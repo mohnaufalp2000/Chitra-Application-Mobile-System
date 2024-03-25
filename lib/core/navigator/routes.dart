@@ -1,0 +1,63 @@
+import 'package:camos/pages/attendance/all_presence_page.dart';
+import 'package:camos/pages/attendance/attendance_page.dart';
+import 'package:camos/pages/attendance/presence_page.dart';
+import 'package:camos/pages/authentication/email_verification_page.dart';
+import 'package:camos/pages/authentication/image_profile_page.dart';
+import 'package:camos/pages/authentication/login_page.dart';
+import 'package:camos/pages/authentication/register_page.dart';
+import 'package:camos/pages/cts/cts_page.dart';
+import 'package:camos/pages/home/detail_tire_site_page.dart';
+import 'package:camos/pages/home/home_page.dart';
+import 'package:camos/pages/home/outstanding_filter_page.dart';
+import 'package:camos/pages/opening/splash_screen.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
+import 'package:camos/pages/pressure_gauge_digital/pgd_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/select_inspection_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/tire_inspection_page.dart';
+import 'package:camos/pages/settings/edit_profile_page.dart';
+import 'package:camos/pages/settings/feedback_page.dart';
+import 'package:camos/pages/settings/settings_page.dart';
+import 'package:camos/pages/site/site_page.dart';
+import 'package:camos/pages/site_condition/site_condition_page.dart';
+import 'package:camos/pages/site_condition/site_condition_pdf.dart';
+import 'package:camos/pages/site_condition/site_condition_report_page.dart';
+import 'package:camos/pages/tire_condition/detail_tire_condition_page.dart';
+import 'package:camos/pages/tire_condition/tire_condition_page.dart';
+import 'package:camos/pages/tire_inventory/tire_inventory_page.dart';
+import 'package:camos/pages/tkph_calculator/result_tkph_page.dart';
+import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
+import 'package:camos/pages/tpms/tpms_page.dart';
+
+var routes = {
+  SplashScreen.routeName: (context) => SplashScreen(),
+  LoginPage.routeName: (context) => LoginPage(),
+  RegisterPage.routeName: (context) => RegisterPage(),
+  HomePage.routeName: (context) => HomePage(),
+  EmailVerificationPage.routeName: (context) => EmailVerificationPage(),
+  ImageProfilePage.routeName: (context) => ImageProfilePage(),
+  TKHPCalculator.routeName: (context) => TKHPCalculator(),
+  ResultTkphPage.routeName: (context) => ResultTkphPage(),
+  SiteConditionPage.routeName: (context) => SiteConditionPage(),
+  // SiteConditionReportPage.routeName: (context) => SiteConditionReportPage(),
+  SiteConditionPDF.routeName: (context) => SiteConditionPDF(),
+  SettingsPage.routeName: (context) => SettingsPage(),
+  EditProfilePage.routeName: (context) => EditProfilePage(),
+  FeedbackPage.routeName: (context) => FeedbackPage(),
+  SitePage.routeName: (context) => SitePage(),
+  PgdPage.routeName: (context) => PgdPage(),
+  SelectUnitPage.routeName: (context) => SelectUnitPage(),
+  AttendancePage.routeName: (context) => AttendancePage(),
+  AllPresencePage.routeName: (context) => AllPresencePage(),
+  CtsPage.routeName: (context) => CtsPage(),
+  TireConditionPage.routeName: (context) => TireConditionPage(),
+  TireInventoryPage.routeName: (context) => TireInventoryPage(),
+  DetailTireConditionPage.routeName: (context) => DetailTireConditionPage(),
+  OutstandingFilterPage.routeName: (context) => OutstandingFilterPage(),
+  PresencePage.routeName: (context) => PresencePage(),
+  DetailTireSitePage.routeName: (context) => DetailTireSitePage(),
+  TpmsPage.routeName: (context) => TpmsPage(),
+  SelectInspectionPage.routeName: (context) => SelectInspectionPage(),
+  TireInspectionPage.routeName: (context) => TireInspectionPage(),
+  DailyPressureListPage.routeName: (context) => DailyPressureListPage(),
+};

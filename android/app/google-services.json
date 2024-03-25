@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "32186857649",
+    "project_id": "caismit",
+    "storage_bucket": "caismit.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:32186857649:android:379491ea030f64811b8a90",
+        "android_client_info": {
+          "package_name": "com.chitraparatama.camos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "32186857649-psmu50hdnjq6dgacks2kolmsf3rm2u2s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjq2bt3nQGDPYLicOKw6J8oQcVdm4hY4U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "32186857649-psmu50hdnjq6dgacks2kolmsf3rm2u2s.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "32186857649-iba0ib3frt9vuo21gm4jl59j8n5j4spe.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.camos"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

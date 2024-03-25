@@ -1,0 +1,107 @@
+import 'dart:io';
+
+import 'package:camera/camera.dart';
+import 'package:camos/core/blocs/attendance/attendance_bloc.dart';
+import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
+import 'package:camos/core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
+import 'package:camos/core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart';
+import 'package:camos/core/blocs/network/network_bloc.dart';
+import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
+import 'package:camos/core/blocs/site/site_bloc.dart';
+import 'package:camos/core/blocs/tire/tire_bloc.dart';
+import 'package:camos/core/blocs/tire_condition/tire_condition_bloc.dart';
+import 'package:camos/core/blocs/tire_invent/tire_invent_bloc.dart';
+import 'package:camos/core/blocs/unit/unit_bloc.dart';
+import 'package:camos/core/navigator/routes.dart';
+import 'package:camos/core/services/local_database/outstanding_task/objectbox.dart';
+import 'package:camos/core/utils/functions/functions.dart';
+import 'package:camos/firebase_options.dart';
+import 'package:camos/objectbox.g.dart';
+import 'package:camos/pages/opening/splash_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+
+late Store store;
+late List<CameraDescription> cameras;
+late List<CameraDescription> camerasTireInspection;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  cameras = await availableCameras();
+  store = (await ObjectBox.create()).store;
+  initializeHERESDK();
+  SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  if (Platform.isIOS) {
+    // await Firebase.initializeApp(
+    //   options: DefaultFirebaseOptions.currentPlatform,
+    // );
+    await Firebase.initializeApp();
+
+    FirebaseFirestore.instance.settings = Settings(
+      persistenceEnabled: true, // Aktifkan disk persistence
+    );
+  } else {
+    await Firebase.initializeApp();
+
+    FirebaseFirestore.instance.settings = Settings(
+      persistenceEnabled: true, // Aktifkan disk persistence
+    );
+  }
+  // requestAllPermission();
+  requestStoragePermission();
+
+  PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        // autentikasi (login, register, verify email, ganti password, edit profil)
+        BlocProvider<AuthenticationBloc>(
+            create: (context) => AuthenticationBloc()),
+        // mengolah data tire di tiap unit
+        BlocProvider<TireBloc>(create: (context) => TireBloc()),
+        // mengolah data site ck
+        BlocProvider<SiteBloc>(create: (context) => SiteBloc()),
+        // mengatur koneksi internet
+        BlocProvider<NetworkBloc>(
+            create: (context) => NetworkBloc()..add(NetworkObserverEvent())),
+        // mengolah data absensi
+        BlocProvider<AttendanceBloc>(create: (context) => AttendanceBloc()),
+        // mengolah data outstanding task
+        BlocProvider<OutstandingTaskBloc>(
+            create: (context) => OutstandingTaskBloc()
+              ..add(ReadOutStandingTaskEvent(selectedDate: []))),
+        // mengolah data unit
+        BlocProvider<UnitBloc>(create: (context) => UnitBloc()),
+        // mengolah data tire running condition
+        BlocProvider<TireConditionBloc>(
+            create: (context) => TireConditionBloc()),
+        // mengolah data tire inventory
+        BlocProvider<TireInventBloc>(create: (context) => TireInventBloc()),
+        // mengolah data detail tire inventory
+        BlocProvider<DetailTireInventBloc>(
+            create: (context) => DetailTireInventBloc()),
+        // mengolah data detail tire condition
+        BlocProvider<DetailTireConditionBloc>(
+            create: (context) => DetailTireConditionBloc()),
+      ],
+      child: MaterialApp(
+        title: 'Material App',
+        debugShowCheckedModeBanner: false,
+        initialRoute: SplashScreen.routeName,
+        routes: routes,
+      ),
+    );
+  }
+}

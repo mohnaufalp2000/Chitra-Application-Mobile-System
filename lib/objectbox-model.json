@@ -1,0 +1,171 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:1247165417930296300",
+      "lastPropertyId": "15:553556009570233128",
+      "name": "OutstandingTaskEntity",
+      "properties": [
+        {
+          "id": "1:1327459534982566706",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4261125030613470334",
+          "name": "unit",
+          "type": 9
+        },
+        {
+          "id": "3:6857417009274331136",
+          "name": "serialNumber",
+          "type": 9
+        },
+        {
+          "id": "4:8767027067182524262",
+          "name": "tireSize",
+          "type": 9
+        },
+        {
+          "id": "5:5175264704332265189",
+          "name": "position",
+          "type": 6
+        },
+        {
+          "id": "6:3843587922974642998",
+          "name": "tireDamage",
+          "type": 9
+        },
+        {
+          "id": "7:4300580738487652109",
+          "name": "remarks",
+          "type": 9
+        },
+        {
+          "id": "8:1216653518039429250",
+          "name": "condition",
+          "type": 30
+        },
+        {
+          "id": "9:7560146528010113624",
+          "name": "pressure",
+          "type": 9
+        },
+        {
+          "id": "10:5013486904149079187",
+          "name": "idSite",
+          "type": 9
+        },
+        {
+          "id": "11:2753554739486871542",
+          "name": "user",
+          "type": 9
+        },
+        {
+          "id": "12:188914959695792532",
+          "name": "lastUpdate",
+          "type": 9
+        },
+        {
+          "id": "13:6302964802626941762",
+          "name": "isDone",
+          "type": 1
+        },
+        {
+          "id": "14:6506732159611965303",
+          "name": "idTask",
+          "type": 9
+        },
+        {
+          "id": "15:553556009570233128",
+          "name": "brand",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "2:4847767954173900942",
+      "lastPropertyId": "11:1304923070146106978",
+      "name": "AttendanceEntity",
+      "properties": [
+        {
+          "id": "1:272198496252705597",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "6:665925264274010934",
+          "name": "date",
+          "type": 9
+        },
+        {
+          "id": "7:1484614968790516581",
+          "name": "masuk",
+          "type": 9
+        },
+        {
+          "id": "8:1924472974290556446",
+          "name": "keluar",
+          "type": 9
+        },
+        {
+          "id": "10:7954331026111298020",
+          "name": "masukImage",
+          "type": 9
+        },
+        {
+          "id": "11:1304923070146106978",
+          "name": "keluarImage",
+          "type": 9
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:2481607064593893714",
+      "lastPropertyId": "3:3754108111333411994",
+      "name": "TireInspectPictureEntity",
+      "properties": [
+        {
+          "id": "1:559766504538233270",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:4804705467211053688",
+          "name": "idImage",
+          "type": 9
+        },
+        {
+          "id": "3:3754108111333411994",
+          "name": "image",
+          "type": 9
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "3:2481607064593893714",
+  "lastIndexId": "0:0",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [
+    474179681657960148,
+    8790142092273941776,
+    270516801495845819,
+    8496804746463566091,
+    3932261417753447039
+  ],
+  "retiredRelationUids": [],
+  "version": 1
+}
