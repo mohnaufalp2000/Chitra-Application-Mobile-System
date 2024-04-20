@@ -2523,7 +2523,7 @@ class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
           title: Padding(
             padding: const EdgeInsets.only(top: 18.0),
             child: Text(
-              'Pressure Gauge Digital',
+              'Tire Inspection',
               textAlign: TextAlign.center,
               style: getBlackTextStyle(fontSize: 20, fontWeight: w700),
             ),

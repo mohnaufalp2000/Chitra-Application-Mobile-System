@@ -436,6 +436,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     String id = await getIdSitePreferences();
     idSite = id;
+        print('id site : $idSite');
+
     // if (idSite == '1') {
     //   idSite = await getSelectedIdSitePreferences();
     // }
@@ -487,6 +489,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       actualIdSite = idSite;
       saveSelectedIdSitePreferences(actualIdSite);
     }
+
+    print('else site : $actualIdSite');
+
     return Scaffold(
       backgroundColor: white,
       body: WillPopScope(

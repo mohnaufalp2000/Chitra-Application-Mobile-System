@@ -125,7 +125,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                       final dateTime = DateTime.parse(dateString);
                       final now = DateTime.now();
 
-                      return dateTime.year == now.year &&
+                      return
+                       dateTime.year == now.year &&
                           dateTime.month == now.month &&
                           dateTime.day == now.day &&
                           data['pit'] == pit[selectedPit];

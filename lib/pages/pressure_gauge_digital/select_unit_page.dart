@@ -55,6 +55,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
 
               if (state is UnitLoadedState) {
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextField(
                       onChanged: (value) {
@@ -67,6 +68,8 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
                           hintStyle: getGreyTextStyle(grey8391A1),
                           prefixIcon: Icon(Icons.search)),
                     ),
+                    const SizedBox(height: 12,),
+                    Text('Total Unit : ${state.units.length.toString()}', style: getGreyTextStyle(grey8391A1),),
                     Column(
                       children: state.units.map((unit) {
                         if (searchQuery.isNotEmpty &&

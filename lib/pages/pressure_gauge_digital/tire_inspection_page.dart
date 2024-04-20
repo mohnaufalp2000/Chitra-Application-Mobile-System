@@ -93,6 +93,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
     // tambahkan pit
     setState(() {
       // BMB COYYY
+      log('id site bmb : $idSite');
       if (idSite == '52') {
         pit.add('Utara');
         pit.add('Selatan');
