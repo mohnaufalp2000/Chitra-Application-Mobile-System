@@ -329,7 +329,8 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                                 height: 6,
                               ),
                               SizedBox(
-                                width: 130,
+                                width: MediaQuery.of(context).size.width * 0.39,
+                                height: 45,
                                 child: ElevatedButton(
                                   onPressed: () {
                                     showDialog(
@@ -488,7 +489,8 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                               ),
                               // SELECT DAMAGE TIRE
                               SizedBox(
-                                width: 130,
+                                width: MediaQuery.of(context).size.width * 0.39,
+                                height: 65,
                                 child: ElevatedButton(
                                     onPressed: () {
                                       List<bool> checkedDamageValues =

@@ -25,6 +25,7 @@ import 'package:camos/core/widgets/box_tire_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/check_box_modal_widget.dart';
 import 'package:camos/core/widgets/custom_error_widget.dart';
+import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/core/widgets/network_checker_widget.dart';
 import 'package:camos/core/widgets/oustandingtask_tile_widget.dart';
 import 'package:camos/main.dart';
@@ -83,6 +84,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final StreamController<QuerySnapshot> _streamController2 =
       StreamController<QuerySnapshot>();
   StreamSubscription<User?>? _authStateSubscription;
+  TextEditingController searchTaskController = TextEditingController();
+  String searchTaskText = '';
 
   final allChecked = CheckBoxModalWidget(title: 'All');
   List<CheckBoxModalWidget> checkBoxList = [
@@ -436,7 +439,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     String id = await getIdSitePreferences();
     idSite = id;
-        print('id site : $idSite');
+    print('id site : $idSite');
 
     // if (idSite == '1') {
     //   idSite = await getSelectedIdSitePreferences();
@@ -1422,7 +1425,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           //     return Container();
                           //   },
                           // ),
-
+                          TextField(
+                            controller: searchTaskController,
+                            onChanged: (value) {
+                              setState(() {
+                                searchTaskText = value;
+                              });
+                            },
+                            decoration: InputDecoration(
+                                hintText: 'Search... (Unit Number)',
+                                hintStyle: getGreyTextStyle(grey8391A1),
+                                prefixIcon: Icon(Icons.search)),
+                          ),
+                          const SizedBox(
+                            height: 12,
+                          ),
                           StreamBuilder<QuerySnapshot>(
                               stream: firestore
                                   .collection('task')
@@ -1470,7 +1487,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   return splittedDate[0];
                                 }).toList();
 
-                                final filteredTask = docs.where((task) {
+                                List<DocumentSnapshot<Object?>> filteredTask =
+                                    docs.where((task) {
                                   List<String> splittedDate =
                                       task['last_update'].split('T');
                                   return formatedDates
@@ -1485,6 +1503,35 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   cast['id_site'] = siteName;
                                   filteredItemTask.add(cast);
                                 });
+
+                                // filter berdasarkan tanggal input data
+                                filteredTask.sort((a, b) {
+                                  Map<String, dynamic> first =
+                                      a.data() as Map<String, dynamic>;
+                                  Map<String, dynamic> second =
+                                      b.data() as Map<String, dynamic>;
+                                  ;
+                                  // Ambil nilai last_update dari masing-masing DocumentSnapshot
+                                  DateTime timeA =
+                                      DateTime.parse(first['last_update']);
+                                  DateTime timeB =
+                                      DateTime.parse(second['last_update']);
+
+                                  // Bandingkan waktu last_update dari kedua DocumentSnapshot
+                                  return timeB.compareTo(
+                                      timeA); // Dari yang terbaru ke yang terlama
+                                });
+
+                                // pencarian data berdasarkan id unit
+                                if (searchTaskText.length > 0) {
+                                  filteredTask = filteredTask.where((element) {
+                                    return element
+                                        .get('unit')
+                                        .toString()
+                                        .toLowerCase()
+                                        .contains(searchTaskText.toLowerCase());
+                                  }).toList();
+                                }
 
                                 return Column(
                                   children: [
