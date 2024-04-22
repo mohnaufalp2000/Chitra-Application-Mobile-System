@@ -270,6 +270,9 @@ Future<File> createFolderPath(String id, String type) async {
     case 'outstanding':
       final outputFile = File("${path?.path}/Outstanding-$id.xlsx");
       return outputFile;
+    case 'daily-check':
+      final outputFile = File("${path?.path}/daily-check-$id.xlsx");
+      return outputFile;
     case 'outstanding-image':
       final outputFile = File("${path?.path}/outstanding-image-$id.jpg");
       return outputFile;
@@ -284,6 +287,7 @@ Future<List<int>> createExcel(String type,
     String sn = 'test',
     String site = '',
     List<Map<String, dynamic>>? task,
+    List<Map<String, dynamic>>? daily,
     List<AttendanceEntity>? presence}) async {
   switch (type) {
     case 'attendance':
@@ -584,6 +588,57 @@ Future<List<int>> createExcel(String type,
       final List<int> bytes = workbook.saveAsStream();
       workbook.dispose();
       return bytes;
+    case 'daily-check':
+      final Workbook workbook = Workbook();
+      final Worksheet sheet = workbook.worksheets[0];
+
+      // sheet.getRangeByName('A1').setText('Date');
+      // sheet.getRangeByName('B1').setText('Unit');
+      // sheet.getRangeByName('C1').setText('Pos');
+      // sheet.getRangeByName('D1').setText('Pressure');
+
+      // log('funcdailyexcel: $daily');
+      // for(int i = 0; i < daily!.length; i++){
+      //   // merubah tanggal jadi dd/MM/yyyy
+      //   DateTime parse = DateTime.parse(daily[i]['tanggal']);
+      //   String formattedDate = DateFormat('dd/MM/yyyy').format(parse);
+
+      //   final unit = daily[i]['unit'];
+      //   final posisi = daily[i]['posisi'] as List<dynamic>;
+        
+      //   for(int j = 0; j < posisi.length; j++){
+      //     sheet.getRangeByName('A${j+2}').setText(formattedDate);
+      //     sheet.getRangeByName('B${j+2}').setText(unit);
+      //     sheet.getRangeByName('C${j+2}').setText(posisi[j]['pos']);
+      //     sheet.getRangeByName('D${j+2}').setText(posisi[j]['pressure']);
+      //   }
+       
+      // }
+      sheet.getRangeByName('A1').setText('Date');
+      sheet.getRangeByName('B1').setText('Unit');
+      sheet.getRangeByName('C1').setText('Pos');
+      sheet.getRangeByName('D1').setText('Pressure');
+
+      log('funcdailyexcel: $daily');
+      for (int i = 0; i < daily!.length; i++) {
+        final unit = daily[i]['unit'];
+        final posisi = daily[i]['posisi'] as List<dynamic>;
+        
+        for (int j = 0; j < posisi.length; j++) {
+            // Merubah tanggal menjadi dd/MM/yyyy
+          DateTime parse = DateTime.parse(daily[i]['tanggal']);
+          String formattedDate = DateFormat('dd/MM/yyyy').format(parse);
+          sheet.getRangeByName('A${i * posisi.length + j + 2}').setText(formattedDate);
+          sheet.getRangeByName('B${i * posisi.length + j + 2}').setText(unit);
+          
+          sheet.getRangeByName('C${i * posisi.length + j + 2}').setText(posisi[j]['pos']);
+          sheet.getRangeByName('D${i * posisi.length + j + 2}').setText(posisi[j]['pressure']);
+        }
+      }
+
+        final List<int> bytes = workbook.saveAsStream();
+        workbook.dispose();
+        return bytes;
   }
   return [];
 }

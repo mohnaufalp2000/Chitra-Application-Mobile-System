@@ -5,6 +5,7 @@ import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
 import 'package:camos/pages/pressure_gauge_digital/pgd_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/tire_inspection_page.dart';
 import 'package:flutter/material.dart';
@@ -41,7 +42,30 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
     final inspectionType = ModalRoute.of(context)?.settings.arguments as String;
 
     return Scaffold(
-      appBar: appBarWidget('Select Unit First', context),
+      appBar: (inspectionType == 'daily_check') ? AppBar(
+        centerTitle: true,
+        title: Text(
+          'Daily Check Pressure',
+          style: getBlackTextStyle(),
+        ),
+        actions: [
+          InkWell(
+            onTap: () {
+              Navigator.pushNamed(context, DailyPressureListPage.routeName);
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(
+                right: 8.0,
+                top: 8.0,
+              ),
+              child: Icon(
+                Icons.list,
+                size: 32,
+              ),
+            ),
+          )
+        ],
+      ) : appBarWidget('Select Unit First', context),
       body: SafeArea(
           child: SingleChildScrollView(
         child: Container(

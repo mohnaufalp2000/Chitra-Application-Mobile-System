@@ -1,16 +1,20 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:camos/core/blocs/tire/tire_bloc.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
+import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
+import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
 class TireInspectionPage extends StatefulWidget {
   static const routeName = '/tire-inspection-page';
@@ -77,6 +81,75 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
   Map<String, dynamic> dataUnit = {};
   String buttonText = 'Select';
 
+  // Bluetooth
+  FlutterBluetoothSerial bluetoothSerial = FlutterBluetoothSerial.instance;
+  BluetoothConnection? connection;
+  bool get isConnected => connection != null && connection!.isConnected;
+  List<BluetoothDevice> devices = [];
+
+  // startScanBluetooth() async {
+  //   bluetoothSerial.startDiscovery().listen((device) {
+  //     if (!devices.contains(device.device)) {
+  //       log('device yg tersedia ' + device.device.toString());
+  //       setState(() {
+  //         devices.add(device.device);
+  //       });
+  //     }
+  //   }, onDone: () {
+  //     setState(() {});
+  //   });
+  // }
+
+
+  startScanBluetooth() async {
+    StreamSubscription<BluetoothDiscoveryResult>? scanSubscription;
+
+    scanSubscription = bluetoothSerial.startDiscovery().listen((device) {
+      if (!devices.contains(device.device)) {
+        log('device yg tersedia ' + device.device.toString());
+        setState(() {
+          devices.add(device.device);
+        });
+      }
+    }, onDone: () {
+      setState(() {});
+    });
+
+    // Tunda pembatalan pemindaian setelah beberapa waktu (misalnya 10 detik)
+    await Future.delayed(Duration(seconds: 10));
+
+    // Setelah tunda, batalkan pemindaian
+    if (scanSubscription != null) {
+      scanSubscription.cancel();
+      log('Bluetooth scan stopped');
+    }
+  }
+
+
+  stopScanBluetooth() async {
+    bluetoothSerial.cancelDiscovery();
+  }
+  
+   // mendapatkan nilai pressure
+  void _listenForData() {
+    connection!.input!.listen((data) {
+      String receivedData = String.fromCharCodes(data).trim();
+      log('data json : $receivedData');
+      String onlyNumber =
+          '${double.parse(receivedData.replaceAll(RegExp(r'[^\d.-]+'), ''))}';
+      print(
+          'Received data: ${double.parse(receivedData.replaceAll(RegExp(r'[^\d.-]+'), ''))}');
+
+      setState(() {
+        double parsedPressure = double.parse(onlyNumber);
+        int roundNumber = parsedPressure.round();
+        pressureCtrl.text = roundNumber.toString();
+        print('tekananangin : ${pressureCtrl.text}');
+      });
+    });
+  }
+
+
   void callTires() async {
     idSite = await getIdSitePreferences();
     log('id site daliy check : $idSite');
@@ -101,6 +174,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
       }
     });
   }
+  
 
   @override
   void initState() {
@@ -145,6 +219,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // UNIT NUMBER DAN HM UNIT
               Row(
@@ -226,6 +301,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
               const SizedBox(
                 height: 24,
               ),
+              (pit.isNotEmpty) ?
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -241,9 +317,9 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                     style: getBlackTextStyle(fontSize: 18, fontWeight: w700),
                   ),
                 ],
-              ),
-              const SizedBox(
-                height: 24,
+              ) : Container(),
+              SizedBox(
+                height: (pit.isNotEmpty) ? 24 : 0,
               ),
               Row(
                 children: pit.map((e) {
@@ -273,12 +349,85 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                   ));
                 }).toList(),
               ),
-              const SizedBox(
-                height: 24,
-              ),
+              // Bluetooth Pressure Gauge Digital
+              ButtonWidget(
+                name: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.bluetooth, color: white,),
+                    const SizedBox(
+                      width: 6,
+                    ),
+                    Text(
+                      'Connect Pressure Gauge Digital',
+                      style: getWhiteTextStyle(),
+                    ),
+                  ],
+                ),
+                function: () async {
+                  log('tombol pressure gauge');
+                   if (connection != null) {
+                        stopScanBluetooth();
+                        connection?.close();
+                      }
+                  requestBluetoothPermission();
+                  startScanBluetooth();
+                  setState(() {
+                    devices.clear();
+                  });
+                  // AppSettings.openBluetoothSettings();
+                }),
+                const SizedBox(height: 12,),
+                Column(
+                  children: devices.map((device) {
+                    return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        device.name ?? 'Uknown Device',
+                        style: getBlackTextStyle(
+                        ),
+                      ),
+                      subtitle: Text(
+                        device.address,
+                        style: getGreyTextStyle(grey6A707C,),
+                      ),
+                      trailing: SizedBox(
+                          width: 110,
+                          height: 60,
+                          child: ButtonWidget(
+                              name: Text(
+                                (isConnected) ? 'Disconnect' : 'Connect',
+                                style: getWhiteTextStyle(
+                                ),
+                              ),
+                              function: () async {
+                                if (isConnected) {
+                                  await connection!.close();
+                                  devices.clear();
+                                  setState(() {});
+                                } else {
+                                  try {
+                                    connection =
+                                        await BluetoothConnection.toAddress(
+                                            device.address);
+                                    print('Connected to the device');
+                                    _listenForData();
+                                    devices.clear();
+                                    devices.add(device);
+                                    setState(() {});
+                                  } catch (e) {
+                                    print(
+                                        'Cannot connect to the device: $e');
+                                  }
+                                }
+                              })),
+                        );
+                      }).toList(),
+                    ),
+                const SizedBox(height: 24,),
               // POSITION
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Icon(
                     Icons.tire_repair,
@@ -308,7 +457,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       }
                     }
                     log('ban : ${state.units.length}');
-
+    
                     return Container(
                       child: Wrap(
                         spacing: 34,
@@ -490,13 +639,13 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                               // SELECT DAMAGE TIRE
                               SizedBox(
                                 width: MediaQuery.of(context).size.width * 0.39,
-                                height: 65,
+                                // height: 65,
                                 child: ElevatedButton(
                                     onPressed: () {
                                       List<bool> checkedDamageValues =
                                           List<bool>.filled(
                                               damageType.length, false);
-
+    
                                       showDialog(
                                         context: context,
                                         builder: (BuildContext context) {
@@ -590,7 +739,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                                                           ),
                                                           onPressed: () {
                                                             setState(() {});
-
+    
                                                             selectedDamage
                                                                 .clear();
                                                             final List<String>
@@ -629,7 +778,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                                                               log('hasil luka ban : ${position}');
                                                             }
                                                             damageCtrl.clear();
-
+    
                                                             Navigator.pop(
                                                                 context);
                                                           },
@@ -676,7 +825,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       ),
                     );
                   }
-
+    
                   return Container();
                 },
               ),
@@ -691,15 +840,18 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
           child: ElevatedButton(
             onPressed: () async {
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
-              if (selectedPit == -1) {
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Text(
-                      'Please select PIT',
-                      style: getWhiteTextStyle(),
-                    )));
-                return;
+              if(pit.isNotEmpty){
+                 if (selectedPit == -1) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      backgroundColor: Colors.red,
+                      content: Text(
+                        'Please select PIT',
+                        style: getWhiteTextStyle(),
+                      )));
+                  return;
+                }
               }
+             
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   backgroundColor: green00968A,
                   content: Text(
@@ -711,10 +863,11 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                     .collection('daily_pressure')
                     .where('unit', isEqualTo: dataUnit['unitNumber'])
                     .get();
-
+    
                 if (querySnapshot.docs.isNotEmpty) {
                   final docId = querySnapshot.docs.first.id;
-
+    
+                  // revisi data
                   await firestore
                       .collection('daily_pressure')
                       .doc(docId)
@@ -730,9 +883,10 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                         'luka': p['damage']
                       };
                     }),
-                    'pit': pit[selectedPit],
+                    'pit': (pit.isEmpty) ? 'Default'  : pit[selectedPit],
                   });
                 } else {
+                  // tambah data
                   await firestore.collection('daily_pressure').add({
                     'tanggal': DateTime.now().toIso8601String(),
                     'unit': dataUnit['unitNumber'],
@@ -745,7 +899,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                         'luka': p['damage']
                       };
                     }),
-                    'pit': pit[selectedPit],
+                    'pit': (pit.isEmpty) ? 'Default'  : pit[selectedPit],
                   });
                 }
               } catch (e) {}

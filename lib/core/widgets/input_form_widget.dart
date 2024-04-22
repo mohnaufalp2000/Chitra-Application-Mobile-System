@@ -75,6 +75,7 @@ class _InputFormWidgetState extends State<InputFormWidget> {
         controller: widget.controller,
         keyboardType: widget.type,
         maxLines: (widget.isLargeInput) ? 7 : 1,
+        autofocus: false,
         obscureText: (widget.isObscure) ? !isPasswordVisible : false,
         decoration: InputDecoration(
           filled: true,
