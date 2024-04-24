@@ -605,14 +605,14 @@ Future<List<int>> createExcel(String type,
 
       //   final unit = daily[i]['unit'];
       //   final posisi = daily[i]['posisi'] as List<dynamic>;
-        
+
       //   for(int j = 0; j < posisi.length; j++){
       //     sheet.getRangeByName('A${j+2}').setText(formattedDate);
       //     sheet.getRangeByName('B${j+2}').setText(unit);
       //     sheet.getRangeByName('C${j+2}').setText(posisi[j]['pos']);
       //     sheet.getRangeByName('D${j+2}').setText(posisi[j]['pressure']);
       //   }
-       
+
       // }
       sheet.getRangeByName('A1').setText('Date');
       sheet.getRangeByName('B1').setText('Unit');
@@ -623,22 +623,28 @@ Future<List<int>> createExcel(String type,
       for (int i = 0; i < daily!.length; i++) {
         final unit = daily[i]['unit'];
         final posisi = daily[i]['posisi'] as List<dynamic>;
-        
+
         for (int j = 0; j < posisi.length; j++) {
-            // Merubah tanggal menjadi dd/MM/yyyy
+          // Merubah tanggal menjadi dd/MM/yyyy
           DateTime parse = DateTime.parse(daily[i]['tanggal']);
-          String formattedDate = DateFormat('dd/MM/yyyy').format(parse);
-          sheet.getRangeByName('A${i * posisi.length + j + 2}').setText(formattedDate);
+          String formattedDate = DateFormat('MM/dd/yyyy').format(parse);
+          sheet
+              .getRangeByName('A${i * posisi.length + j + 2}')
+              .setText(formattedDate);
           sheet.getRangeByName('B${i * posisi.length + j + 2}').setText(unit);
-          
-          sheet.getRangeByName('C${i * posisi.length + j + 2}').setText(posisi[j]['pos']);
-          sheet.getRangeByName('D${i * posisi.length + j + 2}').setText(posisi[j]['pressure']);
+
+          sheet
+              .getRangeByName('C${i * posisi.length + j + 2}')
+              .setText(posisi[j]['pos']);
+          sheet
+              .getRangeByName('D${i * posisi.length + j + 2}')
+              .setText(posisi[j]['pressure']);
         }
       }
 
-        final List<int> bytes = workbook.saveAsStream();
-        workbook.dispose();
-        return bytes;
+      final List<int> bytes = workbook.saveAsStream();
+      workbook.dispose();
+      return bytes;
   }
   return [];
 }

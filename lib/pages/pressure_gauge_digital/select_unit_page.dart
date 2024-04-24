@@ -42,30 +42,33 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
     final inspectionType = ModalRoute.of(context)?.settings.arguments as String;
 
     return Scaffold(
-      appBar: (inspectionType == 'daily_check') ? AppBar(
-        centerTitle: true,
-        title: Text(
-          'Daily Check Pressure',
-          style: getBlackTextStyle(),
-        ),
-        actions: [
-          InkWell(
-            onTap: () {
-              Navigator.pushNamed(context, DailyPressureListPage.routeName);
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(
-                right: 8.0,
-                top: 8.0,
+      appBar: (inspectionType == 'daily_check')
+          ? AppBar(
+              centerTitle: true,
+              title: Text(
+                'Daily Check Pressure',
+                style: getBlackTextStyle(),
               ),
-              child: Icon(
-                Icons.list,
-                size: 32,
-              ),
-            ),
-          )
-        ],
-      ) : appBarWidget('Select Unit First', context),
+              actions: [
+                InkWell(
+                  onTap: () {
+                    Navigator.pushNamed(
+                        context, DailyPressureListPage.routeName);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      right: 8.0,
+                      top: 8.0,
+                    ),
+                    child: Icon(
+                      Icons.list,
+                      size: 32,
+                    ),
+                  ),
+                )
+              ],
+            )
+          : appBarWidget('Select Unit First', context),
       body: SafeArea(
           child: SingleChildScrollView(
         child: Container(
@@ -92,8 +95,13 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
                           hintStyle: getGreyTextStyle(grey8391A1),
                           prefixIcon: Icon(Icons.search)),
                     ),
-                    const SizedBox(height: 12,),
-                    Text('Total Unit : ${state.units.length.toString()}', style: getGreyTextStyle(grey8391A1),),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    Text(
+                      'Total Unit : ${state.units.length.toString()}',
+                      style: getGreyTextStyle(grey8391A1),
+                    ),
                     Column(
                       children: state.units.map((unit) {
                         if (searchQuery.isNotEmpty &&

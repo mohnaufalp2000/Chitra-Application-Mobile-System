@@ -104,58 +104,59 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                   height: 12,
                 ),
                 SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                                onPressed: () async {
-                                  final id = Uuid();
-                                  // print('tugas : $filteredItemTask');
-                                  // print('terpesona $filteredItemTask');
-                                  // final file = await createFolderPath(id.v4(), 'outstanding');
-                                  final file = await createFolderPath(
-                                      id.v4(), 'daily-check');
-                                  final bytes = await createExcel('daily-check',
-                                      daily: filteredItemTask);
-                                  final saved = await file.writeAsBytes(bytes,
-                                      flush: true);
-                                  // print('laper : $saved');
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
-                                          backgroundColor: green00968A,
-                                          content: Text(
-                                            'Successfull Save Data!',
-                                            style: getWhiteTextStyle(),
-                                          )));
-                                  final result = await OpenFile.open(file.path);
+                  width: double.infinity,
+                  child: ElevatedButton(
+                      onPressed: () async {
+                        final id = Uuid();
+                        // print('tugas : $filteredItemTask');
+                        // print('terpesona $filteredItemTask');
+                        // final file = await createFolderPath(id.v4(), 'outstanding');
+                        final file =
+                            await createFolderPath(id.v4(), 'daily-check');
+                        final bytes = await createExcel('daily-check',
+                            daily: filteredItemTask);
+                        final saved =
+                            await file.writeAsBytes(bytes, flush: true);
+                        // print('laper : $saved');
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            backgroundColor: green00968A,
+                            content: Text(
+                              'Successfull Save Data!',
+                              style: getWhiteTextStyle(),
+                            )));
+                        final result = await OpenFile.open(file.path);
 
-                                  if (result.type == ResultType.done) {
-                                    print('File berhasil dibuka');
-                                  } else {
-                                    print(result.message);
-                                    if (result.type == ResultType.noAppToOpen) {
-                                      openPlayStore('attendance');
-                                    }
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.lightBlue
-                                ),
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(vertical: 12),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.table_chart, color: Colors.white,),
-                                      const SizedBox(
-                                        width: 12,
-                                      ),
-                                      Text(
-                                        'Export to Excel',
-                                        style: getWhiteTextStyle(),
-                                      ),
-                                    ],
-                                  ),
-                                )),
-                          ),
+                        if (result.type == ResultType.done) {
+                          print('File berhasil dibuka');
+                        } else {
+                          print(result.message);
+                          if (result.type == ResultType.noAppToOpen) {
+                            openPlayStore('attendance');
+                          }
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.lightBlue),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.table_chart,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Text(
+                              'Export to Excel',
+                              style: getWhiteTextStyle(),
+                            ),
+                          ],
+                        ),
+                      )),
+                ),
                 const SizedBox(
                   height: 12,
                 ),
@@ -187,48 +188,43 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                       final now = DateTime.now();
 
                       // ada pit
-                      if(data['pit'] != 'Default'){
-                        return
-                          dateTime.year == now.year &&
-                              dateTime.month == now.month &&
-                              dateTime.day == now.day &&
-                              data['pit'] == pit[selectedPit];
-                      } 
+                      if (data['pit'] != 'Default') {
+                        return dateTime.year == now.year &&
+                            dateTime.month == now.month &&
+                            dateTime.day == now.day &&
+                            data['pit'] == pit[selectedPit];
+                      }
 
                       // tidak ada pit
-                       return
-                          dateTime.year == now.year &&
-                              dateTime.month == now.month &&
-                              dateTime.day == now.day;
-                      
-                      }).toList();
+                      return dateTime.year == now.year &&
+                          dateTime.month == now.month &&
+                          dateTime.day == now.day;
+                    }).toList();
 
-                      filteredDocument.sort((a, b) {
-                        Map<String, dynamic> first =
-                            a.data() as Map<String, dynamic>;
-                        Map<String, dynamic> second =
-                            b.data() as Map<String, dynamic>;
-                        ;
-                        // Ambil nilai last_update dari masing-masing DocumentSnapshot
-                        DateTime timeA =
-                            DateTime.parse(first['tanggal']);
-                        DateTime timeB =
-                            DateTime.parse(second['tanggal']);
+                    filteredDocument.sort((a, b) {
+                      Map<String, dynamic> first =
+                          a.data() as Map<String, dynamic>;
+                      Map<String, dynamic> second =
+                          b.data() as Map<String, dynamic>;
+                      ;
+                      // Ambil nilai last_update dari masing-masing DocumentSnapshot
+                      DateTime timeA = DateTime.parse(first['tanggal']);
+                      DateTime timeB = DateTime.parse(second['tanggal']);
 
-                        // Bandingkan waktu last_update dari kedua DocumentSnapshot
-                        return timeB.compareTo(
-                            timeA); // Dari yang terbaru ke yang terlama
-                      });
+                      // Bandingkan waktu last_update dari kedua DocumentSnapshot
+                      return timeB.compareTo(
+                          timeA); // Dari yang terbaru ke yang terlama
+                    });
 
-                       // untuk data export excel
-                      filteredItemTask.clear();
-                      filteredDocument.forEach((item) {
-                        Map<String, dynamic> cast =
-                            item.data() as Map<String, dynamic>;
-            
-                        filteredItemTask.add(cast);
-                      });
-                      log('dailyexcel: $filteredItemTask');
+                    // untuk data export excel
+                    filteredItemTask.clear();
+                    filteredDocument.forEach((item) {
+                      Map<String, dynamic> cast =
+                          item.data() as Map<String, dynamic>;
+
+                      filteredItemTask.add(cast);
+                    });
+                    log('dailyexcel: $filteredItemTask');
 
                     return Column(
                       children: [
