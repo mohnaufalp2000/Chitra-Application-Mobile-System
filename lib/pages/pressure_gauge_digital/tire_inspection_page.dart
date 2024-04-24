@@ -70,7 +70,11 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
     'Tread Cut Separation',
     'Worn Out',
   ];
-
+  List<List<int>> inspectRoute = [
+    [0, 1, 2, 3, 4, 5],
+    [0, 2, 3, 4, 5, 1],
+    [1, 5, 4, 3, 2, 0],
+  ];
   List<String> pit = [];
 
   TextEditingController pressureCtrl = TextEditingController(text: '');
@@ -80,6 +84,9 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
   List<String> selectedDamage = [];
   int selectedPit = -1;
   int selectedPosIndex = -1;
+  int selectedType = 0;
+  int selectedRoute = 0;
+  int checkAmount = 0;
   Map<String, dynamic> dataUnit = {};
   String buttonText = 'Select';
 
@@ -141,19 +148,41 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
           'Received data: ${double.parse(receivedData.replaceAll(RegExp(r'[^\d.-]+'), ''))}');
 
       setState(() {
-        // double parsedPressure = double.parse(onlyNumber);
-        // int roundNumber = parsedPressure.round();
-        // pressureCtrl.text = roundNumber.toString();
-
         int dot = onlyNumber.indexOf('.');
         String firstNumber =
             onlyNumber.substring(0, dot != -1 ? dot : onlyNumber.length);
         pressureDigitalCtrl.text = firstNumber;
-        if (selectedPosIndex != -1) {
-          position[selectedPosIndex]['pressure'] = firstNumber;
-          pressureDigitalCtrl.clear();
-          selectedPosIndex = -1;
-          Navigator.pop(context);
+        // if (selectedPosIndex != -1) {
+        //   position[selectedPosIndex]['pressure'] = firstNumber;
+        //   pressureDigitalCtrl.clear();
+        //   selectedPosIndex = -1;
+        //   Navigator.pop(context);
+        // }
+        switch (selectedRoute) {
+          case 0:
+            setState(() {
+              if (checkAmount < 6)
+                position[inspectRoute[0][checkAmount]]['pressure'] =
+                    firstNumber;
+              checkAmount++;
+            });
+            break;
+          case 1:
+            setState(() {
+              if (checkAmount < 6)
+                position[inspectRoute[1][checkAmount]]['pressure'] =
+                    firstNumber;
+              checkAmount++;
+            });
+            break;
+          case 2:
+            setState(() {
+              if (checkAmount < 6)
+                position[inspectRoute[2][checkAmount]]['pressure'] =
+                    firstNumber;
+              checkAmount++;
+            });
+            break;
         }
         print('tekananangin : ${pressureDigitalCtrl.text}');
       });
@@ -360,510 +389,715 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                   ));
                 }).toList(),
               ),
-              // Bluetooth Pressure Gauge Digital
-              ButtonWidget(
-                  name: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.bluetooth,
-                        color: white,
-                      ),
-                      const SizedBox(
-                        width: 6,
-                      ),
-                      Text(
-                        'Connect Pressure Gauge Digital',
-                        style: getWhiteTextStyle(),
-                      ),
-                    ],
-                  ),
-                  function: () async {
-                    log('tombol pressure gauge');
-                    if (connection != null) {
-                      stopScanBluetooth();
-                      connection?.close();
-                    }
-                    requestBluetoothPermission();
-                    startScanBluetooth();
-                    setState(() {
-                      devices.clear();
-                    });
-                    // AppSettings.openBluetoothSettings();
-                  }),
-              const SizedBox(
-                height: 12,
-              ),
-              Column(
-                children: devices.map((device) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      device.name ?? 'Uknown Device',
-                      style: getBlackTextStyle(),
-                    ),
-                    subtitle: Text(
-                      device.address,
-                      style: getGreyTextStyle(
-                        grey6A707C,
-                      ),
-                    ),
-                    trailing: SizedBox(
-                        width: 110,
-                        height: 60,
-                        child: ButtonWidget(
-                            name: Text(
-                              (isConnected) ? 'Disconnect' : 'Connect',
-                              style: getWhiteTextStyle(),
-                            ),
-                            function: () async {
-                              if (isConnected) {
-                                await connection!.close();
-                                devices.clear();
-                                setState(() {});
-                              } else {
-                                try {
-                                  connection =
-                                      await BluetoothConnection.toAddress(
-                                          device.address);
-                                  print('Connected to the device');
-                                  _listenForData();
-                                  devices.clear();
-                                  devices.add(device);
-                                  setState(() {});
-                                } catch (e) {
-                                  print('Cannot connect to the device: $e');
-                                }
-                              }
-                            })),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(
-                height: 24,
-              ),
-              // POSITION
               Row(
-                mainAxisAlignment: MainAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Icon(
-                    Icons.tire_repair,
-                    size: 38,
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedType = 0;
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                                    (Set<MaterialState> states) {
+                              if (selectedType == 0) {
+                                return Colors.lightGreen;
+                              }
+                              return greyDADADA;
+                            }),
+                          ),
+                          child: Text(
+                            'PG Digital',
+                            style: getWhiteTextStyle(fontWeight: w700),
+                          )),
+                    ),
                   ),
                   const SizedBox(
                     width: 12,
                   ),
-                  Text(
-                    'Tire',
-                    style: getBlackTextStyle(fontSize: 18, fontWeight: w700),
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              selectedType = 1;
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                                    (Set<MaterialState> states) {
+                              if (selectedType == 1) {
+                                return Colors.lightGreen;
+                              }
+                              return greyDADADA;
+                            }),
+                          ),
+                          child: Text(
+                            'Manual',
+                            style: getWhiteTextStyle(fontWeight: w700),
+                          )),
+                    ),
                   ),
                 ],
               ),
               const SizedBox(
-                height: 12,
+                height: 24,
               ),
-              BlocBuilder<TireBloc, TireState>(
-                builder: (context, state) {
-                  if (state is TireLoadingState) {
-                    return CircularProgressIndicator();
-                  }
-                  if (state is TiresLoadedState) {
-                    for (var i = 0; i < state.units.length; i++) {
-                      if (position.length < state.units.length) {
-                        position.add({'pressure': '', 'damage': null});
-                      }
-                    }
-                    log('ban : ${state.units.length}');
+              // PG Digital Inspect
+              (selectedType == 0)
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Inspection Tire Route',
+                          style:
+                              getBlackTextStyle(fontWeight: w700, fontSize: 18),
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        Column(
+                          children: inspectRoute.asMap().entries.map((entry) {
+                            int index = entry.key;
+                            List<int> route = entry.value;
 
-                    return Container(
-                      child: Wrap(
-                        spacing: 34,
-                        runSpacing: 24,
-                        alignment: WrapAlignment.center,
-                        children: position.map((pos) {
-                          final posIndex = position.indexOf(pos);
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // POSITION
-                              Text(
-                                'Pos. ${posIndex + 1}',
-                                style: getBlackTextStyle(
-                                    fontSize: 16, fontWeight: w700),
+                            return RadioListTile<int>(
+                              title: Text(route
+                                  .map((index) => (index + 1).toString())
+                                  .join(' -> ')),
+                              value: index,
+                              groupValue: selectedRoute,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedRoute = value!;
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        // Bluetooth Pressure Gauge Digital
+                        ButtonWidget(
+                            name: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.bluetooth,
+                                  color: white,
+                                ),
+                                const SizedBox(
+                                  width: 6,
+                                ),
+                                Text(
+                                  'Connect Pressure Gauge Digital',
+                                  style: getWhiteTextStyle(),
+                                ),
+                              ],
+                            ),
+                            function: () async {
+                              log('tombol pressure gauge');
+                              if (connection != null) {
+                                stopScanBluetooth();
+                                connection?.close();
+                              }
+                              requestBluetoothPermission();
+                              startScanBluetooth();
+                              setState(() {
+                                devices.clear();
+                              });
+                              // AppSettings.openBluetoothSettings();
+                            }),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        Column(
+                          children: devices.map((device) {
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                device.name ?? 'Uknown Device',
+                                style: getBlackTextStyle(),
                               ),
-                              const SizedBox(
-                                height: 6,
+                              subtitle: Text(
+                                device.address,
+                                style: getGreyTextStyle(
+                                  grey6A707C,
+                                ),
                               ),
-                              SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.39,
-                                height: 45,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    FocusScope.of(context).unfocus();
-                                    setState(() {
-                                      selectedPosIndex = posIndex;
-                                    });
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return Dialog(
-                                          child: Container(
-                                            padding: EdgeInsets.all(20.0),
-                                            child: SingleChildScrollView(
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: <Widget>[
-                                                  Text(
-                                                    'Choose Pressure',
-                                                    style: TextStyle(
-                                                      fontSize: 24.0,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  SizedBox(height: 16.0),
-                                                  Column(),
-                                                  Wrap(
-                                                    children:
-                                                        pressure.map((ps) {
-                                                      final psIndex =
-                                                          pressure.indexOf(ps);
-                                                      return Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(
-                                                                right: 16,
-                                                                bottom: 18),
-                                                        child: ElevatedButton(
-                                                          style: ElevatedButton
-                                                              .styleFrom(
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .green),
-                                                          onPressed: () {
-                                                            setState(() {
-                                                              position[posIndex]
-                                                                  [
-                                                                  'pressure'] = ps;
-                                                              Navigator.of(
-                                                                      context)
-                                                                  .pop();
-                                                            });
-                                                          },
-                                                          child: Text(
-                                                            ps,
-                                                            style:
-                                                                getWhiteTextStyle(
-                                                              fontWeight: w700,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }).toList(),
-                                                  ),
-                                                  Row(
-                                                    children: [
-                                                      Expanded(
-                                                        child: SizedBox(
-                                                          width:
-                                                              double.infinity,
-                                                          child: InputFormWidget(
-                                                              controller:
-                                                                  pressureCtrl,
-                                                              isDigitOnly: true,
-                                                              type:
-                                                                  TextInputType
-                                                                      .number,
-                                                              hint:
-                                                                  'Input Manual'),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        width: 6,
-                                                      ),
-                                                      ElevatedButton(
-                                                          onPressed: () {
-                                                            setState(() {
-                                                              if (pressureCtrl
-                                                                      .text !=
-                                                                  '') {
-                                                                position[posIndex]
-                                                                        [
-                                                                        'pressure'] =
-                                                                    pressureCtrl
-                                                                        .text;
-                                                              }
-                                                              pressureCtrl
-                                                                  .clear();
-                                                              Navigator.of(
-                                                                      context)
-                                                                  .pop();
-                                                            });
-                                                          },
-                                                          child: Text('Submit'))
-                                                    ],
-                                                  ),
-                                                  SizedBox(height: 12.0),
-                                                  SizedBox(
-                                                    width: double.infinity,
-                                                    child: InputFormWidget(
-                                                        controller:
-                                                            pressureDigitalCtrl,
-                                                        isDigitOnly: true,
-                                                        type: TextInputType
-                                                            .number,
-                                                        isReadOnly: true,
-                                                        hint:
-                                                            'Send Data From Pressure Gauge Digital!'),
-                                                  ),
-                                                  SizedBox(height: 12.0),
-                                                  SizedBox(
-                                                    width: double.infinity,
-                                                    child: ElevatedButton(
-                                                      onPressed: () {
-                                                        pressureCtrl.clear();
-                                                        Navigator.of(context)
-                                                            .pop();
-                                                      },
-                                                      child: Text('Close'),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      )),
-                                  child: (position[posIndex]['pressure'] == '')
-                                      ? Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.add,
-                                              color: white,
-                                            ),
-                                            const SizedBox(
-                                              width: 6,
-                                            ),
-                                            Text(
-                                              'Pressure',
-                                              style: getWhiteTextStyle(),
-                                            )
-                                          ],
-                                        )
-                                      : Text(
+                              trailing: SizedBox(
+                                  width: 110,
+                                  height: 60,
+                                  child: ButtonWidget(
+                                      name: Text(
+                                        (isConnected)
+                                            ? 'Disconnect'
+                                            : 'Connect',
+                                        style: getWhiteTextStyle(),
+                                      ),
+                                      function: () async {
+                                        if (isConnected) {
+                                          await connection!.close();
+                                          devices.clear();
+                                          setState(() {});
+                                        } else {
+                                          try {
+                                            connection =
+                                                await BluetoothConnection
+                                                    .toAddress(device.address);
+                                            print('Connected to the device');
+                                            _listenForData();
+                                            devices.clear();
+                                            devices.add(device);
+                                            setState(() {});
+                                          } catch (e) {
+                                            print(
+                                                'Cannot connect to the device: $e');
+                                          }
+                                        }
+                                      })),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(
+                          height: 24,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.tire_repair,
+                              size: 38,
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Text(
+                              'Tire',
+                              style: getBlackTextStyle(
+                                  fontSize: 18, fontWeight: w700),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        (position.isEmpty)
+                            ? Text(
+                                'Please select Inspection Route and send data with Pressure Gauge Digital',
+                                style: getBlackTextStyle(),
+                              )
+                            : Column(
+                                children: position.map((pos) {
+                                final posIndex = position.indexOf(pos);
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Pos. ${posIndex + 1}',
+                                      style: getBlackTextStyle(
+                                          fontSize: 16, fontWeight: w700),
+                                    ),
+                                    const SizedBox(
+                                      height: 6,
+                                    ),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        onPressed: () {},
+                                        style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            )),
+                                        child: Text(
                                           '${position[posIndex]['pressure']} Psi',
                                           style: getWhiteTextStyle(
                                             fontSize: 24,
                                             fontWeight: w700,
                                           ),
                                         ),
-                                ),
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              // SELECT DAMAGE TIRE
-                              SizedBox(
-                                width: MediaQuery.of(context).size.width * 0.39,
-                                // height: 65,
-                                child: ElevatedButton(
-                                    onPressed: () {
-                                      FocusScope.of(context).unfocus();
-                                      List<bool> checkedDamageValues =
-                                          List<bool>.filled(
-                                              damageType.length, false);
-
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return Dialog(
-                                            child: Container(
-                                              padding: EdgeInsets.all(20.0),
-                                              child: Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: <Widget>[
-                                                  Text(
-                                                    'Choose Damage Tire',
-                                                    style: TextStyle(
-                                                      fontSize: 24.0,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                    ),
-                                                  ),
-                                                  SizedBox(height: 12.0),
-                                                  Expanded(
-                                                    child:
-                                                        SingleChildScrollView(
-                                                      child: Column(
-                                                        children: damageType
-                                                            .map((damage) {
-                                                          final dmgIndex =
-                                                              damageType
-                                                                  .indexOf(
-                                                                      damage);
-                                                          return StatefulBuilder(
-                                                              builder: (context,
-                                                                  setState) {
-                                                            return CheckboxListTile(
-                                                              title:
-                                                                  Text(damage),
-                                                              value:
-                                                                  checkedDamageValues[
-                                                                      dmgIndex],
-                                                              onChanged: (bool?
-                                                                  value) {
-                                                                setState(() {
-                                                                  checkedDamageValues[
-                                                                          dmgIndex] =
-                                                                      value ??
-                                                                          false;
-                                                                });
-                                                              },
-                                                            );
-                                                          });
-                                                        }).toList(),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  SizedBox(
-                                                      height:
-                                                          12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
-                                                  Column(
-                                                    children: [
-                                                      SizedBox(
-                                                        height: 42,
-                                                        width: double.infinity,
-                                                        child: InputFormWidget(
-                                                            controller:
-                                                                damageCtrl,
-                                                            hint:
-                                                                'Input Manual Here....'),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      SizedBox(
-                                                        width: double.infinity,
-                                                        child: ElevatedButton(
-                                                          onPressed: () {
-                                                            damageCtrl.clear();
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                          child: Text('Close'),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      SizedBox(
-                                                        width: double.infinity,
-                                                        child: ElevatedButton(
-                                                          style: ElevatedButton
-                                                              .styleFrom(
-                                                            backgroundColor:
-                                                                Colors.green,
-                                                          ),
-                                                          onPressed: () {
-                                                            setState(() {});
-
-                                                            selectedDamage
-                                                                .clear();
-                                                            final List<String>
-                                                                tmp = [];
-                                                            if (damageCtrl
-                                                                        .text ==
-                                                                    '' ||
-                                                                damageCtrl.text
-                                                                    .isNotEmpty) {
-                                                              tmp.add(damageCtrl
-                                                                  .text);
-                                                            }
-                                                            for (int i = 0;
-                                                                i <
-                                                                    checkedDamageValues
-                                                                        .length;
-                                                                i++) {
-                                                              if (checkedDamageValues[
-                                                                  i]) {
-                                                                tmp.add(
-                                                                    damageType[
-                                                                        i]);
-                                                              }
-                                                            }
-                                                            log('idx luka ban : $posIndex');
-                                                            // position[posIndex]
-                                                            //     ['damage'] = tmp;
-                                                            if (tmp
-                                                                .isNotEmpty) {
-                                                              position[posIndex]
-                                                                      [
-                                                                      'damage'] =
-                                                                  tmp;
-                                                              selectedDamage
-                                                                  .addAll(tmp);
-                                                              log('hasil luka ban : ${position}');
-                                                            }
-                                                            damageCtrl.clear();
-
-                                                            Navigator.pop(
-                                                                context);
-                                                          },
-                                                          child: Text(
-                                                            'Submit',
-                                                            style:
-                                                                getWhiteTextStyle(
-                                                              fontWeight: w700,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                        backgroundColor: blue344BEF,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        )),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8.0),
-                                      child: Text(
-                                        (position[posIndex]['damage'] == null)
-                                            ? 'Damage Tire (None)'
-                                            : position[posIndex]['damage']
-                                                .join('\n---\n'),
-                                        textAlign: TextAlign.center,
-                                        style: getWhiteTextStyle(fontSize: 14),
                                       ),
-                                    )),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    );
-                  }
+                                    )
+                                  ],
+                                );
+                              }).toList())
+                      ],
+                    )
+                  // Manual Inspect
+                  : Column(
+                      children: [
+                        // POSITION
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.tire_repair,
+                              size: 38,
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Text(
+                              'Tire',
+                              style: getBlackTextStyle(
+                                  fontSize: 18, fontWeight: w700),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        BlocBuilder<TireBloc, TireState>(
+                          builder: (context, state) {
+                            if (state is TireLoadingState) {
+                              return CircularProgressIndicator();
+                            }
+                            if (state is TiresLoadedState) {
+                              for (var i = 0; i < state.units.length; i++) {
+                                if (position.length < state.units.length) {
+                                  position
+                                      .add({'pressure': '', 'damage': null});
+                                }
+                              }
+                              log('ban : ${state.units.length}');
 
-                  return Container();
-                },
-              ),
+                              return Container(
+                                child: Wrap(
+                                  spacing: 34,
+                                  runSpacing: 24,
+                                  alignment: WrapAlignment.center,
+                                  children: position.map((pos) {
+                                    final posIndex = position.indexOf(pos);
+                                    return Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        // POSITION
+                                        Text(
+                                          'Pos. ${posIndex + 1}',
+                                          style: getBlackTextStyle(
+                                              fontSize: 16, fontWeight: w700),
+                                        ),
+                                        const SizedBox(
+                                          height: 6,
+                                        ),
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.39,
+                                          height: 45,
+                                          child: ElevatedButton(
+                                            onPressed: () async {
+                                              FocusScope.of(context).unfocus();
+                                              setState(() {
+                                                selectedPosIndex = posIndex;
+                                              });
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return Dialog(
+                                                    child: Container(
+                                                      padding:
+                                                          EdgeInsets.all(20.0),
+                                                      child:
+                                                          SingleChildScrollView(
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: <Widget>[
+                                                            Text(
+                                                              'Choose Pressure',
+                                                              style: TextStyle(
+                                                                fontSize: 24.0,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                                height: 16.0),
+                                                            Column(),
+                                                            Wrap(
+                                                              children: pressure
+                                                                  .map((ps) {
+                                                                final psIndex =
+                                                                    pressure
+                                                                        .indexOf(
+                                                                            ps);
+                                                                return Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          right:
+                                                                              16,
+                                                                          bottom:
+                                                                              18),
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    style: ElevatedButton.styleFrom(
+                                                                        backgroundColor:
+                                                                            Colors.green),
+                                                                    onPressed:
+                                                                        () {
+                                                                      setState(
+                                                                          () {
+                                                                        position[posIndex]
+                                                                            [
+                                                                            'pressure'] = ps;
+                                                                        Navigator.of(context)
+                                                                            .pop();
+                                                                      });
+                                                                    },
+                                                                    child: Text(
+                                                                      ps,
+                                                                      style:
+                                                                          getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }).toList(),
+                                                            ),
+                                                            Row(
+                                                              children: [
+                                                                Expanded(
+                                                                  child:
+                                                                      SizedBox(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    child: InputFormWidget(
+                                                                        controller:
+                                                                            pressureCtrl,
+                                                                        isDigitOnly:
+                                                                            true,
+                                                                        type: TextInputType
+                                                                            .number,
+                                                                        hint:
+                                                                            'Input Manual'),
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  width: 6,
+                                                                ),
+                                                                ElevatedButton(
+                                                                    onPressed:
+                                                                        () {
+                                                                      setState(
+                                                                          () {
+                                                                        if (pressureCtrl.text !=
+                                                                            '') {
+                                                                          position[posIndex]['pressure'] =
+                                                                              pressureCtrl.text;
+                                                                        }
+                                                                        pressureCtrl
+                                                                            .clear();
+                                                                        Navigator.of(context)
+                                                                            .pop();
+                                                                      });
+                                                                    },
+                                                                    child: Text(
+                                                                        'Submit'))
+                                                              ],
+                                                            ),
+                                                            SizedBox(
+                                                                height: 12.0),
+                                                            SizedBox(
+                                                              width: double
+                                                                  .infinity,
+                                                              child:
+                                                                  ElevatedButton(
+                                                                onPressed: () {
+                                                                  pressureCtrl
+                                                                      .clear();
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+                                                                },
+                                                                child: Text(
+                                                                    'Close'),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.blue,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                )),
+                                            child: (position[posIndex]
+                                                        ['pressure'] ==
+                                                    '')
+                                                ? Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      Icon(
+                                                        Icons.add,
+                                                        color: white,
+                                                      ),
+                                                      const SizedBox(
+                                                        width: 6,
+                                                      ),
+                                                      Text(
+                                                        'Pressure',
+                                                        style:
+                                                            getWhiteTextStyle(),
+                                                      )
+                                                    ],
+                                                  )
+                                                : Text(
+                                                    '${position[posIndex]['pressure']} Psi',
+                                                    style: getWhiteTextStyle(
+                                                      fontSize: 24,
+                                                      fontWeight: w700,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        // SELECT DAMAGE TIRE
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.39,
+                                          // height: 65,
+                                          child: ElevatedButton(
+                                              onPressed: () {
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                                List<bool> checkedDamageValues =
+                                                    List<bool>.filled(
+                                                        damageType.length,
+                                                        false);
+
+                                                showDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return Dialog(
+                                                      child: Container(
+                                                        padding: EdgeInsets.all(
+                                                            20.0),
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: <Widget>[
+                                                            Text(
+                                                              'Choose Damage Tire',
+                                                              style: TextStyle(
+                                                                fontSize: 24.0,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                                height: 12.0),
+                                                            Expanded(
+                                                              child:
+                                                                  SingleChildScrollView(
+                                                                child: Column(
+                                                                  children:
+                                                                      damageType
+                                                                          .map(
+                                                                              (damage) {
+                                                                    final dmgIndex =
+                                                                        damageType
+                                                                            .indexOf(damage);
+                                                                    return StatefulBuilder(builder:
+                                                                        (context,
+                                                                            setState) {
+                                                                      return CheckboxListTile(
+                                                                        title: Text(
+                                                                            damage),
+                                                                        value: checkedDamageValues[
+                                                                            dmgIndex],
+                                                                        onChanged:
+                                                                            (bool?
+                                                                                value) {
+                                                                          setState(
+                                                                              () {
+                                                                            checkedDamageValues[dmgIndex] =
+                                                                                value ?? false;
+                                                                          });
+                                                                        },
+                                                                      );
+                                                                    });
+                                                                  }).toList(),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                                height:
+                                                                    12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
+                                                            Column(
+                                                              children: [
+                                                                SizedBox(
+                                                                  height: 42,
+                                                                  width: double
+                                                                      .infinity,
+                                                                  child: InputFormWidget(
+                                                                      controller:
+                                                                          damageCtrl,
+                                                                      hint:
+                                                                          'Input Manual Here....'),
+                                                                ),
+                                                                const SizedBox(
+                                                                  height: 12,
+                                                                ),
+                                                                SizedBox(
+                                                                  width: double
+                                                                      .infinity,
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    onPressed:
+                                                                        () {
+                                                                      damageCtrl
+                                                                          .clear();
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                    child: Text(
+                                                                        'Close'),
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  height: 12,
+                                                                ),
+                                                                SizedBox(
+                                                                  width: double
+                                                                      .infinity,
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    style: ElevatedButton
+                                                                        .styleFrom(
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .green,
+                                                                    ),
+                                                                    onPressed:
+                                                                        () {
+                                                                      setState(
+                                                                          () {});
+
+                                                                      selectedDamage
+                                                                          .clear();
+                                                                      final List<
+                                                                              String>
+                                                                          tmp =
+                                                                          [];
+                                                                      if (damageCtrl.text ==
+                                                                              '' ||
+                                                                          damageCtrl
+                                                                              .text
+                                                                              .isNotEmpty) {
+                                                                        tmp.add(
+                                                                            damageCtrl.text);
+                                                                      }
+                                                                      for (int i =
+                                                                              0;
+                                                                          i < checkedDamageValues.length;
+                                                                          i++) {
+                                                                        if (checkedDamageValues[
+                                                                            i]) {
+                                                                          tmp.add(
+                                                                              damageType[i]);
+                                                                        }
+                                                                      }
+                                                                      log('idx luka ban : $posIndex');
+                                                                      // position[posIndex]
+                                                                      //     ['damage'] = tmp;
+                                                                      if (tmp
+                                                                          .isNotEmpty) {
+                                                                        position[posIndex]['damage'] =
+                                                                            tmp;
+                                                                        selectedDamage
+                                                                            .addAll(tmp);
+                                                                        log('hasil luka ban : ${position}');
+                                                                      }
+                                                                      damageCtrl
+                                                                          .clear();
+
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                    child: Text(
+                                                                      'Submit',
+                                                                      style:
+                                                                          getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor: blue344BEF,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                  )),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 8.0),
+                                                child: Text(
+                                                  (position[posIndex]
+                                                              ['damage'] ==
+                                                          null)
+                                                      ? 'Damage Tire (None)'
+                                                      : position[posIndex]
+                                                              ['damage']
+                                                          .join('\n---\n'),
+                                                  textAlign: TextAlign.center,
+                                                  style: getWhiteTextStyle(
+                                                      fontSize: 14),
+                                                ),
+                                              )),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              );
+                            }
+
+                            return Container();
+                          },
+                        ),
+                      ],
+                    )
             ],
           ),
         ),
@@ -915,7 +1149,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       return {
                         'pos': '${pIndex + 1}',
                         'pressure': p['pressure'],
-                        'luka': p['damage']
+                        'luka': (selectedType == 0) ? '' : p['damage']
                       };
                     }),
                     'pit': (pit.isEmpty) ? 'Default' : pit[selectedPit],
@@ -931,7 +1165,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       return {
                         'pos': '${pIndex + 1}',
                         'pressure': p['pressure'],
-                        'luka': p['damage']
+                        'luka': (selectedType == 0) ? '' : p['damage']
                       };
                     }),
                     'pit': (pit.isEmpty) ? 'Default' : pit[selectedPit],
