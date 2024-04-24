@@ -227,6 +227,8 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
     dataUnit =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
+    log('data ban : $position');
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -256,344 +258,362 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
           child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // UNIT NUMBER DAN HM UNIT
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
+          child: BlocBuilder<TireBloc, TireState>(
+            builder: (context, state) {
+              if (state is TireLoadingState) {
+                return CircularProgressIndicator();
+              }
+
+              if (state is TiresLoadedState) {
+                for (var i = 0; i < state.units.length; i++) {
+                  if (position.length < state.units.length) {
+                    position.add({'pressure': '', 'damage': null});
+                  }
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // UNIT NUMBER DAN HM UNIT
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.front_loader,
-                              color: Colors.orange,
-                              size: 38,
-                            ),
-                            const SizedBox(
-                              width: 12,
-                            ),
-                            Text(
-                              'UNIT',
-                              style: getBlackTextStyle(
-                                  fontWeight: w700, fontSize: 18),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: InputFormWidget(
-                              isReadOnly: true,
-                              controller: TextEditingController(
-                                  text: dataUnit['unitNumber']),
-                              hint: ''),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 12,
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.watch,
-                              color: Colors.red,
-                              size: 38,
-                            ),
-                            const SizedBox(
-                              width: 12,
-                            ),
-                            Text(
-                              'HM UNIT',
-                              style: getBlackTextStyle(
-                                  fontWeight: w700, fontSize: 18),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        SizedBox(
-                          width: double.infinity,
-                          child: InputFormWidget(
-                              // isReadOnly: true,
-                              controller: hmCtrl,
-                              isDecimalOnly: true,
-                              type: TextInputType.number,
-                              hint: 'Fill HM'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 24,
-              ),
-              (pit.isNotEmpty)
-                  ? Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.ev_station,
-                          size: 38,
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.front_loader,
+                                    color: Colors.orange,
+                                    size: 38,
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Text(
+                                    'UNIT',
+                                    style: getBlackTextStyle(
+                                        fontWeight: w700, fontSize: 18),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              SizedBox(
+                                width: double.infinity,
+                                child: InputFormWidget(
+                                    isReadOnly: true,
+                                    controller: TextEditingController(
+                                        text: dataUnit['unitNumber']),
+                                    hint: ''),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(
                           width: 12,
                         ),
-                        Text(
-                          'Pit',
-                          style:
-                              getBlackTextStyle(fontSize: 18, fontWeight: w700),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.watch,
+                                    color: Colors.red,
+                                    size: 38,
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Text(
+                                    'HM UNIT',
+                                    style: getBlackTextStyle(
+                                        fontWeight: w700, fontSize: 18),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              SizedBox(
+                                width: double.infinity,
+                                child: InputFormWidget(
+                                    // isReadOnly: true,
+                                    controller: hmCtrl,
+                                    isDecimalOnly: true,
+                                    type: TextInputType.number,
+                                    hint: 'Fill HM'),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
-                    )
-                  : Container(),
-              SizedBox(
-                height: (pit.isNotEmpty) ? 24 : 0,
-              ),
-              Row(
-                children: pit.map((e) {
-                  final pitIndex = pit.indexOf(e);
-                  return Expanded(
-                      child: Padding(
-                    padding: EdgeInsets.only(
-                        right: (pitIndex == 0) ? 12 : 0,
-                        left: (pitIndex == pit.length - 1) ? 12 : 0),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: (selectedPit == pitIndex)
-                              ? Colors.orange
-                              : greyF7F8F9),
-                      onPressed: () {
-                        setState(() {
-                          selectedPit = pitIndex;
-                        });
-                      },
-                      child: Text(
-                        e,
-                        style: (selectedPit == pitIndex)
-                            ? getWhiteTextStyle()
-                            : getBlackTextStyle(),
-                      ),
                     ),
-                  ));
-                }).toList(),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              selectedType = 0;
-                            });
-                          },
-                          style: ButtonStyle(
-                            backgroundColor:
-                                MaterialStateProperty.resolveWith<Color>(
-                                    (Set<MaterialState> states) {
-                              if (selectedType == 0) {
-                                return Colors.lightGreen;
-                              }
-                              return greyDADADA;
-                            }),
-                          ),
-                          child: Text(
-                            'PG Digital',
-                            style: getWhiteTextStyle(fontWeight: w700),
-                          )),
+                    const SizedBox(
+                      height: 24,
                     ),
-                  ),
-                  const SizedBox(
-                    width: 12,
-                  ),
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              selectedType = 1;
-                            });
-                          },
-                          style: ButtonStyle(
-                            backgroundColor:
-                                MaterialStateProperty.resolveWith<Color>(
-                                    (Set<MaterialState> states) {
-                              if (selectedType == 1) {
-                                return Colors.lightGreen;
-                              }
-                              return greyDADADA;
-                            }),
-                          ),
-                          child: Text(
-                            'Manual',
-                            style: getWhiteTextStyle(fontWeight: w700),
-                          )),
+                    (pit.isNotEmpty)
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.ev_station,
+                                size: 38,
+                              ),
+                              const SizedBox(
+                                width: 12,
+                              ),
+                              Text(
+                                'Pit',
+                                style: getBlackTextStyle(
+                                    fontSize: 18, fontWeight: w700),
+                              ),
+                            ],
+                          )
+                        : Container(),
+                    SizedBox(
+                      height: (pit.isNotEmpty) ? 24 : 0,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 24,
-              ),
-              // PG Digital Inspect
-              (selectedType == 0)
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Inspection Tire Route',
-                          style:
-                              getBlackTextStyle(fontWeight: w700, fontSize: 18),
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        Column(
-                          children: inspectRoute.asMap().entries.map((entry) {
-                            int index = entry.key;
-                            List<int> route = entry.value;
-
-                            return RadioListTile<int>(
-                              title: Text(route
-                                  .map((index) => (index + 1).toString())
-                                  .join(' -> ')),
-                              value: index,
-                              groupValue: selectedRoute,
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedRoute = value!;
-                                });
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        // Bluetooth Pressure Gauge Digital
-                        ButtonWidget(
-                            name: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.bluetooth,
-                                  color: white,
-                                ),
-                                const SizedBox(
-                                  width: 6,
-                                ),
-                                Text(
-                                  'Connect Pressure Gauge Digital',
-                                  style: getWhiteTextStyle(),
-                                ),
-                              ],
-                            ),
-                            function: () async {
-                              log('tombol pressure gauge');
-                              if (connection != null) {
-                                stopScanBluetooth();
-                                connection?.close();
-                              }
-                              requestBluetoothPermission();
-                              startScanBluetooth();
+                    Row(
+                      children: pit.map((e) {
+                        final pitIndex = pit.indexOf(e);
+                        return Expanded(
+                            child: Padding(
+                          padding: EdgeInsets.only(
+                              right: (pitIndex == 0) ? 12 : 0,
+                              left: (pitIndex == pit.length - 1) ? 12 : 0),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: (selectedPit == pitIndex)
+                                    ? Colors.orange
+                                    : greyF7F8F9),
+                            onPressed: () {
                               setState(() {
-                                devices.clear();
+                                selectedPit = pitIndex;
                               });
-                              // AppSettings.openBluetoothSettings();
-                            }),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        Column(
-                          children: devices.map((device) {
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(
-                                device.name ?? 'Uknown Device',
-                                style: getBlackTextStyle(),
-                              ),
-                              subtitle: Text(
-                                device.address,
-                                style: getGreyTextStyle(
-                                  grey6A707C,
+                            },
+                            child: Text(
+                              e,
+                              style: (selectedPit == pitIndex)
+                                  ? getWhiteTextStyle()
+                                  : getBlackTextStyle(),
+                            ),
+                          ),
+                        ));
+                      }).toList(),
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    selectedType = 0;
+                                  });
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.resolveWith<Color>(
+                                          (Set<MaterialState> states) {
+                                    if (selectedType == 0) {
+                                      return Colors.lightGreen;
+                                    }
+                                    return greyDADADA;
+                                  }),
                                 ),
+                                child: Text(
+                                  'PG Digital',
+                                  style: getWhiteTextStyle(fontWeight: w700),
+                                )),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 12,
+                        ),
+                        Expanded(
+                          child: SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    selectedType = 1;
+                                  });
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.resolveWith<Color>(
+                                          (Set<MaterialState> states) {
+                                    if (selectedType == 1) {
+                                      return Colors.lightGreen;
+                                    }
+                                    return greyDADADA;
+                                  }),
+                                ),
+                                child: Text(
+                                  'Manual',
+                                  style: getWhiteTextStyle(fontWeight: w700),
+                                )),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 24,
+                    ),
+                    // PG Digital Inspect
+                    (selectedType == 0)
+                        ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Inspection Tire Route',
+                                style: getBlackTextStyle(
+                                    fontWeight: w700, fontSize: 18),
                               ),
-                              trailing: SizedBox(
-                                  width: 110,
-                                  height: 60,
-                                  child: ButtonWidget(
-                                      name: Text(
-                                        (isConnected)
-                                            ? 'Disconnect'
-                                            : 'Connect',
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              Column(
+                                children:
+                                    inspectRoute.asMap().entries.map((entry) {
+                                  int index = entry.key;
+                                  List<int> route = entry.value;
+
+                                  return RadioListTile<int>(
+                                    title: Text(route
+                                        .map((index) => (index + 1).toString())
+                                        .join(' -> ')),
+                                    value: index,
+                                    groupValue: selectedRoute,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedRoute = value!;
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                              // Bluetooth Pressure Gauge Digital
+                              ButtonWidget(
+                                  name: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.bluetooth,
+                                        color: white,
+                                      ),
+                                      const SizedBox(
+                                        width: 6,
+                                      ),
+                                      Text(
+                                        'Connect Pressure Gauge Digital',
                                         style: getWhiteTextStyle(),
                                       ),
-                                      function: () async {
-                                        if (isConnected) {
-                                          await connection!.close();
-                                          devices.clear();
-                                          setState(() {});
-                                        } else {
-                                          try {
-                                            connection =
-                                                await BluetoothConnection
-                                                    .toAddress(device.address);
-                                            print('Connected to the device');
-                                            _listenForData();
-                                            devices.clear();
-                                            devices.add(device);
-                                            setState(() {});
-                                          } catch (e) {
-                                            print(
-                                                'Cannot connect to the device: $e');
-                                          }
-                                        }
-                                      })),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(
-                          height: 24,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.tire_repair,
-                              size: 38,
-                            ),
-                            const SizedBox(
-                              width: 12,
-                            ),
-                            Text(
-                              'Tire',
-                              style: getBlackTextStyle(
-                                  fontSize: 18, fontWeight: w700),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        (position.isEmpty)
-                            ? Text(
-                                'Please select Inspection Route and send data with Pressure Gauge Digital',
+                                    ],
+                                  ),
+                                  function: () async {
+                                    log('tombol pressure gauge');
+                                    if (connection != null) {
+                                      stopScanBluetooth();
+                                      connection?.close();
+                                    }
+                                    requestBluetoothPermission();
+                                    startScanBluetooth();
+                                    setState(() {
+                                      devices.clear();
+                                    });
+                                    // AppSettings.openBluetoothSettings();
+                                  }),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              Column(
+                                children: devices.map((device) {
+                                  return ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text(
+                                      device.name ?? 'Uknown Device',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    subtitle: Text(
+                                      device.address,
+                                      style: getGreyTextStyle(
+                                        grey6A707C,
+                                      ),
+                                    ),
+                                    trailing: SizedBox(
+                                        width: 110,
+                                        height: 60,
+                                        child: ButtonWidget(
+                                            name: Text(
+                                              (isConnected)
+                                                  ? 'Disconnect'
+                                                  : 'Connect',
+                                              style: getWhiteTextStyle(),
+                                            ),
+                                            function: () async {
+                                              if (isConnected) {
+                                                await connection!.close();
+                                                devices.clear();
+                                                setState(() {});
+                                              } else {
+                                                try {
+                                                  connection =
+                                                      await BluetoothConnection
+                                                          .toAddress(
+                                                              device.address);
+                                                  print(
+                                                      'Connected to the device');
+                                                  _listenForData();
+                                                  devices.clear();
+                                                  devices.add(device);
+                                                  setState(() {});
+                                                } catch (e) {
+                                                  print(
+                                                      'Cannot connect to the device: $e');
+                                                }
+                                              }
+                                            })),
+                                  );
+                                }).toList(),
+                              ),
+                              const SizedBox(
+                                height: 24,
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.tire_repair,
+                                    size: 38,
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Text(
+                                    'Tire',
+                                    style: getBlackTextStyle(
+                                        fontSize: 18, fontWeight: w700),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              Text(
+                                'Please select Inspection Route once and send data with Pressure Gauge Digital',
                                 style: getBlackTextStyle(),
-                              )
-                            : Column(
-                                children: position.map((pos) {
+                              ),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              Column(
+                                  children: position.map((pos) {
                                 final posIndex = position.indexOf(pos);
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,47 +648,33 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                                   ],
                                 );
                               }).toList())
-                      ],
-                    )
-                  // Manual Inspect
-                  : Column(
-                      children: [
-                        // POSITION
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.tire_repair,
-                              size: 38,
-                            ),
-                            const SizedBox(
-                              width: 12,
-                            ),
-                            Text(
-                              'Tire',
-                              style: getBlackTextStyle(
-                                  fontSize: 18, fontWeight: w700),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        BlocBuilder<TireBloc, TireState>(
-                          builder: (context, state) {
-                            if (state is TireLoadingState) {
-                              return CircularProgressIndicator();
-                            }
-                            if (state is TiresLoadedState) {
-                              for (var i = 0; i < state.units.length; i++) {
-                                if (position.length < state.units.length) {
-                                  position
-                                      .add({'pressure': '', 'damage': null});
-                                }
-                              }
-                              log('ban : ${state.units.length}');
-
-                              return Container(
+                            ],
+                          )
+                        // Manual Inspect
+                        : Column(
+                            children: [
+                              // POSITION
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.tire_repair,
+                                    size: 38,
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Text(
+                                    'Tire',
+                                    style: getBlackTextStyle(
+                                        fontSize: 18, fontWeight: w700),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 12,
+                              ),
+                              Container(
                                 child: Wrap(
                                   spacing: 34,
                                   runSpacing: 24,
@@ -1090,15 +1096,14 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                                     );
                                   }).toList(),
                                 ),
-                              );
-                            }
-
-                            return Container();
-                          },
-                        ),
-                      ],
-                    )
-            ],
+                              ),
+                            ],
+                          )
+                  ],
+                );
+              }
+              return Container();
+            },
           ),
         ),
       )),
