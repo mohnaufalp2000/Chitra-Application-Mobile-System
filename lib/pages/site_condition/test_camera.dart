@@ -94,7 +94,7 @@ class _TestCameraState extends State<TestCamera> {
                       }
 
                       try {
-                        await cameraController.setFlashMode(FlashMode.auto);
+                        await cameraController.setFlashMode(FlashMode.off);
                         XFile picture = await cameraController.takePicture();
 
                         setState(() {

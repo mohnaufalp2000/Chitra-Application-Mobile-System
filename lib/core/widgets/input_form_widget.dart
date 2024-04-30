@@ -55,7 +55,7 @@ class _InputFormWidgetState extends State<InputFormWidget> {
     } else if (widget.isDecimalOnly) {
       List<TextInputFormatter>? format = [
         FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-        _DecimalInputFormatter(decimalRegExp: RegExp(r'^\d{0,2}\.?\d{0,2}$')),
+        _DecimalInputFormatter(decimalRegExp: RegExp(r'^\d{0,10}\.?\d{0,10}$')),
       ];
       return format;
     } else {

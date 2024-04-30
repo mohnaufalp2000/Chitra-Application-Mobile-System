@@ -1337,6 +1337,47 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                     const SizedBox(
                       height: 24,
                     ),
+                    Container(
+                      height: 300,
+                      width: 300,
+                      child: CarouselSlider(
+                        carouselController: _carouselController,
+                        items: condition.image.map((file) {
+                          return Image.file(
+                            File(file),
+                          );
+                        }).toList(),
+                        options: CarouselOptions(
+                          aspectRatio: 3.0,
+                          height: 350,
+                          enableInfiniteScroll: false,
+                          enlargeCenterPage: true,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    SizedBox(
+                        width: double.infinity,
+                        child: ButtonWidget(
+                            name: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.rotate_left),
+                                const SizedBox(
+                                  width: 12,
+                                ),
+                                Text(
+                                  'Rotate Image',
+                                  style: getWhiteTextStyle(),
+                                ),
+                              ],
+                            ),
+                            function: () {})),
+                    const SizedBox(
+                      height: 12,
+                    ),
                     Text(
                       'Place Name',
                       style: getBlackTextStyle(),
@@ -2074,22 +2115,22 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                               height: 12,
                                             ),
                                             p.Divider(),
-                                            p.Row(
+                                            p.Column(
+                                              crossAxisAlignment:
+                                                  p.CrossAxisAlignment.start,
                                               children: [
                                                 // p.Icon(Icons.access_time),
                                                 p.Text(
                                                   'Time : ',
-                                                  style: p.TextStyle(
-                                                    fontSize: 18,
-                                                  ),
+                                                  style: p.TextStyle(),
                                                 ),
                                                 p.SizedBox(
-                                                  width: 6,
+                                                  height: 6,
                                                 ),
                                                 p.Text(
                                                   '${c.date}',
                                                   style: p.TextStyle(
-                                                    fontSize: 18,
+                                                    fontSize: 16,
                                                   ),
                                                   // style: getBlackTextStyle(fontSize: 12),
                                                 ),
@@ -2098,24 +2139,53 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                             p.SizedBox(
                                               height: 12,
                                             ),
-                                            p.Row(
+                                            p.Column(
+                                              crossAxisAlignment:
+                                                  p.CrossAxisAlignment.start,
                                               children: [
                                                 // Icon(Icons.location_pin),
                                                 p.Text(
                                                   'Coordinate Location : ',
-                                                  style: p.TextStyle(
-                                                    fontSize: 18,
-                                                  ),
+                                                  style: p.TextStyle(),
                                                 ),
                                                 p.SizedBox(
-                                                  width: 6,
+                                                  height: 6,
                                                 ),
                                                 p.Text(
                                                   '${c.latitude}, ${c.longitude}',
                                                   style: p.TextStyle(
-                                                    fontSize: 18,
+                                                    fontSize: 16,
                                                   ),
                                                   // style: getBlackTextStyle(fontSize: 12),
+                                                ),
+                                              ],
+                                            ),
+                                            p.SizedBox(
+                                              height: 12,
+                                            ),
+                                            p.Column(
+                                              crossAxisAlignment:
+                                                  p.CrossAxisAlignment.start,
+                                              children: [
+                                                // Icon(Icons.location_pin),
+                                                p.Text(
+                                                  'Google Maps Link : ',
+                                                  style: p.TextStyle(),
+                                                ),
+                                                p.SizedBox(
+                                                  height: 6,
+                                                ),
+                                                p.UrlLink(
+                                                  child: p.Text(
+                                                      'https://www.google.com/maps?q=${c.latitude},${c.longitude}',
+                                                      style: p.TextStyle(
+                                                          decoration: p
+                                                              .TextDecoration
+                                                              .underline,
+                                                          color:
+                                                              PdfColors.blue)),
+                                                  destination:
+                                                      'https://www.google.com/maps?q=${c.latitude},${c.longitude}',
                                                 ),
                                               ],
                                             ),

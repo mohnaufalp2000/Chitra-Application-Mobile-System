@@ -27,6 +27,7 @@ import 'package:camos/pages/tire_condition/tire_condition_page.dart';
 import 'package:camos/pages/tire_inventory/tire_inventory_page.dart';
 import 'package:camos/pages/tkph_calculator/result_tkph_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
+import 'package:camos/pages/tpms/qr_tpms_page.dart';
 import 'package:camos/pages/tpms/tpms_page.dart';
 
 var routes = {
@@ -60,4 +61,5 @@ var routes = {
   SelectInspectionPage.routeName: (context) => SelectInspectionPage(),
   TireInspectionPage.routeName: (context) => TireInspectionPage(),
   DailyPressureListPage.routeName: (context) => DailyPressureListPage(),
+  QrTpmsPage.routeName: (context) => QrTpmsPage(),
 };

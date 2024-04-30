@@ -12,6 +12,7 @@ import 'package:camos/pages/authentication/email_verification_page.dart';
 import 'package:camos/pages/authentication/image_profile_page.dart';
 import 'package:camos/pages/authentication/register_page.dart';
 import 'package:camos/pages/home/home_page.dart';
+import 'package:camos/pages/tpms/tpms_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -312,6 +313,26 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ],
                     ),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     Image.asset(
+                    //       '${iconPath}/tpms_icon.png',
+                    //       width: 30,
+                    //       height: 30,
+                    //     ),
+                    //     TextButtonWidget(
+                    //       name: 'Open SPM / TPMS Page',
+                    //       style: getGreenTextStyle(fontSize: 16),
+                    //       function: () {
+                    //         push(context, TpmsPage.routeName);
+                    //       },
+                    //     ),
+                    //   ],
+                    // ),
                   ],
                 ),
               ),
