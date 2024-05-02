@@ -104,10 +104,22 @@ class _TpmsPageState extends State<TpmsPage> {
                           top: 20,
                           left: 0,
                           right: 0,
-                          child: SizedBox(
-                            height: 150,
-                            width: 100,
-                            child: Image.asset('${imagePath}/dump_truck.png'),
+                          child: Column(
+                            children: [
+                              Text(
+                                'CO 3374',
+                                style: getBlackTextStyle(
+                                  fontSize: 18,
+                                  fontWeight: w700,
+                                ),
+                              ),
+                              SizedBox(
+                                height: 150,
+                                width: 100,
+                                child:
+                                    Image.asset('${imagePath}/dump_truck.png'),
+                              ),
+                            ],
                           ),
                         ),
                         Row(
@@ -145,7 +157,10 @@ class _TpmsPageState extends State<TpmsPage> {
                       itemBuilder: (context, index) {
                         // Memperhitungkan offset karena index pertama dan kedua diabaikan
                         final dataIndex = index + 2;
-                        return PressureCard(position: pressureData[dataIndex]);
+                        return PressureCard(
+                          position: pressureData[dataIndex],
+                          index: index,
+                        );
                       },
                     )
                   ],
@@ -168,13 +183,13 @@ class _TpmsPageState extends State<TpmsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             const Text(
-                              "- Low Tire Pressure",
+                              "- Position 3 Low Tire Pressure",
                               style:
                                   TextStyle(fontSize: 16, color: Colors.white),
                             ),
                             Container(height: 10),
                             const Text(
-                              "- Low Tire Pressure",
+                              "- Position 4 Low Tire Pressure",
                               style:
                                   TextStyle(fontSize: 16, color: Colors.white),
                             ),
@@ -194,12 +209,10 @@ class _TpmsPageState extends State<TpmsPage> {
 }
 
 class PressureCard extends StatelessWidget {
-  const PressureCard({
-    super.key,
-    required this.position,
-  });
+  const PressureCard({super.key, required this.position, this.index = -1});
 
   final String position;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +225,7 @@ class PressureCard extends StatelessWidget {
                 padding: EdgeInsets.all(12),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                    color: black,
+                    color: (index == 0 || index == 1) ? Colors.red : black,
                     borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12))),
@@ -225,7 +238,7 @@ class PressureCard extends StatelessWidget {
             Column(
               children: [
                 Text(
-                  '120',
+                  (index == 0 || index == 1) ? '70' : '120',
                   style: getBlackTextStyle(fontSize: 24),
                 ),
                 Text('Psi', style: getBlackTextStyle(fontSize: 24)),

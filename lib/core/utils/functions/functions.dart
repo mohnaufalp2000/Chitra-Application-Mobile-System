@@ -491,6 +491,10 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('M3:Q3').cellStyle.hAlign = HAlignType.center;
       sheet.getRangeByName('M3:Q3').setText('Tire Damage');
 
+      sheet.getRangeByName('R3:S3').merge();
+      sheet.getRangeByName('R3:S3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('R3:S3').setText('OTD/RTD');
+
       for (var i = 0; i < task!.length; i++) {
         // inspector
         sheet.getRangeByName('A${i + 4}:D${i + 4}').merge();
@@ -549,40 +553,56 @@ Future<List<int>> createExcel(String type,
             .getRangeByName('M${i + 4}:Q${i + 4}')
             .setText(task[i]['tire_damage']);
 
+        // OTD / RTD
+        sheet.getRangeByName('R${i + 4}:S${i + 4}').merge();
+        sheet.getRangeByName('R${i + 4}:S${i + 4}').cellStyle.hAlign =
+            HAlignType.center;
+        sheet.getRangeByName('R${i + 4}:S${i + 4}').cellStyle.vAlign =
+            VAlignType.center;
+        sheet.getRangeByName('R${i + 4}:S${i + 4}').setText(task[i]['rtd']);
+
         // IMAGE TIRE
-        final urlImage = task[i]['images'];
-        if (urlImage != null) {
-          for (var j = 0; j < urlImage.length; j++) {
-            log('gambar dari firebase : ${urlImage[j]}');
+        // final urlImage = task[i]['images'];
+        // if (urlImage != null) {
+        //   for (var j = 0; j < urlImage.length; j++) {
+        //     log('gambar dari firebase : ${urlImage[j]}');
 
-            try {
-              final file = File(urlImage[j]);
-              final bytes = await file.readAsBytes();
-            } catch (e) {
-              log('kenapa gambar error : $e');
-            }
-            final file = File(urlImage[j]);
-            final bytes = await file.readAsBytes();
+        //     try {
+        //       final file = File(urlImage[j]);
+        //       final bytes = await file.readAsBytes();
+        //     } catch (e) {
+        //       log('kenapa gambar error : $e');
+        //     }
+        //     final file = File(urlImage[j]);
+        //     final bytes = await file.readAsBytes();
 
-            // sheet.getRangeByIndex(3, j + 18).setText('Image (Link)');
-            // sheet.getRangeByIndex(3, j + 18).cellStyle.hAlign =
-            //     HAlignType.center;
-            // sheet.getRangeByIndex(4, j + 18).setText('${urlImage[j]}');
+        //     // sheet.getRangeByIndex(3, j + 18).setText('Image (Link)');
+        //     // sheet.getRangeByIndex(3, j + 18).cellStyle.hAlign =
+        //     //     HAlignType.center;
+        //     // sheet.getRangeByIndex(4, j + 18).setText('${urlImage[j]}');
 
-            // final List<int> img = await ApiService.fetchImageData(urlImage[j]);
+        //     // final List<int> img = await ApiService.fetchImageData(urlImage[j]);
 
-            final resizedImage =
-                await resizeImage(Uint8List.fromList(bytes), 150, 185);
-            sheet.pictures.addStream(i + 4, j + 18, resizedImage);
+        //     final resizedImage =
+        //         await resizeImage(Uint8List.fromList(bytes), 150, 185);
+        //     // sheet.pictures.addStream(i + 4, j + 18, resizedImage);
 
-            sheet.getRangeByIndex(i + 4, j + 18).rowHeight = 130;
-            sheet.getRangeByIndex(i + 4, j + 18).columnWidth = 100;
-            sheet.getRangeByIndex(i + 4, j + 18).cellStyle.hAlign =
-                HAlignType.center;
-            sheet.getRangeByIndex(i + 4, j + 18).cellStyle.vAlign =
-                VAlignType.center;
-          }
-        }
+        //     // sheet.getRangeByIndex(i + 4, j + 18).rowHeight = 130;
+        //     // sheet.getRangeByIndex(i + 4, j + 18).columnWidth = 100;
+        //     // sheet.getRangeByIndex(i + 4, j + 18).cellStyle.hAlign =
+        //     //     HAlignType.center;
+        //     // sheet.getRangeByIndex(i + 4, j + 18).cellStyle.vAlign =
+        //     //     VAlignType.center;
+        //     sheet.pictures.addStream(i + 7, j + 21, resizedImage);
+
+        //     sheet.getRangeByIndex(i + 7, j + 21).rowHeight = 130;
+        //     sheet.getRangeByIndex(i + 7, j + 21).columnWidth = 100;
+        //     sheet.getRangeByIndex(i + 7, j + 21).cellStyle.hAlign =
+        //         HAlignType.center;
+        //     sheet.getRangeByIndex(i + 7, j + 21).cellStyle.vAlign =
+        //         VAlignType.center;
+        //   }
+        // }
       }
 
       final List<int> bytes = workbook.saveAsStream();
