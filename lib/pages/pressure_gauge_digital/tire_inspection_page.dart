@@ -29,7 +29,6 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
-  int unitTireAmount = 6;
   List<Map<String, dynamic>> position = [];
   String idSite = '';
   List<String> pressure = [
@@ -152,39 +151,47 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
         String firstNumber =
             onlyNumber.substring(0, dot != -1 ? dot : onlyNumber.length);
         pressureDigitalCtrl.text = firstNumber;
-        // if (selectedPosIndex != -1) {
-        //   position[selectedPosIndex]['pressure'] = firstNumber;
-        //   pressureDigitalCtrl.clear();
-        //   selectedPosIndex = -1;
-        //   Navigator.pop(context);
-        // }
-        switch (selectedRoute) {
+        switch (selectedType) {
+          // PG DIGITAL Type
           case 0:
-            setState(() {
-              if (checkAmount < 6)
-                position[inspectRoute[0][checkAmount]]['pressure'] =
-                    firstNumber;
-              checkAmount++;
-            });
+            switch (selectedRoute) {
+              case 0:
+                setState(() {
+                  if (checkAmount < 6)
+                    position[inspectRoute[0][checkAmount]]['pressure'] =
+                        firstNumber;
+                  checkAmount++;
+                });
+                break;
+              case 1:
+                setState(() {
+                  if (checkAmount < 6)
+                    position[inspectRoute[1][checkAmount]]['pressure'] =
+                        firstNumber;
+                  checkAmount++;
+                });
+                break;
+              case 2:
+                setState(() {
+                  if (checkAmount < 6)
+                    position[inspectRoute[2][checkAmount]]['pressure'] =
+                        firstNumber;
+                  checkAmount++;
+                });
+                break;
+            }
+            print('tekananangin : ${pressureDigitalCtrl.text}');
             break;
           case 1:
-            setState(() {
-              if (checkAmount < 6)
-                position[inspectRoute[1][checkAmount]]['pressure'] =
-                    firstNumber;
-              checkAmount++;
-            });
-            break;
-          case 2:
-            setState(() {
-              if (checkAmount < 6)
-                position[inspectRoute[2][checkAmount]]['pressure'] =
-                    firstNumber;
-              checkAmount++;
-            });
+            // Manual Type
+            if (selectedPosIndex != -1) {
+              position[selectedPosIndex]['pressure'] = firstNumber;
+              pressureDigitalCtrl.clear();
+              selectedPosIndex = -1;
+              Navigator.pop(context);
+            }
             break;
         }
-        print('tekananangin : ${pressureDigitalCtrl.text}');
       });
     });
   }
@@ -195,11 +202,9 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
     if (idSite == '1') {
       idSite = await getSelectedIdSitePreferences();
     }
-    if (mounted) {
-      if (dataUnit != {} || dataUnit != null || dataUnit.isNotEmpty) {
-        context.read<TireBloc>().add(GetUnitTiresEvent(
-            idSite: idSite, unitNumber: dataUnit['unitNumber']));
-      }
+    if (dataUnit != {} || dataUnit != null || dataUnit.isNotEmpty) {
+      context.read<TireBloc>().add(GetUnitTiresEvent(
+          idSite: idSite, unitNumber: dataUnit['unitNumber']));
     }
 
 // tambahkan pit
@@ -218,7 +223,6 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
   void initState() {
     // addPositionVariable();
     super.initState();
-
     callTires();
   }
 
@@ -258,19 +262,23 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
           child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: BlocBuilder<TireBloc, TireState>(
+          child: BlocConsumer<TireBloc, TireState>(
+            listener: (context, state) {
+              if (state is TiresLoadedState) {
+                //? BLOC TER EKSEKUSI dua kali dan mengambil jumlah tire sebelumnya
+                for (var i = 0; i < state.units.length; i++) {
+                  if (position.length < state.units.length) {
+                    position.add({'pressure': '', 'damage': null});
+                  }
+                }
+              }
+            },
             builder: (context, state) {
               if (state is TireLoadingState) {
                 return CircularProgressIndicator();
               }
 
               if (state is TiresLoadedState) {
-                for (var i = 0; i < state.units.length; i++) {
-                  if (position.length < state.units.length) {
-                    position.add({'pressure': '', 'damage': null});
-                  }
-                }
-
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

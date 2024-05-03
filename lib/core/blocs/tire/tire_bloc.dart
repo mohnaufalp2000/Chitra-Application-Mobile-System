@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/tire_spec.dart';
@@ -11,8 +13,10 @@ part 'tire_state.dart';
 class TireBloc extends Bloc<TireEvent, TireState> {
   TireBloc() : super(TireInitial()) {
     on<GetUnitTiresEvent>((event, emit) async {
+      emit(TireLoadingState());
       final units =
           await ApiService.getCachedUnits(unitNumber: event.unitNumber);
+      log('unitsunitsunits : ${units.length}');
       emit(TiresLoadedState(units: units));
       // try {
       //   emit(TireLoadingState());

@@ -78,10 +78,10 @@ class ApiService {
             }
             fixData.add(unit);
           });
-
+          log('fixdata : ${fixData.length}');
           return fixData;
         }
-
+        log('cachedUnits : ${cachedUnits.length}');
         return cachedUnits;
       }
 

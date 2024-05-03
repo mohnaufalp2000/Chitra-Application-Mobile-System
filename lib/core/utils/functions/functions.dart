@@ -639,10 +639,15 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('C1').setText('Pos');
       sheet.getRangeByName('D1').setText('Pressure');
 
-      log('funcdailyexcel: $daily');
+      log('funcdailyexcel: ${daily?[4]}');
       for (int i = 0; i < daily!.length; i++) {
         final unit = daily[i]['unit'];
         final posisi = daily[i]['posisi'] as List<dynamic>;
+
+        if (i == 4) {
+          log('unit4: ${daily[i]['unit']}');
+          log('posisi4: ${daily[i]['posisi']}');
+        }
 
         for (int j = 0; j < posisi.length; j++) {
           // Merubah tanggal menjadi dd/MM/yyyy

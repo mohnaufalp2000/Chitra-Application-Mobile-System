@@ -29,27 +29,27 @@ class _TpmsPageState extends State<TpmsPage> {
   @override
   void initState() {
     super.initState();
-    // webViewController = WebViewController()
-    //   ..setJavaScriptMode(JavaScriptMode.unrestricted)
-    //   ..setBackgroundColor(white)
-    //   ..setNavigationDelegate(
-    //     NavigationDelegate(
-    //       onProgress: (int progress) {
-    //         // Update loading bar.
-    //       },
-    //       onPageStarted: (String url) {},
-    //       onPageFinished: (String url) {},
-    //       onWebResourceError: (WebResourceError error) {},
-    //       onNavigationRequest: (NavigationRequest request) {
-    //         if (request.url.startsWith('https://www.chitraparatama.co.id/')) {
-    //           return NavigationDecision.prevent;
-    //         }
-    //         return NavigationDecision.navigate;
-    //       },
-    //     ),
-    //   )
-    //   ..loadRequest(Uri.parse(
-    //       'https://chitraparatama.co.id/esp-weather-station.php?readingsCount='));
+    webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(white)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onProgress: (int progress) {
+            // Update loading bar.
+          },
+          onPageStarted: (String url) {},
+          onPageFinished: (String url) {},
+          onWebResourceError: (WebResourceError error) {},
+          onNavigationRequest: (NavigationRequest request) {
+            if (request.url.startsWith('https://www.chitraparatama.co.id/')) {
+              return NavigationDecision.prevent;
+            }
+            return NavigationDecision.navigate;
+          },
+        ),
+      )
+      ..loadRequest(Uri.parse(
+          'https://chitraparatama.co.id/esp-weather-station.php?readingsCount='));
   }
 
   @override
@@ -57,152 +57,153 @@ class _TpmsPageState extends State<TpmsPage> {
     return Scaffold(
       appBar: appBarWidget('SPM Page', context),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                // Identity Data
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  color: Color(0xFF0C44A3),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Container(
-                        padding: const EdgeInsets.all(15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            const Text(
-                              "Operator : Naufal",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                            Container(height: 10),
-                            Text('ID / SN : 72618',
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.grey[200])),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: 12,
-                ),
-                // Unit
-                Column(
-                  children: [
-                    // Pos 1, 2
-                    Stack(
-                      children: [
-                        Positioned(
-                          top: 20,
-                          left: 0,
-                          right: 0,
-                          child: Column(
-                            children: [
-                              Text(
-                                'CO 3374',
-                                style: getBlackTextStyle(
-                                  fontSize: 18,
-                                  fontWeight: w700,
-                                ),
-                              ),
-                              SizedBox(
-                                height: 150,
-                                width: 100,
-                                child:
-                                    Image.asset('${imagePath}/dump_truck.png'),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: pressureData.map((e) {
-                            final index = pressureData.indexOf(e);
-                            if (index < 2) {
-                              return Expanded(
-                                child: Padding(
-                                  padding: EdgeInsets.only(
-                                      right: (index == 0) ? 84 : 0,
-                                      left: (index == 1) ? 84 : 0),
-                                  child: PressureCard(
-                                    position: e,
-                                  ),
-                                ),
-                              );
-                            }
-                            return Container();
-                          }).toList(),
-                        ),
-                      ],
-                    ),
-                    // Pos 3, 4, 5, 6
-                    GridView.builder(
-                      itemCount: pressureData.length -
-                          2, // Mengurangi 2 untuk menghilangkan index pertama dan kedua
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 4,
-                        childAspectRatio: 0.4,
-                        mainAxisSpacing: 3,
-                      ),
-                      itemBuilder: (context, index) {
-                        // Memperhitungkan offset karena index pertama dan kedua diabaikan
-                        final dataIndex = index + 2;
-                        return PressureCard(
-                          position: pressureData[dataIndex],
-                          index: index,
-                        );
-                      },
-                    )
-                  ],
-                ),
-                const SizedBox(
-                  height: 12,
-                ),
-                // event
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  color: Colors.red,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Container(
-                        padding: const EdgeInsets.all(15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            const Text(
-                              "- Position 3 Low Tire Pressure",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                            Container(height: 10),
-                            const Text(
-                              "- Position 4 Low Tire Pressure",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        child: WebViewWidget(controller: webViewController!),
+        // child: Padding(
+        //   padding: const EdgeInsets.all(24.0),
+        //   child: SingleChildScrollView(
+        //     child: Column(
+        //       children: [
+        //         // Identity Data
+        //         Card(
+        //           shape: RoundedRectangleBorder(
+        //             borderRadius: BorderRadius.circular(4),
+        //           ),
+        //           color: Color(0xFF0C44A3),
+        //           child: Column(
+        //             crossAxisAlignment: CrossAxisAlignment.start,
+        //             children: <Widget>[
+        //               Container(
+        //                 padding: const EdgeInsets.all(15),
+        //                 child: Column(
+        //                   crossAxisAlignment: CrossAxisAlignment.start,
+        //                   children: <Widget>[
+        //                     const Text(
+        //                       "Operator : Naufal",
+        //                       style:
+        //                           TextStyle(fontSize: 16, color: Colors.white),
+        //                     ),
+        //                     Container(height: 10),
+        //                     Text('ID / SN : 72618',
+        //                         style: TextStyle(
+        //                             fontSize: 16, color: Colors.grey[200])),
+        //                   ],
+        //                 ),
+        //               ),
+        //             ],
+        //           ),
+        //         ),
+        //         SizedBox(
+        //           height: 12,
+        //         ),
+        //         // Unit
+        //         Column(
+        //           children: [
+        //             // Pos 1, 2
+        //             Stack(
+        //               children: [
+        //                 Positioned(
+        //                   top: 20,
+        //                   left: 0,
+        //                   right: 0,
+        //                   child: Column(
+        //                     children: [
+        //                       Text(
+        //                         'CO 3374',
+        //                         style: getBlackTextStyle(
+        //                           fontSize: 18,
+        //                           fontWeight: w700,
+        //                         ),
+        //                       ),
+        //                       SizedBox(
+        //                         height: 150,
+        //                         width: 100,
+        //                         child:
+        //                             Image.asset('${imagePath}/dump_truck.png'),
+        //                       ),
+        //                     ],
+        //                   ),
+        //                 ),
+        //                 Row(
+        //                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //                   children: pressureData.map((e) {
+        //                     final index = pressureData.indexOf(e);
+        //                     if (index < 2) {
+        //                       return Expanded(
+        //                         child: Padding(
+        //                           padding: EdgeInsets.only(
+        //                               right: (index == 0) ? 84 : 0,
+        //                               left: (index == 1) ? 84 : 0),
+        //                           child: PressureCard(
+        //                             position: e,
+        //                           ),
+        //                         ),
+        //                       );
+        //                     }
+        //                     return Container();
+        //                   }).toList(),
+        //                 ),
+        //               ],
+        //             ),
+        //             // Pos 3, 4, 5, 6
+        //             GridView.builder(
+        //               itemCount: pressureData.length -
+        //                   2, // Mengurangi 2 untuk menghilangkan index pertama dan kedua
+        //               shrinkWrap: true,
+        //               physics: NeverScrollableScrollPhysics(),
+        //               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        //                 crossAxisCount: 4,
+        //                 childAspectRatio: 0.4,
+        //                 mainAxisSpacing: 3,
+        //               ),
+        //               itemBuilder: (context, index) {
+        //                 // Memperhitungkan offset karena index pertama dan kedua diabaikan
+        //                 final dataIndex = index + 2;
+        //                 return PressureCard(
+        //                   position: pressureData[dataIndex],
+        //                   index: index,
+        //                 );
+        //               },
+        //             )
+        //           ],
+        //         ),
+        //         const SizedBox(
+        //           height: 12,
+        //         ),
+        //         // event
+        //         Card(
+        //           shape: RoundedRectangleBorder(
+        //             borderRadius: BorderRadius.circular(4),
+        //           ),
+        //           color: Colors.red,
+        //           child: Column(
+        //             crossAxisAlignment: CrossAxisAlignment.start,
+        //             children: <Widget>[
+        //               Container(
+        //                 padding: const EdgeInsets.all(15),
+        //                 child: Column(
+        //                   crossAxisAlignment: CrossAxisAlignment.start,
+        //                   children: <Widget>[
+        //                     const Text(
+        //                       "- Position 3 Low Tire Pressure",
+        //                       style:
+        //                           TextStyle(fontSize: 16, color: Colors.white),
+        //                     ),
+        //                     Container(height: 10),
+        //                     const Text(
+        //                       "- Position 4 Low Tire Pressure",
+        //                       style:
+        //                           TextStyle(fontSize: 16, color: Colors.white),
+        //                     ),
+        //                   ],
+        //                 ),
+        //               ),
+        //             ],
+        //           ),
+        //         ),
+        //       ],
+        //     ),
+        //   ),
+        // ),
       ),
     );
   }
