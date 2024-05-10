@@ -84,6 +84,7 @@ dependencies:
   dotted_line: ^3.2.2
   camera: ^0.10.5+9
   connection_network_type: ^0.0.1
+  date_picker_timeline: ^1.2.5
   # flutter_blue: ^0.8.0
 
 dev_dependencies:

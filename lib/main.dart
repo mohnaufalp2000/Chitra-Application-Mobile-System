@@ -8,6 +8,7 @@ import 'package:camos/core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart
 import 'package:camos/core/blocs/network/network_bloc.dart';
 import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
 import 'package:camos/core/blocs/site/site_bloc.dart';
+import 'package:camos/core/blocs/spm/spm_bloc.dart';
 import 'package:camos/core/blocs/tire/tire_bloc.dart';
 import 'package:camos/core/blocs/tire_condition/tire_condition_bloc.dart';
 import 'package:camos/core/blocs/tire_invent/tire_invent_bloc.dart';
@@ -95,6 +96,8 @@ class MyApp extends StatelessWidget {
         // mengolah data detail tire condition
         BlocProvider<DetailTireConditionBloc>(
             create: (context) => DetailTireConditionBloc()),
+        // mendapatkan nilai spm
+        BlocProvider<SpmBloc>(create: (context) => SpmBloc()),
       ],
       child: MaterialApp(
         title: 'Material App',

@@ -5,6 +5,7 @@ import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/model/tire_spec.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
+import 'package:camos/core/utils/data/spm.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -343,6 +344,27 @@ class ApiService {
       return site;
     } catch (e) {
       log(e.toString());
+      throw Exception(e.toString());
+    }
+  }
+
+  // api TPMS
+  static Future<List<Spm>> getApiSpm() async {
+    final response = await http.get(Uri.parse('${url}get_tpms'));
+
+    try {
+      final body = response.body;
+
+      final result = jsonDecode(body);
+
+      List<Spm> listSpm = List<Spm>.from(result['data'].map((pressure) {
+        return Spm.fromJson(pressure);
+      }));
+
+      return listSpm;
+    } catch (e) {
+      log('error spm : $e');
+
       throw Exception(e.toString());
     }
   }

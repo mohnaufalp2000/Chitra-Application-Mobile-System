@@ -10,6 +10,7 @@ import 'package:camos/pages/home/detail_tire_site_page.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/outstanding_filter_page.dart';
 import 'package:camos/pages/opening/splash_screen.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
 import 'package:camos/pages/pressure_gauge_digital/pgd_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_inspection_page.dart';
@@ -62,4 +63,5 @@ var routes = {
   TireInspectionPage.routeName: (context) => TireInspectionPage(),
   DailyPressureListPage.routeName: (context) => DailyPressureListPage(),
   QrTpmsPage.routeName: (context) => QrTpmsPage(),
+  DailyPressureHistoryPage.routeName: (context) => DailyPressureHistoryPage(),
 };

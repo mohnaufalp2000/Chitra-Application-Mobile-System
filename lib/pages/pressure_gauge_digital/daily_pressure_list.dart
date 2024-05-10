@@ -5,6 +5,7 @@ import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -21,6 +22,7 @@ class DailyPressureListPage extends StatefulWidget {
 
 class _DailyPressureListPageState extends State<DailyPressureListPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  String idSite = '';
   List<String> pit = [];
   int selectedPit = 0;
   String searchQuery = '';
@@ -34,7 +36,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   }
 
   insertPit() async {
-    String idSite = await getIdSitePreferences();
+    idSite = await getIdSitePreferences();
     if (idSite == '1') {
       idSite = await getSelectedIdSitePreferences();
     }
@@ -160,6 +162,34 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                 const SizedBox(
                   height: 12,
                 ),
+                // SizedBox(
+                //     width: double.infinity,
+                //     child: ElevatedButton(
+                //         onPressed: () {
+                //           Navigator.pushNamed(
+                //               context, DailyPressureHistoryPage.routeName);
+                //         },
+                //         style: ElevatedButton.styleFrom(
+                //             backgroundColor: Colors.orange),
+                //         child: Container(
+                //           padding: EdgeInsets.symmetric(vertical: 12),
+                //           child: Row(
+                //             mainAxisAlignment: MainAxisAlignment.center,
+                //             children: [
+                //               Icon(
+                //                 Icons.history,
+                //                 color: Colors.white,
+                //               ),
+                //               const SizedBox(
+                //                 width: 12,
+                //               ),
+                //               Text(
+                //                 'History',
+                //                 style: getWhiteTextStyle(),
+                //               ),
+                //             ],
+                //           ),
+                //         ))),
                 StreamBuilder(
                   stream: firestore.collection('daily_pressure').snapshots(),
                   builder: (context, snapshot) {

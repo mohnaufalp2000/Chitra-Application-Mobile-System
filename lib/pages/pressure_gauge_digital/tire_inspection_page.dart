@@ -1154,6 +1154,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       .collection('daily_pressure')
                       .doc(docId)
                       .update({
+                    'idSite': idSite,
                     'tanggal': DateTime.now().toIso8601String(),
                     'unit': dataUnit['unitNumber'],
                     'hm': hmCtrl.text,
@@ -1170,6 +1171,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                 } else {
                   // tambah data
                   await firestore.collection('daily_pressure').add({
+                    'idSite': idSite,
                     'tanggal': DateTime.now().toIso8601String(),
                     'unit': dataUnit['unitNumber'],
                     'hm': hmCtrl.text,
