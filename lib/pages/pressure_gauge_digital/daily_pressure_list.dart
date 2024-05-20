@@ -162,34 +162,34 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                 const SizedBox(
                   height: 12,
                 ),
-                // SizedBox(
-                //     width: double.infinity,
-                //     child: ElevatedButton(
-                //         onPressed: () {
-                //           Navigator.pushNamed(
-                //               context, DailyPressureHistoryPage.routeName);
-                //         },
-                //         style: ElevatedButton.styleFrom(
-                //             backgroundColor: Colors.orange),
-                //         child: Container(
-                //           padding: EdgeInsets.symmetric(vertical: 12),
-                //           child: Row(
-                //             mainAxisAlignment: MainAxisAlignment.center,
-                //             children: [
-                //               Icon(
-                //                 Icons.history,
-                //                 color: Colors.white,
-                //               ),
-                //               const SizedBox(
-                //                 width: 12,
-                //               ),
-                //               Text(
-                //                 'History',
-                //                 style: getWhiteTextStyle(),
-                //               ),
-                //             ],
-                //           ),
-                //         ))),
+                SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(
+                              context, DailyPressureHistoryPage.routeName);
+                        },
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(
+                                width: 12,
+                              ),
+                              Text(
+                                'History',
+                                style: getWhiteTextStyle(),
+                              ),
+                            ],
+                          ),
+                        ))),
                 StreamBuilder(
                   stream: firestore.collection('daily_pressure').snapshots(),
                   builder: (context, snapshot) {
@@ -222,14 +222,18 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                         return dateTime.year == now.year &&
                             dateTime.month == now.month &&
                             dateTime.day == now.day &&
+                            data['idSite'] == idSite &&
                             data['pit'] == pit[selectedPit];
                       }
 
                       // tidak ada pit
                       return dateTime.year == now.year &&
                           dateTime.month == now.month &&
-                          dateTime.day == now.day;
+                          dateTime.day == now.day &&
+                          data['idSite'] == idSite;
                     }).toList();
+
+                    log('jumlah unit udu : ${filteredDocument.length}');
 
                     filteredDocument.sort((a, b) {
                       Map<String, dynamic> first =
