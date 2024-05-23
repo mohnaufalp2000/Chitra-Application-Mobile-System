@@ -1162,7 +1162,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       final pIndex = position.indexOf(p);
                       return {
                         'pos': '${pIndex + 1}',
-                        'pressure': p['pressure'],
+                        'pressure': (p['pressure']) ? p['pressure'] : '0',
                         'luka': (selectedType == 0) ? '' : p['damage']
                       };
                     }),
@@ -1179,7 +1179,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       final pIndex = position.indexOf(p);
                       return {
                         'pos': '${pIndex + 1}',
-                        'pressure': p['pressure'],
+                        'pressure': (p['pressure']) ? p['pressure'] : '0',
                         'luka': (selectedType == 0) ? '' : p['damage']
                       };
                     }),

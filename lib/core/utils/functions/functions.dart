@@ -241,7 +241,8 @@ Future<Uint8List?> capturePage(
 }
 
 /// membuat path penyimpanan file
-Future<File> createFolderPath(String id, String type) async {
+Future<File> createFolderPath(String id, String type,
+    {String site = '', String email = '', String date = ''}) async {
   /// final output = await getApplicationDocumentsDirectory();
   // String path = '';
   Directory? path;
@@ -262,7 +263,9 @@ Future<File> createFolderPath(String id, String type) async {
       final outputFile = File("${path?.path}/TKPH-$id.pdf");
       return outputFile;
     case 'site':
-      final outputFile = File("${path?.path}/Site-$id.pdf");
+      // final outputFile = File("${path?.path}/Site-$id.pdf");
+      final outputFile = File(
+          "${path?.path}/SiteCondition_${date}_${site}_${email}_CAMOS.pdf");
       return outputFile;
     case 'attendance':
       final outputFile = File("${path?.path}/Attendance-$id.xlsx");
@@ -271,7 +274,9 @@ Future<File> createFolderPath(String id, String type) async {
       final outputFile = File("${path?.path}/Outstanding-$id.xlsx");
       return outputFile;
     case 'daily-check':
-      final outputFile = File("${path?.path}/daily-check-$id.xlsx");
+      final outputFile = File(
+          "${path?.path}/DailyTireCheck_${date}_${site}_${email}_CAMOS.xlsx");
+      // final outputFile = File("${path?.path}/daily-check_${id}xlsx");
       return outputFile;
     case 'outstanding-image':
       final outputFile = File("${path?.path}/outstanding-image-$id.jpg");
@@ -639,7 +644,6 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('C1').setText('Pos');
       sheet.getRangeByName('D1').setText('Pressure');
 
-      log('funcdailyexcel: ${daily?[4]}');
       for (int i = 0; i < daily!.length; i++) {
         final unit = daily[i]['unit'];
         final posisi = daily[i]['posisi'] as List<dynamic>;

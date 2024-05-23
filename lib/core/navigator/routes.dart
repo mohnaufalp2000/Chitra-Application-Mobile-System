@@ -9,6 +9,7 @@ import 'package:camos/pages/cts/cts_page.dart';
 import 'package:camos/pages/home/detail_tire_site_page.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/outstanding_filter_page.dart';
+import 'package:camos/pages/home/trial/home_page_trial.dart';
 import 'package:camos/pages/opening/splash_screen.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
@@ -18,6 +19,7 @@ import 'package:camos/pages/pressure_gauge_digital/pgd_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/tire_inspection_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';
 import 'package:camos/pages/settings/edit_profile_page.dart';
 import 'package:camos/pages/settings/feedback_page.dart';
 import 'package:camos/pages/settings/settings_page.dart';
@@ -69,4 +71,6 @@ var routes = {
   NonRunningInspectionPage.routeName: (context) => NonRunningInspectionPage(),
   DetailNonTireRunningTireInspection.routeName: (context) =>
       DetailNonTireRunningTireInspection(),
+  HomePageTrial.routeName: (context) => HomePageTrial(),
+  DailyPressureTrialPage.routeName: (context) => DailyPressureTrialPage(),
 };

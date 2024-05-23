@@ -12,6 +12,7 @@ import 'package:camos/pages/authentication/email_verification_page.dart';
 import 'package:camos/pages/authentication/image_profile_page.dart';
 import 'package:camos/pages/authentication/register_page.dart';
 import 'package:camos/pages/home/home_page.dart';
+import 'package:camos/pages/home/trial/home_page_trial.dart';
 import 'package:camos/pages/pressure_gauge_digital/non_running_inspection_page.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
 import 'package:camos/pages/tpms/tpms_page.dart';
@@ -36,6 +37,7 @@ class _LoginPageState extends State<LoginPage> {
   GoogleTranslator translator = GoogleTranslator();
   FirebaseAuth auth = FirebaseAuth.instance;
   bool? isCompleted = false;
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -249,7 +251,19 @@ class _LoginPageState extends State<LoginPage> {
                                 saveManpowerShiftPreferences(shift: 'morning');
                               }
                             }
-                            pushReplace(context, HomePage.routeName);
+
+                            final user = await firestore
+                                .collection('users')
+                                .where('email',
+                                    isEqualTo: auth.currentUser?.email)
+                                .get();
+
+                            // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
+                            if (user.docs[0]['id_site'] == '3') {
+                              pushReplace(context, HomePageTrial.routeName);
+                            } else {
+                              pushReplace(context, HomePage.routeName);
+                            }
                           } else {
                             push(context, EmailVerificationPage.routeName);
                           }
@@ -318,23 +332,23 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(
                       height: 12,
                     ),
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.center,
-                    //   children: [
-                    //     Image.asset(
-                    //       '${iconPath}/tpms_icon.png',
-                    //       width: 30,
-                    //       height: 30,
-                    //     ),
-                    //     TextButtonWidget(
-                    //       name: 'Open SPM / TPMS Page',
-                    //       style: getGreenTextStyle(fontSize: 16),
-                    //       function: () {
-                    //         push(context, QrTpmsPage.routeName);
-                    //       },
-                    //     ),
-                    //   ],
-                    // ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          '${iconPath}/tpms_icon.png',
+                          width: 30,
+                          height: 30,
+                        ),
+                        TextButtonWidget(
+                          name: 'Open SPM / TPMS Page',
+                          style: getGreenTextStyle(fontSize: 16),
+                          function: () {
+                            push(context, QrTpmsPage.routeName);
+                          },
+                        ),
+                      ],
+                    ),
                     // Row(
                     //   mainAxisAlignment: MainAxisAlignment.center,
                     //   children: [

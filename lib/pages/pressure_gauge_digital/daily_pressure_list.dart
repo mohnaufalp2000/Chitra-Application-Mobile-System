@@ -7,6 +7,7 @@ import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:open_file/open_file.dart';
@@ -22,10 +23,12 @@ class DailyPressureListPage extends StatefulWidget {
 
 class _DailyPressureListPageState extends State<DailyPressureListPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+
   String idSite = '';
   List<String> pit = [];
   int selectedPit = 0;
   String searchQuery = '';
+  Map<String, dynamic> user = {};
   List<Map<String, dynamic>> filteredItemTask = [];
 
   @override
@@ -33,10 +36,17 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     super.initState();
 
     insertPit();
+    getUser();
+  }
+
+  getUser() async {
+    user = await getUserPreferences();
+    log('username : ${user}');
   }
 
   insertPit() async {
     idSite = await getIdSitePreferences();
+    log('hahaha : $idSite');
     if (idSite == '1') {
       idSite = await getSelectedIdSitePreferences();
     }
@@ -113,8 +123,13 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                         // print('tugas : $filteredItemTask');
                         // print('terpesona $filteredItemTask');
                         // final file = await createFolderPath(id.v4(), 'outstanding');
-                        final file =
-                            await createFolderPath(id.v4(), 'daily-check');
+                        final file = await createFolderPath(
+                            id.v4(), 'daily-check',
+                            email: user['email'] ?? '',
+                            site: user['siteName'] ?? '',
+                            date:
+                                "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
+
                         final bytes = await createExcel('daily-check',
                             daily: filteredItemTask);
                         final saved =
@@ -233,7 +248,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                           data['idSite'] == idSite;
                     }).toList();
 
-                    log('jumlah unit udu : ${filteredDocument.length}');
+                    log('pusing : ${filteredDocument.length}');
+
+                    log('jumlah unit udu : ${documents}');
 
                     filteredDocument.sort((a, b) {
                       Map<String, dynamic> first =

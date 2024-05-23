@@ -13,6 +13,7 @@ import 'package:camos/core/widgets/outlined_button_widget.dart';
 import 'package:camos/core/widgets/upload_photo_widget.dart';
 import 'package:camos/pages/authentication/login_page.dart';
 import 'package:camos/pages/home/home_page.dart';
+import 'package:camos/pages/home/trial/home_page_trial.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -190,9 +191,19 @@ class _ImageProfilePageState extends State<ImageProfilePage> {
                   height: 24,
                 ),
                 BlocConsumer<AuthenticationBloc, AuthenticationState>(
-                  listener: (context, state) {
+                  listener: (context, state) async {
                     if (state is AuthenticationCompleteProfileState) {
-                      pushReplace(context, HomePage.routeName);
+                      final user = await firestore
+                          .collection('users')
+                          .where('email', isEqualTo: auth.currentUser?.email)
+                          .get();
+
+                      // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
+                      if (user.docs[0]['id_site'] == '3') {
+                        pushReplace(context, HomePageTrial.routeName);
+                      } else {
+                        pushReplace(context, HomePage.routeName);
+                      }
                     }
                   },
                   builder: (context, state) {
@@ -247,7 +258,16 @@ class _ImageProfilePageState extends State<ImageProfilePage> {
                           saveManpowerShiftPreferences(shift: 'morning');
                         }
                       }
-                      pushReplace(context, HomePage.routeName);
+                      final user = await firestore
+                          .collection('users')
+                          .where('email', isEqualTo: auth.currentUser?.email)
+                          .get();
+                      // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
+                      if (user.docs[0]['id_site'] == '3') {
+                        pushReplace(context, HomePageTrial.routeName);
+                      } else {
+                        pushReplace(context, HomePage.routeName);
+                      }
                     }),
               ],
             ),

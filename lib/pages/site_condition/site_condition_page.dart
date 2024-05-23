@@ -1247,6 +1247,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -1287,6 +1288,7 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
   TextEditingController nameCtrl = TextEditingController(text: '');
   TextEditingController remarksCtrl = TextEditingController(text: '');
   bool isConfirmDelete = false;
+  Map<String, dynamic> user = {};
 
   Uint8List fileToUint8List(File file) {
     List<int> fileBytes = file.readAsBytesSync();
@@ -1783,6 +1785,13 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
   void initState() {
     super.initState();
     getCurrentLocation();
+
+    getUser();
+  }
+
+  getUser() async {
+    user = await getUserPreferences();
+    log('username : ${user}');
   }
 
   @override
@@ -2225,8 +2234,12 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                               }));
 
                           final id = Uuid();
-                          final outputFile =
-                              await createFolderPath('${id.v4()}', 'site');
+                          final outputFile = await createFolderPath(
+                              '${id.v4()}', 'site',
+                              email: user['email'] ?? '',
+                              site: user['siteName'] ?? '',
+                              date:
+                                  "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
                           final filePath = await savePdf(pdf, outputFile);
 
                           log('save baru : $filePath');

@@ -25,6 +25,10 @@ class SiteBloc extends Bloc<SiteEvent, SiteState> {
           1,
           Site(idSite: '2', site: 'All-CK', lastUpdate: '2023-10-16'),
         );
+        listSite.insert(
+          2,
+          Site(idSite: '3', site: 'PAMA-TRIAL', lastUpdate: '2024-05-22'),
+        );
         emit(SiteLoadedState(listSite: listSite));
       } catch (e) {
         emit(SiteErrorState(message: e.toString()));
