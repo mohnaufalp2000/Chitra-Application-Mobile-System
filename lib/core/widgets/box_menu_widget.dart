@@ -13,6 +13,7 @@ import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';
 import 'package:camos/pages/site_condition/site_condition_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
+import 'package:camos/pages/tpms/qr_tpms_page.dart';
 import 'package:camos/pages/tpms/tpms_page.dart';
 import 'package:flutter/material.dart';
 
@@ -66,7 +67,7 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
 
         break;
       case 5:
-        push(context, TpmsPage.routeName);
+        push(context, QrTpmsPage.routeName);
         break;
       case 6:
         push(
