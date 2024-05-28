@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:camos/core/navigator/navigation_route.dart';
 import 'package:camos/core/styles/color.dart';
+import 'package:camos/pages/attendance/absence_page.dart';
 import 'package:camos/pages/attendance/attendance_page.dart';
 import 'package:camos/pages/attendance/presence_page.dart';
 import 'package:camos/pages/cts/cts_page.dart';
@@ -72,7 +73,7 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
       case 6:
         push(
           context,
-          PresencePage.routeName,
+          AbsencePage.routeName,
         );
         break;
     }

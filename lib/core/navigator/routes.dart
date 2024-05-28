@@ -1,5 +1,8 @@
+import 'package:camos/pages/attendance/absence_page.dart';
 import 'package:camos/pages/attendance/all_presence_page.dart';
 import 'package:camos/pages/attendance/attendance_page.dart';
+import 'package:camos/pages/attendance/presence_camera_page.dart';
+import 'package:camos/pages/attendance/presence_camera_result_page.dart';
 import 'package:camos/pages/attendance/presence_page.dart';
 import 'package:camos/pages/authentication/email_verification_page.dart';
 import 'package:camos/pages/authentication/image_profile_page.dart';
@@ -34,6 +37,7 @@ import 'package:camos/pages/tkph_calculator/result_tkph_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
 import 'package:camos/pages/tpms/tpms_page.dart';
+import 'package:image_picker/image_picker.dart';
 
 var routes = {
   SplashScreen.routeName: (context) => SplashScreen(),
@@ -73,4 +77,7 @@ var routes = {
       DetailNonTireRunningTireInspection(),
   HomePageTrial.routeName: (context) => HomePageTrial(),
   DailyPressureTrialPage.routeName: (context) => DailyPressureTrialPage(),
+  PresenceCameraPage.routeName: (context) => PresenceCameraPage(),
+  AbsencePage.routeName: (context) => AbsencePage(),
+  PresenceCameraResultPage.routeName: (context) => PresenceCameraResultPage(),
 };

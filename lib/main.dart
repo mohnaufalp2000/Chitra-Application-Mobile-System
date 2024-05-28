@@ -33,6 +33,7 @@ late List<CameraDescription> camerasTireInspection;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   cameras = await availableCameras();
+  cameras = [cameras[0], cameras[1]];
   store = (await ObjectBox.create()).store;
   initializeHERESDK();
   SystemChrome.setPreferredOrientations(
