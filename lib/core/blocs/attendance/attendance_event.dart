@@ -46,11 +46,12 @@ class SaveCsvPresenceEvent extends AttendanceEvent {
   final String position;
   final String sn;
   final String site;
-  SaveCsvPresenceEvent({
-    required this.presence,
-    required this.username,
-    required this.position,
-    required this.sn,
-    required this.site,
-  });
+  final String desc;
+  SaveCsvPresenceEvent(
+      {required this.presence,
+      required this.username,
+      required this.position,
+      required this.sn,
+      required this.site,
+      this.desc = ''});
 }

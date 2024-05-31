@@ -108,7 +108,7 @@ final _entities = <ModelEntity>[
   ModelEntity(
       id: const IdUid(2, 4847767954173900942),
       name: 'AttendanceEntity',
-      lastPropertyId: const IdUid(11, 1304923070146106978),
+      lastPropertyId: const IdUid(13, 7744846828465339842),
       flags: 0,
       properties: <ModelProperty>[
         ModelProperty(
@@ -139,6 +139,16 @@ final _entities = <ModelEntity>[
         ModelProperty(
             id: const IdUid(11, 1304923070146106978),
             name: 'keluarImage',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(12, 1190013883963276794),
+            name: 'keteranganMasuk',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(13, 7744846828465339842),
+            name: 'keteranganKeluar',
             type: 9,
             flags: 0)
       ],
@@ -295,13 +305,18 @@ ModelDefinition getObjectBoxModel() {
           final keluarOffset = fbb.writeString(object.keluar);
           final masukImageOffset = fbb.writeString(object.masukImage);
           final keluarImageOffset = fbb.writeString(object.keluarImage);
-          fbb.startTable(12);
+          final keteranganMasukOffset = fbb.writeString(object.keteranganMasuk);
+          final keteranganKeluarOffset =
+              fbb.writeString(object.keteranganKeluar);
+          fbb.startTable(14);
           fbb.addInt64(0, object.id);
           fbb.addOffset(5, dateOffset);
           fbb.addOffset(6, masukOffset);
           fbb.addOffset(7, keluarOffset);
           fbb.addOffset(9, masukImageOffset);
           fbb.addOffset(10, keluarImageOffset);
+          fbb.addOffset(11, keteranganMasukOffset);
+          fbb.addOffset(12, keteranganKeluarOffset);
           fbb.finish(fbb.endTable());
           return object.id;
         },
@@ -319,7 +334,11 @@ ModelDefinition getObjectBoxModel() {
               keluar: const fb.StringReader(asciiOptimization: true)
                   .vTableGet(buffer, rootOffset, 18, ''),
               keluarImage: const fb.StringReader(asciiOptimization: true)
-                  .vTableGet(buffer, rootOffset, 24, ''))
+                  .vTableGet(buffer, rootOffset, 24, ''),
+              keteranganMasuk: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 26, ''),
+              keteranganKeluar: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 28, ''))
             ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
 
           return object;
@@ -448,6 +467,14 @@ class AttendanceEntity_ {
   /// see [AttendanceEntity.keluarImage]
   static final keluarImage =
       QueryStringProperty<AttendanceEntity>(_entities[1].properties[5]);
+
+  /// see [AttendanceEntity.keteranganMasuk]
+  static final keteranganMasuk =
+      QueryStringProperty<AttendanceEntity>(_entities[1].properties[6]);
+
+  /// see [AttendanceEntity.keteranganKeluar]
+  static final keteranganKeluar =
+      QueryStringProperty<AttendanceEntity>(_entities[1].properties[7]);
 }
 
 /// [TireInspectPictureEntity] entity fields to define ObjectBox queries.

@@ -89,7 +89,7 @@
     },
     {
       "id": "2:4847767954173900942",
-      "lastPropertyId": "11:1304923070146106978",
+      "lastPropertyId": "13:7744846828465339842",
       "name": "AttendanceEntity",
       "properties": [
         {
@@ -121,6 +121,16 @@
         {
           "id": "11:1304923070146106978",
           "name": "keluarImage",
+          "type": 9
+        },
+        {
+          "id": "12:1190013883963276794",
+          "name": "keteranganMasuk",
+          "type": 9
+        },
+        {
+          "id": "13:7744846828465339842",
+          "name": "keteranganKeluar",
           "type": 9
         }
       ],

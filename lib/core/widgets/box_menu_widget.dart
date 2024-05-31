@@ -73,7 +73,8 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
       case 6:
         push(
           context,
-          AbsencePage.routeName,
+          // AbsencePage.routeName,
+          PresencePage.routeName,
         );
         break;
     }

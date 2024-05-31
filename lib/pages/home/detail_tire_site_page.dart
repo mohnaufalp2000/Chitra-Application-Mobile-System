@@ -52,6 +52,8 @@ class _DetailTireSitePageState extends State<DetailTireSitePage> {
                                 return Container();
                               } else if (index == 1) {
                                 return Container();
+                              } else if (index == 2) {
+                                return Container();
                               } else {
                                 return InkWell(
                                   onTap: () async {

@@ -679,10 +679,10 @@ class _AttendancePageState extends State<AttendancePage> {
                           onPressed: () async {
                             // back(context);
 
-                            context.read<AttendanceBloc>().add(
-                                PresenceAttendanceEvent(
-                                    context: context,
-                                    selectedShift: selectedShift));
+                            // context.read<AttendanceBloc>().add(
+                            //     PresenceAttendanceEvent(
+                            //         context: context,
+                            //         selectedShift: selectedShift));
                           },
                           child: BlocConsumer<AttendanceBloc, AttendanceState>(
                             listener: (context, state) {

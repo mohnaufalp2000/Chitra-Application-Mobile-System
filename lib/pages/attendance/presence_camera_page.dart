@@ -302,6 +302,9 @@ class _PresenceCameraPageState extends State<PresenceCameraPage> {
 
   @override
   Widget build(BuildContext context) {
+    final presenceData =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -396,11 +399,11 @@ class _PresenceCameraPageState extends State<PresenceCameraPage> {
                               width: 24,
                             ),
                             SizedBox(
-                                width: 150,
+                                width: 100,
                                 height: 50,
                                 child: ButtonWidget(
                                     name: Text(
-                                      'Edit Location',
+                                      'Edit',
                                       style: getWhiteTextStyle(),
                                     ),
                                     function: () {
@@ -421,7 +424,7 @@ class _PresenceCameraPageState extends State<PresenceCameraPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         cameraToggle(),
-                        cameraControl(context),
+                        cameraControl(context, presenceData),
                         Spacer()
                       ],
                     ),
@@ -548,7 +551,8 @@ class _PresenceCameraPageState extends State<PresenceCameraPage> {
     });
   }
 
-  Widget cameraControl(BuildContext context) {
+  Widget cameraControl(
+      BuildContext context, Map<String, dynamic> presenceData) {
     return Expanded(
         child: Align(
       alignment: Alignment.center,
@@ -558,7 +562,7 @@ class _PresenceCameraPageState extends State<PresenceCameraPage> {
         children: [
           FloatingActionButton(
             onPressed: () {
-              onCapture(context);
+              onCapture(context, presenceData);
             },
             backgroundColor: black,
             child: Icon(
@@ -571,7 +575,7 @@ class _PresenceCameraPageState extends State<PresenceCameraPage> {
     ));
   }
 
-  onCapture(context) async {
+  onCapture(context, Map<String, dynamic> presenceData) async {
     try {
       await cameraController.takePicture().then((value) async {
         setState(() {
@@ -585,6 +589,7 @@ class _PresenceCameraPageState extends State<PresenceCameraPage> {
         });
         Navigator.pushNamed(context, PresenceCameraResultPage.routeName,
             arguments: {
+              'selectedShift': presenceData['selectedShift'],
               'imagePath': value,
               'date1': formattedDate1,
               'date2': formattedDate2,

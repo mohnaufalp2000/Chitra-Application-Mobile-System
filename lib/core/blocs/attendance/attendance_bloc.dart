@@ -40,6 +40,8 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         String yesterdayDocId = DateFormat.yMd()
             .format(now.subtract(Duration(days: 1)))
             .replaceAll('/', '-');
+        // change image
+        // final String imgString = base64Encode(event.image);
 
         switch (event.selectedShift) {
           case 'morning':
@@ -49,6 +51,10 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                 attendanceBox.getAll().length == 0) {
               // final uploadedPicture = await uploadImage(capturedCamera);
 
+              // attendanceBox.put(AttendanceEntity(
+              //     date: now.toIso8601String(),
+              //     masuk: now.toIso8601String(),
+              //     masukImage: imgString));
               attendanceBox.put(AttendanceEntity(
                   date: now.toIso8601String(),
                   masuk: now.toIso8601String(),
@@ -56,7 +62,14 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                       .pickImage(imageQuality: 30, source: ImageSource.camera)
                       .then((value) async {
                     Uint8List bytes = await value!.readAsBytes();
-                    String imgString = base64Encode(bytes);
+                    img.Image originalImage = img.decodeImage(bytes)!;
+                    img.drawString(originalImage,
+                        DateFormat('EEEE, d MMMM yyyy').format(now),
+                        font: img.arial48);
+                    Uint8List modifiedBytes =
+                        Uint8List.fromList(img.encodeJpg(originalImage));
+                    String imgString = base64Encode(modifiedBytes);
+
                     return imgString;
                   })));
             } else {
@@ -78,17 +91,29 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                   log('belum absen keluar : 3');
 
                   isPresenceToday.keluar = now.toIso8601String();
+                  // isPresenceToday.keluarImage = imgString;
                   isPresenceToday.keluarImage = await ImagePicker()
                       .pickImage(imageQuality: 30, source: ImageSource.camera)
                       .then((value) async {
                     Uint8List bytes = await value!.readAsBytes();
-                    String imgString = base64Encode(bytes);
+                    img.Image originalImage = img.decodeImage(bytes)!;
+                    img.drawString(originalImage,
+                        DateFormat('EEEE, d MMMM yyyy').format(now),
+                        font: img.arial48);
+                    Uint8List modifiedBytes =
+                        Uint8List.fromList(img.encodeJpg(originalImage));
+                    String imgString = base64Encode(modifiedBytes);
+
                     return imgString;
                   });
                   attendanceBox.put(isPresenceToday);
                 }
               } else {
                 log('sudah absen keluar : 4');
+                // attendanceBox.put(AttendanceEntity(
+                //     date: now.toIso8601String(),
+                //     masuk: now.toIso8601String(),
+                //     masukImage: imgString));
                 attendanceBox.put(AttendanceEntity(
                     date: now.toIso8601String(),
                     masuk: now.toIso8601String(),
@@ -96,7 +121,14 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                         .pickImage(imageQuality: 30, source: ImageSource.camera)
                         .then((value) async {
                       Uint8List bytes = await value!.readAsBytes();
-                      String imgString = base64Encode(bytes);
+                      img.Image originalImage = img.decodeImage(bytes)!;
+                      img.drawString(originalImage,
+                          DateFormat('EEEE, d MMMM yyyy').format(now),
+                          font: img.arial48);
+                      Uint8List modifiedBytes =
+                          Uint8List.fromList(img.encodeJpg(originalImage));
+                      String imgString = base64Encode(modifiedBytes);
+
                       return imgString;
                     })));
               }

@@ -346,6 +346,8 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('E9').setText('To');
       sheet.getRangeByName('F9').setText('Check-In');
       sheet.getRangeByName('G9').setText('Check-Out');
+      sheet.getRangeByName('H9').setText('Description-In');
+      sheet.getRangeByName('I9').setText('Description-Out');
 
       /// get date
       int days = daysInMonth(DateTime.now());
@@ -390,15 +392,25 @@ Future<List<int>> createExcel(String type,
             //     VAlignType.center;
 
             final resizedImage = await resizeImage(
-                base64Decode(presence[j].masukImage), 200, 200);
+                base64Decode(presence[j].masukImage), 600, 600);
             sheet.pictures.addStream(i + 10, 6, resizedImage);
 
-            sheet.getRangeByIndex(i + 10, 6).rowHeight = 200;
-            sheet.getRangeByIndex(i + 10, 6).columnWidth = 30;
+            sheet.getRangeByIndex(i + 10, 6).rowHeight = 550;
+            sheet.getRangeByIndex(i + 10, 6).columnWidth = 92;
             sheet.getRangeByIndex(i + 10, 6).cellStyle.hAlign =
                 HAlignType.center;
             sheet.getRangeByIndex(i + 10, 6).cellStyle.vAlign =
                 VAlignType.center;
+
+            // keterangan masuk
+            sheet
+                .getRangeByName('H${i + 10}')
+                .setText('${presence[j].keteranganMasuk}');
+            sheet.getRangeByName('H${i + 10}').cellStyle.hAlign =
+                HAlignType.center;
+            sheet.getRangeByName('H${i + 10}').cellStyle.vAlign =
+                VAlignType.center;
+            sheet.getRangeByName('H${i + 10}').columnWidth = 15;
 
             /// To
             /// cek apakah ada data absen keluar atau tidak
@@ -427,16 +439,28 @@ Future<List<int>> createExcel(String type,
               //     HAlignType.center;
               // sheet.getRangeByIndex(i + 10, 7).cellStyle.vAlign =
               //     VAlignType.center;
+
+              // yang dipake
               final resizedImage = await resizeImage(
-                  base64Decode(presence[j].keluarImage), 200, 200);
+                  base64Decode(presence[j].keluarImage), 600, 600);
               sheet.pictures.addStream(i + 10, 7, resizedImage);
 
-              sheet.getRangeByIndex(i + 10, 7).rowHeight = 200;
-              sheet.getRangeByIndex(i + 10, 7).columnWidth = 30;
+              sheet.getRangeByIndex(i + 10, 7).rowHeight = 550;
+              sheet.getRangeByIndex(i + 10, 7).columnWidth = 92;
               sheet.getRangeByIndex(i + 10, 7).cellStyle.hAlign =
                   HAlignType.center;
               sheet.getRangeByIndex(i + 10, 7).cellStyle.vAlign =
                   VAlignType.center;
+
+              // keterangan keluar
+              sheet
+                  .getRangeByName('I${i + 10}')
+                  .setText('${presence[j].keteranganKeluar}');
+              sheet.getRangeByName('I${i + 10}').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('I${i + 10}').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('I${i + 10}').columnWidth = 15;
             }
           }
         }
