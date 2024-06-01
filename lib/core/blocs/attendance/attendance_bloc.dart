@@ -54,7 +54,8 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
               // attendanceBox.put(AttendanceEntity(
               //     date: now.toIso8601String(),
               //     masuk: now.toIso8601String(),
-              //     masukImage: imgString));
+              //     masukImage: imgString));'
+
               attendanceBox.put(AttendanceEntity(
                   date: now.toIso8601String(),
                   masuk: now.toIso8601String(),
@@ -63,8 +64,14 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                       .then((value) async {
                     Uint8List bytes = await value!.readAsBytes();
                     img.Image originalImage = img.decodeImage(bytes)!;
-                    img.drawString(originalImage,
-                        DateFormat('EEEE, d MMMM yyyy').format(now),
+                    int textPadding = 200;
+                    int textPosX = originalImage.width - (textPadding + 550);
+                    int textPosY = originalImage.height - textPadding;
+                    img.drawString(
+                        originalImage,
+                        x: textPosX,
+                        y: textPosY,
+                        DateFormat('EEEE, d MMMM yyyy HH:mm').format(now),
                         font: img.arial48);
                     Uint8List modifiedBytes =
                         Uint8List.fromList(img.encodeJpg(originalImage));
@@ -97,7 +104,14 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                       .then((value) async {
                     Uint8List bytes = await value!.readAsBytes();
                     img.Image originalImage = img.decodeImage(bytes)!;
-                    img.drawString(originalImage,
+
+                    int textPadding = 200;
+                    int textPosX = originalImage.width - (textPadding + 350);
+                    int textPosY = originalImage.height - textPadding;
+                    img.drawString(
+                        originalImage,
+                        x: textPosX,
+                        y: textPosY,
                         DateFormat('EEEE, d MMMM yyyy').format(now),
                         font: img.arial48);
                     Uint8List modifiedBytes =
@@ -122,7 +136,13 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                         .then((value) async {
                       Uint8List bytes = await value!.readAsBytes();
                       img.Image originalImage = img.decodeImage(bytes)!;
-                      img.drawString(originalImage,
+                      int textPadding = 200;
+                      int textPosX = originalImage.width - (textPadding + 350);
+                      int textPosY = originalImage.height - textPadding;
+                      img.drawString(
+                          originalImage,
+                          x: textPosX,
+                          y: textPosY,
                           DateFormat('EEEE, d MMMM yyyy').format(now),
                           font: img.arial48);
                       Uint8List modifiedBytes =

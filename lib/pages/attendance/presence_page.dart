@@ -226,9 +226,6 @@ class _PresencePageState extends State<PresencePage> {
                   ));
                 }
               }
-              if (state is AttendanceSuccessPresenceState) {
-                getDataPresenceToday();
-              }
             },
             builder: (context, state) {
               return Column(
@@ -443,6 +440,7 @@ class _PresencePageState extends State<PresencePage> {
                                                     ),
                                               color: white,
                                               function: () {
+                                                getDataPresenceToday();
                                                 showAddInfoDialog('check-in');
                                               }),
                                         ),
@@ -542,6 +540,7 @@ class _PresencePageState extends State<PresencePage> {
                                                     ),
                                               color: white,
                                               function: () {
+                                                getDataPresenceToday();
                                                 showAddInfoDialog('check-out');
                                               }),
                                         ),
@@ -633,7 +632,7 @@ class _PresencePageState extends State<PresencePage> {
                         ],
                       ),
                       Text(
-                        presence.masuk == null
+                        presence.masuk == null || presence.masuk == ''
                             ? '-'
                             : '${DateFormat.Hms().format(DateTime.parse(presence.masuk))}',
                         style: getWhiteTextStyle(),
@@ -646,7 +645,7 @@ class _PresencePageState extends State<PresencePage> {
                         style: getWhiteTextStyle(fontWeight: w700),
                       ),
                       Text(
-                        presence.keluar == null
+                        presence.keluar == null || presence.keluar == ''
                             ? '-'
                             : '${DateFormat.Hms().format(DateTime.parse(presence.keluar))}',
                         style: getWhiteTextStyle(),

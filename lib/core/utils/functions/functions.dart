@@ -343,11 +343,23 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('B9:C9').cellStyle.hAlign = HAlignType.center;
 
       sheet.getRangeByName('D9').setText('From');
+      sheet.getRangeByName('D9').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('D9').columnWidth = 15;
       sheet.getRangeByName('E9').setText('To');
+      sheet.getRangeByName('E9').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('E9').columnWidth = 15;
       sheet.getRangeByName('F9').setText('Check-In');
+      sheet.getRangeByName('F9').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('F9').columnWidth = 92;
       sheet.getRangeByName('G9').setText('Check-Out');
+      sheet.getRangeByName('G9').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('G9').columnWidth = 92;
       sheet.getRangeByName('H9').setText('Description-In');
+      sheet.getRangeByName('H9').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('H9').columnWidth = 70;
       sheet.getRangeByName('I9').setText('Description-Out');
+      sheet.getRangeByName('I9').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('I9').columnWidth = 70;
 
       /// get date
       int days = daysInMonth(DateTime.now());
@@ -375,22 +387,6 @@ Future<List<int>> createExcel(String type,
             sheet.getRangeByName('D${i + 10}').columnWidth = 15;
 
             /// masukkan gambar check in
-            // final List<int> imageCheckIn =
-            //     await ApiService.fetchImageData(presence[j].masuk);
-
-            // if (imageCheckIn != null) {
-            //   final resizedImage =
-            //       await resizeImage(Uint8List.fromList(imageCheckIn), 200, 200);
-            //   sheet.pictures.addStream(i + 10, 6, resizedImage);
-            // }
-
-            // sheet.getRangeByIndex(i + 10, 6).rowHeight = 200;
-            // sheet.getRangeByIndex(i + 10, 6).columnWidth = 30;
-            // sheet.getRangeByIndex(i + 10, 6).cellStyle.hAlign =
-            //     HAlignType.center;
-            // sheet.getRangeByIndex(i + 10, 6).cellStyle.vAlign =
-            //     VAlignType.center;
-
             final resizedImage = await resizeImage(
                 base64Decode(presence[j].masukImage), 600, 600);
             sheet.pictures.addStream(i + 10, 6, resizedImage);
@@ -410,7 +406,7 @@ Future<List<int>> createExcel(String type,
                 HAlignType.center;
             sheet.getRangeByName('H${i + 10}').cellStyle.vAlign =
                 VAlignType.center;
-            sheet.getRangeByName('H${i + 10}').columnWidth = 15;
+            sheet.getRangeByName('H${i + 10}').columnWidth = 70;
 
             /// To
             /// cek apakah ada data absen keluar atau tidak
@@ -424,23 +420,6 @@ Future<List<int>> createExcel(String type,
               sheet.getRangeByName('E${i + 10}').columnWidth = 15;
 
               /// masukkan gambar check out
-              // final List<int> imageCheckIn = await ApiService.fetchImageData(
-              //     presence[j]['keluar']['image']);
-
-              // if (imageCheckIn != null) {
-              //   final resizedImage = await resizeImage(
-              //       Uint8List.fromList(imageCheckIn), 200, 200);
-              //   sheet.pictures.addStream(i + 10, 7, resizedImage);
-              // }
-
-              // sheet.getRangeByIndex(i + 10, 7).rowHeight = 200;
-              // sheet.getRangeByIndex(i + 10, 7).columnWidth = 30;
-              // sheet.getRangeByIndex(i + 10, 7).cellStyle.hAlign =
-              //     HAlignType.center;
-              // sheet.getRangeByIndex(i + 10, 7).cellStyle.vAlign =
-              //     VAlignType.center;
-
-              // yang dipake
               final resizedImage = await resizeImage(
                   base64Decode(presence[j].keluarImage), 600, 600);
               sheet.pictures.addStream(i + 10, 7, resizedImage);
@@ -460,7 +439,7 @@ Future<List<int>> createExcel(String type,
                   HAlignType.center;
               sheet.getRangeByName('I${i + 10}').cellStyle.vAlign =
                   VAlignType.center;
-              sheet.getRangeByName('I${i + 10}').columnWidth = 15;
+              sheet.getRangeByName('I${i + 10}').columnWidth = 70;
             }
           }
         }
