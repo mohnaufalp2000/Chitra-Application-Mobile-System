@@ -242,7 +242,11 @@ Future<Uint8List?> capturePage(
 
 /// membuat path penyimpanan file
 Future<File> createFolderPath(String id, String type,
-    {String site = '', String email = '', String date = ''}) async {
+    {String site = '',
+    String email = '',
+    String date = '',
+    String username = '',
+    String sn = ''}) async {
   /// final output = await getApplicationDocumentsDirectory();
   // String path = '';
   Directory? path;
@@ -268,7 +272,9 @@ Future<File> createFolderPath(String id, String type,
           "${path?.path}/SiteCondition_${date}_${site}_${email}_CAMOS.pdf");
       return outputFile;
     case 'attendance':
-      final outputFile = File("${path?.path}/Attendance-$id.xlsx");
+      // final outputFile = File("${path?.path}/Attendance-$id.xlsx");
+      final outputFile =
+          File("${path?.path}/Attendance_${username}_${sn}_${date}.xlsx");
       return outputFile;
     case 'outstanding':
       final outputFile = File("${path?.path}/Outstanding-$id.xlsx");

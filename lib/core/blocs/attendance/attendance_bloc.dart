@@ -456,7 +456,11 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
       try {
         // emit(AttendanceSaveCsvLoadingState());
         final id = Uuid();
-        final file = await createFolderPath(id.v4(), 'attendance');
+        final file = await createFolderPath(id.v4(), 'attendance',
+            username: event.username,
+            sn: event.sn,
+            date:
+                '${DateFormat('MMMM').format(DateTime.now())} ${DateTime.now().year}');
         final bytes = await createExcel(
           'attendance',
           username: event.username,

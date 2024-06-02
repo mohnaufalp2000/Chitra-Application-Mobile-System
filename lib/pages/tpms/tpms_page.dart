@@ -8,8 +8,10 @@ import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/tire_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class TpmsPage extends StatefulWidget {
@@ -103,12 +105,12 @@ class _TpmsPageState extends State<TpmsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             const Text(
-                              "Operator : Naufal",
+                              "Operator : CK-KIM",
                               style:
                                   TextStyle(fontSize: 16, color: Colors.white),
                             ),
                             Container(height: 10),
-                            Text('ID / SN : 72618',
+                            Text('ID / SN : Project Synergy CP-CK',
                                 style: TextStyle(
                                     fontSize: 16, color: Colors.grey[200])),
                           ],
@@ -440,6 +442,80 @@ class _TpmsPageState extends State<TpmsPage> {
                                       '${unit.lat},${unit.lon} | ${unit.alt}',
                                       style: getBlackTextStyle(),
                                     ),
+                                  ],
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                        child: SizedBox(
+                                      height: 80,
+                                      child: ButtonWidget(
+                                          color: blue344BEF,
+                                          name: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.copy,
+                                                color: white,
+                                              ),
+                                              const SizedBox(
+                                                width: 6,
+                                              ),
+                                              Text(
+                                                'Copy Location',
+                                                style: getWhiteTextStyle(
+                                                    fontWeight: w700),
+                                              ),
+                                            ],
+                                          ),
+                                          function: () {
+                                            Clipboard.setData(ClipboardData(
+                                                text:
+                                                    '${unit.lat},${unit.lon}'));
+                                            ScaffoldMessenger.of(context)
+                                                .hideCurrentSnackBar();
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(SnackBar(
+                                                    content: Text(
+                                              'Location copied! You can now paste it anywhere.',
+                                              style: getWhiteTextStyle(),
+                                            )));
+                                          }),
+                                    )),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Expanded(
+                                        child: SizedBox(
+                                      height: 80,
+                                      child: ButtonWidget(
+                                          color: Colors.red,
+                                          name: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.map,
+                                                color: white,
+                                              ),
+                                              const SizedBox(
+                                                width: 6,
+                                              ),
+                                              SizedBox(
+                                                width: 90,
+                                                child: Text(
+                                                  'Open with Google Maps',
+                                                  style: getWhiteTextStyle(
+                                                      fontWeight: w700),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          function: () async {
+                                            await launchUrl(Uri.parse(
+                                                'https://www.google.com/maps?q=${unit.lat},${unit.lon}'));
+                                          }),
+                                    )),
                                   ],
                                 ),
                               ],
