@@ -357,6 +357,8 @@ class ApiService {
 
       final result = jsonDecode(body);
 
+      log('hasilnya : $result');
+
       List<Spm> listSpm = List<Spm>.from(result['data'].map((pressure) {
         return Spm.fromJson(pressure);
       }));

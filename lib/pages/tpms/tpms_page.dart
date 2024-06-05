@@ -506,6 +506,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                                 child: Text(
                                                   'Open with Google Maps',
                                                   style: getWhiteTextStyle(
+                                                      fontSize: 12,
                                                       fontWeight: w700),
                                                 ),
                                               ),

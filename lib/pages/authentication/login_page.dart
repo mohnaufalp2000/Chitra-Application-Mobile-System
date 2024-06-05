@@ -344,7 +344,7 @@ class _LoginPageState extends State<LoginPage> {
                           name: 'Open SPM / TPMS Page',
                           style: getGreenTextStyle(fontSize: 16),
                           function: () {
-                            push(context, QrTpmsPage.routeName);
+                            push(context, TpmsPage.routeName);
                           },
                         ),
                       ],

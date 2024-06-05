@@ -15,6 +15,7 @@ import 'package:camos/core/blocs/tire_invent/tire_invent_bloc.dart';
 import 'package:camos/core/blocs/unit/unit_bloc.dart';
 import 'package:camos/core/navigator/routes.dart';
 import 'package:camos/core/services/local_database/outstanding_task/objectbox.dart';
+import 'package:camos/core/services/sheets/attendance_sheets.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/firebase_options.dart';
 import 'package:camos/objectbox.g.dart';
@@ -36,6 +37,7 @@ void main() async {
   cameras = [cameras[0], cameras[1]];
   store = (await ObjectBox.create()).store;
   initializeHERESDK();
+  await AttendanceSheetsAPI.initAttendanceSheets();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   if (Platform.isIOS) {

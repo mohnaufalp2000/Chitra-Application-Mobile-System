@@ -13,6 +13,8 @@ import 'package:camos/core/services/local_database/outstanding_task/outstanding_
 import 'package:camos/core/services/model/outstanding_task.dart';
 import 'package:camos/core/services/model/tire_spec.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
+import 'package:camos/core/services/sheets/attendance_sheets.dart';
+import 'package:camos/core/services/sheets/model_sheets/attendance.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -562,11 +564,28 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   return Row(
                                     children: [
                                       InkWell(
-                                        onTap: () {
-                                          // NotificationApi.showNotification(
-                                          //     title: 'Tire Man',
-                                          //     body: 'Coba coba',
-                                          //     payload: 'tireman.abs');
+                                        onTap: () async {
+                                          // final id = await AttendanceSheetsAPI
+                                          //         .getRowCount() +
+                                          //     1;
+                                          // final user = AttendanceSheetsModel(
+                                          //     namaKaryawan: 'Agus',
+                                          //     tanggal: '01-01-01',
+                                          //     masuk: '08:00',
+                                          //     pulang: '17:00',
+                                          //     keteranganMasuk: '',
+                                          //     keteranganPulang: '');
+                                          // final newUser = user.copy(id: id);
+
+                                          // await AttendanceSheetsAPI
+                                          //     .insertAttendanceSheet(
+                                          //         [newUser.toJson()]);
+
+                                          // await AttendanceSheetsAPI
+                                          //     .updateAttendanceCell(
+                                          //         id: 1,
+                                          //         key: 'Nama_Karyawan',
+                                          //         value: 'Budi');
                                         },
                                         child: CircleAvatar(
                                           backgroundImage: (map['image'] ==
