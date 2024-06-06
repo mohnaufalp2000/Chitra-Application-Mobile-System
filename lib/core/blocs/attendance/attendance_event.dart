@@ -11,8 +11,10 @@ abstract class AttendanceEvent extends Equatable {
 class PresenceAttendanceEvent extends AttendanceEvent {
   final BuildContext context;
   final String selectedShift;
+  final Map<String, dynamic> user;
   PresenceAttendanceEvent({
     required this.context,
+    required this.user,
     required this.selectedShift,
   });
 }

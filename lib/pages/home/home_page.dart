@@ -570,9 +570,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                           //     1;
                                           // final user = AttendanceSheetsModel(
                                           //     namaKaryawan: 'Agus',
-                                          //     tanggal: '01-01-01',
-                                          //     masuk: '08:00',
-                                          //     pulang: '17:00',
+                                          //     sn: '72413',
+                                          //     tanggal:
+                                          //         '${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
+                                          //     masuk: '',
+                                          //     pulang: '',
                                           //     keteranganMasuk: '',
                                           //     keteranganPulang: '');
                                           // final newUser = user.copy(id: id);
@@ -585,7 +587,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                           //     .updateAttendanceCell(
                                           //         id: 1,
                                           //         key: 'Nama_Karyawan',
-                                          //         value: 'Budi');
+                                          //         value: 'Tono');
+                                          // print(
+                                          //     'data satu karyawan : ${await AttendanceSheetsAPI.getSingleDataAttendance('Naufal', '06-07-2024')}');
                                         },
                                         child: CircleAvatar(
                                           backgroundImage: (map['image'] ==

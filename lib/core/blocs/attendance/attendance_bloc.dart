@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/local_database/attendance/attendance_entity.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
+import 'package:camos/core/services/sheets/attendance_sheets.dart';
+import 'package:camos/core/services/sheets/model_sheets/attendance.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/main.dart';
@@ -79,15 +81,36 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
 
                     return imgString;
                   })));
+
+              try {
+                final id = await AttendanceSheetsAPI.getRowCount() + 1;
+                final user = AttendanceSheetsModel(
+                    namaKaryawan: '${event.user['username'] ?? ''}',
+                    sn: '${event.user['sn'] ?? ''}',
+                    tanggal: '${DateFormat('dd/MM/yyyy').format(now)}',
+                    masuk:
+                        '${DateFormat.Hms().format(DateTime.parse(now.toIso8601String()))}',
+                    pulang: '',
+                    keteranganMasuk: '',
+                    keteranganPulang: '');
+                final newUser = user.copy(id: id);
+
+                await AttendanceSheetsAPI.insertAttendanceSheet(
+                    [newUser.toJson()]);
+              } catch (e) {
+                print('error spreadsheet di bloc : $e');
+              }
             } else {
               final tmpDate = DateFormat('MM-dd-yyyy').parse(todayDocId);
               String formattedDate = DateFormat('yyyy-MM-dd').format(tmpDate);
+              String formattedDateForSpreadsheet =
+                  DateFormat('dd-MM-yyyy').format(tmpDate);
               final isPresenceToday = attendanceBox
                   .query(AttendanceEntity_.date
                       .contains(formattedDate, caseSensitive: false))
                   .build()
                   .findFirst();
-              log('absen masuk : ${isPresenceToday?.date}');
+              log('absen masuk : ${isPresenceToday}');
               log('waktu masuk : $formattedDate');
               // sudah pernah absen di hari yg sama
               if (isPresenceToday != null) {
@@ -121,6 +144,19 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                     return imgString;
                   });
                   attendanceBox.put(isPresenceToday);
+                  try {
+                    final id =
+                        await AttendanceSheetsAPI.getSingleDataAttendance(
+                            event.user['username'],
+                            DateFormat('MM-dd-yyyy').format(now));
+                    await AttendanceSheetsAPI.updateAttendanceCell(
+                        id: int.parse(id ?? ''),
+                        key: 'Pulang',
+                        value:
+                            '${DateFormat.Hms().format(DateTime.parse(now.toIso8601String()))}');
+                  } catch (e) {
+                    print('error spreadsheet di bloc : $e');
+                  }
                 }
               } else {
                 log('sudah absen keluar : 4');
@@ -151,6 +187,24 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
 
                       return imgString;
                     })));
+                try {
+                  final id = await AttendanceSheetsAPI.getRowCount() + 1;
+                  final user = AttendanceSheetsModel(
+                      namaKaryawan: '${event.user['username'] ?? ''}',
+                      sn: '${event.user['sn'] ?? ''}',
+                      tanggal: '${DateFormat('dd/MM/yyyy').format(now)}',
+                      masuk:
+                          '${DateFormat.Hms().format(DateTime.parse(now.toIso8601String()))}',
+                      pulang: '',
+                      keteranganMasuk: '',
+                      keteranganPulang: '');
+                  final newUser = user.copy(id: id);
+
+                  await AttendanceSheetsAPI.insertAttendanceSheet(
+                      [newUser.toJson()]);
+                } catch (e) {
+                  print('error spreadsheet di bloc : $e');
+                }
               }
             }
             break;

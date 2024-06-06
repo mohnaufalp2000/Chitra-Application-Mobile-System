@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:camos/core/services/sheets/model_sheets/attendance.dart';
 import 'package:gsheets/gsheets.dart';
+import 'package:intl/intl.dart';
 
 class AttendanceSheetsAPI {
   static const credentials = r'''
@@ -72,5 +75,32 @@ class AttendanceSheetsAPI {
 
     return userSheet!.values
         .insertValueByKeys(value, columnKey: key, rowKey: id);
+  }
+
+  static Future<String?> getSingleDataAttendance(
+      String namaKaryawan, String tanggal) async {
+    try {
+      if (userSheet == null) return null;
+
+      // Get all rows
+      final rows =
+          await userSheet!.values.allRows(fromRow: 2); // skip header row
+
+      print('data absensi api : $rows');
+
+      // Find the row with the matching Nama_Karyawan and Tanggal
+      for (var row in rows) {
+        var epoch = DateTime(1899, 12, 30);
+        var currentDate = epoch.add(Duration(days: int.tryParse(row[3])!));
+        var formattedDate = '${DateFormat('MM-dd-yyyy').format(currentDate)}';
+
+        if (row[1] == namaKaryawan && (tanggal == formattedDate)) {
+          return row[0]; // Return the id (first column)
+        }
+      }
+    } catch (e) {
+      print('Get Employee Id Error : $e');
+    }
+    return null;
   }
 }

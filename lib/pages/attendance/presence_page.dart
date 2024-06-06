@@ -83,6 +83,7 @@ class _PresencePageState extends State<PresencePage> {
     user = await getUserPreferences();
     idSite = await getIdSitePreferences();
     log(user.toString());
+    // {image: image, id_site: 1, position: Innovation, sn: 72618, email: naufaldev2000@gmail.com, age: 23, username: Naufal, siteName: CK-MIFA Mining}
   }
 
   void retrieveManpowerShift() async {
@@ -304,6 +305,7 @@ class _PresencePageState extends State<PresencePage> {
                           context.read<AttendanceBloc>().add(
                               PresenceAttendanceEvent(
                                   context: context,
+                                  user: user,
                                   selectedShift: selectedShift));
                           back(context);
                         },
