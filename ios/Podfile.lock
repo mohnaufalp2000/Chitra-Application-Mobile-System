@@ -892,6 +892,8 @@ PODS:
   - qr_code_scanner (0.2.0):
     - Flutter
     - MTBBarcodeScanner
+  - qr_code_tools (0.1.0):
+    - Flutter
   - ReachabilitySwift (5.0.0)
   - SDWebImage (5.16.0):
     - SDWebImage/Core (= 5.16.0)
@@ -932,6 +934,7 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - qr_code_scanner (from `.symlinks/plugins/qr_code_scanner/ios`)
+  - qr_code_tools (from `.symlinks/plugins/qr_code_tools/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - store_redirect (from `.symlinks/plugins/store_redirect/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
@@ -1019,6 +1022,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   qr_code_scanner:
     :path: ".symlinks/plugins/qr_code_scanner/ios"
+  qr_code_tools:
+    :path: ".symlinks/plugins/qr_code_tools/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
   store_redirect:
@@ -1080,6 +1085,7 @@ SPEC CHECKSUMS:
   PromisesObjC: 09985d6d70fbe7878040aa746d78236e6946d2ef
   PromisesSwift: cf9eb58666a43bbe007302226e510b16c1e10959
   qr_code_scanner: bb67d64904c3b9658ada8c402e8b4d406d5d796e
+  qr_code_tools: a2c9e4ee5ec641df1cde93e4fc9e31b677ad0d5a
   ReachabilitySwift: 985039c6f7b23a1da463388634119492ff86c825
   SDWebImage: 2aea163b50bfcb569a2726b6a754c54a4506fcf6
   shared_preferences_foundation: 5b919d13b803cadd15ed2dc053125c68730e5126

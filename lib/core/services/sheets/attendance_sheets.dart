@@ -48,7 +48,7 @@ class AttendanceSheetsAPI {
   static Future insertAttendanceSheet(
       List<Map<String, dynamic>> rowList) async {
     if (userSheet == null) return;
-
+    print('bisakah');
     userSheet!.values.map.appendRows(rowList);
   }
 
@@ -78,7 +78,7 @@ class AttendanceSheetsAPI {
   }
 
   static Future<String?> getSingleDataAttendance(
-      String namaKaryawan, String tanggal) async {
+      String sn, String tanggal) async {
     try {
       if (userSheet == null) return null;
 
@@ -93,8 +93,9 @@ class AttendanceSheetsAPI {
         var epoch = DateTime(1899, 12, 30);
         var currentDate = epoch.add(Duration(days: int.tryParse(row[3])!));
         var formattedDate = '${DateFormat('MM-dd-yyyy').format(currentDate)}';
+        log('tanggal numerik : $formattedDate');
 
-        if (row[1] == namaKaryawan && (tanggal == formattedDate)) {
+        if (row[2] == sn && (tanggal == formattedDate)) {
           return row[0]; // Return the id (first column)
         }
       }

@@ -5,6 +5,7 @@ import 'package:camos/core/blocs/attendance/attendance_bloc.dart';
 import 'package:camos/core/navigator/navigation_route.dart';
 import 'package:camos/core/services/local_database/attendance/attendance_entity.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
+import 'package:camos/core/services/sheets/attendance_sheets.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -179,22 +180,87 @@ class _PresencePageState extends State<PresencePage> {
                   )),
               TextButton(
                   onPressed: () async {
-                    setState(() {
-                      log('apakah data kosong : ${isPresenceToday == null}');
-                      if (isPresenceToday != null) {
-                        if (type == 'check-in') {
-                          isPresenceToday?.keteranganMasuk =
-                              infoCheckInCtrl.text;
-                          InfoCheckIn = infoCheckInCtrl.text;
-                        } else {
-                          isPresenceToday?.keteranganKeluar =
-                              infoCheckOutCtrl.text;
-                          InfoCheckOut = infoCheckOutCtrl.text;
+                    if (isPresenceToday != null) {
+                      Navigator.pop(context);
+
+                      if (type == 'check-in') {
+                        isPresenceToday?.keteranganMasuk = infoCheckInCtrl.text;
+                        InfoCheckIn = infoCheckInCtrl.text;
+                        try {
+                          final id =
+                              await AttendanceSheetsAPI.getSingleDataAttendance(
+                                  user['sn'],
+                                  DateFormat('MM-dd-yyyy')
+                                      .format(DateTime.now()));
+                          await AttendanceSheetsAPI.updateAttendanceCell(
+                              id: int.parse(id ?? ''),
+                              key: 'Keterangan_Masuk',
+                              value: infoCheckInCtrl.text);
+                        } catch (e) {
+                          print('error spreadsheet di page : $e');
                         }
-                        attendanceBox.put(isPresenceToday!);
+                      } else {
+                        isPresenceToday?.keteranganKeluar =
+                            infoCheckOutCtrl.text;
+                        InfoCheckOut = infoCheckOutCtrl.text;
+                        try {
+                          final id =
+                              await AttendanceSheetsAPI.getSingleDataAttendance(
+                                  user['sn'],
+                                  DateFormat('MM-dd-yyyy')
+                                      .format(DateTime.now()));
+                          await AttendanceSheetsAPI.updateAttendanceCell(
+                              id: int.parse(id ?? ''),
+                              key: 'Keterangan_Pulang',
+                              value: infoCheckOutCtrl.text);
+                        } catch (e) {
+                          print('error spreadsheet di page : $e');
+                        }
                       }
-                    });
-                    Navigator.pop(context);
+                      attendanceBox.put(isPresenceToday!);
+                      setState(() {});
+                    }
+                    // setState(() async {
+                    //   log('apakah data kosong : ${isPresenceToday == null}');
+                    //   if (isPresenceToday != null) {
+                    //     if (type == 'check-in') {
+                    //       isPresenceToday?.keteranganMasuk =
+                    //           infoCheckInCtrl.text;
+                    //       InfoCheckIn = infoCheckInCtrl.text;
+                    //       try {
+                    //         final id = await AttendanceSheetsAPI
+                    //             .getSingleDataAttendance(
+                    //                 user['username'],
+                    //                 DateFormat('MM-dd-yyyy')
+                    //                     .format(DateTime.now()));
+                    //         await AttendanceSheetsAPI.updateAttendanceCell(
+                    //             id: int.parse(id ?? ''),
+                    //             key: 'Keterangan_Masuk',
+                    //             value: infoCheckInCtrl.text);
+                    //       } catch (e) {
+                    //         print('error spreadsheet di page : $e');
+                    //       }
+                    //     } else {
+                    //       isPresenceToday?.keteranganKeluar =
+                    //           infoCheckOutCtrl.text;
+                    //       InfoCheckOut = infoCheckOutCtrl.text;
+                    //       try {
+                    //         final id = await AttendanceSheetsAPI
+                    //             .getSingleDataAttendance(
+                    //                 user['username'],
+                    //                 DateFormat('MM-dd-yyyy')
+                    //                     .format(DateTime.now()));
+                    //         await AttendanceSheetsAPI.updateAttendanceCell(
+                    //             id: int.parse(id ?? ''),
+                    //             key: 'Keterangan_Pulang',
+                    //             value: infoCheckOutCtrl.text);
+                    //       } catch (e) {
+                    //         print('error spreadsheet di page : $e');
+                    //       }
+                    //     }
+                    //     attendanceBox.put(isPresenceToday!);
+                    //   }
+                    // });
                   },
                   child: Text('Save')),
             ],

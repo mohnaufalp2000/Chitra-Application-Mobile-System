@@ -87,7 +87,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                 final user = AttendanceSheetsModel(
                     namaKaryawan: '${event.user['username'] ?? ''}',
                     sn: '${event.user['sn'] ?? ''}',
-                    tanggal: '${DateFormat('dd/MM/yyyy').format(now)}',
+                    tanggal: '${DateFormat('MM/dd/yyyy').format(now)}',
                     masuk:
                         '${DateFormat.Hms().format(DateTime.parse(now.toIso8601String()))}',
                     pulang: '',
@@ -145,17 +145,21 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                   });
                   attendanceBox.put(isPresenceToday);
                   try {
+                    print('bisa 1');
                     final id =
                         await AttendanceSheetsAPI.getSingleDataAttendance(
-                            event.user['username'],
+                            event.user['sn'],
                             DateFormat('MM-dd-yyyy').format(now));
+                    print(
+                        'bisa 2 : ${DateFormat('MM-dd-yyyy').format(now)} | ${event.user['username']} | id : $id');
                     await AttendanceSheetsAPI.updateAttendanceCell(
                         id: int.parse(id ?? ''),
                         key: 'Pulang',
                         value:
                             '${DateFormat.Hms().format(DateTime.parse(now.toIso8601String()))}');
+                    print('bisa 3');
                   } catch (e) {
-                    print('error spreadsheet di bloc : $e');
+                    print('error spreadsheet di bloc keluar: $e');
                   }
                 }
               } else {
@@ -192,7 +196,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                   final user = AttendanceSheetsModel(
                       namaKaryawan: '${event.user['username'] ?? ''}',
                       sn: '${event.user['sn'] ?? ''}',
-                      tanggal: '${DateFormat('dd/MM/yyyy').format(now)}',
+                      tanggal: '${DateFormat('MM/dd/yyyy').format(now)}',
                       masuk:
                           '${DateFormat.Hms().format(DateTime.parse(now.toIso8601String()))}',
                       pulang: '',
@@ -203,6 +207,7 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
                   await AttendanceSheetsAPI.insertAttendanceSheet(
                       [newUser.toJson()]);
                 } catch (e) {
+                  print('gabisa cuy');
                   print('error spreadsheet di bloc : $e');
                 }
               }
