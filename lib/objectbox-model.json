@@ -159,22 +159,78 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "4:1532226628722020044",
+      "lastPropertyId": "9:8608723263995913600",
+      "name": "SiteConditionEntity",
+      "properties": [
+        {
+          "id": "1:483597318480856548",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8315105565570580933",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "3:5592767056786396245",
+          "name": "latitude",
+          "type": 8
+        },
+        {
+          "id": "4:7157923189098878148",
+          "name": "longitude",
+          "type": 8
+        },
+        {
+          "id": "5:5506902624774073560",
+          "name": "remarks",
+          "type": 9
+        },
+        {
+          "id": "6:2241240998231815699",
+          "name": "date",
+          "type": 9
+        },
+        {
+          "id": "7:636548642260981471",
+          "name": "image",
+          "type": 30
+        },
+        {
+          "id": "8:6097711016615018336",
+          "name": "siteConditionId",
+          "type": 9
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "3:2481607064593893714",
-  "lastIndexId": "0:0",
+  "lastEntityId": "5:3938695816533245477",
+  "lastIndexId": "1:3050109029188817089",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
   "modelVersionParserMinimum": 5,
-  "retiredEntityUids": [],
-  "retiredIndexUids": [],
+  "retiredEntityUids": [
+    3938695816533245477
+  ],
+  "retiredIndexUids": [
+    3050109029188817089
+  ],
   "retiredPropertyUids": [
     474179681657960148,
     8790142092273941776,
     270516801495845819,
     8496804746463566091,
-    3932261417753447039
+    3932261417753447039,
+    8608723263995913600,
+    9079409243840037885,
+    479354870416861301
   ],
   "retiredRelationUids": [],
   "version": 1

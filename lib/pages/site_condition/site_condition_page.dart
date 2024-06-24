@@ -1247,6 +1247,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:camos/core/services/local_database/site_condition/site_condition_entity.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
@@ -1257,6 +1258,9 @@ import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/core/widgets/outlined_button_widget.dart';
+import 'package:camos/main.dart';
+import 'package:camos/objectbox.g.dart';
+import 'package:camos/pages/site_condition/history_site_condition_page.dart';
 import 'package:camos/pages/site_condition/site_condition_pdf.dart';
 import 'package:camos/pages/site_condition/test_camera.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -1269,6 +1273,7 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as p;
 import 'package:uuid/uuid.dart';
+import 'package:image/image.dart' as img;
 
 //////////////////////// TEMPORARY CODE
 
@@ -1290,11 +1295,16 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
   bool isConfirmDelete = false;
   Map<String, dynamic> user = {};
 
+  final Box<SiteConditionEntity> siteConditionBox =
+      store.box<SiteConditionEntity>();
+
   Uint8List fileToUint8List(File file) {
     List<int> fileBytes = file.readAsBytesSync();
     Uint8List uint8List = Uint8List.fromList(fileBytes);
     return uint8List;
   }
+
+  void showDeleteConfirmation() {}
 
   void getCurrentLocation() async {
     requestGeolocatorPermission();
@@ -1306,463 +1316,682 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
     log('posisi : $position');
   }
 
+  Future<bool> isImageHorizontal(String imagePath) async {
+    final bytes = await File(imagePath).readAsBytes();
+    final image = img.decodeImage(Uint8List.fromList(bytes));
+    if (image == null) return false;
+    return image.width > image.height;
+  }
+
   Future<void> showInputDialog(String type,
-      {String image: '', SiteCondition? condition}) async {
+      {String image: '', SiteConditionEntity? condition}) async {
     return showDialog(
         context: context,
         builder: (BuildContext context) {
           switch (type) {
             case 'edit':
+              List<String> rotateImageVar = condition?.image ?? [];
               nameCtrl.text = condition!.name;
               remarksCtrl.text = condition.remarks;
               return AlertDialog(
                   // contentPadding: EdgeInsets.zero,
-                  content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.edit),
-                        const SizedBox(
-                          width: 8,
-                        ),
-                        Text(
-                          'Edit',
-                          style:
-                              getBlackTextStyle(fontSize: 24, fontWeight: w700),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 24,
-                    ),
-                    Container(
-                      height: 300,
-                      width: 300,
-                      child: CarouselSlider(
-                        carouselController: _carouselController,
-                        items: condition.image.map((file) {
-                          return Image.file(
-                            File(file),
-                          );
-                        }).toList(),
-                        options: CarouselOptions(
-                          aspectRatio: 3.0,
-                          height: 350,
-                          enableInfiniteScroll: false,
-                          enlargeCenterPage: true,
-                        ),
+                  content: StatefulBuilder(builder: (context, stState) {
+                return SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.edit),
+                          const SizedBox(
+                            width: 8,
+                          ),
+                          Text(
+                            'Edit',
+                            style: getBlackTextStyle(
+                                fontSize: 24, fontWeight: w700),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    SizedBox(
-                        width: double.infinity,
-                        child: ButtonWidget(
-                            name: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                      const SizedBox(
+                        height: 24,
+                      ),
+                      Container(
+                        height: 300,
+                        width: 300,
+                        child: CarouselSlider(
+                          carouselController: _carouselController,
+                          items: rotateImageVar.map((file) {
+                            return Column(
                               children: [
-                                Icon(Icons.rotate_left),
-                                const SizedBox(
-                                  width: 12,
-                                ),
-                                Text(
-                                  'Rotate Image',
-                                  style: getWhiteTextStyle(),
+                                Image.file(
+                                  File(file),
                                 ),
                               ],
-                            ),
-                            function: () {})),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    Text(
-                      'Place Name',
-                      style: getBlackTextStyle(),
-                    ),
-                    const SizedBox(
-                      height: 6,
-                    ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: InputFormWidget(
-                          controller: nameCtrl, hint: 'Place Name'),
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    Text(
-                      'Remarks',
-                      style: getBlackTextStyle(),
-                    ),
-                    const SizedBox(
-                      height: 6,
-                    ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: InputFormWidget(
-                          controller: remarksCtrl, hint: 'Remarks'),
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    ButtonWidget(
-                        name: Text(
-                          'Save',
-                          style: getWhiteTextStyle(),
+                            );
+                          }).toList(),
+                          options: CarouselOptions(
+                            aspectRatio: 3.0,
+                            height: 350,
+                            enableInfiniteScroll: false,
+                            enlargeCenterPage: true,
+                          ),
                         ),
-                        function: () {
-                          for (var i = 0; i < listSiteCondition.length; i++) {
-                            log('apakah sama : ${listSiteCondition[i] == condition}');
-                            if (listSiteCondition[i] == condition) {
-                              listSiteCondition[i].name = nameCtrl.text;
-                              listSiteCondition[i].remarks = remarksCtrl.text;
-                              log('apakah sama hasilnya : ${listSiteCondition[i]}');
-                            }
-                          }
-                          nameCtrl.clear();
-                          remarksCtrl.clear();
-                          Navigator.pop(context);
-                          setState(() {});
-                        }),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    OutlinedButtonWidget(
-                        name: Text(
-                          'Cancel',
-                          style: getBlackTextStyle(),
-                        ),
-                        function: () {
-                          nameCtrl.clear();
-                          remarksCtrl.clear();
-                          Navigator.pop(context);
-                        }),
-                    const SizedBox(
-                      height: 24,
-                    ),
-                  ],
-                ),
-              ));
-            case 'add':
-              return Scaffold(
-                backgroundColor: Colors.transparent,
-                body: AlertDialog(
-                    contentPadding: EdgeInsets.symmetric(horizontal: 24),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(
-                            height: 24,
-                          ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.edit),
-                              const SizedBox(
-                                width: 8,
-                              ),
-                              Text(
-                                'Add',
-                                style: getBlackTextStyle(
-                                    fontSize: 24, fontWeight: w700),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            height: 24,
-                          ),
-                          // Image.file(File(image)),
-                          (listTmpImg.isEmpty)
-                              ? Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                      border: Border.all(color: grey8391A1)),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Container(
-                                            width: 48,
-                                            height: 48,
-                                            decoration: BoxDecoration(
-                                                color: grey8391A1,
-                                                shape: BoxShape.circle),
-                                            child: Icon(
-                                              Icons.camera_alt,
-                                              color: white,
-                                            )),
-                                        const SizedBox(
-                                          height: 12,
-                                        ),
-                                        Text(
-                                          'Click Button to Add Picture!',
-                                          textAlign: TextAlign.center,
-                                          style: getGreyTextStyle(
-                                            grey8391A1,
-                                            fontSize: 24,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : SizedBox(
-                                  height: 480,
-                                  width: 350,
-                                  child: CarouselSlider(
-                                    carouselController: _carouselController,
-                                    items: listTmpImg.map((file) {
-                                      log('gambarku : $file');
-                                      final indexImg = listTmpImg.indexOf(file);
-                                      return Column(
-                                        children: [
-                                          Image.file(File(file)),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: ElevatedButton(
-                                                onPressed: () {
-                                                  if (!isConfirmDelete) {
-                                                    setState(() {
-                                                      isConfirmDelete = true;
-                                                    });
-                                                    ScaffoldMessenger.of(
-                                                            context)
-                                                        .showSnackBar(
-                                                      const SnackBar(
-                                                        content: Text(
-                                                            'Press again to delete'),
-                                                        duration: Duration(
-                                                            seconds: 2),
-                                                      ),
-                                                    );
-                                                    Future.delayed(
-                                                        Duration(seconds: 2),
-                                                        () {
-                                                      setState(() {
-                                                        isConfirmDelete = false;
-                                                      });
-                                                    });
-                                                  } else {
-                                                    ScaffoldMessenger.of(
-                                                            context)
-                                                        .hideCurrentSnackBar();
-                                                    isConfirmDelete = false;
-                                                    listTmpImg
-                                                        .removeAt(indexImg);
-                                                    Navigator.pop(context);
-                                                    showInputDialog('add');
-                                                    setState(() {});
-                                                  }
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                    backgroundColor: Colors.red,
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        12))),
-                                                child: Icon(
-                                                  Icons.delete,
-                                                  color: white,
-                                                )),
-                                          )
-                                        ],
-                                      );
-                                    }).toList(),
-                                    options: CarouselOptions(
-                                      aspectRatio: 0.5,
-                                      // height: 300,
-                                      enableInfiniteScroll: false,
-                                      enlargeCenterPage: true,
-                                    ),
-                                  ),
-                                ),
-
-                          const SizedBox(
-                            height: 24,
-                          ),
-                          ButtonWidget(
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      SizedBox(
+                          width: double.infinity,
+                          child: ButtonWidget(
                               name: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.camera_alt),
+                                  Icon(Icons.rotate_left),
                                   const SizedBox(
                                     width: 12,
                                   ),
                                   Text(
-                                    'Take Picture',
+                                    'Rotate Image',
                                     style: getWhiteTextStyle(),
                                   ),
                                 ],
                               ),
-                              // function: (listTmpImg.length < 3)
-                              //     ? () {
-                              //         // requestCameraPermission();
-                              //         // takePicture();
-                              //         Navigator.pop(context);
-                              //         Navigator.push(context,
-                              //             MaterialPageRoute(builder: (context) {
-                              //           return TestCamera();
-                              //         })).then((value) {
-                              //           if (value != null) {
-                              //             setState(() {
-                              //               // listTmpImg.add(value);
-                              //               listTmpImg
-                              //                   .addAll(value as List<String>);
-                              //               showInputDialog('add');
-                              //             });
-                              //           }
-                              //         });
-                              //       }
-                              //     : null),
-                              function: () {
-                                // requestCameraPermission();
-                                // takePicture();
-                                Navigator.pop(context);
-                                Navigator.push(context,
-                                    MaterialPageRoute(builder: (context) {
-                                  return TestCamera();
-                                })).then((value) {
-                                  if (value != null) {
-                                    setState(() {
-                                      // listTmpImg.add(value);
-                                      listTmpImg.addAll(value as List<String>);
-                                      showInputDialog('add');
-                                    });
-                                  }
-                                });
-                              }),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          Text(
-                            'Place Name',
-                            style: getBlackTextStyle(),
-                          ),
-                          const SizedBox(
-                            height: 6,
-                          ),
-                          SizedBox(
-                            width: double.infinity,
-                            child: InputFormWidget(
-                                controller: nameCtrl, hint: 'Place Name'),
-                          ),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          Text(
-                            'Remarks',
-                            style: getBlackTextStyle(),
-                          ),
-                          const SizedBox(
-                            height: 6,
-                          ),
-                          SizedBox(
-                            width: double.infinity,
-                            child: InputFormWidget(
-                                controller: remarksCtrl, hint: 'Remarks'),
-                          ),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          ButtonWidget(
-                              name: Text(
-                                'Save',
-                                style: getWhiteTextStyle(),
-                              ),
-                              function: () {
-                                getCurrentLocation();
-                                if (listTmpImg.isEmpty) {
-                                  FocusManager.instance.primaryFocus?.unfocus();
-                                  ScaffoldMessenger.of(context)
-                                      .hideCurrentSnackBar();
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
-                                          backgroundColor: Colors.red,
-                                          content: Text(
-                                            'Please Take Picture First!',
-                                            style: getWhiteTextStyle(),
-                                          )));
+                              function: () async {
+                                rotateImageVar = [
+                                  await rotateImage(rotateImageVar[0])
+                                ];
 
-                                  return;
-                                }
-
-                                if (listTmpImg.length > 3) {
-                                  FocusManager.instance.primaryFocus?.unfocus();
-                                  ScaffoldMessenger.of(context)
-                                      .hideCurrentSnackBar();
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
-                                          backgroundColor: Colors.red,
-                                          content: Text(
-                                            'Maximum 3 images. Please delete some until there are 3 images remaining.',
-                                            style: getWhiteTextStyle(),
-                                          )));
-
-                                  return;
-                                }
-
-                                List<String> listImage = [];
-                                DateTime now = DateTime.now();
-                                String formattedDate =
-                                    DateFormat('EEEE d MMMM yyyy HH:mm')
-                                        .format(now);
-                                listImage.addAll(listTmpImg);
-                                listSiteCondition.add(SiteCondition(
-                                    name: nameCtrl.text,
-                                    latitude: position.latitude,
-                                    longitude: position.longitude,
-                                    remarks: remarksCtrl.text,
-                                    date: formattedDate,
-                                    image: listImage));
-                                log('link gambar  masuk 1: ${listSiteCondition}');
-                                // hapus form
-                                nameCtrl.clear();
-                                remarksCtrl.clear();
-                                // hapus daftar gambar sementara
-                                listTmpImg.clear();
-                                log('link gambar  masuk 2: ${listSiteCondition}');
-
-                                Navigator.pop(context);
-                                setState(() {});
-                              }),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          OutlinedButtonWidget(
-                              name: Text(
-                                'Cancel',
-                                style: getBlackTextStyle(),
-                              ),
-                              function: () {
-                                listTmpImg.clear();
-                                nameCtrl.clear();
-                                remarksCtrl.clear();
-                                Navigator.pop(context);
-                              }),
-                          const SizedBox(
-                            height: 24,
-                          ),
-                        ],
+                                stState(() {});
+                              })),
+                      const SizedBox(
+                        height: 12,
                       ),
-                    )),
+                      Text(
+                        'Place Name',
+                        style: getBlackTextStyle(),
+                      ),
+                      const SizedBox(
+                        height: 6,
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: InputFormWidget(
+                            controller: nameCtrl, hint: 'Place Name'),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      Text(
+                        'Remarks',
+                        style: getBlackTextStyle(),
+                      ),
+                      const SizedBox(
+                        height: 6,
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: InputFormWidget(
+                            controller: remarksCtrl, hint: 'Remarks'),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      ButtonWidget(
+                          name: Text(
+                            'Save',
+                            style: getWhiteTextStyle(),
+                          ),
+                          function: () {
+                            if (condition.id > 0) {
+                              siteConditionBox.put(SiteConditionEntity(
+                                id: condition.id,
+                                name: nameCtrl.text,
+                                remarks: remarksCtrl.text,
+                                latitude: condition.latitude,
+                                longitude: condition.longitude,
+                                date: condition.date,
+                                image: (rotateImageVar != [] ||
+                                        rotateImageVar.isNotEmpty)
+                                    ? rotateImageVar
+                                    : condition.image,
+                              ));
+                            }
+                            for (var i = 0; i < listSiteCondition.length; i++) {
+                              log('apakah sama : ${listSiteCondition[i] == condition}');
+                              if (listSiteCondition[i] == condition) {
+                                listSiteCondition[i].name = nameCtrl.text;
+                                listSiteCondition[i].remarks = remarksCtrl.text;
+                                log('apakah sama hasilnya : ${listSiteCondition[i]}');
+                              }
+                            }
+                            nameCtrl.clear();
+                            remarksCtrl.clear();
+                            Navigator.pop(context);
+                            setState(() {});
+                          }),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      OutlinedButtonWidget(
+                          name: Text(
+                            'Cancel',
+                            style: getBlackTextStyle(),
+                          ),
+                          function: () {
+                            nameCtrl.clear();
+                            remarksCtrl.clear();
+                            Navigator.pop(context);
+                          }),
+                      const SizedBox(
+                        height: 24,
+                      ),
+                    ],
+                  ),
+                );
+              }));
+            case 'add':
+              List<String> rotateImageVar = listTmpImg ?? [];
+              int indexCarousel = 0;
+              return Scaffold(
+                backgroundColor: Colors.transparent,
+                body: AlertDialog(
+                    contentPadding: EdgeInsets.symmetric(horizontal: 24),
+                    content: StatefulBuilder(builder: (context, stState) {
+                      return SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(
+                              height: 24,
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.edit),
+                                const SizedBox(
+                                  width: 8,
+                                ),
+                                Text(
+                                  'Add',
+                                  style: getBlackTextStyle(
+                                      fontSize: 24, fontWeight: w700),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(
+                              height: 24,
+                            ),
+                            // Image.file(File(image)),
+                            (rotateImageVar.isEmpty)
+                                ? Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                        border: Border.all(color: grey8391A1)),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Container(
+                                              width: 48,
+                                              height: 48,
+                                              decoration: BoxDecoration(
+                                                  color: grey8391A1,
+                                                  shape: BoxShape.circle),
+                                              child: Icon(
+                                                Icons.camera_alt,
+                                                color: white,
+                                              )),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Text(
+                                            'Click Button to Add Picture!',
+                                            textAlign: TextAlign.center,
+                                            style: getGreyTextStyle(
+                                              grey8391A1,
+                                              fontSize: 24,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : Column(
+                                    children: [
+                                      Container(
+                                        height: 510,
+                                        width: 350,
+                                        child: CarouselSlider(
+                                          carouselController:
+                                              _carouselController,
+                                          items: rotateImageVar.map((file) {
+                                            log('gambarku : $file');
+                                            final indexImg =
+                                                listTmpImg.indexOf(file);
+                                            return Image.file(File(file));
+                                            return Column(
+                                              children: [
+                                                Image.file(File(file)),
+                                                const SizedBox(
+                                                  height: 12,
+                                                ),
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  child: ElevatedButton(
+                                                      onPressed: () {
+                                                        if (!isConfirmDelete) {
+                                                          setState(() {
+                                                            isConfirmDelete =
+                                                                true;
+                                                          });
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .showSnackBar(
+                                                            const SnackBar(
+                                                              content: Text(
+                                                                  'Press again to delete'),
+                                                              duration:
+                                                                  Duration(
+                                                                      seconds:
+                                                                          2),
+                                                            ),
+                                                          );
+                                                          Future.delayed(
+                                                              Duration(
+                                                                  seconds: 2),
+                                                              () {
+                                                            setState(() {
+                                                              isConfirmDelete =
+                                                                  false;
+                                                            });
+                                                          });
+                                                        } else {
+                                                          ScaffoldMessenger.of(
+                                                                  context)
+                                                              .hideCurrentSnackBar();
+                                                          isConfirmDelete =
+                                                              false;
+                                                          listTmpImg.removeAt(
+                                                              indexImg);
+                                                          Navigator.pop(
+                                                              context);
+                                                          showInputDialog(
+                                                              'add');
+                                                          setState(() {});
+                                                        }
+                                                      },
+                                                      style: ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              Colors.red,
+                                                          shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12))),
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                            Icons.delete,
+                                                            color: white,
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 6,
+                                                          ),
+                                                          Text(
+                                                            'Delete Image',
+                                                            style:
+                                                                getWhiteTextStyle(),
+                                                          )
+                                                        ],
+                                                      )),
+                                                ),
+                                                const SizedBox(
+                                                  height: 12,
+                                                ),
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  child: ElevatedButton(
+                                                      onPressed: () async {
+                                                        rotateImageVar = [
+                                                          await rotateImage(
+                                                              rotateImageVar[0])
+                                                        ];
+                                                        stState(() {});
+                                                      },
+                                                      style: ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              Colors.orange,
+                                                          shape: RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12))),
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Icon(
+                                                            Icons
+                                                                .rotate_90_degrees_ccw,
+                                                            color: white,
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 6,
+                                                          ),
+                                                          Text(
+                                                            'Rotate Image',
+                                                            style:
+                                                                getWhiteTextStyle(),
+                                                          )
+                                                        ],
+                                                      )),
+                                                ),
+                                              ],
+                                            );
+                                          }).toList(),
+                                          options: CarouselOptions(
+                                              aspectRatio: 0.5,
+                                              // height: 300,
+                                              enableInfiniteScroll: false,
+                                              enlargeCenterPage: true,
+                                              onPageChanged:
+                                                  (index, reason) async {
+                                                indexCarousel = index;
+                                                log('apakah gambar horizontal : ${await isImageHorizontal(rotateImageVar[indexCarousel])}');
+                                                stState(() {});
+                                                log('index carousel : $indexCarousel');
+                                              }),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                            onPressed: () async {
+                                              // rotateImageVar = [
+                                              //   await rotateImage(
+                                              //       rotateImageVar[0])
+                                              // ];
+                                              rotateImageVar[indexCarousel] =
+                                                  await rotateImage(
+                                                      rotateImageVar[
+                                                          indexCarousel]);
+                                              stState(() {});
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.orange,
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12))),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.rotate_90_degrees_ccw,
+                                                  color: white,
+                                                ),
+                                                const SizedBox(
+                                                  width: 6,
+                                                ),
+                                                Text(
+                                                  'Rotate Image',
+                                                  style: getWhiteTextStyle(),
+                                                )
+                                              ],
+                                            )),
+                                      ),
+                                    ],
+                                  ),
+
+                            const SizedBox(
+                              height: 24,
+                            ),
+
+                            ButtonWidget(
+                                name: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.camera_alt),
+                                    const SizedBox(
+                                      width: 12,
+                                    ),
+                                    Text(
+                                      'Take Picture',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                                // function: (listTmpImg.length < 3)
+                                //     ? () {
+                                //         // requestCameraPermission();
+                                //         // takePicture();
+                                //         Navigator.pop(context);
+                                //         Navigator.push(context,
+                                //             MaterialPageRoute(builder: (context) {
+                                //           return TestCamera();
+                                //         })).then((value) {
+                                //           if (value != null) {
+                                //             setState(() {
+                                //               // listTmpImg.add(value);
+                                //               listTmpImg
+                                //                   .addAll(value as List<String>);
+                                //               showInputDialog('add');
+                                //             });
+                                //           }
+                                //         });
+                                //       }
+                                //     : null),
+                                function: () {
+                                  // requestCameraPermission();
+                                  // takePicture();
+                                  Navigator.pop(context);
+                                  Navigator.push(context,
+                                      MaterialPageRoute(builder: (context) {
+                                    return TestCamera();
+                                  })).then((value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        // listTmpImg.add(value);
+                                        listTmpImg
+                                            .addAll(value as List<String>);
+                                        // memanggil kembali dialog add
+                                        showInputDialog('add');
+                                      });
+                                    }
+                                  });
+                                }),
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            Text(
+                              'Place Name',
+                              style: getBlackTextStyle(),
+                            ),
+                            const SizedBox(
+                              height: 6,
+                            ),
+                            SizedBox(
+                              width: double.infinity,
+                              child: InputFormWidget(
+                                  controller: nameCtrl, hint: 'Place Name'),
+                            ),
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            Text(
+                              'Remarks',
+                              style: getBlackTextStyle(),
+                            ),
+                            const SizedBox(
+                              height: 6,
+                            ),
+                            SizedBox(
+                              width: double.infinity,
+                              child: InputFormWidget(
+                                  controller: remarksCtrl, hint: 'Remarks'),
+                            ),
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            ButtonWidget(
+                                name: Text(
+                                  'Save',
+                                  style: getWhiteTextStyle(),
+                                ),
+                                function: () {
+                                  getCurrentLocation();
+                                  if (listTmpImg.isEmpty) {
+                                    FocusManager.instance.primaryFocus
+                                        ?.unfocus();
+                                    ScaffoldMessenger.of(context)
+                                        .hideCurrentSnackBar();
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                            backgroundColor: Colors.red,
+                                            content: Text(
+                                              'Please Take Picture First!',
+                                              style: getWhiteTextStyle(),
+                                            )));
+
+                                    return;
+                                  }
+
+                                  if (listTmpImg.length > 3) {
+                                    FocusManager.instance.primaryFocus
+                                        ?.unfocus();
+                                    ScaffoldMessenger.of(context)
+                                        .hideCurrentSnackBar();
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                            backgroundColor: Colors.red,
+                                            content: Text(
+                                              'Maximum 3 images. Please delete some until there are 3 images remaining.',
+                                              style: getWhiteTextStyle(),
+                                            )));
+
+                                    return;
+                                  }
+
+                                  List<String> listImage = [];
+                                  DateTime now = DateTime.now();
+                                  String formattedDate =
+                                      DateFormat('EEEE d MMMM yyyy HH:mm')
+                                          .format(now);
+                                  listImage.addAll(listTmpImg);
+                                  listSiteCondition.add(SiteCondition(
+                                      name: nameCtrl.text,
+                                      latitude: position.latitude,
+                                      longitude: position.longitude,
+                                      remarks: remarksCtrl.text,
+                                      date: formattedDate,
+                                      image: (rotateImageVar.isNotEmpty)
+                                          ? rotateImageVar
+                                          : listImage));
+                                  siteConditionBox.put(SiteConditionEntity(
+                                      name: nameCtrl.text,
+                                      latitude: position.latitude,
+                                      longitude: position.longitude,
+                                      remarks: remarksCtrl.text,
+                                      date: formattedDate,
+                                      image: (rotateImageVar.isNotEmpty)
+                                          ? rotateImageVar
+                                          : listImage));
+                                  log('link gambar  masuk 1: ${listSiteCondition}');
+                                  // hapus form
+                                  nameCtrl.clear();
+                                  remarksCtrl.clear();
+                                  // hapus daftar gambar sementara
+                                  listTmpImg.clear();
+                                  log('link gambar  masuk 2: ${listSiteCondition}');
+
+                                  Navigator.pop(context);
+                                  setState(() {});
+                                }),
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            OutlinedButtonWidget(
+                                name: Text(
+                                  'Cancel',
+                                  style: getBlackTextStyle(),
+                                ),
+                                function: () {
+                                  listTmpImg.clear();
+                                  nameCtrl.clear();
+                                  remarksCtrl.clear();
+                                  Navigator.pop(context);
+                                }),
+                            const SizedBox(
+                              height: 24,
+                            ),
+                          ],
+                        ),
+                      );
+                    })),
+              );
+            case 'delete-confirmation':
+              return AlertDialog(
+                title: Text("Delete Confirmation"),
+                content: Text("Are you sure you want to delete?"),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("No"),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if (condition != null) {
+                        siteConditionBox.remove(condition.id);
+                      } else {
+                        siteConditionBox.removeAll();
+                      }
+                      setState(() {});
+                      Navigator.of(context).pop();
+                    },
+                    child: Text("Yes"),
+                  ),
+                ],
               );
           }
           return Container();
         });
+  }
+
+  Future<String> rotateImage(String imagePath) async {
+    // Baca file gambar
+    final imageFile = File(imagePath);
+    final imageBytes = await imageFile.readAsBytes();
+
+    // Decode gambar
+    final image = img.decodeImage(imageBytes);
+
+    if (image != null) {
+      // Rotasi gambar 90 derajat ke kanan (horizontal)
+      final rotatedImage = img.copyRotate(image, angle: 90);
+
+      // Simpan kembali gambar yang sudah diedit
+      final newImagePath = imagePath.replaceAll('.jpg', '_rotated.jpg');
+      await File(newImagePath).writeAsBytes(img.encodeJpg(rotatedImage));
+
+      print('Gambar telah berhasil diputar dan disimpan di: $newImagePath');
+      return newImagePath;
+    } else {
+      print('Gagal memuat gambar.');
+      return '';
+    }
   }
 
   void takePicture() async {
@@ -1801,6 +2030,7 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
     log('dataku : $data');
+    // untuk stream agar data terupdate otomatis setelah ada data yg dihapus
 
     return Scaffold(
       appBar: appBarWidget('Site Condition', context),
@@ -1810,15 +2040,18 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
-                (listSiteCondition.isEmpty)
+                (siteConditionBox.getAll().isEmpty)
                     ? Text(
                         'There is no data',
                         style: getBlackTextStyle(),
                       )
                     : Column(
-                        children: listSiteCondition.map((condition) {
-                          log('data condition : $condition');
-                          final index = listSiteCondition.indexOf(condition);
+                        children: siteConditionBox.getAll().map((condition) {
+                          log('data condition : ${siteConditionBox.getAll()}');
+                          final index =
+                              siteConditionBox.getAll().indexOf(condition);
+                          log('data condition index : $index');
+
                           return Column(
                             children: [
                               // Text(
@@ -1858,6 +2091,14 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                       CarouselSlider(
                                         carouselController: _carouselController,
                                         items: condition.image.map((file) {
+                                          // return Transform(
+                                          //   alignment: Alignment.center,
+                                          //   transform:
+                                          //       Matrix4.rotationZ(3.14 * 1 / 2),
+                                          //   child: Image.file(
+                                          //     File(file),
+                                          //   ),
+                                          // );
                                           return Image.file(
                                             File(file),
                                           );
@@ -1893,26 +2134,58 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                                     const SizedBox(
                                                       height: 4,
                                                     ),
-                                                    Text(
-                                                      condition.name,
-                                                      style: getBlackTextStyle(
-                                                          fontWeight: w700),
+                                                    Container(
+                                                      width: 120,
+                                                      child: Text(
+                                                        condition.name,
+                                                        style:
+                                                            getBlackTextStyle(
+                                                                fontWeight:
+                                                                    w700),
+                                                      ),
                                                     ),
                                                   ],
                                                 ),
-                                                SizedBox(
-                                                  height: 50,
-                                                  width: 50,
-                                                  child: ButtonWidget(
-                                                      name: Icon(
-                                                        Icons.edit,
-                                                        size: 16,
-                                                      ),
-                                                      function: () {
-                                                        showInputDialog('edit',
-                                                            condition:
-                                                                condition);
-                                                      }),
+                                                Row(
+                                                  children: [
+                                                    SizedBox(
+                                                      height: 70,
+                                                      width: 70,
+                                                      child: ButtonWidget(
+                                                          color: blue344BEF,
+                                                          name: Icon(
+                                                            Icons.edit,
+                                                            color: white,
+                                                            size: 24,
+                                                          ),
+                                                          function: () {
+                                                            showInputDialog(
+                                                                'edit',
+                                                                condition:
+                                                                    condition);
+                                                          }),
+                                                    ),
+                                                    const SizedBox(
+                                                      width: 12,
+                                                    ),
+                                                    SizedBox(
+                                                      height: 70,
+                                                      width: 70,
+                                                      child: ButtonWidget(
+                                                          color: Colors.red,
+                                                          name: Icon(
+                                                            Icons.delete,
+                                                            color: white,
+                                                            size: 24,
+                                                          ),
+                                                          function: () {
+                                                            showInputDialog(
+                                                                'delete-confirmation',
+                                                                condition:
+                                                                    condition);
+                                                          }),
+                                                    ),
+                                                  ],
                                                 ),
                                               ],
                                             ),
@@ -1987,6 +2260,32 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                     name: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Icon(
+                          Icons.delete,
+                          color: white,
+                        ),
+                        const SizedBox(
+                          width: 12,
+                        ),
+                        Text(
+                          'Clear All',
+                          style: getWhiteTextStyle(),
+                        ),
+                      ],
+                    ),
+                    color: Colors.red,
+                    function: (siteConditionBox.getAll().isEmpty)
+                        ? null
+                        : () {
+                            showInputDialog('delete-confirmation');
+                          }),
+                const SizedBox(
+                  height: 12,
+                ),
+                ButtonWidget(
+                    name: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
                         Icon(Icons.camera_alt),
                         const SizedBox(
                           width: 12,
@@ -2018,7 +2317,7 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                       ),
                     ],
                   ),
-                  function: (listSiteCondition.isNotEmpty)
+                  function: (siteConditionBox.getAll().isNotEmpty)
                       ? () async {
                           log('daftar site condition : ${listSiteCondition}');
                           final pdf = p.Document();
@@ -2066,9 +2365,10 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                               build: (p.Context context) {
                                 return [
                                   p.Column(
-                                    children: listSiteCondition.map((c) {
+                                    children:
+                                        siteConditionBox.getAll().map((c) {
                                       final index =
-                                          listSiteCondition.indexOf(c);
+                                          siteConditionBox.getAll().indexOf(c);
                                       return p.Column(
                                           crossAxisAlignment:
                                               p.CrossAxisAlignment.start,
@@ -2114,6 +2414,7 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                                   c.image.map<p.Widget>((img) {
                                                 return p.SizedBox(
                                                     height: 200,
+                                                    // height: (isImageHorizontal(img)) ? 200 : 100,
                                                     child: p.Image(
                                                         p.MemoryImage(
                                                             fileToUint8List(

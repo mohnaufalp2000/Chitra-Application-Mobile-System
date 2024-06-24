@@ -16,6 +16,7 @@ import 'package:objectbox_flutter_libs/objectbox_flutter_libs.dart';
 
 import 'core/services/local_database/attendance/attendance_entity.dart';
 import 'core/services/local_database/outstanding_task/outstanding_task_entity.dart';
+import 'core/services/local_database/site_condition/site_condition_entity.dart';
 import 'core/services/local_database/tire_inspect_picture/tire_inspect_picture_entity.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
@@ -177,6 +178,55 @@ final _entities = <ModelEntity>[
             flags: 0)
       ],
       relations: <ModelRelation>[],
+      backlinks: <ModelBacklink>[]),
+  ModelEntity(
+      id: const IdUid(4, 1532226628722020044),
+      name: 'SiteConditionEntity',
+      lastPropertyId: const IdUid(9, 8608723263995913600),
+      flags: 0,
+      properties: <ModelProperty>[
+        ModelProperty(
+            id: const IdUid(1, 483597318480856548),
+            name: 'id',
+            type: 6,
+            flags: 1),
+        ModelProperty(
+            id: const IdUid(2, 8315105565570580933),
+            name: 'name',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(3, 5592767056786396245),
+            name: 'latitude',
+            type: 8,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(4, 7157923189098878148),
+            name: 'longitude',
+            type: 8,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(5, 5506902624774073560),
+            name: 'remarks',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(6, 2241240998231815699),
+            name: 'date',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(7, 636548642260981471),
+            name: 'image',
+            type: 30,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(8, 6097711016615018336),
+            name: 'siteConditionId',
+            type: 9,
+            flags: 0)
+      ],
+      relations: <ModelRelation>[],
       backlinks: <ModelBacklink>[])
 ];
 
@@ -200,18 +250,21 @@ Future<Store> openStore(
 ModelDefinition getObjectBoxModel() {
   final model = ModelInfo(
       entities: _entities,
-      lastEntityId: const IdUid(3, 2481607064593893714),
-      lastIndexId: const IdUid(0, 0),
+      lastEntityId: const IdUid(5, 3938695816533245477),
+      lastIndexId: const IdUid(1, 3050109029188817089),
       lastRelationId: const IdUid(0, 0),
       lastSequenceId: const IdUid(0, 0),
-      retiredEntityUids: const [],
-      retiredIndexUids: const [],
+      retiredEntityUids: const [3938695816533245477],
+      retiredIndexUids: const [3050109029188817089],
       retiredPropertyUids: const [
         474179681657960148,
         8790142092273941776,
         270516801495845819,
         8496804746463566091,
-        3932261417753447039
+        3932261417753447039,
+        8608723263995913600,
+        9079409243840037885,
+        479354870416861301
       ],
       retiredRelationUids: const [],
       modelVersion: 5,
@@ -373,6 +426,58 @@ ModelDefinition getObjectBoxModel() {
             ..id = const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0);
 
           return object;
+        }),
+    SiteConditionEntity: EntityDefinition<SiteConditionEntity>(
+        model: _entities[3],
+        toOneRelations: (SiteConditionEntity object) => [],
+        toManyRelations: (SiteConditionEntity object) => {},
+        getId: (SiteConditionEntity object) => object.id,
+        setId: (SiteConditionEntity object, int id) {
+          object.id = id;
+        },
+        objectToFB: (SiteConditionEntity object, fb.Builder fbb) {
+          final nameOffset = fbb.writeString(object.name);
+          final remarksOffset = fbb.writeString(object.remarks);
+          final dateOffset = fbb.writeString(object.date);
+          final imageOffset = fbb.writeList(
+              object.image.map(fbb.writeString).toList(growable: false));
+          final siteConditionIdOffset = fbb.writeString(object.siteConditionId);
+          fbb.startTable(10);
+          fbb.addInt64(0, object.id);
+          fbb.addOffset(1, nameOffset);
+          fbb.addFloat64(2, object.latitude);
+          fbb.addFloat64(3, object.longitude);
+          fbb.addOffset(4, remarksOffset);
+          fbb.addOffset(5, dateOffset);
+          fbb.addOffset(6, imageOffset);
+          fbb.addOffset(7, siteConditionIdOffset);
+          fbb.finish(fbb.endTable());
+          return object.id;
+        },
+        objectFromFB: (Store store, ByteData fbData) {
+          final buffer = fb.BufferContext(fbData);
+          final rootOffset = buffer.derefObject(0);
+
+          final object = SiteConditionEntity(
+              id: const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0),
+              name: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 6, ''),
+              siteConditionId: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 18, ''),
+              latitude:
+                  const fb.Float64Reader().vTableGet(buffer, rootOffset, 8, 0),
+              longitude:
+                  const fb.Float64Reader().vTableGet(buffer, rootOffset, 10, 0),
+              remarks: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 12, ''),
+              date: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 14, ''),
+              image: const fb.ListReader<String>(
+                      fb.StringReader(asciiOptimization: true),
+                      lazy: false)
+                  .vTableGet(buffer, rootOffset, 16, []));
+
+          return object;
         })
   };
 
@@ -490,4 +595,39 @@ class TireInspectPictureEntity_ {
   /// see [TireInspectPictureEntity.image]
   static final image =
       QueryStringProperty<TireInspectPictureEntity>(_entities[2].properties[2]);
+}
+
+/// [SiteConditionEntity] entity fields to define ObjectBox queries.
+class SiteConditionEntity_ {
+  /// see [SiteConditionEntity.id]
+  static final id =
+      QueryIntegerProperty<SiteConditionEntity>(_entities[3].properties[0]);
+
+  /// see [SiteConditionEntity.name]
+  static final name =
+      QueryStringProperty<SiteConditionEntity>(_entities[3].properties[1]);
+
+  /// see [SiteConditionEntity.latitude]
+  static final latitude =
+      QueryDoubleProperty<SiteConditionEntity>(_entities[3].properties[2]);
+
+  /// see [SiteConditionEntity.longitude]
+  static final longitude =
+      QueryDoubleProperty<SiteConditionEntity>(_entities[3].properties[3]);
+
+  /// see [SiteConditionEntity.remarks]
+  static final remarks =
+      QueryStringProperty<SiteConditionEntity>(_entities[3].properties[4]);
+
+  /// see [SiteConditionEntity.date]
+  static final date =
+      QueryStringProperty<SiteConditionEntity>(_entities[3].properties[5]);
+
+  /// see [SiteConditionEntity.image]
+  static final image = QueryStringVectorProperty<SiteConditionEntity>(
+      _entities[3].properties[6]);
+
+  /// see [SiteConditionEntity.siteConditionId]
+  static final siteConditionId =
+      QueryStringProperty<SiteConditionEntity>(_entities[3].properties[7]);
 }

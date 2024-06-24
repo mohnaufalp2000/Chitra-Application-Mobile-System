@@ -27,6 +27,7 @@ import 'package:camos/pages/settings/edit_profile_page.dart';
 import 'package:camos/pages/settings/feedback_page.dart';
 import 'package:camos/pages/settings/settings_page.dart';
 import 'package:camos/pages/site/site_page.dart';
+import 'package:camos/pages/site_condition/history_site_condition_page.dart';
 import 'package:camos/pages/site_condition/site_condition_page.dart';
 import 'package:camos/pages/site_condition/site_condition_pdf.dart';
 import 'package:camos/pages/site_condition/site_condition_report_page.dart';
@@ -80,4 +81,5 @@ var routes = {
   PresenceCameraPage.routeName: (context) => PresenceCameraPage(),
   AbsencePage.routeName: (context) => AbsencePage(),
   PresenceCameraResultPage.routeName: (context) => PresenceCameraResultPage(),
+  HistorySiteConditionPage.routeName: (context) => HistorySiteConditionPage(),
 };
