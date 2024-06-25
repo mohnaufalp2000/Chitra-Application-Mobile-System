@@ -1272,6 +1272,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:image/image.dart' as img;
 
@@ -1323,6 +1324,13 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
     return image.width > image.height;
   }
 
+  bool isImageHorizontalSync(String imagePath) {
+    final bytes = File(imagePath).readAsBytesSync();
+    final image = img.decodeImage(Uint8List.fromList(bytes));
+    if (image == null) return false;
+    return image.width > image.height;
+  }
+
   Future<void> showInputDialog(String type,
       {String image: '', SiteConditionEntity? condition}) async {
     return showDialog(
@@ -1333,6 +1341,7 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
               List<String> rotateImageVar = condition?.image ?? [];
               nameCtrl.text = condition!.name;
               remarksCtrl.text = condition.remarks;
+              int indexCarousel = 0;
               return AlertDialog(
                   // contentPadding: EdgeInsets.zero,
                   content: StatefulBuilder(builder: (context, stState) {
@@ -1364,48 +1373,88 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                         child: CarouselSlider(
                           carouselController: _carouselController,
                           items: rotateImageVar.map((file) {
-                            return Column(
-                              children: [
-                                Image.file(
-                                  File(file),
-                                ),
-                              ],
+                            return Image.file(
+                              File(file),
                             );
                           }).toList(),
                           options: CarouselOptions(
-                            aspectRatio: 3.0,
-                            height: 350,
-                            enableInfiniteScroll: false,
-                            enlargeCenterPage: true,
-                          ),
+                              aspectRatio: 3.0,
+                              height: 350,
+                              enableInfiniteScroll: false,
+                              enlargeCenterPage: true,
+                              onPageChanged: (index, reason) {
+                                indexCarousel = index;
+                                stState(() {});
+                              }),
                         ),
                       ),
                       const SizedBox(
                         height: 12,
                       ),
                       SizedBox(
-                          width: double.infinity,
-                          child: ButtonWidget(
-                              name: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.rotate_left),
-                                  const SizedBox(
-                                    width: 12,
-                                  ),
-                                  Text(
-                                    'Rotate Image',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                ],
-                              ),
-                              function: () async {
-                                rotateImageVar = [
-                                  await rotateImage(rotateImageVar[0])
-                                ];
-
-                                stState(() {});
-                              })),
+                        width: double.infinity,
+                        child: ElevatedButton(
+                            onPressed: () async {
+                              // rotateImageVar = [
+                              //   await rotateImage(
+                              //       rotateImageVar[0])
+                              // ];
+                              rotateImageVar[indexCarousel] = await rotateImage(
+                                  rotateImageVar[indexCarousel]);
+                              stState(() {});
+                            },
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12))),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.rotate_90_degrees_ccw,
+                                  color: white,
+                                ),
+                                const SizedBox(
+                                  width: 6,
+                                ),
+                                Text(
+                                  'Rotate Image',
+                                  style: getWhiteTextStyle(),
+                                )
+                              ],
+                            )),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                            onPressed: () async {
+                              rotateImageVar.removeAt(indexCarousel);
+                              stState(() {});
+                            },
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12))),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.delete,
+                                  color: white,
+                                ),
+                                const SizedBox(
+                                  width: 6,
+                                ),
+                                Text(
+                                  'Delete Image',
+                                  style: getWhiteTextStyle(),
+                                )
+                              ],
+                            )),
+                      ),
                       const SizedBox(
                         height: 12,
                       ),
@@ -1575,129 +1624,6 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                             final indexImg =
                                                 listTmpImg.indexOf(file);
                                             return Image.file(File(file));
-                                            return Column(
-                                              children: [
-                                                Image.file(File(file)),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: ElevatedButton(
-                                                      onPressed: () {
-                                                        if (!isConfirmDelete) {
-                                                          setState(() {
-                                                            isConfirmDelete =
-                                                                true;
-                                                          });
-                                                          ScaffoldMessenger.of(
-                                                                  context)
-                                                              .showSnackBar(
-                                                            const SnackBar(
-                                                              content: Text(
-                                                                  'Press again to delete'),
-                                                              duration:
-                                                                  Duration(
-                                                                      seconds:
-                                                                          2),
-                                                            ),
-                                                          );
-                                                          Future.delayed(
-                                                              Duration(
-                                                                  seconds: 2),
-                                                              () {
-                                                            setState(() {
-                                                              isConfirmDelete =
-                                                                  false;
-                                                            });
-                                                          });
-                                                        } else {
-                                                          ScaffoldMessenger.of(
-                                                                  context)
-                                                              .hideCurrentSnackBar();
-                                                          isConfirmDelete =
-                                                              false;
-                                                          listTmpImg.removeAt(
-                                                              indexImg);
-                                                          Navigator.pop(
-                                                              context);
-                                                          showInputDialog(
-                                                              'add');
-                                                          setState(() {});
-                                                        }
-                                                      },
-                                                      style: ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              Colors.red,
-                                                          shape: RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          12))),
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Icon(
-                                                            Icons.delete,
-                                                            color: white,
-                                                          ),
-                                                          const SizedBox(
-                                                            width: 6,
-                                                          ),
-                                                          Text(
-                                                            'Delete Image',
-                                                            style:
-                                                                getWhiteTextStyle(),
-                                                          )
-                                                        ],
-                                                      )),
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: ElevatedButton(
-                                                      onPressed: () async {
-                                                        rotateImageVar = [
-                                                          await rotateImage(
-                                                              rotateImageVar[0])
-                                                        ];
-                                                        stState(() {});
-                                                      },
-                                                      style: ElevatedButton.styleFrom(
-                                                          backgroundColor:
-                                                              Colors.orange,
-                                                          shape: RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          12))),
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Icon(
-                                                            Icons
-                                                                .rotate_90_degrees_ccw,
-                                                            color: white,
-                                                          ),
-                                                          const SizedBox(
-                                                            width: 6,
-                                                          ),
-                                                          Text(
-                                                            'Rotate Image',
-                                                            style:
-                                                                getWhiteTextStyle(),
-                                                          )
-                                                        ],
-                                                      )),
-                                                ),
-                                              ],
-                                            );
                                           }).toList(),
                                           options: CarouselOptions(
                                               aspectRatio: 0.5,
@@ -1746,6 +1672,41 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                                 ),
                                                 Text(
                                                   'Rotate Image',
+                                                  style: getWhiteTextStyle(),
+                                                )
+                                              ],
+                                            )),
+                                      ),
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                            onPressed: () async {
+                                              rotateImageVar
+                                                  .removeAt(indexCarousel);
+                                              stState(() {});
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12))),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Icon(
+                                                  Icons.delete,
+                                                  color: white,
+                                                ),
+                                                const SizedBox(
+                                                  width: 6,
+                                                ),
+                                                Text(
+                                                  'Delete Image',
                                                   style: getWhiteTextStyle(),
                                                 )
                                               ],
@@ -2125,15 +2086,15 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                                   crossAxisAlignment:
                                                       CrossAxisAlignment.start,
                                                   children: [
-                                                    Text(
-                                                      'Point ${index + 1}',
-                                                      style: getBlackTextStyle(
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                    const SizedBox(
-                                                      height: 4,
-                                                    ),
+                                                    // Text(
+                                                    //   'Point ${index + 1}',
+                                                    //   style: getBlackTextStyle(
+                                                    //     fontSize: 12,
+                                                    //   ),
+                                                    // ),
+                                                    // const SizedBox(
+                                                    //   height: 4,
+                                                    // ),
                                                     Container(
                                                       width: 120,
                                                       child: Text(
@@ -2220,6 +2181,34 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                                       fontSize: 12),
                                                 ),
                                               ],
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            ButtonWidget(
+                                                color: green00968A,
+                                                name: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.map_sharp,
+                                                      color: white,
+                                                    ),
+                                                    SizedBox(
+                                                      width: 6,
+                                                    ),
+                                                    Text(
+                                                      'Open with Google Maps',
+                                                      style:
+                                                          getWhiteTextStyle(),
+                                                    ),
+                                                  ],
+                                                ),
+                                                function: () async {
+                                                  await launchUrl(Uri.parse(
+                                                      'https://www.google.com/maps?q=${condition.latitude},${condition.longitude}'));
+                                                }),
+                                            const SizedBox(
+                                              height: 12,
                                             ),
                                             Divider(),
                                             Text(
@@ -2413,8 +2402,11 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
                                               children:
                                                   c.image.map<p.Widget>((img) {
                                                 return p.SizedBox(
-                                                    height: 200,
-                                                    // height: (isImageHorizontal(img)) ? 200 : 100,
+                                                    height:
+                                                        (isImageHorizontalSync(
+                                                                img))
+                                                            ? 100
+                                                            : 150,
                                                     child: p.Image(
                                                         p.MemoryImage(
                                                             fileToUint8List(
