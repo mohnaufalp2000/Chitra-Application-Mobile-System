@@ -412,6 +412,9 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                         ));
                       }).toList(),
                     ),
+                    const SizedBox(
+                      height: 12,
+                    ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -1162,7 +1165,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       final pIndex = position.indexOf(p);
                       return {
                         'pos': '${pIndex + 1}',
-                        'pressure': (p['pressure']) ? p['pressure'] : '0',
+                        'pressure': (p['pressure']) ?? '0',
                         'luka': (selectedType == 0) ? '' : p['damage']
                       };
                     }),
@@ -1179,14 +1182,16 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       final pIndex = position.indexOf(p);
                       return {
                         'pos': '${pIndex + 1}',
-                        'pressure': (p['pressure']) ? p['pressure'] : '0',
+                        'pressure': (p['pressure']) ?? '0',
                         'luka': (selectedType == 0) ? '' : p['damage']
                       };
                     }),
                     'pit': (pit.isEmpty) ? 'Default' : pit[selectedPit],
                   });
                 }
-              } catch (e) {}
+              } catch (e) {
+                print('error bmb : $e');
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
