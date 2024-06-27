@@ -25,6 +25,8 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   String searchQuery = '';
   String idSite = '';
+  List<String> pit = [];
+  int selectedPit = 0;
   List<Map<String, dynamic>> filteredItemTask = [];
   Map<String, dynamic> user = {};
 
@@ -50,6 +52,15 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
     if (idSite == '1') {
       idSite = await getSelectedIdSitePreferences();
     }
+
+    setState(() {
+      // BMB COYYY
+      if (idSite == '52') {
+        pit.add('Utara');
+        pit.add('Selatan');
+        pit.add('RML');
+      }
+    });
   }
 
   @override
@@ -118,6 +129,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                           id.v4(), 'daily-check',
                           email: user['email'] ?? '',
                           site: user['siteName'] ?? '',
+                          pit: pit[selectedPit] ?? '',
                           date:
                               "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
 
@@ -165,6 +177,40 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                     )),
               ),
             ),
+            const SizedBox(
+              height: 12,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Row(
+                children: pit.map((e) {
+                  final pitIndex = pit.indexOf(e);
+                  return Expanded(
+                      child: Padding(
+                    padding: EdgeInsets.only(
+                        right: (pitIndex == 0) ? 12 : 0,
+                        left: (pitIndex == pit.length - 1) ? 12 : 0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: (selectedPit == pitIndex)
+                              ? Colors.orange
+                              : greyF7F8F9),
+                      onPressed: () {
+                        setState(() {
+                          selectedPit = pitIndex;
+                        });
+                      },
+                      child: Text(
+                        e,
+                        style: (selectedPit == pitIndex)
+                            ? getWhiteTextStyle()
+                            : getBlackTextStyle(),
+                      ),
+                    ),
+                  ));
+                }).toList(),
+              ),
+            ),
             StreamBuilder(
                 stream: firestore.collection('daily_pressure').snapshots(),
                 builder: (context, snapshot) {
@@ -199,6 +245,15 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                     String formattedDate =
                         "${dateOnly.year}-${(dateOnly.month).toString().padLeft(2, '0')}-${(dateOnly.day).toString().padLeft(2, '0')}";
                     final formattedDateTime = DateTime.parse(formattedDate);
+
+                    // ada pit
+                    if (data['pit'] != 'default') {
+                      return formattedDateTime.year == selectedDate.year &&
+                          formattedDateTime.month == selectedDate.month &&
+                          data['idSite'] == idSite &&
+                          data['pit'] == pit[selectedPit] &&
+                          formattedDateTime.day == selectedDate.day;
+                    }
 
                     // tidak ada pit
                     return formattedDateTime.year == selectedDate.year &&

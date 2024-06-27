@@ -246,6 +246,7 @@ Future<File> createFolderPath(String id, String type,
     String email = '',
     String date = '',
     String username = '',
+    String pit = '',
     String sn = ''}) async {
   /// final output = await getApplicationDocumentsDirectory();
   // String path = '';
@@ -281,7 +282,7 @@ Future<File> createFolderPath(String id, String type,
       return outputFile;
     case 'daily-check':
       final outputFile = File(
-          "${path?.path}/DailyTireCheck_${date}_${site}_${email}_CAMOS.xlsx");
+          "${path?.path}/DailyTireCheck_${date}_${site}_${pit}_${email}_${id}_CAMOS.xlsx");
       // final outputFile = File("${path?.path}/daily-check_${id}xlsx");
       return outputFile;
     case 'outstanding-image':
@@ -652,6 +653,8 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('B1').setText('Unit');
       sheet.getRangeByName('C1').setText('Pos');
       sheet.getRangeByName('D1').setText('Pressure');
+      sheet.getRangeByName('E1').setText('Tire Damage');
+      sheet.getRangeByName('E1').columnWidth = 25;
 
       for (int i = 0; i < daily!.length; i++) {
         final unit = daily[i]['unit'];
@@ -677,6 +680,14 @@ Future<List<int>> createExcel(String type,
           sheet
               .getRangeByName('D${i * posisi.length + j + 2}')
               .setText(posisi[j]['pressure']);
+          if (posisi[j]['luka'] != null) {
+            sheet.getRangeByName('E${i * posisi.length + j + 2}').setText(
+                (posisi[j]['luka'] as List<dynamic>)
+                    .where((element) => element.isNotEmpty)
+                    .join('\n'));
+            sheet.getRangeByName('E${i * posisi.length + j + 2}').columnWidth =
+                25;
+          }
         }
       }
 

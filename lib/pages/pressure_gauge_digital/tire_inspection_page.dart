@@ -59,6 +59,8 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
     'Run Flat',
     'Sidewall Crack',
     'Sidewall Cut',
+    'Sidewall Cut 2',
+    'Sidewall Cut 3',
     'Sidewall Separation',
     'Shoulder Cut',
     'Shoulder Separation',

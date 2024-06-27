@@ -127,6 +127,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                             id.v4(), 'daily-check',
                             email: user['email'] ?? '',
                             site: user['siteName'] ?? '',
+                            pit: pit[selectedPit] ?? '',
                             date:
                                 "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
 
