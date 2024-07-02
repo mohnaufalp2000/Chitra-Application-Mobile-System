@@ -653,8 +653,9 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('B1').setText('Unit');
       sheet.getRangeByName('C1').setText('Pos');
       sheet.getRangeByName('D1').setText('Pressure');
-      sheet.getRangeByName('E1').setText('Tire Damage');
-      sheet.getRangeByName('E1').columnWidth = 25;
+      sheet.getRangeByName('E1').setText('Adj');
+      sheet.getRangeByName('F1').setText('Tire Damage');
+      sheet.getRangeByName('F1').columnWidth = 25;
 
       for (int i = 0; i < daily!.length; i++) {
         final unit = daily[i]['unit'];
@@ -680,12 +681,16 @@ Future<List<int>> createExcel(String type,
           sheet
               .getRangeByName('D${i * posisi.length + j + 2}')
               .setText(posisi[j]['pressure']);
+          sheet.getRangeByName('E${i * posisi.length + j + 2}').setText(
+              (posisi[j]['adjusmentPressure'] == '')
+                  ? '0'
+                  : posisi[j]['adjusmentPressure']);
           if (posisi[j]['luka'] != null) {
-            sheet.getRangeByName('E${i * posisi.length + j + 2}').setText(
+            sheet.getRangeByName('F${i * posisi.length + j + 2}').setText(
                 (posisi[j]['luka'] as List<dynamic>)
                     .where((element) => element.isNotEmpty)
                     .join('\n'));
-            sheet.getRangeByName('E${i * posisi.length + j + 2}').columnWidth =
+            sheet.getRangeByName('F${i * posisi.length + j + 2}').columnWidth =
                 25;
           }
         }

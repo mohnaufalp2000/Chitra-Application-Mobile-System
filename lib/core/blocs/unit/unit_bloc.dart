@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
+import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:connection_network_type/connection_network_type.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:equatable/equatable.dart';
@@ -33,11 +34,19 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
           emit(UnitLoadedState(units: cachedData));
           return;
         } else {
-          log('unit aman');
+          log('unit aman == ${await getSavedMonthYear()}, ${"${DateTime.now().year}-${DateTime.now().month}"}');
           emit(UnitLoadingState());
 
-          final units = await ApiService.getUnits(event.idSite);
-          emit(UnitLoadedState(units: units));
+          // belum ganti bulan
+          if (await getSavedMonthYear() ==
+              "${DateTime.now().year}-${DateTime.now().month}") {
+            final cachedData = await ApiService.getCachedUnits();
+            emit(UnitLoadedState(units: cachedData));
+          } else {
+            // sudah ganti bulan
+            final units = await ApiService.getUnits(event.idSite);
+            emit(UnitLoadedState(units: units));
+          }
         }
       }
       // try {

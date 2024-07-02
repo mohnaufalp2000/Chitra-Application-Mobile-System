@@ -1,5 +1,7 @@
 import 'dart:developer';
 
+import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -29,6 +31,8 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   int selectedPit = 0;
   List<Map<String, dynamic>> filteredItemTask = [];
   Map<String, dynamic> user = {};
+  List<UnitTire> units = [];
+  int selectedMenu = 0;
 
   @override
   void initState() {
@@ -40,6 +44,17 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
     log('tanggal kemarin : $formattedDate');
     getIdSite();
     getUser();
+  }
+
+  Future<void> getUnits() async {
+    // belum ganti bulan
+    if (await getSavedMonthYear() ==
+        "${DateTime.now().year}-${DateTime.now().month}") {
+      units = await ApiService.getCachedUnits();
+    } else {
+      // sudah ganti bulan
+      units = await ApiService.getUnits(idSite);
+    }
   }
 
   getUser() async {
@@ -65,6 +80,9 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    getUnits();
+    log('count unit : ${units.length}');
+
     return Scaffold(
       appBar: appBarWidget('History', context),
       body: SafeArea(
@@ -180,37 +198,6 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
             const SizedBox(
               height: 12,
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Row(
-                children: pit.map((e) {
-                  final pitIndex = pit.indexOf(e);
-                  return Expanded(
-                      child: Padding(
-                    padding: EdgeInsets.only(
-                        right: (pitIndex == 0) ? 12 : 0,
-                        left: (pitIndex == pit.length - 1) ? 12 : 0),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: (selectedPit == pitIndex)
-                              ? Colors.orange
-                              : greyF7F8F9),
-                      onPressed: () {
-                        setState(() {
-                          selectedPit = pitIndex;
-                        });
-                      },
-                      child: Text(
-                        e,
-                        style: (selectedPit == pitIndex)
-                            ? getWhiteTextStyle()
-                            : getBlackTextStyle(),
-                      ),
-                    ),
-                  ));
-                }).toList(),
-              ),
-            ),
             StreamBuilder(
                 stream: firestore.collection('daily_pressure').snapshots(),
                 builder: (context, snapshot) {
@@ -246,15 +233,6 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                         "${dateOnly.year}-${(dateOnly.month).toString().padLeft(2, '0')}-${(dateOnly.day).toString().padLeft(2, '0')}";
                     final formattedDateTime = DateTime.parse(formattedDate);
 
-                    // ada pit
-                    if (data['pit'] != 'default') {
-                      return formattedDateTime.year == selectedDate.year &&
-                          formattedDateTime.month == selectedDate.month &&
-                          data['idSite'] == idSite &&
-                          data['pit'] == pit[selectedPit] &&
-                          formattedDateTime.day == selectedDate.day;
-                    }
-
                     // tidak ada pit
                     return formattedDateTime.year == selectedDate.year &&
                         formattedDateTime.month == selectedDate.month &&
@@ -283,177 +261,190 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                     Map<String, dynamic> cast =
                         item.data() as Map<String, dynamic>;
 
+                    units.removeWhere(
+                        (element) => element.unitNumber == cast['unit']);
                     filteredItemTask.add(cast);
                   });
                   log('dailyexcel: $filteredItemTask');
+                  log('jumlah kendaraan : ${units.length}');
 
                   return Column(
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                        child: Text(
+                          (selectedMenu == 0)
+                              ? 'Total Unit : ${filteredDocument.length}'
+                              : 'Total Unit : ${units.length}',
+                          style: getBlackTextStyle(
+                            fontSize: 20,
+                          ),
+                        ),
+                      ),
                       const SizedBox(
                         height: 12,
                       ),
                       ListView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
-                        itemCount: filteredDocument.length,
+                        itemCount: (selectedMenu == 0)
+                            ? filteredDocument.length
+                            : units.length,
                         itemBuilder: (context, index) {
-                          final Map<String, dynamic> dailyMap =
-                              filteredDocument[index].data()
-                                  as Map<String, dynamic>;
-                          final positionList =
-                              dailyMap['posisi'] as List<dynamic>;
+                          if (selectedMenu == 0) {
+                            final Map<String, dynamic> dailyMap =
+                                filteredDocument[index].data()
+                                    as Map<String, dynamic>;
+                            final positionList =
+                                dailyMap['posisi'] as List<dynamic>;
 
-                          log('subsub : $positionList');
+                            log('subsub : $positionList');
 
-                          return Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: Card(
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                color: green00968A,
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 24),
-                                  decoration: BoxDecoration(
-                                    color: green00968A,
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8.0),
+                              child: Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: ExpansionTile(
-                                    tilePadding: EdgeInsets.zero,
-                                    childrenPadding: EdgeInsets.all(0),
-                                    title: Row(
+                                  color: green00968A,
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 24),
+                                    decoration: BoxDecoration(
+                                      color: green00968A,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ExpansionTile(
+                                      tilePadding: EdgeInsets.zero,
+                                      childrenPadding: EdgeInsets.all(0),
+                                      title: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.task,
+                                            color: white,
+                                            size: 36,
+                                          ),
+                                          const SizedBox(
+                                            width: 12,
+                                          ),
+                                          Text(
+                                            dailyMap['unit'],
+                                            style: getWhiteTextStyle(
+                                                fontWeight: w700, fontSize: 24),
+                                          )
+                                        ],
+                                      ),
+                                      trailing: SizedBox(
+                                        width: 90,
+                                        child: Icon(Icons.arrow_drop_down),
+                                      ),
                                       children: [
-                                        Icon(
-                                          Icons.task,
-                                          color: white,
-                                          size: 36,
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Tanggal',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 18),
+                                            ),
+                                            Text(
+                                              dailyMap['tanggal'].split('T')[0],
+                                              style: getWhiteTextStyle(
+                                                  fontWeight: w700,
+                                                  fontSize: 18),
+                                            ),
+                                          ],
                                         ),
                                         const SizedBox(
-                                          width: 12,
+                                          height: 12,
                                         ),
-                                        Text(
-                                          dailyMap['unit'],
-                                          style: getWhiteTextStyle(
-                                              fontWeight: w700, fontSize: 24),
-                                        )
-                                      ],
-                                    ),
-                                    trailing: SizedBox(
-                                      width: 90,
-                                      child: Icon(Icons.arrow_drop_down),
-                                    ),
-                                    children: [
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'Tanggal',
-                                            style:
-                                                getWhiteTextStyle(fontSize: 18),
-                                          ),
-                                          Text(
-                                            dailyMap['tanggal'].split('T')[0],
-                                            style: getWhiteTextStyle(
-                                                fontWeight: w700, fontSize: 18),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'HM Unit',
-                                            style:
-                                                getWhiteTextStyle(fontSize: 18),
-                                          ),
-                                          Text(
-                                            dailyMap['hm'],
-                                            style: getWhiteTextStyle(
-                                                fontWeight: w700, fontSize: 18),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Text(
-                                            'Pit',
-                                            style:
-                                                getWhiteTextStyle(fontSize: 18),
-                                          ),
-                                          Text(
-                                            dailyMap['pit'],
-                                            style: getWhiteTextStyle(
-                                                fontWeight: w700, fontSize: 18),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
-                                      Column(
-                                        children: positionList.map((pl) {
-                                          final plIndex =
-                                              positionList.indexOf(pl);
-                                          List<dynamic> luka = [];
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'HM Unit',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 18),
+                                            ),
+                                            Text(
+                                              dailyMap['hm'],
+                                              style: getWhiteTextStyle(
+                                                  fontWeight: w700,
+                                                  fontSize: 18),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              'Pit',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 18),
+                                            ),
+                                            Text(
+                                              dailyMap['pit'],
+                                              style: getWhiteTextStyle(
+                                                  fontWeight: w700,
+                                                  fontSize: 18),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        Column(
+                                          children: positionList.map((pl) {
+                                            final plIndex =
+                                                positionList.indexOf(pl);
+                                            List<dynamic> luka = [];
 
-                                          if (pl['luka'] != null) {
-                                            luka = pl['luka'] as List<dynamic>;
-                                          }
+                                            if (pl['luka'] != null) {
+                                              luka =
+                                                  pl['luka'] as List<dynamic>;
+                                            }
 
-                                          return Column(
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
-                                                children: [
-                                                  Text(
-                                                    'Pos. ${pl['pos']}',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment.end,
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Text(
-                                                        '${pl['pressure']} Psi',
-                                                        style:
-                                                            getWhiteTextStyle(
-                                                                fontWeight:
-                                                                    w700,
-                                                                fontSize: 18),
-                                                      ),
-                                                      (luka.isEmpty ||
-                                                              luka == null)
-                                                          ? Container()
-                                                          : Text(
-                                                              pl['luka']
-                                                                  .join('\n'),
-                                                              textAlign:
-                                                                  TextAlign.end,
+                                            return Column(
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      'Pos. ${pl['pos']}',
+                                                      style: getWhiteTextStyle(
+                                                          fontSize: 18),
+                                                    ),
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .end,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .end,
+                                                          children: [
+                                                            Text(
+                                                              '${pl['pressure']} Psi',
                                                               style:
                                                                   getWhiteTextStyle(
                                                                       fontWeight:
@@ -461,25 +452,102 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                                       fontSize:
                                                                           18),
                                                             ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                              Divider(
-                                                color: white,
-                                                thickness: 1.5,
-                                              ),
-                                            ],
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ],
+                                                            (pl['adjusmentPressure'] !=
+                                                                        null &&
+                                                                    pl['adjusmentPressure'] !=
+                                                                        '0' &&
+                                                                    pl['adjusmentPressure'] !=
+                                                                        '')
+                                                                ? Text(
+                                                                    '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
+                                                                    style: getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                        fontSize:
+                                                                            18),
+                                                                  )
+                                                                : Container(),
+                                                          ],
+                                                        ),
+                                                        (luka.isEmpty ||
+                                                                luka == null)
+                                                            ? Container()
+                                                            : Text(
+                                                                pl['luka']
+                                                                    .join('\n'),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .end,
+                                                                style: getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
+                                                                    fontSize:
+                                                                        18),
+                                                              ),
+                                                        const SizedBox(
+                                                          height: 12,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                                Divider(
+                                                  color: white,
+                                                  thickness: 1.5,
+                                                ),
+                                              ],
+                                            );
+                                          }).toList(),
+                                        ),
+                                      ],
+                                    ),
+                                  )),
+                            );
+                          } else {
+                            log('kendaraan di bmb ${units.length}');
+                            final item = units[index];
+                            if (searchQuery.isNotEmpty &&
+                                !item.unitNumber!
+                                    .toLowerCase()
+                                    .contains(searchQuery) &&
+                                !item.model!
+                                    .toLowerCase()
+                                    .contains(searchQuery)) {
+                              return Container();
+                            }
+                            return Container(
+                              margin: EdgeInsets.symmetric(
+                                  vertical: 8.0, horizontal: 12),
+                              padding: EdgeInsets.symmetric(vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 2),
                                   ),
-                                )),
-                          );
+                                ],
+                              ),
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.front_loader,
+                                  color: Colors.orange,
+                                ),
+                                title: Padding(
+                                  padding: const EdgeInsets.only(bottom: 4.0),
+                                  child: Text(
+                                    '${item.unitNumber}',
+                                    style: getBlackTextStyle(
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                          return Container();
                         },
                       ),
                     ],
@@ -488,6 +556,21 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
           ],
         ),
       )),
+      bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: green00968A,
+        items: [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.done_outline_rounded), label: 'Checked'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.close), label: 'Not Checked'),
+        ],
+        currentIndex: selectedMenu,
+        onTap: (index) {
+          setState(() {
+            selectedMenu = index;
+          });
+        },
+      ),
     );
   }
 }

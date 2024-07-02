@@ -155,6 +155,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   //   }
   // }
 
+ 
+
   void retrieveVersionNumber() async {
     final versionCol = FirebaseFirestore.instance.collection('version');
     final versionDoc = await versionCol.doc('version').get();

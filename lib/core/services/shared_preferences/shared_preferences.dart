@@ -106,3 +106,16 @@ Future<String> getNumberVersion() async {
   SharedPreferences prefs = await getSharedPreferences();
   return prefs.getString('version') ?? '';
 }
+
+// Fungsi untuk menyimpan bulan dan tahun sebagai string
+Future<void> saveMonthYear(DateTime dateTime) async {
+  final prefs = await SharedPreferences.getInstance();
+  String monthYearString = "${dateTime.year}-${dateTime.month}";
+  await prefs.setString('saved_month_year', monthYearString);
+}
+
+// Fungsi untuk mengambil bulan dan tahun yang disimpan
+Future<String?> getSavedMonthYear() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('saved_month_year');
+}

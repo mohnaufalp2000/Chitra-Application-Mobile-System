@@ -37,7 +37,8 @@ class ApiService {
       });
 
       await cacheUnits(listUnitTire);
-
+      // for check data unit monthly
+      await saveMonthYear(DateTime.now());
       return fixData;
     } catch (e) {
       throw Exception(e.toString());
