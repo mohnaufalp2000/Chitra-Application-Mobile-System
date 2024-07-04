@@ -16,16 +16,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
-class TireInspectionPage extends StatefulWidget {
+class DailyCheckFormPage extends StatefulWidget {
   static const routeName = '/tire-inspection-page';
 
-  const TireInspectionPage({super.key});
+  const DailyCheckFormPage({super.key});
 
   @override
-  State<TireInspectionPage> createState() => _TireInspectionPageState();
+  State<DailyCheckFormPage> createState() => _DailyCheckFormPageState();
 }
 
-class _TireInspectionPageState extends State<TireInspectionPage> {
+class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
@@ -85,7 +85,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
   List<String> selectedDamage = [];
   int selectedPit = -1;
   int selectedPosIndex = -1;
-  int selectedType = 0;
+  int selectedType = 1;
   int selectedRoute = 0;
   int checkAmount = 0;
   Map<String, dynamic> dataUnit = {};
@@ -96,6 +96,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
   BluetoothConnection? connection;
   bool get isConnected => connection != null && connection!.isConnected;
   List<BluetoothDevice> devices = [];
+  Map<String, dynamic> user = {};
 
   // startScanBluetooth() async {
   //   bluetoothSerial.startDiscovery().listen((device) {
@@ -210,11 +211,17 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
     }
   }
 
+  getUser() async {
+    user = await getUserPreferences();
+    log('username : ${user}');
+  }
+
   @override
   void initState() {
     // addPositionVariable();
     super.initState();
     callTires();
+    getUser();
   }
 
   @override
@@ -1247,6 +1254,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                       .doc(docId)
                       .update({
                     'idSite': idSite,
+                    'user': (user != null && user['username']),
                     'tanggal': DateTime.now().toIso8601String(),
                     'unit': dataUnit['unitNumber'],
                     'hm': hmCtrl.text,
@@ -1264,6 +1272,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                 } else {
                   // tambah data
                   await firestore.collection('daily_pressure').add({
+                    // 'nama': (user),
                     'idSite': idSite,
                     'tanggal': DateTime.now().toIso8601String(),
                     'unit': dataUnit['unitNumber'],

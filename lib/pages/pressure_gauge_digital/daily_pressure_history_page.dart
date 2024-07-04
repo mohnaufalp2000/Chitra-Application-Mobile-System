@@ -370,6 +370,28 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
+                                              'Waktu',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 18),
+                                            ),
+                                            Text(
+                                              dailyMap['tanggal']
+                                                  .split('T')[1]
+                                                  .substring(0, 5),
+                                              style: getWhiteTextStyle(
+                                                  fontWeight: w700,
+                                                  fontSize: 18),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
                                               'HM Unit',
                                               style: getWhiteTextStyle(
                                                   fontSize: 18),
@@ -444,7 +466,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                                   .end,
                                                           children: [
                                                             Text(
-                                                              '${pl['pressure']} Psi',
+                                                              '${(pl['pressure'] != '' || pl['pressure'] != null) ? 0 : pl['pressure']} Psi',
                                                               style:
                                                                   getWhiteTextStyle(
                                                                       fontWeight:

@@ -8,7 +8,7 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/tire_inspection_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -361,6 +361,30 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
+                                                'Name',
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 18),
+                                              ),
+                                              Container(
+                                                width: 250,
+                                                child: Text(
+                                                  'Nama',
+                                                  textAlign: TextAlign.end,
+                                                  style: getWhiteTextStyle(
+                                                      fontWeight: w700,
+                                                      fontSize: 18),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
                                                 'Tanggal',
                                                 style: getWhiteTextStyle(
                                                     fontSize: 18),
@@ -368,6 +392,28 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                               Text(
                                                 dailyMap['tanggal']
                                                     .split('T')[0],
+                                                style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Waktu',
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 18),
+                                              ),
+                                              Text(
+                                                dailyMap['tanggal']
+                                                    .split('T')[1]
+                                                    .substring(0, 5),
                                                 style: getWhiteTextStyle(
                                                     fontWeight: w700,
                                                     fontSize: 18),
@@ -458,7 +504,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                     .end,
                                                             children: [
                                                               Text(
-                                                                '${pl['pressure']} Psi',
+                                                                '${(pl['pressure'] != '' || pl['pressure'] != null) ? 0 : pl['pressure']} Psi',
                                                                 style: getWhiteTextStyle(
                                                                     fontWeight:
                                                                         w700,
@@ -530,7 +576,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                 return InkWell(
                                   onTap: () {
                                     Navigator.pushNamed(
-                                        context, TireInspectionPage.routeName,
+                                        context, DailyCheckFormPage.routeName,
                                         arguments: {
                                           'unitNumber': item.unitNumber,
                                         });

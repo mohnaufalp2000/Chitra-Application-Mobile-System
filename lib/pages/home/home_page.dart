@@ -155,8 +155,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   //   }
   // }
 
- 
-
   void retrieveVersionNumber() async {
     final versionCol = FirebaseFirestore.instance.collection('version');
     final versionDoc = await versionCol.doc('version').get();
@@ -1086,7 +1084,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Outstanding Task',
+                            'Tire Inspection Result',
                             style: getGreenTextStyle(
                                 fontWeight: w700, fontSize: 20),
                           ),
@@ -1771,80 +1769,42 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                               filteredTask[index].data()
                                                   as Map<String, dynamic>;
 
-                                          return Dismissible(
-                                            key: Key('${task['id']}'),
-                                            onDismissed: (direction) {
-                                              setState(() {});
-                                              taskCollection
-                                                  .where('id',
-                                                      isEqualTo: task['id'])
-                                                  .get()
-                                                  .then((value) {
-                                                if (value
-                                                    .docChanges.isNotEmpty) {
-                                                  final docRef = value
-                                                      .docs.first.reference;
-                                                  docRef.update({
-                                                    'is_done': true,
-                                                  });
-                                                }
-                                              });
-                                            },
-                                            background: Container(
-                                                color: Colors.red,
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 24),
-                                                child: const Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.delete,
-                                                      color: white,
-                                                    ),
-                                                    Icon(
-                                                      Icons.delete,
-                                                      color: white,
-                                                    )
-                                                  ],
-                                                )),
-                                            child: OustandingTileWidget(
-                                                task: OutstandingTask(
-                                                    id: task['id'] ?? '',
-                                                    idSite:
-                                                        task['id_site'] ?? '',
-                                                    user: task['user'] ?? '',
-                                                    unit: task['unit'] ?? '',
-                                                    serialNumber:
-                                                        task['serial_number'] ??
-                                                            '',
-                                                    condition: (task['condition'] !=
-                                                            null)
-                                                        ? List<String>.from(
-                                                            task['condition'].map(
-                                                                (condition) =>
-                                                                    condition
-                                                                        .toString()))
-                                                        : [],
-                                                    tireSize:
-                                                        task['tire_size'] ?? '',
-                                                    position:
-                                                        task['position'] ?? 0,
-                                                    brand: task['brand'] ?? '',
-                                                    tireDamage:
-                                                        task['tire_damage'] ?? '',
-                                                    remarks: task['remarks'] ?? '',
-                                                    rtd: task['rtd'] ?? '',
-                                                    pressure: task['pressure'] ?? '',
-                                                    lastUpdate: task['last_update'] ?? '',
-                                                    isDone: task['is_done'] ?? '',
-                                                    sn: task['sn'] ?? '',
-                                                    kunciUnit: task['kunci_unit'] ?? '',
-                                                    kunciTire: task['kunci_tire'] ?? '',
-                                                    images: [])),
-                                          );
+                                          return OustandingTileWidget(
+                                              task: OutstandingTask(
+                                                  id: task['id'] ?? '',
+                                                  idSite: task['id_site'] ?? '',
+                                                  user: task['user'] ?? '',
+                                                  unit: task['unit'] ?? '',
+                                                  serialNumber:
+                                                      task['serial_number'] ??
+                                                          '',
+                                                  condition: (task['condition'] != null)
+                                                      ? List<String>.from(
+                                                          task['condition'].map(
+                                                              (condition) => condition
+                                                                  .toString()))
+                                                      : [],
+                                                  tireSize:
+                                                      task['tire_size'] ?? '',
+                                                  hm: '',
+                                                  position:
+                                                      task['position'] ?? 0,
+                                                  brand: task['brand'] ?? '',
+                                                  tireDamage:
+                                                      task['tire_damage'] ?? '',
+                                                  remarks:
+                                                      task['remarks'] ?? '',
+                                                  rtd: task['rtd'] ?? '',
+                                                  pressure:
+                                                      task['pressure'] ?? '',
+                                                  lastUpdate:
+                                                      task['last_update'] ?? '',
+                                                  isDone: task['is_done'] ?? '',
+                                                  sn: task['sn'] ?? '',
+                                                  kunciUnit:
+                                                      task['kunci_unit'] ?? '',
+                                                  kunciTire: task['kunci_tire'] ?? '',
+                                                  images: []));
                                         }),
                                   ],
                                 );
@@ -1858,7 +1818,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.task), label: 'Outstanding Task'),
+              icon: Icon(Icons.task), label: 'Tire Inspection Result'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

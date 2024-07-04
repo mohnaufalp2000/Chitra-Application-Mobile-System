@@ -8,7 +8,7 @@ import 'package:camos/pages/attendance/absence_page.dart';
 import 'package:camos/pages/attendance/attendance_page.dart';
 import 'package:camos/pages/attendance/presence_page.dart';
 import 'package:camos/pages/cts/cts_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/pgd_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/tire_inspection_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';

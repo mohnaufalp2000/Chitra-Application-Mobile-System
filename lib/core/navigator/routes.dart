@@ -18,10 +18,10 @@ import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.d
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
 import 'package:camos/pages/pressure_gauge_digital/detail_non_running_tire_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/non_running_inspection_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/pgd_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/tire_inspection_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/tire_inspection_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';
 import 'package:camos/pages/settings/edit_profile_page.dart';
 import 'package:camos/pages/settings/feedback_page.dart';
@@ -56,7 +56,6 @@ var routes = {
   EditProfilePage.routeName: (context) => EditProfilePage(),
   FeedbackPage.routeName: (context) => FeedbackPage(),
   SitePage.routeName: (context) => SitePage(),
-  PgdPage.routeName: (context) => PgdPage(),
   SelectUnitPage.routeName: (context) => SelectUnitPage(),
   AttendancePage.routeName: (context) => AttendancePage(),
   AllPresencePage.routeName: (context) => AllPresencePage(),
@@ -69,7 +68,7 @@ var routes = {
   DetailTireSitePage.routeName: (context) => DetailTireSitePage(),
   TpmsPage.routeName: (context) => TpmsPage(),
   SelectInspectionPage.routeName: (context) => SelectInspectionPage(),
-  TireInspectionPage.routeName: (context) => TireInspectionPage(),
+  DailyCheckFormPage.routeName: (context) => DailyCheckFormPage(),
   DailyPressureListPage.routeName: (context) => DailyPressureListPage(),
   QrTpmsPage.routeName: (context) => QrTpmsPage(),
   DailyPressureHistoryPage.routeName: (context) => DailyPressureHistoryPage(),
@@ -82,4 +81,5 @@ var routes = {
   AbsencePage.routeName: (context) => AbsencePage(),
   PresenceCameraResultPage.routeName: (context) => PresenceCameraResultPage(),
   HistorySiteConditionPage.routeName: (context) => HistorySiteConditionPage(),
+  TireInspectionFormPage.routeName: (context) => TireInspectionFormPage(),
 };

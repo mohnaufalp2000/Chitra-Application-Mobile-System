@@ -33,15 +33,15 @@
 // import 'package:permission_handler/permission_handler.dart';
 // import 'package:uuid/uuid.dart';
 
-// class PgdPage extends StatefulWidget {
+// class TireInspectionFormPage extends StatefulWidget {
 //   static const routeName = '/pgd-page';
-//   const PgdPage({super.key});
+//   const TireInspectionFormPage({super.key});
 
 //   @override
-//   State<PgdPage> createState() => _PgdPageState();
+//   State<TireInspectionFormPage> createState() => _TireInspectionFormPageState();
 // }
 
-// class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
+// class _TireInspectionFormPageState extends State<TireInspectionFormPage> with WidgetsBindingObserver {
 //   FirebaseFirestore firestore = FirebaseFirestore.instance;
 //   FirebaseAuth auth = FirebaseAuth.instance;
 
@@ -766,18 +766,20 @@ import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 
-class PgdPage extends StatefulWidget {
+class TireInspectionFormPage extends StatefulWidget {
   static const routeName = '/pgd-page';
-  const PgdPage({super.key});
+  const TireInspectionFormPage({super.key});
 
   @override
-  State<PgdPage> createState() => _PgdPageState();
+  State<TireInspectionFormPage> createState() => _TireInspectionFormPageState();
 }
 
-class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
+class _TireInspectionFormPageState extends State<TireInspectionFormPage>
+    with WidgetsBindingObserver {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
+  int selectedMenu = 1;
   var map = {};
   String idSite = '';
   bool isSaved = false;
@@ -797,6 +799,49 @@ class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
   String remarks = '';
   String rtd = '';
   List<String> listImg = [];
+  List<String> pressure = [
+    '95',
+    '100',
+    '105',
+    '110',
+    '115',
+    '120',
+    '125',
+    '130',
+    '135',
+  ];
+  List<Map<String, dynamic>> position = [];
+
+  List<String> damageType = [
+    'Good Condition (Keep Monitoring)',
+    'Accident',
+    'Bead Crack',
+    'Boulder',
+    'Bulging',
+    'Bead Damage',
+    'Chaffer Separation',
+    'Dog Bound',
+    'Foreign Object',
+    'Heat Separation',
+    'Inner Linner Separation',
+    'Impact',
+    'Repair Failure',
+    'Radial Crack',
+    'Run Flat',
+    'Sidewall Crack',
+    'Sidewall Cut',
+    'Sidewall Cut 2',
+    'Sidewall Cut 3',
+    'Sidewall Separation',
+    'Shoulder Cut',
+    'Shoulder Separation',
+    'Tread Chipping',
+    'Tread Chungking',
+    'Tread Lifting',
+    'Tread Cut',
+    'Tread Cut Separation',
+    'Worn Out',
+  ];
 
   List<String> categories = [
     'Reseal Oring',
@@ -866,22 +911,6 @@ class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
       });
     });
   }
-
-  // void connectedDevice(BluetoothDevice device) async {
-  //   if (isConnected) {
-  //     await connection!.close();
-  //   }
-
-  //   try {
-  //     connection = await BluetoothConnection.toAddress(device.address);
-  //     print('Connected to the device');
-  //     _listenForData();
-  //     // pressureGaugeLooping();
-  //     setState(() {});
-  //   } catch (e) {
-  //     print('Cannot connect to the device: $e');
-  //   }
-  // }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -978,7 +1007,9 @@ class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
           title: Padding(
             padding: const EdgeInsets.only(top: 18.0),
             child: Text(
-              'Pressure Gauge Digital',
+              (selectedMenu == 0)
+                  ? 'PG Digital Tire Inspection'
+                  : 'Manual Tire Inspection',
               textAlign: TextAlign.center,
               style: getBlackTextStyle(fontSize: 20, fontWeight: w700),
             ),
@@ -1018,471 +1049,1173 @@ class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
             ),
           ),
         ),
-        body: SafeArea(child: BlocBuilder<TireBloc, TireState>(
+        body: SafeArea(
+            child: BlocConsumer<TireBloc, TireState>(
+          listener: (context, state) {
+            if (state is TiresLoadedState) {
+              position.clear();
+
+              for (int i = 0; i < state.units.length; i++) {
+                position.add({
+                  'position': i + 1,
+                  'damageTire': '',
+                  'rtd': '',
+                  'remarks': '',
+                  'condition': [],
+                });
+              }
+              log('message position tire inspect : ${position}');
+            }
+          },
           builder: (context, state) {
-            return SingleChildScrollView(
-              primary: false,
-              physics: BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
+            if (selectedMenu == 0) {
+              return SingleChildScrollView(
+                primary: false,
+                physics: BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Text(
+                                  'Unit Number',
+                                  style: getBlackTextStyle(fontWeight: w700),
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: InputFormWidget(
+                                      isReadOnly: true,
+                                      controller: idUnit,
+                                      hint: ''),
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                Text(
+                                  'HM Unit',
+                                  style: getBlackTextStyle(fontWeight: w700),
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: InputFormWidget(
+                                      isReadOnly: true,
+                                      controller: hmUnit,
+                                      hint: 'Insert HM Unit'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(
+                            width: 12,
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
+                        child: Divider(
+                          thickness: 1.2,
+                        ),
+                      ),
+                      Text(
+                        'Bluetooth Connection',
+                        style: getBlackTextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      ButtonWidget(
+                          name: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
-                                'Unit Number',
-                                style: getBlackTextStyle(fontWeight: w700),
-                              ),
+                              Icon(Icons.bluetooth),
                               const SizedBox(
-                                height: 12,
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: InputFormWidget(
-                                    isReadOnly: true,
-                                    controller: idUnit,
-                                    hint: ''),
-                              ),
-                              const SizedBox(
-                                height: 12,
+                                width: 6,
                               ),
                               Text(
-                                'HM Unit',
-                                style: getBlackTextStyle(fontWeight: w700),
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: InputFormWidget(
-                                    isReadOnly: true,
-                                    controller: hmUnit,
-                                    hint: 'Insert HM Unit'),
+                                'Scan Devices',
+                                style: getWhiteTextStyle(),
                               ),
                             ],
                           ),
-                        ),
-                        const SizedBox(
-                          width: 12,
-                        ),
-                        // SizedBox(
-                        //   height: 200,
-                        //   width: 100,
-                        //   child: ButtonWidget(
-                        //       name: Row(
-                        //         mainAxisAlignment: MainAxisAlignment.center,
-                        //         children: [
-                        //           Icon(Icons.restore),
-                        //           const SizedBox(
-                        //             width: 6,
-                        //           ),
-                        //           Text(
-                        //             'Reset',
-                        //             style: getWhiteTextStyle(),
-                        //           ),
-                        //         ],
-                        //       ),
-                        //       function: () {
-                        //         idUnit.clear();
-                        //         hmUnit.clear();
-                        //         setState(() {});
-                        //       }),
-                        // ),
-                      ],
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12.0),
-                      child: Divider(
-                        thickness: 1.2,
+                          function: () async {
+                            requestBluetoothPermission();
+                            startScanBluetooth();
+                            devices.clear();
+                            // AppSettings.openBluetoothSettings();
+                          }),
+                      const SizedBox(
+                        height: 12,
                       ),
-                    ),
-                    Text(
-                      'Bluetooth Connection',
-                      style: getBlackTextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    ButtonWidget(
-                        name: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.bluetooth),
-                            const SizedBox(
-                              width: 6,
+                      Column(
+                        children: devices.map((device) {
+                          return ListTile(
+                            title: Text(
+                              device.name ?? 'Uknown Device',
+                              style: getBlackTextStyle(),
                             ),
-                            Text(
-                              'Scan Devices',
-                              style: getWhiteTextStyle(),
+                            subtitle: Text(
+                              device.address,
+                              style: getGreyTextStyle(grey6A707C),
+                            ),
+                            trailing: SizedBox(
+                                width: 110,
+                                height: 50,
+                                child: ButtonWidget(
+                                    name: Text(
+                                      (isConnected) ? 'Disconnect' : 'Connect',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                    function: () async {
+                                      if (isConnected) {
+                                        await connection!.close();
+                                        devices.clear();
+                                        setState(() {});
+                                      } else {
+                                        try {
+                                          connection = await BluetoothConnection
+                                              .toAddress(device.address);
+                                          print('Connected to the device');
+                                          _listenForData();
+                                          devices.clear();
+                                          devices.add(device);
+                                          setState(() {});
+                                        } catch (e) {
+                                          print(
+                                              'Cannot connect to the device: $e');
+                                        }
+                                      }
+                                    })),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      Text(
+                        'Pressure',
+                        style: getBlackTextStyle(),
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      Column(
+                        children: [
+                          SizedBox(
+                            width: MediaQuery.of(context).size.width * 0.25,
+                            child: InputFormWidget(
+                              isDecimalOnly: true,
+                              type: const TextInputType.numberWithOptions(
+                                  decimal: true),
+                              controller: pressureCtrl,
+                              hint: '',
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 12,
+                          ),
+                        ],
+                      ),
+                      // TIRE
+                      BlocBuilder<TireBloc, TireState>(
+                        builder: (context, state) {
+                          if (state is TireLoadingState) {
+                            return CircularProgressIndicator();
+                          }
+
+                          if (state is TiresLoadedState) {
+                            return LayoutBuilder(
+                                builder: (context, constraints) {
+                              return Container(
+                                height: constraints.maxWidth * 3.4,
+                                child: Swiper(
+                                  controller: swiperController,
+                                  loop: false,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  scrollDirection: Axis.horizontal,
+                                  itemCount: state.units.length,
+                                  itemBuilder: (context, index) {
+                                    return PgdTireCardWidget(
+                                      dataTire: state.units[index],
+                                      onCategoryChecked: (checkedList) {
+                                        handleDataChecked(checkedList, index);
+                                      },
+                                      onSelectedTireDamage: (tireDamage) {
+                                        handleDataSelected(tireDamage, index);
+                                      },
+                                      onStringRemarks: (remarks) {
+                                        handleDataRemarks(remarks, index);
+                                      },
+                                      onStringRTD: (rtd) {
+                                        handleDataRTD(rtd, index);
+                                      },
+                                      onImageTire: (images) {
+                                        handleImageTire(images);
+                                      },
+                                    );
+                                  },
+                                ),
+                              );
+                            });
+                          }
+                          return Container();
+                        },
+                      ),
+
+                      const SizedBox(
+                        height: 12,
+                      ),
+
+                      BlocBuilder<TireBloc, TireState>(
+                        builder: (context, state) {
+                          if (state is TireLoadingState) {}
+
+                          if (state is TiresLoadedState) {
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: ButtonWidget(
+                                    name: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.arrow_left),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Previous',
+                                          style: getWhiteTextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                    function: () {
+                                      if (swiperController.index > 0) {
+                                        swiperController.index--;
+                                        swiperController.previous();
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ButtonWidget(
+                                    name: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Next',
+                                          style: getWhiteTextStyle(),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Icon(Icons.arrow_right),
+                                      ],
+                                    ),
+                                    function: () {
+                                      if (swiperController.index <
+                                          state.units.length - 1) {
+                                        swiperController.index++;
+                                        swiperController.next();
+                                      }
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Container();
+                        },
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      BlocBuilder<TireBloc, TireState>(
+                        builder: (context, state) {
+                          if (state is TiresLoadedState) {
+                            final tire = state.units;
+                            return ButtonWidget(
+                                name: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.save_alt),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      'Save',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                                function: () {
+                                  final id = Uuid();
+                                  final fixId = id.v4();
+                                  isSaved = true;
+                                  final savedTires =
+                                      state.units[swiperController.index];
+
+                                  imageBox.put(TireInspectPictureEntity(
+                                      idImage: fixId, image: ''));
+
+                                  // Disimpan di objectbox
+                                  context
+                                      .read<OutstandingTaskBloc>()
+                                      .add(AddOutStandingTaskEvent(
+                                          task: OutstandingTask(
+                                        id: id.v4(),
+                                        idSite: idSite,
+                                        user: auth.currentUser!.email ?? '',
+                                        unit: idUnit.text,
+                                        position:
+                                            int.parse(savedTires.posisi ?? '0'),
+                                        brand: savedTires.brand ?? '',
+                                        serialNumber: savedTires.sn ?? '',
+                                        tireSize: savedTires.size ?? '',
+                                        hm: '',
+                                        condition: checkedCategories
+                                            .map((category) => category)
+                                            .toList(),
+                                        tireDamage: selectedTireDamage,
+                                        remarks: remarks,
+                                        rtd: rtd,
+                                        pressure: pressureCtrl.text,
+                                        lastUpdate:
+                                            DateTime.now().toIso8601String(),
+                                        isDone: false,
+                                        sn: savedTires.sn ?? '',
+                                        images:
+                                            (Platform.isAndroid) ? listImg : [],
+                                        kunciUnit: savedTires.kunciUnit ?? '',
+                                        kunciTire: savedTires.kunciTire ?? '',
+                                      )));
+
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                          backgroundColor: green00968A,
+                                          content: Text(
+                                            'Succesful Save Data',
+                                            style: getWhiteTextStyle(),
+                                          )));
+                                });
+                          }
+                          return Container();
+                        },
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            } else {
+              if (state is TireLoadingState) {
+                return Center(
+                  child: CircularProgressIndicator(),
+                );
+              }
+              if (state is TiresLoadedState) {
+                final units = state.units;
+
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.front_loader,
+                                        color: Colors.orange,
+                                        size: 38,
+                                      ),
+                                      const SizedBox(
+                                        width: 12,
+                                      ),
+                                      Text(
+                                        'UNIT',
+                                        style: getBlackTextStyle(
+                                            fontWeight: w700, fontSize: 18),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(
+                                    height: 12,
+                                  ),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: InputFormWidget(
+                                        isReadOnly: true,
+                                        controller: TextEditingController(
+                                          text: units[0].unitNumber,
+                                        ),
+                                        hint: ''),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.watch,
+                                        color: Colors.red,
+                                        size: 38,
+                                      ),
+                                      const SizedBox(
+                                        width: 12,
+                                      ),
+                                      Text(
+                                        'HM UNIT',
+                                        style: getBlackTextStyle(
+                                            fontWeight: w700, fontSize: 18),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(
+                                    height: 12,
+                                  ),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: InputFormWidget(
+                                        // isReadOnly: true,
+                                        // controller: hmCtrl,
+                                        controller: TextEditingController(),
+                                        isDecimalOnly: true,
+                                        type: TextInputType.number,
+                                        hint: 'Fill HM'),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
-                        ),
-                        function: () async {
-                          requestBluetoothPermission();
-                          startScanBluetooth();
-                          devices.clear();
-                          // AppSettings.openBluetoothSettings();
-                        }),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    Column(
-                      children: devices.map((device) {
-                        return ListTile(
-                          title: Text(
-                            device.name ?? 'Uknown Device',
-                            style: getBlackTextStyle(),
-                          ),
-                          subtitle: Text(
-                            device.address,
-                            style: getGreyTextStyle(grey6A707C),
-                          ),
-                          trailing: SizedBox(
-                              width: 110,
-                              height: 50,
-                              child: ButtonWidget(
-                                  name: Text(
-                                    (isConnected) ? 'Disconnect' : 'Connect',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                  function: () async {
-                                    if (isConnected) {
-                                      await connection!.close();
-                                      devices.clear();
-                                      setState(() {});
-                                    } else {
-                                      try {
-                                        connection =
-                                            await BluetoothConnection.toAddress(
-                                                device.address);
-                                        print('Connected to the device');
-                                        _listenForData();
-                                        devices.clear();
-                                        devices.add(device);
-                                        setState(() {});
-                                      } catch (e) {
-                                        print(
-                                            'Cannot connect to the device: $e');
-                                      }
-                                    }
-                                  })),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    Text(
-                      'Pressure',
-                      style: getBlackTextStyle(),
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    Column(
-                      children: [
-                        SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.25,
-                          child: InputFormWidget(
-                            isDecimalOnly: true,
-                            type: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            controller: pressureCtrl,
-                            hint: '',
-                          ),
                         ),
                         const SizedBox(
                           height: 12,
                         ),
-                      ],
-                    ),
-                    // (tmpPressure == '')
-                    //     ? Container()
-                    //     : Column(
-                    //         children: [
-                    //           SizedBox(
-                    //             width: MediaQuery.of(context).size.width * 0.25,
-                    //             child: InputFormWidget(
-                    //               isReadOnly: true,
-                    //               controller:
-                    //                   TextEditingController(text: tmpPressure),
-                    //               hint: '',
-                    //             ),
-                    //           ),
-                    //           const SizedBox(
-                    //             height: 12,
-                    //           ),
-                    //         ],
-                    //       ),
-                    // TIRE
-                    BlocBuilder<TireBloc, TireState>(
-                      builder: (context, state) {
-                        if (state is TireLoadingState) {
-                          return CircularProgressIndicator();
-                        }
+                        Column(
+                          children: units.map((unit) {
+                            final unitIndex = units.indexOf(unit);
+                            return Card(
+                              elevation: 2,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width,
+                                padding: EdgeInsets.all(24),
+                                child: Stack(
+                                  children: [
+                                    Opacity(
+                                      opacity: 0.1,
+                                      child: Center(
+                                        child: Text(
+                                          unit.rating ?? '',
+                                          style: TextStyle(
+                                            fontSize: 100,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Column(
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            SizedBox(
+                                              width: 35,
+                                              height: 53,
+                                              child: Image.asset(
+                                                '$imagePath/em_tire_image.png',
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              children: [
+                                                Text(
+                                                  'Position',
+                                                  style: getBlackTextStyle(
+                                                      fontSize: 14),
+                                                ),
+                                                const SizedBox(
+                                                  height: 6,
+                                                ),
+                                                Text(
+                                                  '${unitIndex + 1}',
+                                                  style: getBlackTextStyle(
+                                                      fontSize: 22,
+                                                      fontWeight: w700),
+                                                ),
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                        Padding(
+                                          padding:
+                                              EdgeInsets.symmetric(vertical: 6),
+                                          child: Divider(
+                                            thickness: 1.5,
+                                          ),
+                                        ),
+                                        Column(
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'SN',
+                                                  style: getBlackTextStyle(
+                                                      fontWeight: w700),
+                                                ),
+                                                Text(
+                                                  unit.sn ?? '',
+                                                  style: getBlackTextStyle(),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Brand',
+                                                  style: getBlackTextStyle(
+                                                      fontWeight: w700),
+                                                ),
+                                                Text(
+                                                  unit.brand ?? '',
+                                                  style: getBlackTextStyle(),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Tire Lifetime',
+                                                  style: getBlackTextStyle(
+                                                      fontWeight: w700),
+                                                ),
+                                                Text(
+                                                  unit.lifetime ?? '',
+                                                  style: getBlackTextStyle(),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Rating',
+                                                  style: getBlackTextStyle(
+                                                      fontWeight: w700),
+                                                ),
+                                                Text(
+                                                  unit.rating ?? '',
+                                                  style: getBlackTextStyle(),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        Padding(
+                                          padding:
+                                              EdgeInsets.symmetric(vertical: 6),
+                                          child: Divider(
+                                            thickness: 1.5,
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width:
+                                              MediaQuery.of(context).size.width,
+                                          height: 45,
+                                          child: ElevatedButton(
+                                            onPressed: () async {
+                                              FocusScope.of(context).unfocus();
+                                              setState(() {
+                                                // selectedPosIndex = posIndex;
+                                              });
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return Dialog(
+                                                    child: Container(
+                                                      padding:
+                                                          EdgeInsets.all(20.0),
+                                                      child:
+                                                          SingleChildScrollView(
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: <Widget>[
+                                                            Text(
+                                                              'Choose Pressure',
+                                                              style: TextStyle(
+                                                                fontSize: 24.0,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                                height: 16.0),
+                                                            Column(),
+                                                            Wrap(
+                                                              children: pressure
+                                                                  .map((ps) {
+                                                                final psIndex =
+                                                                    pressure
+                                                                        .indexOf(
+                                                                            ps);
+                                                                return Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          right:
+                                                                              16,
+                                                                          bottom:
+                                                                              18),
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    style: ElevatedButton.styleFrom(
+                                                                        backgroundColor:
+                                                                            Colors.green),
+                                                                    onPressed:
+                                                                        () {
+                                                                      final id =
+                                                                          Uuid();
+                                                                      setState(
+                                                                          () {
+                                                                        // position.add(
+                                                                        //   OutstandingTask(
+                                                                        //     id: id.v4(),
+                                                                        //     idSite: idSite,
+                                                                        //     user: auth.currentUser?.email ?? '',
+                                                                        //     unit: idUnit.text,
+                                                                        //     serialNumber: serialNumber,
+                                                                        //     condition: condition,
+                                                                        //     tireSize: tireSize,
+                                                                        //     position: position,
+                                                                        //     brand: brand,
+                                                                        //     tireDamage: tireDamage,
+                                                                        //     remarks: remarks,
+                                                                        //     rtd: rtd,
+                                                                        //     pressure: pressure,
+                                                                        //     lastUpdate: lastUpdate,
+                                                                        //     isDone: isDone,
+                                                                        //     images: images,
+                                                                        //     sn: sn,
+                                                                        //     kunciUnit: kunciUnit,
+                                                                        //     kunciTire: kunciTire)
+                                                                        // );
+                                                                        Navigator.of(context)
+                                                                            .pop();
+                                                                      });
+                                                                    },
+                                                                    child: Text(
+                                                                      ps,
+                                                                      style:
+                                                                          getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }).toList(),
+                                                            ),
+                                                            Row(
+                                                              children: [
+                                                                Expanded(
+                                                                  child:
+                                                                      SizedBox(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    child: InputFormWidget(
+                                                                        controller:
+                                                                            pressureCtrl,
+                                                                        isDigitOnly:
+                                                                            true,
+                                                                        type: TextInputType
+                                                                            .number,
+                                                                        hint:
+                                                                            'Input Manual'),
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  width: 6,
+                                                                ),
+                                                                ElevatedButton(
+                                                                    onPressed:
+                                                                        () {
+                                                                      setState(
+                                                                          () {
+                                                                        if (pressureCtrl.text !=
+                                                                            '') {
+                                                                          // position[posIndex]['pressure'] =
+                                                                          //     pressureCtrl.text;
+                                                                        }
+                                                                        pressureCtrl
+                                                                            .clear();
+                                                                        Navigator.of(context)
+                                                                            .pop();
+                                                                      });
+                                                                    },
+                                                                    child: Text(
+                                                                        'Submit'))
+                                                              ],
+                                                            ),
+                                                            SizedBox(
+                                                                height: 12.0),
+                                                            SizedBox(
+                                                              width: double
+                                                                  .infinity,
+                                                              child:
+                                                                  ElevatedButton(
+                                                                onPressed: () {
+                                                                  pressureCtrl
+                                                                      .clear();
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+                                                                },
+                                                                child: Text(
+                                                                    'Close'),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.blue,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                )),
+                                            // child: (position[posIndex]
+                                            //             ['pressure'] ==
+                                            //         '')
+                                            //     ? Row(
+                                            //         mainAxisSize:
+                                            //             MainAxisSize.min,
+                                            //         children: [
+                                            //           Icon(
+                                            //             Icons.add,
+                                            //             color: white,
+                                            //           ),
+                                            //           const SizedBox(
+                                            //             width: 6,
+                                            //           ),
+                                            //           Text(
+                                            //             'Pressure',
+                                            //             style:
+                                            //                 getWhiteTextStyle(),
+                                            //           )
+                                            //         ],
+                                            //       )
+                                            //     : Text(
+                                            //         '${position[posIndex]['pressure']} Psi',
+                                            //         style: getWhiteTextStyle(
+                                            //           fontSize: 24,
+                                            //           fontWeight: w700,
+                                            //         ),
+                                            //       ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.add,
+                                                  color: white,
+                                                ),
+                                                const SizedBox(
+                                                  width: 6,
+                                                ),
+                                                Text(
+                                                  'Pressure',
+                                                  style: getWhiteTextStyle(),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        SizedBox(
+                                          width:
+                                              MediaQuery.of(context).size.width,
+                                          // height: 65,
+                                          child: ElevatedButton(
+                                              onPressed: () {
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                                List<bool> checkedDamageValues =
+                                                    List<bool>.filled(
+                                                        damageType.length,
+                                                        false);
 
-                        if (state is TiresLoadedState) {
-                          return LayoutBuilder(builder: (context, constraints) {
-                            return Container(
-                              height: constraints.maxWidth * 3.4,
-                              child: Swiper(
-                                controller: swiperController,
-                                loop: false,
-                                physics: NeverScrollableScrollPhysics(),
-                                scrollDirection: Axis.horizontal,
-                                itemCount: state.units.length,
-                                itemBuilder: (context, index) {
-                                  return PgdTireCardWidget(
-                                    dataTire: state.units[index],
-                                    onCategoryChecked: (checkedList) {
-                                      handleDataChecked(checkedList, index);
-                                    },
-                                    onSelectedTireDamage: (tireDamage) {
-                                      handleDataSelected(tireDamage, index);
-                                    },
-                                    onStringRemarks: (remarks) {
-                                      handleDataRemarks(remarks, index);
-                                    },
-                                    onStringRTD: (rtd) {
-                                      handleDataRTD(rtd, index);
-                                    },
-                                    onImageTire: (images) {
-                                      handleImageTire(images);
-                                    },
-                                  );
-                                },
+                                                showDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return Dialog(
+                                                      child: Container(
+                                                        padding: EdgeInsets.all(
+                                                            20.0),
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: <Widget>[
+                                                            Text(
+                                                              'Choose Damage Tire',
+                                                              style: TextStyle(
+                                                                fontSize: 24.0,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                                height: 12.0),
+                                                            Expanded(
+                                                              child:
+                                                                  SingleChildScrollView(
+                                                                child: Column(
+                                                                  children:
+                                                                      damageType
+                                                                          .map(
+                                                                              (damage) {
+                                                                    final dmgIndex =
+                                                                        damageType
+                                                                            .indexOf(damage);
+                                                                    return StatefulBuilder(builder:
+                                                                        (context,
+                                                                            setState) {
+                                                                      return CheckboxListTile(
+                                                                        title: Text(
+                                                                            damage),
+                                                                        value: checkedDamageValues[
+                                                                            dmgIndex],
+                                                                        onChanged:
+                                                                            (bool?
+                                                                                value) {
+                                                                          setState(
+                                                                              () {
+                                                                            checkedDamageValues[dmgIndex] =
+                                                                                value ?? false;
+                                                                          });
+                                                                        },
+                                                                      );
+                                                                    });
+                                                                  }).toList(),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                                height:
+                                                                    12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
+                                                            Column(
+                                                              children: [
+                                                                SizedBox(
+                                                                  height: 42,
+                                                                  width: double
+                                                                      .infinity,
+                                                                  child: InputFormWidget(
+                                                                      controller:
+                                                                          TextEditingController(),
+                                                                      hint:
+                                                                          'Input Manual Here....'),
+                                                                ),
+                                                                const SizedBox(
+                                                                  height: 12,
+                                                                ),
+                                                                SizedBox(
+                                                                  width: double
+                                                                      .infinity,
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    onPressed:
+                                                                        () {
+                                                                      // damageCtrl
+                                                                      //     .clear();
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                    child: Text(
+                                                                        'Close'),
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  height: 12,
+                                                                ),
+                                                                SizedBox(
+                                                                  width: double
+                                                                      .infinity,
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    style: ElevatedButton
+                                                                        .styleFrom(
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .green,
+                                                                    ),
+                                                                    onPressed:
+                                                                        () {
+                                                                      setState(
+                                                                          () {});
+
+                                                                      // selectedDamage
+                                                                      //     .clear();
+                                                                      // final List<
+                                                                      //         String>
+                                                                      //     tmp =
+                                                                      //     [];
+                                                                      // if (damageCtrl.text ==
+                                                                      //         '' ||
+                                                                      //     damageCtrl
+                                                                      //         .text
+                                                                      //         .isNotEmpty) {
+                                                                      //   tmp.add(
+                                                                      //       damageCtrl.text);
+                                                                      // }
+                                                                      // for (int i =
+                                                                      //         0;
+                                                                      //     i < checkedDamageValues.length;
+                                                                      //     i++) {
+                                                                      //   if (checkedDamageValues[
+                                                                      //       i]) {
+                                                                      //     tmp.add(
+                                                                      //         damageType[i]);
+                                                                      //   }
+                                                                      // }
+                                                                      // log('idx luka ban : $posIndex');
+                                                                      // // position[posIndex]
+                                                                      // //     ['damage'] = tmp;
+                                                                      // if (tmp
+                                                                      //     .isNotEmpty) {
+                                                                      //   position[posIndex]['damage'] =
+                                                                      //       tmp;
+                                                                      //   selectedDamage
+                                                                      //       .addAll(tmp);
+                                                                      //   log('hasil luka ban : ${position}');
+                                                                      // }
+                                                                      // damageCtrl
+                                                                      //     .clear();
+
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                    child: Text(
+                                                                      'Submit',
+                                                                      style:
+                                                                          getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor: blue344BEF,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                  )),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 8.0),
+                                                child: Text(
+                                                  'Damage Tire (None)',
+                                                  textAlign: TextAlign.center,
+                                                  style: getWhiteTextStyle(
+                                                      fontSize: 14),
+                                                ),
+                                                // child: Text(
+                                                //   (position[posIndex]
+                                                //               ['damage'] ==
+                                                //           null)
+                                                //       ? 'Damage Tire (None)'
+                                                //       : position[posIndex]
+                                                //               ['damage']
+                                                //           .join('\n---\n'),
+                                                //   textAlign: TextAlign.center,
+                                                //   style: getWhiteTextStyle(
+                                                //       fontSize: 14),
+                                                // ),
+                                              )),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  Text(
+                                                    'RTD 1',
+                                                    style: getBlackTextStyle(
+                                                        fontWeight: w700),
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                        controller:
+                                                            TextEditingController(),
+                                                        hint: ''),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: 12,
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  Text(
+                                                    'RTD 2',
+                                                    style: getBlackTextStyle(
+                                                        fontWeight: w700),
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                        controller:
+                                                            TextEditingController(),
+                                                        hint: ''),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: 12,
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Text(
+                                              'Remarks',
+                                              style: getBlackTextStyle(
+                                                  fontWeight: w700),
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: InputFormWidget(
+                                                  controller:
+                                                      TextEditingController(),
+                                                  hint: ''),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
                             );
-                          });
-                        }
-                        return Container();
-                      },
+                          }).toList(),
+                        ),
+                      ],
                     ),
-
-                    const SizedBox(
-                      height: 12,
-                    ),
-
-                    BlocBuilder<TireBloc, TireState>(
-                      builder: (context, state) {
-                        if (state is TireLoadingState) {}
-
-                        if (state is TiresLoadedState) {
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: ButtonWidget(
-                                  name: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.arrow_left),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Previous',
-                                        style: getWhiteTextStyle(),
-                                      ),
-                                    ],
-                                  ),
-                                  function: () {
-                                    if (swiperController.index > 0) {
-                                      swiperController.index--;
-                                      swiperController.previous();
-                                    }
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: ButtonWidget(
-                                  name: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        'Next',
-                                        style: getWhiteTextStyle(),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Icon(Icons.arrow_right),
-                                    ],
-                                  ),
-                                  function: () {
-                                    if (swiperController.index <
-                                        state.units.length - 1) {
-                                      swiperController.index++;
-                                      swiperController.next();
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          );
-                        }
-
-                        return Container();
-                      },
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    BlocBuilder<TireBloc, TireState>(
-                      builder: (context, state) {
-                        if (state is TiresLoadedState) {
-                          final tire = state.units;
-                          return ButtonWidget(
-                              name: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.save_alt),
-                                  const SizedBox(
-                                    width: 6,
-                                  ),
-                                  Text(
-                                    'Save',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                ],
-                              ),
-                              function: () {
-                                final id = Uuid();
-                                final fixId = id.v4();
-                                isSaved = true;
-                                final savedTires =
-                                    state.units[swiperController.index];
-
-                                imageBox.put(TireInspectPictureEntity(
-                                    idImage: fixId, image: ''));
-
-                                // Disimpan di objectbox
-                                context
-                                    .read<OutstandingTaskBloc>()
-                                    .add(AddOutStandingTaskEvent(
-                                        task: OutstandingTask(
-                                      id: id.v4(),
-                                      idSite: idSite,
-                                      user: auth.currentUser!.email ?? '',
-                                      unit: idUnit.text,
-                                      position:
-                                          int.parse(savedTires.posisi ?? '0'),
-                                      brand: savedTires.brand ?? '',
-                                      serialNumber: savedTires.sn ?? '',
-                                      tireSize: savedTires.size ?? '',
-                                      condition: checkedCategories
-                                          .map((category) => category)
-                                          .toList(),
-                                      tireDamage: selectedTireDamage,
-                                      remarks: remarks,
-                                      rtd: rtd,
-                                      pressure: pressureCtrl.text,
-                                      lastUpdate:
-                                          DateTime.now().toIso8601String(),
-                                      isDone: false,
-                                      sn: savedTires.sn ?? '',
-                                      images:
-                                          (Platform.isAndroid) ? listImg : [],
-                                      kunciUnit: savedTires.kunciUnit ?? '',
-                                      kunciTire: savedTires.kunciTire ?? '',
-                                    )));
-
-                                // for (var outStandingTask in box.getAll()) {
-                                //   log(box.getAll().length.toString());
-                                //   log('data outstanding (object box) ${outStandingTask.id}');
-                                // }
-
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                        backgroundColor: green00968A,
-                                        content: Text(
-                                          'Succesful Save Data',
-                                          style: getWhiteTextStyle(),
-                                        )));
-                              });
-                        }
-                        return Container();
-                      },
-                    ),
-                    // const SizedBox(
-                    //   height: 12,
-                    // ),
-                    // ButtonWidget(
-                    //     name: Row(
-                    //       mainAxisAlignment: MainAxisAlignment.center,
-                    //       children: [
-                    //         Icon(Icons.send),
-                    //         const SizedBox(
-                    //           width: 6,
-                    //         ),
-                    //         Text(
-                    //           'Send',
-                    //           style: getWhiteTextStyle(),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //     function: () async {
-                    //       // await _notificationHelper
-                    //       //     .showNotification(flutterLocalNotificationsPlugin);
-                    //     }),
-                    const SizedBox(
-                      height: 12,
-                    ),
-
-                    // Row(
-                    //   children: [
-                    //     Expanded(
-                    //       child: ButtonWidget(
-                    //           name: Row(
-                    //             mainAxisAlignment: MainAxisAlignment.center,
-                    //             children: [
-                    //               Icon(Icons.arrow_left),
-                    //               Text(
-                    //                 'Previous',
-                    //                 style: getWhiteTextStyle(),
-                    //               ),
-                    //             ],
-                    //           ),
-                    //           function: () {
-                    //             setState(() {
-                    //               if (tireIndex > 1) {
-                    //                 tireIndex--;
-                    //               }
-                    //             });
-                    //           }),
-                    //     ),
-                    //     const SizedBox(
-                    //       width: 12,
-                    //     ),
-                    //     Expanded(
-                    //       child: ButtonWidget(
-                    //           name: Row(
-                    //             mainAxisAlignment: MainAxisAlignment.center,
-                    //             children: [
-                    //               Text(
-                    //                 'Next',
-                    //                 style: getWhiteTextStyle(),
-                    //               ),
-                    //               Icon(Icons.arrow_right),
-                    //             ],
-                    //           ),
-                    //           function: () {
-                    //             setState(() {
-                    //               tireIndex++;
-                    //             });
-                    //           }),
-                    //     ),
-                    //   ],
-                    // ),
-                  ],
-                ),
-              ),
-            );
+                  ),
+                );
+              }
+              return Container();
+            }
           },
         )),
+        bottomNavigationBar: BottomNavigationBar(
+          selectedItemColor: green00968A,
+          items: [
+            BottomNavigationBarItem(
+                icon: Icon(Icons.tire_repair), label: 'PG Digital'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.edit_square), label: 'Manual'),
+          ],
+          currentIndex: selectedMenu,
+          onTap: (index) {
+            setState(() {
+              selectedMenu = index;
+            });
+          },
+        ),
       ),
     );
   }
@@ -1527,15 +2260,15 @@ class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
 // import 'package:permission_handler/permission_handler.dart';
 // import 'package:uuid/uuid.dart';
 
-// class PgdPage extends StatefulWidget {
+// class TireInspectionFormPage extends StatefulWidget {
 //   static const routeName = '/pgd-page';
-//   const PgdPage({super.key});
+//   const TireInspectionFormPage({super.key});
 
 //   @override
-//   State<PgdPage> createState() => _PgdPageState();
+//   State<TireInspectionFormPage> createState() => _TireInspectionFormPageState();
 // }
 
-// class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
+// class _TireInspectionFormPageState extends State<TireInspectionFormPage> with WidgetsBindingObserver {
 //   // bluetooth
 
 //   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -2251,15 +2984,15 @@ class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
 // import 'package:permission_handler/permission_handler.dart';
 // import 'package:uuid/uuid.dart';
 
-// class PgdPage extends StatefulWidget {
+// class TireInspectionFormPage extends StatefulWidget {
 //   static const routeName = '/pgd-page';
-//   const PgdPage({super.key});
+//   const TireInspectionFormPage({super.key});
 
 //   @override
-//   State<PgdPage> createState() => _PgdPageState();
+//   State<TireInspectionFormPage> createState() => _TireInspectionFormPageState();
 // }
 
-// class _PgdPageState extends State<PgdPage> with WidgetsBindingObserver {
+// class _TireInspectionFormPageState extends State<TireInspectionFormPage> with WidgetsBindingObserver {
 //   // bluetooth
 //   // FlutterBluePlus flutterBlue = FlutterBluePlus.
 //   List<ScanResult> devices = [];

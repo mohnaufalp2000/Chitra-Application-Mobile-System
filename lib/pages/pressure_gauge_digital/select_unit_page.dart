@@ -6,8 +6,8 @@ import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
-import 'package:camos/pages/pressure_gauge_digital/pgd_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/tire_inspection_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/tire_inspection_form_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -116,13 +116,14 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
                             switch (inspectionType) {
                               case 'daily_check':
                                 Navigator.pushNamed(
-                                    context, TireInspectionPage.routeName,
+                                    context, DailyCheckFormPage.routeName,
                                     arguments: {
                                       'unitNumber': unit.unitNumber,
                                     });
                                 break;
                               case 'tire_inspection':
-                                Navigator.pushNamed(context, PgdPage.routeName,
+                                Navigator.pushNamed(
+                                    context, TireInspectionFormPage.routeName,
                                     arguments: {
                                       'unitNumber': unit.unitNumber,
                                       'hm': unit.hm,
