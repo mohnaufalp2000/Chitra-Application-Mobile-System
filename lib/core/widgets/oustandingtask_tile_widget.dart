@@ -1,4 +1,6 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:developer';
+
 import 'package:camos/core/services/local_database/outstanding_task/outstanding_task_entity.dart';
 import 'package:camos/core/services/model/outstanding_task.dart';
 import 'package:camos/core/styles/asset_path.dart';
@@ -19,6 +21,9 @@ class OustandingTileWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (task.unit == 'CO2068') {
+      log('adjusment : ${task.adjusmentPressure}');
+    }
     // return Container(
     //   width: double.infinity,
     //   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 24),
@@ -225,6 +230,32 @@ class OustandingTileWidget extends StatelessWidget {
             const SizedBox(
               height: 12,
             ),
+            (task.adjusmentPressure != '' || task.adjusmentPressure != null)
+                ? Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Adjusment Pressure',
+                            style: getWhiteTextStyle(),
+                          ),
+                          Text(
+                            '${task.adjusmentPressure} Psi',
+                            style: getWhiteTextStyle(
+                              fontWeight: w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                    ],
+                  )
+                : const SizedBox(
+                    height: 12,
+                  ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

@@ -13,6 +13,7 @@ class OutstandingTask {
   final String remarks;
   final String rtd;
   final String pressure;
+  final String adjusmentPressure;
   final String lastUpdate;
   final bool isDone;
   final List<String>? images;
@@ -35,6 +36,7 @@ class OutstandingTask {
     required this.remarks,
     required this.rtd,
     required this.pressure,
+    required this.adjusmentPressure,
     required this.lastUpdate,
     required this.isDone,
     required this.images,

@@ -368,7 +368,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                               Container(
                                                 width: 250,
                                                 child: Text(
-                                                  'Nama',
+                                                  dailyMap['user'] ?? 'No Name',
                                                   textAlign: TextAlign.end,
                                                   style: getWhiteTextStyle(
                                                       fontWeight: w700,
@@ -504,7 +504,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                     .end,
                                                             children: [
                                                               Text(
-                                                                '${(pl['pressure'] != '' || pl['pressure'] != null) ? 0 : pl['pressure']} Psi',
+                                                                '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
                                                                 style: getWhiteTextStyle(
                                                                     fontWeight:
                                                                         w700,

@@ -1254,7 +1254,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       .doc(docId)
                       .update({
                     'idSite': idSite,
-                    'user': (user != null && user['username']),
+                    'user': user['username'] ?? auth.currentUser!.email,
                     'tanggal': DateTime.now().toIso8601String(),
                     'unit': dataUnit['unitNumber'],
                     'hm': hmCtrl.text,
@@ -1274,6 +1274,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                   await firestore.collection('daily_pressure').add({
                     // 'nama': (user),
                     'idSite': idSite,
+                    'user': user['username'] ?? auth.currentUser!.email,
                     'tanggal': DateTime.now().toIso8601String(),
                     'unit': dataUnit['unitNumber'],
                     'hm': hmCtrl.text,

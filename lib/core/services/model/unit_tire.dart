@@ -1,15 +1,6 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
-// To parse this JSON data, do
-//
-//     final unitTire = unitTireFromJson(jsonString);
+import 'package:equatable/equatable.dart';
 
-import 'dart:convert';
-
-UnitTire unitTireFromJson(String str) => UnitTire.fromJson(json.decode(str));
-
-String unitTireToJson(UnitTire data) => json.encode(data.toJson());
-
-class UnitTire {
+class UnitTire extends Equatable {
   String? unitNumber;
   String? posisi;
   String? model;
@@ -52,26 +43,54 @@ class UnitTire {
     this.kunciTire,
   });
 
-  UnitTire.fromJson(Map<String, dynamic> json) {
-    unitNumber = json['unit_number'];
-    posisi = json['posisi'];
-    model = json['model'];
-    status = json['status'];
-    hm = json['hm'];
-    brand = json['brand'];
-    size = json['size'];
-    pattern = json['pattern'];
-    otd = json['otd'];
-    rtd = json['rtd'];
-    lifetime = json['lifetime'];
-    hmOnJob = json['hm_on_job'];
-    lifeOnJob = json['life_on_job'];
-    date = json['date'];
-    rating = json['rating'];
-    site = json['site'];
-    sn = json['sn'];
-    kunciUnit = json['kunci_unit'];
-    kunciTire = json['kunci_tire'];
+  @override
+  List<Object?> get props => [
+        unitNumber,
+        posisi,
+        model,
+        status,
+        hm,
+        brand,
+        size,
+        pattern,
+        otd,
+        rtd,
+        lifetime,
+        hmOnJob,
+        lifeOnJob,
+        date,
+        rating,
+        site,
+        sn,
+        kunciUnit,
+        kunciTire,
+      ];
+
+  // Metode fromJson, toJson, dan toString tetap seperti yang Anda miliki
+  // ...
+
+  factory UnitTire.fromJson(Map<String, dynamic> json) {
+    return UnitTire(
+      unitNumber: json['unit_number'],
+      posisi: json['posisi'],
+      model: json['model'],
+      status: json['status'],
+      hm: json['hm'],
+      brand: json['brand'],
+      size: json['size'],
+      pattern: json['pattern'],
+      otd: json['otd'],
+      rtd: json['rtd'],
+      lifetime: json['lifetime'],
+      hmOnJob: json['hm_on_job'],
+      lifeOnJob: json['life_on_job'],
+      date: json['date'],
+      rating: json['rating'],
+      site: json['site'],
+      sn: json['sn'],
+      kunciUnit: json['kunci_unit'],
+      kunciTire: json['kunci_tire'],
+    );
   }
 
   Map<String, dynamic> toJson() {

@@ -278,7 +278,9 @@ Future<File> createFolderPath(String id, String type,
           File("${path?.path}/Attendance_${username}_${sn}_${date}.xlsx");
       return outputFile;
     case 'outstanding':
-      final outputFile = File("${path?.path}/Outstanding-$id.xlsx");
+      final outputFile = File(
+          "${path?.path}/TireInspection_${site}_${email}_${id}_CAMOS.xlsx");
+      // final outputFile = File("${path?.path}/Outstanding-$id.xlsx");
       return outputFile;
     case 'daily-check':
       final outputFile = File(
@@ -508,7 +510,15 @@ Future<List<int>> createExcel(String type,
 
       sheet.getRangeByName('R3:S3').merge();
       sheet.getRangeByName('R3:S3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('R3:S3').setText('OTD/RTD');
+      sheet.getRangeByName('R3:S3').setText('RTD');
+
+      sheet.getRangeByName('T3:U3').merge();
+      sheet.getRangeByName('T3:U3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('T3:U3').setText('RTD');
+
+      sheet.getRangeByName('V3:Z3').merge();
+      sheet.getRangeByName('V3:Z3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('V3:Z3').setText('Broken Component');
 
       for (var i = 0; i < task!.length; i++) {
         // inspector
@@ -564,17 +574,41 @@ Future<List<int>> createExcel(String type,
             HAlignType.center;
         sheet.getRangeByName('M${i + 4}:Q${i + 4}').cellStyle.vAlign =
             VAlignType.center;
-        sheet
-            .getRangeByName('M${i + 4}:Q${i + 4}')
-            .setText(task[i]['tire_damage']);
+        sheet.getRangeByName('M${i + 4}:Q${i + 4}').setText(
+            (task[i]['tire_damage'] is List<dynamic>)
+                ? (task[i]['tire_damage'] as List<dynamic>).join('\n')
+                : task[i]['tire_damage']);
 
-        // OTD / RTD
+        //RTD
         sheet.getRangeByName('R${i + 4}:S${i + 4}').merge();
         sheet.getRangeByName('R${i + 4}:S${i + 4}').cellStyle.hAlign =
             HAlignType.center;
         sheet.getRangeByName('R${i + 4}:S${i + 4}').cellStyle.vAlign =
             VAlignType.center;
         sheet.getRangeByName('R${i + 4}:S${i + 4}').setText(task[i]['rtd']);
+
+        //ADJUSMNET PRESSURE
+        sheet.getRangeByName('T${i + 4}:U${i + 4}').merge();
+        sheet.getRangeByName('T${i + 4}:U${i + 4}').cellStyle.hAlign =
+            HAlignType.center;
+        sheet.getRangeByName('T${i + 4}:U${i + 4}').cellStyle.vAlign =
+            VAlignType.center;
+        sheet.getRangeByName('T${i + 4}:U${i + 4}').setText(
+            (task[i]['adjusmentPressure'] == '' ||
+                    task[i]['adjusmentPressure'] == null)
+                ? '0 Psi'
+                : task[i]['adjusmentPressure'] + 'Psi');
+
+        // BROKEN COMPONENT
+        sheet.getRangeByName('V${i + 4}:Z${i + 4}').merge();
+        sheet.getRangeByName('V${i + 4}:Z${i + 4}').cellStyle.hAlign =
+            HAlignType.center;
+        sheet.getRangeByName('V${i + 4}:Z${i + 4}').cellStyle.vAlign =
+            VAlignType.center;
+        sheet.getRangeByName('V${i + 4}:Z${i + 4}').setText(
+            (task[i]['condition'] is List<dynamic>)
+                ? (task[i]['condition'] as List<dynamic>).join('\n')
+                : task[i]['condition']);
 
         // IMAGE TIRE
         // final urlImage = task[i]['images'];

@@ -1099,10 +1099,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   print('tugas : $filteredItemTask');
                                   // print('terpesona $filteredItemTask');
                                   // final file = await createFolderPath(id.v4(), 'outstanding');
+                                  print(
+                                      'site mana : ${filteredItemTask[0]['id_site']}');
+
                                   final file = await createFolderPath(
-                                      id.v4(), 'outstanding');
-                                  final bytes = await createExcel('outstanding',
-                                      task: filteredItemTask);
+                                      id.v4(), 'outstanding',
+                                      email: auth.currentUser?.email ?? '',
+                                      site: filteredItemTask[0]['id_site']);
+                                  final bytes = await createExcel(
+                                    'outstanding',
+                                    task: filteredItemTask,
+                                  );
                                   final saved = await file.writeAsBytes(bytes,
                                       flush: true);
                                   print('laper : $saved');
@@ -1781,28 +1788,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   condition: (task['condition'] != null)
                                                       ? List<String>.from(
                                                           task['condition'].map(
-                                                              (condition) => condition
-                                                                  .toString()))
+                                                              (condition) =>
+                                                                  condition
+                                                                      .toString()))
                                                       : [],
                                                   tireSize:
                                                       task['tire_size'] ?? '',
-                                                  hm: '',
-                                                  position:
-                                                      task['position'] ?? 0,
+                                                  hm: task['hm'] ?? '',
+                                                  position: task['position'] is String
+                                                      ? int.tryParse(task['position']) ??
+                                                          0
+                                                      : task['position'] ?? 0,
                                                   brand: task['brand'] ?? '',
-                                                  tireDamage:
-                                                      task['tire_damage'] ?? '',
-                                                  remarks:
-                                                      task['remarks'] ?? '',
+                                                  tireDamage: task['tire_damage']
+                                                          is List<dynamic>
+                                                      ? task['tire_damage'].join(', ')
+                                                      : task['tire_damage'],
+                                                  remarks: task['remarks'] ?? '',
                                                   rtd: task['rtd'] ?? '',
-                                                  pressure:
-                                                      task['pressure'] ?? '',
-                                                  lastUpdate:
-                                                      task['last_update'] ?? '',
+                                                  pressure: task['pressure'] ?? '',
+                                                  adjusmentPressure: task['adjusmentPressure'] ?? '',
+                                                  lastUpdate: task['last_update'] ?? '',
                                                   isDone: task['is_done'] ?? '',
                                                   sn: task['sn'] ?? '',
-                                                  kunciUnit:
-                                                      task['kunci_unit'] ?? '',
+                                                  kunciUnit: task['kunci_unit'] ?? '',
                                                   kunciTire: task['kunci_tire'] ?? '',
                                                   images: []));
                                         }),
