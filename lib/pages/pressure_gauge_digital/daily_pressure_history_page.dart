@@ -350,6 +350,30 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
+                                              'Name',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 18),
+                                            ),
+                                            Container(
+                                              width: 250,
+                                              child: Text(
+                                                dailyMap['user'] ?? 'No Name',
+                                                textAlign: TextAlign.end,
+                                                style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
                                               'Tanggal',
                                               style: getWhiteTextStyle(
                                                   fontSize: 18),
@@ -466,7 +490,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                                   .end,
                                                           children: [
                                                             Text(
-                                                              '${(pl['pressure'] != '' || pl['pressure'] != null) ? 0 : pl['pressure']} Psi',
+                                                              '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
                                                               style:
                                                                   getWhiteTextStyle(
                                                                       fontWeight:
@@ -474,11 +498,11 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                                       fontSize:
                                                                           18),
                                                             ),
-                                                            (pl['adjusmentPressure'] !=
+                                                            (pl['adjusmentPressure'] ==
                                                                         null &&
-                                                                    pl['adjusmentPressure'] !=
+                                                                    pl['adjusmentPressure'] ==
                                                                         '0' &&
-                                                                    pl['adjusmentPressure'] !=
+                                                                    pl['adjusmentPressure'] ==
                                                                         '')
                                                                 ? Text(
                                                                     '${pl['adjusmentPressure']} Psi (Adj. Pressure)',

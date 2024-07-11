@@ -2678,10 +2678,23 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
                                   // input ke daily check pressure
                                   try {
+                                    final today = DateTime.now();
+                                    final startOfDay = DateTime(
+                                        today.year, today.month, today.day);
+                                    final endOfDay = DateTime(today.year,
+                                        today.month, today.day, 23, 59, 59);
+
                                     final querySnapshot = await firestore
                                         .collection('daily_pressure')
                                         .where('unit', isEqualTo: idUnit.text)
+                                        .where('tanggal',
+                                            isGreaterThanOrEqualTo: startOfDay)
+                                        .where('tanggal',
+                                            isLessThanOrEqualTo: endOfDay)
                                         .get();
+
+                                    print(
+                                        'Documents found: ${querySnapshot.docs.length}');
 
                                     if (querySnapshot.docs.isNotEmpty) {
                                       final docId = querySnapshot.docs.first.id;

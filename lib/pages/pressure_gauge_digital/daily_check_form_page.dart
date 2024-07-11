@@ -15,6 +15,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:intl/intl.dart';
 
 class DailyCheckFormPage extends StatefulWidget {
   static const routeName = '/tire-inspection-page';
@@ -1240,9 +1241,16 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     style: getWhiteTextStyle(),
                   )));
               try {
+                final today = DateTime.now();
+                final startOfDay = DateTime(today.year, today.month, today.day);
+                final endOfDay =
+                    DateTime(today.year, today.month, today.day, 23, 59, 59);
+                final formatDate = DateFormat('yyyy-MM-dd').format(today);
                 final querySnapshot = await firestore
                     .collection('daily_pressure')
                     .where('unit', isEqualTo: dataUnit['unitNumber'])
+                    .where('tanggal', isGreaterThanOrEqualTo: startOfDay)
+                    .where('tanggal', isLessThanOrEqualTo: endOfDay)
                     .get();
 
                 if (querySnapshot.docs.isNotEmpty) {
