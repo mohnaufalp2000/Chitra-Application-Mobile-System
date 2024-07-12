@@ -373,47 +373,82 @@ class _TpmsPageState extends State<TpmsPage> {
                                   ],
                                 ),
                                 // Pos 3, 4, 5, 6
-                                GridView.builder(
-                                  itemCount: allUnits[indexUnit][0].length -
-                                      2, // Mengurangi 2 untuk menghilangkan index pertama dan kedua
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 4,
-                                    childAspectRatio: 0.4,
-                                    mainAxisSpacing: 3,
-                                  ),
-                                  itemBuilder: (context, index) {
-                                    // Memperhitungkan offset karena index pertama dan kedua diabaikan
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: List.generate(
+                                      allUnits[indexUnit][0].length - 2,
+                                      (index) {
                                     final dataIndex = index + 2;
-
-                                    return PressureCard(
-                                      position: '${dataIndex + 1}',
-                                      index: index,
-                                      // temperature: temperatures[dataIndex]
-                                      //         ['temperature${dataIndex + 1}'] ??
-                                      //     '',
-                                      temperature: allUnits[indexUnit][2]
-                                                  [dataIndex]
-                                              ['temperature${dataIndex + 1}'] ??
-                                          '',
-                                      // pressureStatus: pressureStatus[dataIndex]
-                                      //         ['press${dataIndex + 1}'] ??
-                                      //     '',
-                                      pressureStatus: allUnits[indexUnit][1]
-                                                  [dataIndex]
-                                              ['press${dataIndex + 1}'] ??
-                                          '',
-                                      // pressure: pressures[dataIndex]
-                                      //     ['pressure${dataIndex + 1}'],
-                                      pressure: allUnits[indexUnit][0]
-                                                  [dataIndex]
-                                              ['pressure${dataIndex + 1}'] ??
-                                          '',
+                                    return Expanded(
+                                      child: PressureCard(
+                                        position: '${dataIndex + 1}',
+                                        index: index,
+                                        // temperature: temperatures[dataIndex]
+                                        //         ['temperature${dataIndex + 1}'] ??
+                                        //     '',
+                                        temperature: allUnits[indexUnit][2]
+                                                    [dataIndex][
+                                                'temperature${dataIndex + 1}'] ??
+                                            '',
+                                        // pressureStatus: pressureStatus[dataIndex]
+                                        //         ['press${dataIndex + 1}'] ??
+                                        //     '',
+                                        pressureStatus: allUnits[indexUnit][1]
+                                                    [dataIndex]
+                                                ['press${dataIndex + 1}'] ??
+                                            '',
+                                        // pressure: pressures[dataIndex]
+                                        //     ['pressure${dataIndex + 1}'],
+                                        pressure: allUnits[indexUnit][0]
+                                                    [dataIndex]
+                                                ['pressure${dataIndex + 1}'] ??
+                                            '',
+                                      ),
                                     );
-                                  },
+                                  }),
                                 ),
+                                // GridView.builder(
+                                //   itemCount: allUnits[indexUnit][0].length -
+                                //       2, // Mengurangi 2 untuk menghilangkan index pertama dan kedua
+                                //   shrinkWrap: true,
+                                //   physics: NeverScrollableScrollPhysics(),
+                                //   gridDelegate:
+                                //       SliverGridDelegateWithFixedCrossAxisCount(
+                                //     crossAxisCount: 4,
+                                //     childAspectRatio: 0.4,
+                                //     mainAxisSpacing: 3,
+                                //   ),
+                                //   itemBuilder: (context, index) {
+                                //     // Memperhitungkan offset karena index pertama dan kedua diabaikan
+                                //     final dataIndex = index + 2;
+
+                                //     return PressureCard(
+                                //       position: '${dataIndex + 1}',
+                                //       index: index,
+                                //       // temperature: temperatures[dataIndex]
+                                //       //         ['temperature${dataIndex + 1}'] ??
+                                //       //     '',
+                                //       temperature: allUnits[indexUnit][2]
+                                //                   [dataIndex]
+                                //               ['temperature${dataIndex + 1}'] ??
+                                //           '',
+                                //       // pressureStatus: pressureStatus[dataIndex]
+                                //       //         ['press${dataIndex + 1}'] ??
+                                //       //     '',
+                                //       pressureStatus: allUnits[indexUnit][1]
+                                //                   [dataIndex]
+                                //               ['press${dataIndex + 1}'] ??
+                                //           '',
+                                //       // pressure: pressures[dataIndex]
+                                //       //     ['pressure${dataIndex + 1}'],
+                                //       pressure: allUnits[indexUnit][0]
+                                //                   [dataIndex]
+                                //               ['pressure${dataIndex + 1}'] ??
+                                //           '',
+                                //     );
+                                //   },
+                                // ),
                                 const SizedBox(
                                   height: 12,
                                 ),
