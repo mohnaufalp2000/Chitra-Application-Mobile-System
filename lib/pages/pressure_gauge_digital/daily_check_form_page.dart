@@ -99,6 +99,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   List<BluetoothDevice> devices = [];
   Map<String, dynamic> user = {};
 
+  bool isProcessing = false;
+
   // startScanBluetooth() async {
   //   bluetoothSerial.startDiscovery().listen((device) {
   //     if (!devices.contains(device.device)) {
@@ -223,6 +225,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     super.initState();
     callTires();
     getUser();
+  }
+
+  @override
+  void dispose() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+    super.dispose();
   }
 
   @override
@@ -1234,6 +1243,23 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
             onPressed: () async {
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
+              if (isProcessing) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text(
+                      'Please wait a moment before pressing again.',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              setState(() {
+                isProcessing = true;
+              });
+
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   backgroundColor: green00968A,
                   content: Text(
@@ -1241,16 +1267,33 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     style: getWhiteTextStyle(),
                   )));
               try {
+                // final today = DateTime.now();
+                // final startOfDay = DateTime(today.year, today.month, today.day);
+                // log('hari ini 1 : ${startOfDay}');
+                // final endOfDay =
+                //     DateTime(today.year, today.month, today.day, 23, 59, 59);
+                // final formatDate = DateFormat('yyyy-MM-dd').format(today);
+                // log('hari ini 2 : ${endOfDay}');
+
+                // final querySnapshot = await firestore
+                //     .collection('daily_pressure')
+                //     .where('unit', isEqualTo: dataUnit['unitNumber'])
+                //     .where('tanggal', isGreaterThanOrEqualTo: startOfDay)
+                //     .where('tanggal', isLessThanOrEqualTo: endOfDay)
+                //     .get();
+
                 final today = DateTime.now();
                 final startOfDay = DateTime(today.year, today.month, today.day);
                 final endOfDay =
                     DateTime(today.year, today.month, today.day, 23, 59, 59);
-                final formatDate = DateFormat('yyyy-MM-dd').format(today);
-                final querySnapshot = await firestore
+
+                final querySnapshot = await FirebaseFirestore.instance
                     .collection('daily_pressure')
                     .where('unit', isEqualTo: dataUnit['unitNumber'])
-                    .where('tanggal', isGreaterThanOrEqualTo: startOfDay)
-                    .where('tanggal', isLessThanOrEqualTo: endOfDay)
+                    .where('tanggal',
+                        isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+                    .where('tanggal',
+                        isLessThanOrEqualTo: endOfDay.toIso8601String())
                     .get();
 
                 if (querySnapshot.docs.isNotEmpty) {
@@ -1300,6 +1343,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 }
               } catch (e) {
                 print('error bmb : $e');
+              } finally {
+                await Future.delayed(
+                    Duration(seconds: 3)); // Jeda waktu 3 detik
+                setState(() {
+                  isProcessing = false;
+                });
               }
             },
             style: ElevatedButton.styleFrom(

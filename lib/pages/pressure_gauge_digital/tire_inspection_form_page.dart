@@ -729,6 +729,7 @@
 
 ////// FLUTTER SERIAL BLUETOOTH 1 (YG DIPAKE)
 
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
@@ -763,6 +764,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 
@@ -2038,7 +2041,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             width: MediaQuery.of(context)
                                                 .size
                                                 .width,
-                                            // height: 65,
                                             child: ElevatedButton(
                                                 onPressed: () {
                                                   FocusScope.of(context)
@@ -2255,6 +2257,98 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           const SizedBox(
                                             height: 12,
                                           ),
+
+                                          // SizedBox(
+                                          //   width: double.infinity,
+                                          //   height: 45,
+                                          //   child: ElevatedButton(
+                                          //       style: ElevatedButton.styleFrom(
+                                          //           backgroundColor:
+                                          //               Colors.deepOrange,
+                                          //           shape:
+                                          //               RoundedRectangleBorder(
+                                          //             borderRadius:
+                                          //                 BorderRadius.circular(
+                                          //                     12),
+                                          //           )),
+                                          //       onPressed: () async {
+                                          //         requestCameraPermission();
+                                          //         final ImagePicker picker =
+                                          //             ImagePicker();
+                                          //         final XFile? image =
+                                          //             await picker.pickImage(
+                                          //                 imageQuality: 50,
+                                          //                 source: ImageSource
+                                          //                     .camera);
+                                          //         try {
+                                          //           if (image != null) {
+                                          //             // Read image as a file
+                                          //             File imageFile =
+                                          //                 File(image.path);
+
+                                          //             // Compress the image if needed (optional)
+                                          //             final compressedImageFile =
+                                          //                 await FlutterImageCompress
+                                          //                     .compressAndGetFile(
+                                          //               imageFile.path,
+                                          //               imageFile.path +
+                                          //                   '_compressed.jpg',
+                                          //               quality: 50,
+                                          //             );
+
+                                          //             // Convert image to base64
+                                          //             List<int> imageBytes =
+                                          //                 await compressedImageFile!
+                                          //                     .readAsBytes();
+                                          //             String base64String =
+                                          //                 base64Encode(
+                                          //                     imageBytes);
+
+                                          //             List<String> chunks = [];
+                                          //             for (int i = 0;
+                                          //                 i <
+                                          //                     base64String
+                                          //                         .length;
+                                          //                 i++) {
+                                          //               int end = (i + 1000 <
+                                          //                       base64String
+                                          //                           .length)
+                                          //                   ? i + 1000
+                                          //                   : base64String
+                                          //                       .length;
+                                          //               chunks.add(base64String
+                                          //                   .substring(i, end));
+                                          //             }
+                                          //             log('gambar string : ${chunks}');
+                                          //           }
+                                          //         } catch (e) {
+                                          //           log('error gambar string : $e');
+                                          //         }
+
+                                          //         setState(() {});
+                                          //       },
+                                          //       child: Row(
+                                          //         mainAxisAlignment:
+                                          //             MainAxisAlignment.center,
+                                          //         children: [
+                                          //           Icon(
+                                          //             Icons.camera_alt,
+                                          //             color: white,
+                                          //           ),
+                                          //           const SizedBox(
+                                          //             width: 12,
+                                          //           ),
+                                          //           Text(
+                                          //             'Take Picture',
+                                          //             style:
+                                          //                 getWhiteTextStyle(),
+                                          //           ),
+                                          //         ],
+                                          //       )),
+                                          // ),
+                                          // const SizedBox(
+                                          //   height: 12,
+                                          // ),
                                           Row(
                                             children: [
                                               Expanded(

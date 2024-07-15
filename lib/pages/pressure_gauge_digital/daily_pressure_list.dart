@@ -469,7 +469,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                   positionList.indexOf(pl);
                                               List<dynamic> luka = [];
 
-                                              if (pl['luka'] != null) {
+                                              if (pl['luka'] != null &&
+                                                  pl['luka'] is! String) {
                                                 luka =
                                                     pl['luka'] as List<dynamic>;
                                               }

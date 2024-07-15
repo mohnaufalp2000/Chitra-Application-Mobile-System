@@ -317,7 +317,7 @@ class ApiService {
     }
   }
 
-  // mendapatkan data salah satu site ck
+  // mendapatkan data salah satu site
   static Future<Site> getSite(String idSite) async {
     late Site site;
     final response = await http.get(Uri.parse('${url}get_site'));
