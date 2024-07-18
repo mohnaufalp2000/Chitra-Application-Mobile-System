@@ -262,6 +262,7 @@ class ApiService {
 
       return tireSpecCount;
     } catch (e) {
+      log('error inventory : ${e}');
       throw Exception(e.toString());
     }
   }
@@ -272,6 +273,8 @@ class ApiService {
     final response = await http.get(Uri.parse(
         '${url}get_tire&limit=10&offset=$offset&idsite=$site&status=$status'));
 
+    log('error detail inventory body' + site);
+
     try {
       final body = response.body;
       // log(body.toString());
@@ -280,6 +283,7 @@ class ApiService {
 
       List<TireSpec> listTireInvent =
           List<TireSpec>.from(result['data'].map((invent) {
+        print('data detail inventory : $invent');
         if (invent['size'] != null) {
           invent['size'] = invent['size'].replaceAll("-", "R");
         }
@@ -288,7 +292,7 @@ class ApiService {
 
       return listTireInvent;
     } catch (e) {
-      log(e.toString());
+      log('error detail inventory' + e.toString());
       return [];
       // throw Exception(e.toString());
     }

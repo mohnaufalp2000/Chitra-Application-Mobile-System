@@ -118,6 +118,8 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
             },
           ];
 
+          log('berjalan 1');
+
           // selain user office yaitu manpower di site, simpan data di lokal
           if (await getIdSitePreferences() != '1' &&
               await getIdSitePreferences() != '2') {
@@ -125,6 +127,8 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
             final jsonData = jsonEncode(
                 {'count': count, 'idSite': site.idSite, 'siteName': site.site});
             await prefs.setString('tire_spec', jsonData);
+
+            log('berjalan 2');
 
             // menyimpan data detail tire inventory ke penyimpanan local
             // cek dulu apakah sudah ada data detail tire invetory di local?
@@ -139,6 +143,8 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
             int parseTotal2 = int.parse(total2);
             // karena datanya (124 Pcs| 1150 Avg Lifetime), maka datanya di split
             int parseTotal3 = int.parse(total3.split('|')[1]);
+
+            log('berjalan 3');
 
             String idSite = event.idSite;
 
@@ -159,7 +165,7 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
             if (parseTotal0 < 10) {
               // jika tire berjumlah 0
               if (parseTotal0 == 0) {
-                return;
+                listNewInvent = [];
               } else {
                 listNewInvent.addAll(await ApiService.getDetailInventory(
                     event.status[0], '0', idSite));
@@ -172,12 +178,14 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
               }
             }
 
+            log('berjalan 4');
+
             // REPAIR
             // Gathering data from api
             if (parseTotal1 < 10) {
               // jika tire berjumlah 0
               if (parseTotal1 == 0) {
-                return;
+                listRepairInvent = [];
               } else {
                 listRepairInvent.addAll(await ApiService.getDetailInventory(
                     event.status[1], '0', idSite));
@@ -190,12 +198,14 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
               }
             }
 
+            log('berjalan 5');
+
             // SPARE
             // Gathering data from api
             if (parseTotal2 < 10) {
               // jika tire berjumlah 0
               if (parseTotal2 == 0) {
-                return;
+                listSpareInvent = [];
               } else {
                 listSpareInvent.addAll(await ApiService.getDetailInventory(
                     event.status[2], '0', idSite));
@@ -208,12 +218,14 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
               }
             }
 
+            log('berjalan 6');
+
             // SCRAP
             // Gathering data from api
             if (parseTotal3 < 10) {
               // jika tire berjumlah 0
               if (parseTotal3 == 0) {
-                return;
+                listScrapInvent = [];
               } else {
                 listScrapInvent.addAll(await ApiService.getDetailInventory(
                     event.status[3], '0', idSite));
@@ -225,6 +237,8 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
                     event.status[3], i.toString(), idSite));
               }
             }
+
+            log('berjalan 7');
 
             // SCRAP
             Map<String, Map<String, Map<String, List<TireSpec>>>> groupedData =
@@ -360,6 +374,8 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
               'spare': resultSpare,
               'scrap': resultScrap
             });
+            log('detailJsonData : $detailJsonData');
+
             await prefs.setString('detail_tire_spec', detailJsonData);
           }
 
@@ -367,6 +383,7 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
               tireBlocData: count,
               site: {'idSite': site.idSite, 'siteName': site.site}));
         } catch (e) {
+          log('message error : $e');
           // if (await getIdSitePreferences() == '1' ||
           //     await getIdSitePreferences() == '2') {
           //   emit(TireInventErrorState(message: 'Please Try Again!'));

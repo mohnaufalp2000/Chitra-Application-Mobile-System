@@ -686,6 +686,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                           BlocConsumer<TireInventBloc, TireInventState>(
                               builder: (context, state) {
+                                print('state saat ini :$state');
                                 if (state is TireInventErrorState) {
                                   return CustomErrorWidget(
                                       errorMessage: state.message,
