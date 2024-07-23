@@ -114,107 +114,6 @@ class ApiService {
     }
   }
 
-  // mendapatkan daftar tire di salah satu unit
-  static Future<List<UnitTire>> getUnitTires(
-      String site, String unitNumber) async {
-    final response =
-        await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
-
-    try {
-      final body = response.body;
-      final result = jsonDecode(body);
-
-      List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
-        (unit) => UnitTire.fromJson(unit),
-      ));
-
-      List<UnitTire> fixData = [];
-
-      listUnitTire.forEach((unit) {
-        if (unitNumber == unit.unitNumber) {
-          fixData.add(unit);
-        }
-      });
-
-      // print('unitku ${fixData}');
-      await cacheUnitTires(fixData, unitNumber);
-
-      return fixData;
-    } catch (e) {
-      throw Exception(e.toString());
-    }
-  }
-
-  static Future<void> cacheUnitTires(
-      List<UnitTire> units, String unitNumber) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedData = prefs.getString('cached_units');
-
-      List<Map<String, dynamic>> dataList = jsonDecode(cachedData ?? '');
-
-      log('berubah : ${dataList.toString()}');
-
-      // Map<String, dynamic> unitDataMap = {};
-
-      // unitDataMap = jsonDecode(cachedData ?? '');
-
-      // // Hapus entri lain yang memiliki unitNumber berbeda
-      // unitDataMap.removeWhere((key, value) => key != unitNumber);
-
-      // for (final unit in units) {
-      //   final unitData = unit.toJson();
-
-      //   if (!unitDataMap.containsKey(unitNumber)) {
-      //     unitDataMap[unitNumber] = [unitData];
-      //   } else {
-      //     unitDataMap[unitNumber].add(unitData);
-      //   }
-      // }
-
-      // await prefs.setString('cached_unit_tires', jsonEncode(unitDataMap));
-      // final a = prefs.getString('cached_unit_tires');
-    } catch (e) {
-      // Handle error jika gagal menyimpan data.
-      throw Exception('Gagal menyimpan data ke penyimpanan lokal: $e');
-    }
-  }
-
-  static Future<List<UnitTire>> getCachedUnitTires(String unitNumber) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final cachedData = prefs.getString('cached_unit_tires');
-
-      if (cachedData != null) {
-        final cachedDataParsed = jsonDecode(cachedData);
-
-        if (cachedDataParsed is Map<String, dynamic>) {
-          if (cachedDataParsed.containsKey(unitNumber)) {
-            final unitDataList = cachedDataParsed[unitNumber] as List<dynamic>;
-            final units =
-                unitDataList.map((data) => UnitTire.fromJson(data)).toList();
-            return units;
-          }
-        } else if (cachedDataParsed is List<dynamic>) {
-          // Iterate through the list and find matching entries
-          final matchingUnits = <UnitTire>[];
-          for (final unitData in cachedDataParsed) {
-            final unit = UnitTire.fromJson(unitData);
-            if (unit.unitNumber == unitNumber) {
-              matchingUnits.add(unit);
-            }
-          }
-          return matchingUnits;
-        }
-      }
-
-      return []; // Return an empty list if no matching data found
-    } catch (e) {
-      // Handle error jika gagal mengambil data.
-      throw Exception('Gagal mengambil data dari penyimpanan lokal: $e');
-    }
-  }
-
   // mendapatkan data tire condition di salah satu site
   static Future<List<UnitTire>> getTireCondition(String site) async {
     final response =
@@ -231,16 +130,6 @@ class ApiService {
       return listUnitTire;
     } catch (e) {
       throw Exception(e.toString());
-    }
-  }
-
-  // mendapatkan data gambar user dari firebase
-  static Future<List<int>> fetchImageData(String firebaseStorageUrl) async {
-    final response = await http.get(Uri.parse('${firebaseStorageUrl}'));
-    if (response.statusCode == 200) {
-      return response.bodyBytes;
-    } else {
-      throw Exception('Gagal mengunduh gambar');
     }
   }
 

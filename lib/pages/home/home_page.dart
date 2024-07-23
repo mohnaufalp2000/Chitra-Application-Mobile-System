@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
 import 'package:camos/core/blocs/network/network_bloc.dart';
 import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
+import 'package:camos/core/blocs/site/site_bloc.dart';
 import 'package:camos/core/blocs/tire/tire_bloc.dart';
 import 'package:camos/core/blocs/tire_condition/tire_condition_bloc.dart';
 import 'package:camos/core/blocs/tire_invent/tire_invent_bloc.dart';
@@ -89,6 +90,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   TextEditingController searchTaskController = TextEditingController();
   String searchTaskText = '';
 
+  String? _selectedSite; // Menyimpan nilai yang dipilih
+  List<String> _siteOptions = [];
+
   final allChecked = CheckBoxModalWidget(title: 'All');
   List<CheckBoxModalWidget> checkBoxList = [
     // CheckBoxModalWidget(title: 'CheckBox 1'),
@@ -125,14 +129,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     context
         .read<OutstandingTaskBloc>()
         .add(ReadOutStandingTaskEvent(selectedDate: []));
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      var connectivityResult = await Connectivity().checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        print('Tidak ada koneksi internet');
-      } else {
-        showPosterDialog(context);
-      }
-    });
+    showPoster();
+
+    context.read<TireInventBloc>().add(GetTireInventEvent(
+        idSite: (_selectedSite != null) ? _selectedSite ?? '' : idSite,
+        status: status));
+
+    context.read<SiteBloc>().add(GetAllSiteEvent());
+
+    context.read<TireConditionBloc>().add(GetTireConditionEvent(
+        idSite: (_selectedSite != null) ? _selectedSite ?? '' : idSite));
   }
 
   @override
@@ -144,16 +150,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  // @override
-  // void didChangeAppLifecycleState(AppLifecycleState state) async {
-  //   super.didChangeAppLifecycleState(state);
-
-  //   if (state == AppLifecycleState.inactive ||
-  //       state == AppLifecycleState.detached) {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     prefs.remove('detail_tire_spec');
-  //   }
-  // }
+  void showPoster() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        print('Tidak ada koneksi internet');
+      } else {
+        showPosterDialog(context);
+      }
+    });
+  }
 
   void retrieveVersionNumber() async {
     final versionCol = FirebaseFirestore.instance.collection('version');
@@ -367,11 +373,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  // void initialCallIdSite() async {
-  //   String id = await getIdSitePreferences();
-  //   idSite = id;
-  // }
-
   String greeting() {
     var hour = DateTime.now().hour;
     if (hour < 12) {
@@ -443,9 +444,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     idSite = id;
     print('id site : $idSite');
 
-    // if (idSite == '1') {
-    //   idSite = await getSelectedIdSitePreferences();
-    // }
     if (mounted) {}
 
     Stream<QuerySnapshot> stream = firestore
@@ -464,38 +462,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    CollectionReference taskCollection = firestore.collection('task');
-    final siteData =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    context.read<TireInventBloc>().add(GetTireInventEvent(
+        idSite: (_selectedSite != null) ? _selectedSite ?? '' : idSite,
+        status: status));
 
-    if (siteData != null) {
-      // setelah milih site
-      print('id site home page : ${siteData['idSite']}');
-      context
-          .read<TireInventBloc>()
-          .add(GetTireInventEvent(idSite: siteData['idSite'], status: status));
+    context.read<SiteBloc>().add(GetAllSiteEvent());
 
-      context
-          .read<TireConditionBloc>()
-          .add(GetTireConditionEvent(idSite: siteData['idSite']));
+    context.read<TireConditionBloc>().add(GetTireConditionEvent(
+        idSite: (_selectedSite != null) ? _selectedSite ?? '' : idSite));
 
-      actualIdSite = siteData['idSite'];
-      saveSelectedIdSitePreferences(actualIdSite);
-    } else {
-      // default site
-      context
-          .read<TireInventBloc>()
-          .add(GetTireInventEvent(idSite: idSite, status: status));
-
-      context
-          .read<TireConditionBloc>()
-          .add(GetTireConditionEvent(idSite: idSite));
-
-      actualIdSite = idSite;
-      saveSelectedIdSitePreferences(actualIdSite);
+    // actualIdSite = idSite;
+    // saveSelectedIdSitePreferences(actualIdSite);
+    if (_selectedSite != null) {
+      saveSelectedIdSitePreferences(_selectedSite ?? '');
     }
 
-    print('else site : $actualIdSite');
+    print('else site : $_selectedSite');
 
     return Scaffold(
       backgroundColor: white,
@@ -564,33 +546,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   return Row(
                                     children: [
                                       InkWell(
-                                        onTap: () async {
-                                          // final id = await AttendanceSheetsAPI
-                                          //         .getRowCount() +
-                                          //     1;
-                                          // final user = AttendanceSheetsModel(
-                                          //     namaKaryawan: 'Agus',
-                                          //     sn: '72413',
-                                          //     tanggal:
-                                          //         '${DateFormat('dd/MM/yyyy').format(DateTime.now())}',
-                                          //     masuk: '',
-                                          //     pulang: '',
-                                          //     keteranganMasuk: '',
-                                          //     keteranganPulang: '');
-                                          // final newUser = user.copy(id: id);
-
-                                          // await AttendanceSheetsAPI
-                                          //     .insertAttendanceSheet(
-                                          //         [newUser.toJson()]);
-
-                                          // await AttendanceSheetsAPI
-                                          //     .updateAttendanceCell(
-                                          //         id: 1,
-                                          //         key: 'Nama_Karyawan',
-                                          //         value: 'Tono');
-                                          // print(
-                                          //     'data satu karyawan : ${await AttendanceSheetsAPI.getSingleDataAttendance('Naufal', '06-07-2024')}');
-                                        },
+                                        onTap: () async {},
                                         child: CircleAvatar(
                                           backgroundImage: (map['image'] ==
                                                       '' ||
@@ -683,7 +639,51 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           const SizedBox(
                             height: 12,
                           ),
+                          (idSite == '1' || idSite == '2')
+                              ? BlocBuilder<SiteBloc, SiteState>(
+                                  builder: (context, state) {
+                                  if (state is SiteErrorState) {
+                                    return CustomErrorWidget(
+                                        errorMessage: 'Please Try Again',
+                                        onRefresh: () {
+                                          context
+                                              .read<SiteBloc>()
+                                              .add(GetAllSiteEvent());
+                                        });
+                                  }
 
+                                  if (state is SiteLoadedState) {
+                                    final listSite = state.listSite;
+                                    // menghilangkan office, ck dan pama
+                                    listSite.removeRange(0, 3);
+                                    // Mengupdate opsi dropdown hanya jika ada perubahan dalam listSite
+                                    _siteOptions = listSite
+                                        .map((site) => site.site ?? '')
+                                        .toList();
+                                    return DropdownButton<String>(
+                                      isExpanded: true,
+                                      padding:
+                                          EdgeInsets.symmetric(horizontal: 24),
+                                      value: _selectedSite,
+                                      hint: Text('Choose Site'),
+                                      items: listSite.map((site) {
+                                        return DropdownMenuItem<String>(
+                                          value: site.idSite,
+                                          child: Text(site.site ?? ''),
+                                        );
+                                      }).toList(),
+                                      onChanged: (newValue) {
+                                        setState(() {
+                                          _selectedSite = newValue;
+                                          saveSelectedIdSitePreferences(
+                                              _selectedSite ?? '');
+                                        });
+                                      },
+                                    );
+                                  }
+                                  return Container();
+                                })
+                              : Container(),
                           BlocConsumer<TireInventBloc, TireInventState>(
                               builder: (context, state) {
                                 print('state saat ini :$state');
@@ -691,17 +691,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   return CustomErrorWidget(
                                       errorMessage: state.message,
                                       onRefresh: () {
-                                        if (siteData != null) {
-                                          context.read<TireInventBloc>().add(
-                                              GetTireInventEvent(
-                                                  idSite: siteData['idSite'],
-                                                  status: status));
-                                        } else {
-                                          context.read<TireInventBloc>().add(
-                                              GetTireInventEvent(
-                                                  idSite: idSite,
-                                                  status: status));
-                                        }
+                                        context.read<TireInventBloc>().add(
+                                            GetTireInventEvent(
+                                                idSite: (_selectedSite != null)
+                                                    ? _selectedSite ?? ''
+                                                    : idSite,
+                                                status: status));
                                       });
                                 }
                                 if (state is TireInventLoadingState) {
@@ -738,39 +733,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   ),
                                                 ),
                                                 Text(
-                                                  (siteData == null)
-                                                      ? state.site['siteName']
-                                                      : siteData['siteName'],
+                                                  state.nameSite,
                                                   style: getGreenTextStyle(
                                                       fontSize: 16,
                                                       fontWeight: w700),
                                                 ),
                                               ],
                                             ),
-                                            (idSite == '1' || idSite == '2')
-                                                ? SizedBox(
-                                                    width:
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            0.3,
-                                                    child: ButtonWidget(
-                                                        name: Text(
-                                                          'Choose Site',
-                                                          style:
-                                                              getWhiteTextStyle(),
-                                                        ),
-                                                        function: () {
-                                                          if (idSite == '1' ||
-                                                              idSite == '2') {
-                                                            Navigator.pushNamed(
-                                                                context,
-                                                                DetailTireSitePage
-                                                                    .routeName);
-                                                          }
-                                                        }),
-                                                  )
-                                                : SizedBox()
                                           ],
                                         ),
                                       ),
@@ -778,13 +747,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         height: 12,
                                       ),
                                       InkWell(
-                                        onTap: () async {
-                                          final prefs = await SharedPreferences
-                                              .getInstance();
-                                          final cachedData =
-                                              prefs.getString('tire_spec');
-                                          print('data invent $cachedData');
-                                        },
+                                        onTap: () async {},
                                         child: Padding(
                                             padding: EdgeInsets.symmetric(
                                                 horizontal: 12),
@@ -826,7 +789,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                                 .routeName,
                                                             arguments: {
                                                               'idSite':
-                                                                  actualIdSite,
+                                                                  (_selectedSite !=
+                                                                          null)
+                                                                      ? _selectedSite
+                                                                      : idSite,
                                                               'status':
                                                                   status[index],
                                                               'total': (tire[
@@ -864,6 +830,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             builder: (context, state) {
                               if (state is TireConditionLoadingState) {
                                 return CircularProgressIndicator();
+                              }
+
+                              if (state is TireConditionErrorState) {
+                                return CustomErrorWidget(
+                                    errorMessage: state.message,
+                                    onRefresh: () {
+                                      context.read<TireConditionBloc>().add(
+                                          GetTireConditionEvent(
+                                              idSite: (_selectedSite != null)
+                                                  ? _selectedSite ?? ''
+                                                  : idSite));
+                                    });
                               }
 
                               if (state is TireConditionLoadedState) {
@@ -996,18 +974,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   ),
                                 );
                               }
-
-                              // if (state is TireConditionErrorState) {
-                              //   return CustomErrorWidget(
-                              //       errorMessage: state.message,
-                              //       onRefresh: () {
-                              //         context
-                              //             .read<TireConditionBloc>()
-                              //             .add(GetTireConditionEvent(
-                              //               idSite: idSite,
-                              //             ));
-                              //       });
-                              // }
 
                               return Container();
                             },
@@ -1474,7 +1440,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           StreamBuilder<QuerySnapshot>(
                               stream: firestore
                                   .collection('task')
-                                  .where('id_site', isEqualTo: actualIdSite)
+                                  .where('id_site',
+                                      isEqualTo: (_selectedSite != null)
+                                          ? _selectedSite
+                                          : idSite)
                                   .where('is_done', isEqualTo: false)
                                   .snapshots(),
                               builder: (context, snapshot) {

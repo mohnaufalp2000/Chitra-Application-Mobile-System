@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -65,7 +66,8 @@ class AuthenticationBloc
               'image': 'image',
               'age': 0,
               'position': 'position',
-              'id_site': event.idSite
+              'id_site': event.idSite,
+              'created_at': DateFormat('yyyy-MM-dd').format(DateTime.now()),
             });
             // users.add({
             //   'email': event.email,

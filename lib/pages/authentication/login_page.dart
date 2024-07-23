@@ -8,6 +8,7 @@ import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/core/widgets/text_button_widget.dart';
+import 'package:camos/pages/authentication/chat_bot_page.dart';
 import 'package:camos/pages/authentication/email_verification_page.dart';
 import 'package:camos/pages/authentication/image_profile_page.dart';
 import 'package:camos/pages/authentication/register_page.dart';
@@ -311,6 +312,17 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(
                       height: 12,
                     ),
+                    // ButtonWidget(
+                    //     name: Text('ChatBot'),
+                    //     function: () {
+                    //       Navigator.push(
+                    //           context,
+                    //           MaterialPageRoute(
+                    //               builder: (context) => ChatMaximaWidget()));
+                    //     }),
+                    // const SizedBox(
+                    //   height: 12,
+                    // ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

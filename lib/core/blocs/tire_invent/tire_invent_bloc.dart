@@ -27,6 +27,7 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
             await getIdSitePreferences() == '2') {
           log('no koneksi satu');
           emit(TireInventErrorState(message: 'Please Try Again!'));
+          return;
         } else {
           log('no koneksi dua');
           final prefs = await SharedPreferences.getInstance();

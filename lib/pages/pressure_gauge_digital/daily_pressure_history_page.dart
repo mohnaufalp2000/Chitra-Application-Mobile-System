@@ -139,37 +139,42 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                 width: double.infinity,
                 child: ElevatedButton(
                     onPressed: () async {
-                      final id = Uuid();
-                      // print('tugas : $filteredItemTask');
-                      // print('terpesona $filteredItemTask');
-                      // final file = await createFolderPath(id.v4(), 'outstanding');
-                      final file = await createFolderPath(
-                          id.v4(), 'daily-check',
-                          email: user['email'] ?? '',
-                          site: user['siteName'] ?? '',
-                          pit: pit[selectedPit] ?? '',
-                          date:
-                              "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
+                      try {
+                        final id = Uuid();
+                        // print('tugas : $filteredItemTask');
+                        // print('terpesona $filteredItemTask');
+                        // final file = await createFolderPath(id.v4(), 'outstanding');
+                        final file = await createFolderPath(
+                            id.v4(), 'daily-check',
+                            email: user['email'] ?? '',
+                            site: user['siteName'] ?? '',
+                            pit: pit[selectedPit] ?? '',
+                            date:
+                                "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
 
-                      final bytes = await createExcel('daily-check',
-                          daily: filteredItemTask);
-                      final saved = await file.writeAsBytes(bytes, flush: true);
-                      // print('laper : $saved');
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          backgroundColor: green00968A,
-                          content: Text(
-                            'Successfull Save Data!',
-                            style: getWhiteTextStyle(),
-                          )));
-                      final result = await OpenFile.open(file.path);
+                        final bytes = await createExcel('daily-check',
+                            daily: filteredItemTask);
+                        final saved =
+                            await file.writeAsBytes(bytes, flush: true);
+                        // print('laper : $saved');
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            backgroundColor: green00968A,
+                            content: Text(
+                              'Successfull Save Data!',
+                              style: getWhiteTextStyle(),
+                            )));
+                        final result = await OpenFile.open(file.path);
 
-                      if (result.type == ResultType.done) {
-                        print('File berhasil dibuka');
-                      } else {
-                        print(result.message);
-                        if (result.type == ResultType.noAppToOpen) {
-                          openPlayStore('attendance');
+                        if (result.type == ResultType.done) {
+                          print('File berhasil dibuka');
+                        } else {
+                          print(result.message);
+                          if (result.type == ResultType.noAppToOpen) {
+                            openPlayStore('attendance');
+                          }
                         }
+                      } catch (e) {
+                        log('error export bmb : $e');
                       }
                     },
                     style: ElevatedButton.styleFrom(

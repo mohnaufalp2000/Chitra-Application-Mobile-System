@@ -719,7 +719,7 @@ Future<List<int>> createExcel(String type,
               (posisi[j]['adjusmentPressure'] == '')
                   ? '0'
                   : posisi[j]['adjusmentPressure']);
-          if (posisi[j]['luka'] != null) {
+          if (posisi[j]['luka'] != null && posisi[j]['luka'] is! String) {
             sheet.getRangeByName('F${i * posisi.length + j + 2}').setText(
                 (posisi[j]['luka'] as List<dynamic>)
                     .where((element) => element.isNotEmpty)
