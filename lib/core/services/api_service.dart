@@ -16,6 +16,7 @@ class ApiService {
 
   // mendapatkan daftar unit di salah satu site
   static Future<List<UnitTire>> getUnits(String site) async {
+    log('id site from daily : $site');
     final response =
         await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
 

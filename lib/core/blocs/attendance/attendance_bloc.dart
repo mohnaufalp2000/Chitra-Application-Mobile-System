@@ -511,15 +511,51 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
     //   }
     // });
 
+    // on<SaveCsvPresenceEvent>((event, emit) async {
+    //   try {
+    //     // emit(AttendanceSaveCsvLoadingState());
+    //     final id = Uuid();
+    //     final file = await createFolderPath(id.v4(), 'attendance',
+    //         username: event.username,
+    //         sn: event.sn,
+    //         date:
+    //             '${DateFormat('MMMM').format(DateTime.now())} ${DateTime.now().year}');
+    //     final bytes = await createExcel(
+    //       'attendance',
+    //       username: event.username,
+    //       position: event.position,
+    //       sn: event.sn,
+    //       presence: event.presence,
+    //       site: event.site,
+    //     );
+    //     await file.writeAsBytes(bytes, flush: true);
+    //     final result = await OpenFile.open(file.path);
+
+    //     if (result.type == ResultType.done) {
+    //       print('File berhasil dibuka');
+    //     } else {
+    //       print(result.message);
+    //       log(result.message);
+    //       if (result.type == ResultType.noAppToOpen) {
+    //         openPlayStore('attendance');
+    //       }
+    //     }
+    //     // emit(AttendanceSuccessSaveCsvState());
+    //   } catch (e) {
+    //     // emit(AttendanceErrorState());
+    //   }
+    // });
     on<SaveCsvPresenceEvent>((event, emit) async {
       try {
         // emit(AttendanceSaveCsvLoadingState());
+        DateTime now = DateTime.now();
+        DateTime lastMonth = DateTime(now.year, now.month - 1, now.day);
+        log('bulan lalu : $lastMonth');
         final id = Uuid();
         final file = await createFolderPath(id.v4(), 'attendance',
             username: event.username,
             sn: event.sn,
-            date:
-                '${DateFormat('MMMM').format(DateTime.now())} ${DateTime.now().year}');
+            date: '${DateFormat('MMMM').format(lastMonth)} ${lastMonth.year}');
         final bytes = await createExcel(
           'attendance',
           username: event.username,

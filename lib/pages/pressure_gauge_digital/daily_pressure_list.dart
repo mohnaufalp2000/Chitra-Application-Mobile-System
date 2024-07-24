@@ -49,10 +49,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   }
 
   Future<void> getUnits() async {
-    log('id site : $idSite');
-
     // jika user office tidak perlu ambil dari cache
-    if (await getIdSitePreferences() != '1') {
+    if (await getIdSitePreferences() != '1' ||
+        await getIdSitePreferences() != '2') {
       // belum ganti bulan
 
       if (await getSavedMonthYear() ==
@@ -75,10 +74,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   insertPit() async {
     idSite = await getIdSitePreferences();
     actualIdSite = await getIdSitePreferences();
-    if (idSite == '1') {
+    if (idSite == '1' || idSite == '2') {
       idSite = await getSelectedIdSitePreferences();
     }
-    getUnits();
+    log('id site : $idSite');
+
+    await getUnits();
   }
 
   @override

@@ -22,6 +22,7 @@ class DetailTireInventBloc
         if (await getIdSitePreferences() == '1' ||
             await getIdSitePreferences() == '2') {
           emit(DetailTireInventErrorState());
+          return;
         } else {
           log('gaada internet blas 1');
           final prefs = await SharedPreferences.getInstance();
@@ -47,14 +48,6 @@ class DetailTireInventBloc
               break;
           }
           log('status terbaru : ${event.status}');
-          // emit(DetailTireInventLoadedState(
-          //     mapSizeInvent: (event.status == 'Scrap')
-          //         ? decodedData['scrap']
-          //         : (event.status == 'Repair')
-          //             ? decodedData['repair']
-          //             : (event.status == 'New')
-          //                 ? decodedData['new']
-          //                 : decodedData['spare']));
           emit(DetailTireInventLoadedState(mapSizeInvent: {
             'New': decodedData['new'],
             'Repair': decodedData['repair'],
@@ -62,27 +55,23 @@ class DetailTireInventBloc
             'Scrap': decodedData['scrap'],
           }));
         }
-      } else {
+      }
+
+      if (connectivityResult == ConnectivityResult.mobile ||
+          connectivityResult == ConnectivityResult.ethernet ||
+          connectivityResult == ConnectivityResult.wifi) {
+        // jika user office dan ck, ambil data pakai internet
         if (await getIdSitePreferences() == '1' ||
             await getIdSitePreferences() == '2') {
           try {
             emit(DetailTireInventLoadingState());
-
             List<TireSpec> listInvent = [];
             int total = int.parse(event.total);
             String idSite = event.idSite;
+            String actualIdSite = await getSelectedIdSitePreferences();
 
-            log('eventku ${event.idSite} | ${event.status} | ${event.total}');
-
-            if (idSite == '1') {
-              Site site = await ApiService.getSite(idSite);
-              idSite = site.idSite ?? '';
-            }
-
-            if (idSite == '2') {
-              Site site = await ApiService.getSite(idSite);
-              idSite = site.idSite ?? '';
-            }
+            Site site = await ApiService.getSite(actualIdSite);
+            idSite = site.idSite ?? '';
 
             // Gathering data from api
             if (total < 10) {
@@ -240,15 +229,6 @@ class DetailTireInventBloc
                 break;
             }
 
-            // emit(DetailTireInventLoadedState(
-            //   mapSizeInvent: (event.status == 'Scrap')
-            //       ? resultScrap
-            //       : (event.status == 'Repair')
-            //           ? resultRepair
-            //           : (event.status == 'New')
-            //               ? resultNew
-            //               : resultSpare,
-            // ));
             emit(DetailTireInventLoadedState(mapSizeInvent: {
               'New': resultNew,
               'Repair': resultRepair,
@@ -256,67 +236,40 @@ class DetailTireInventBloc
               'Scrap': resultScrap,
             }));
           } catch (e) {
-            if (await getIdSitePreferences() == '1' ||
-                await getIdSitePreferences() == '2') {
-              emit(DetailTireInventErrorState());
-            } else {
-              final prefs = await SharedPreferences.getInstance();
-              final cachedData = prefs.getString('detail_tire_spec');
-              final decodedData =
-                  jsonDecode(cachedData ?? '') as Map<String, dynamic>;
-              log('statusku : ${event.status}');
-              log('lapar : ${decodedData['new']}');
-              // emit(DetailTireInventLoadedState(
-              //     mapSizeInvent: (event.status == 'Scrap')
-              //         ? decodedData['scrap']
-              //         : (event.status == 'Repair')
-              //             ? decodedData['repair']
-              //             : (event.status == 'New')
-              //                 ? decodedData['new']
-              //                 : decodedData['spare']));
-              emit(DetailTireInventLoadedState(mapSizeInvent: {
-                'New': decodedData['new'],
-                'Repair': decodedData['repair'],
-                'Spare': decodedData['spare'],
-                'Scrap': decodedData['scrap'],
-              }));
-            }
+            emit(DetailTireInventErrorState());
           }
         } else {
-          final prefs = await SharedPreferences.getInstance();
-          final cachedData = prefs.getString('detail_tire_spec');
-          log('apa nich : $cachedData');
-          final decodedData =
-              jsonDecode(cachedData ?? '') as Map<String, dynamic>;
-          switch (event.status) {
-            case 'New':
-              log('statusku : ${decodedData['new']}');
-              break;
-            case 'Scrap':
-              log('statusku : ${decodedData['scrap']}');
-              break;
-            case 'Repair':
-              log('statusku : ${decodedData['repair']}');
-              break;
-            case 'Spare':
-              log('statusku : ${decodedData['spare']}');
-              break;
+          // jika user site, ambil data dari lokal
+          try {
+            final prefs = await SharedPreferences.getInstance();
+            final cachedData = prefs.getString('detail_tire_spec');
+            log('apa nich : $cachedData');
+            final decodedData =
+                jsonDecode(cachedData ?? '') as Map<String, dynamic>;
+            switch (event.status) {
+              case 'New':
+                log('statusku : ${decodedData['new']}');
+                break;
+              case 'Scrap':
+                log('statusku : ${decodedData['scrap']}');
+                break;
+              case 'Repair':
+                log('statusku : ${decodedData['repair']}');
+                break;
+              case 'Spare':
+                log('statusku : ${decodedData['spare']}');
+                break;
+            }
+            log('status terbaru : ${event.status}');
+            emit(DetailTireInventLoadedState(mapSizeInvent: {
+              'New': decodedData['new'],
+              'Repair': decodedData['repair'],
+              'Spare': decodedData['spare'],
+              'Scrap': decodedData['scrap'],
+            }));
+          } catch (e) {
+            emit(DetailTireInventErrorState());
           }
-          log('status terbaru : ${event.status}');
-          // emit(DetailTireInventLoadedState(
-          //     mapSizeInvent: (event.status == 'Scrap')
-          //         ? decodedData['scrap']
-          //         : (event.status == 'Repair')
-          //             ? decodedData['repair']
-          //             : (event.status == 'New')
-          //                 ? decodedData['new']
-          //                 : decodedData['spare']));
-          emit(DetailTireInventLoadedState(mapSizeInvent: {
-            'New': decodedData['new'],
-            'Repair': decodedData['repair'],
-            'Spare': decodedData['spare'],
-            'Scrap': decodedData['scrap'],
-          }));
         }
       }
     });
