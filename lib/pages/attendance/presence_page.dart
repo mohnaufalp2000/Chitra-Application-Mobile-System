@@ -36,11 +36,27 @@ class _PresencePageState extends State<PresencePage> {
   final Box<AttendanceEntity> attendanceBox = store.box<AttendanceEntity>();
 
   String selectedShift = 'morning';
+  int selectedDate = -1;
+  List<Map<int, dynamic>> generalDate = [
+    {1: 'January'},
+    {2: 'February'},
+    {3: 'March'},
+    {4: 'April'},
+    {5: 'May'},
+    {6: 'June'},
+    {7: 'July'},
+    {8: 'August'},
+    {9: 'September'},
+    {10: 'October'},
+    {11: 'November'},
+    {12: 'December'},
+  ];
 
   Stream<List<AttendanceEntity>>? attendanceStream;
 
   Map<String, dynamic> user = {};
   String idSite = '';
+  List<String> dates = [];
 
   TextEditingController infoCheckInCtrl = TextEditingController();
   TextEditingController infoCheckOutCtrl = TextEditingController();
@@ -53,7 +69,8 @@ class _PresencePageState extends State<PresencePage> {
   @override
   void initState() {
     super.initState();
-    log('kemarin : ${DateTime.now().subtract(Duration(days: 1)).toIso8601String().split('T')[0]}');
+    selectedDate = DateTime.now().month;
+
     retrieveManpowerShift();
     retrieveUser();
     getDataPresenceToday();
@@ -299,6 +316,45 @@ class _PresencePageState extends State<PresencePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   profileCard(),
+                  const SizedBox(
+                    height: 12,
+                  ),
+                  Container(
+                    height: 50.0, // Sesuaikan tinggi container sesuai kebutuhan
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: generalDate.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8.0),
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                selectedDate = generalDate[index].keys.first;
+                              });
+                            },
+                            style: ElevatedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6)),
+                                backgroundColor: (selectedDate ==
+                                        generalDate[index].keys.first)
+                                    ? Colors.orange
+                                    : Colors.white70,
+                                padding: EdgeInsets.all(12.0)),
+                            child: Text(
+                              generalDate[index].values.first,
+                              style: TextStyle(
+                                  color: (selectedDate ==
+                                          generalDate[index].keys.first)
+                                      ? white
+                                      : black,
+                                  fontSize: 18.0),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                   const SizedBox(
                     height: 12,
                   ),
@@ -743,20 +799,23 @@ class _PresencePageState extends State<PresencePage> {
           ],
         ),
         color: Colors.blue,
-        function: () async {
-          context.read<AttendanceBloc>().add(SaveCsvPresenceEvent(
-              username: user['username'] ?? '',
-              position: user['position'] ?? '',
-              sn: user['sn'] ?? '',
-              site: (idSite == '1') ? 'Office' : user['siteName'],
-              presence: attendanceBox.getAll()));
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              backgroundColor: green00968A,
-              content: Text(
-                'Successfull Save Data!',
-                style: getWhiteTextStyle(),
-              )));
-        });
+        function: (selectedDate == '')
+            ? null
+            : () async {
+                context.read<AttendanceBloc>().add(SaveCsvPresenceEvent(
+                    username: user['username'] ?? '',
+                    position: user['position'] ?? '',
+                    sn: user['sn'] ?? '',
+                    site: (idSite == '1') ? 'Office' : user['siteName'],
+                    date: selectedDate,
+                    presence: attendanceBox.getAll()));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    backgroundColor: green00968A,
+                    content: Text(
+                      'Successfull Save Data!',
+                      style: getWhiteTextStyle(),
+                    )));
+              });
   }
 
   SizedBox dropdownShift() {

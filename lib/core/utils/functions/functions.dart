@@ -270,12 +270,12 @@ Future<File> createFolderPath(String id, String type,
     case 'site':
       // final outputFile = File("${path?.path}/Site-$id.pdf");
       final outputFile = File(
-          "${path?.path}/SiteCondition_${date}_${site}_${email}_CAMOS.pdf");
+          "${path?.path}/SiteCondition_${date}_${site}_${email}_CAMOS_${id.substring(0, 4)}.pdf");
       return outputFile;
     case 'attendance':
       // final outputFile = File("${path?.path}/Attendance-$id.xlsx");
-      final outputFile =
-          File("${path?.path}/Attendance_${username}_${sn}_${date}.xlsx");
+      final outputFile = File(
+          "${path?.path}/Attendance_${username}_${sn}_${DateFormat.MMMM().format(DateTime(DateTime.now().year, int.parse(date)))} ${DateTime.now().year}_${id.substring(0, 4)}.xlsx");
       return outputFile;
     case 'outstanding':
       final outputFile = File(
@@ -284,7 +284,7 @@ Future<File> createFolderPath(String id, String type,
       return outputFile;
     case 'daily-check':
       final outputFile = File(
-          "${path?.path}/DailyTireCheck_${date}_${site}_${pit}_${email}_${id}_CAMOS.xlsx");
+          "${path?.path}/DailyTireCheck_${date}_${site}_${pit}_${email}_${id.substring(0, 8)}_CAMOS.xlsx");
       // final outputFile = File("${path?.path}/daily-check_${id}xlsx");
       return outputFile;
     case 'outstanding-image':
@@ -300,6 +300,7 @@ Future<List<int>> createExcel(String type,
     String position = '',
     String sn = 'test',
     String site = '',
+    int date = 0,
     List<Map<String, dynamic>>? task,
     List<Map<String, dynamic>>? daily,
     List<AttendanceEntity>? presence}) async {
@@ -317,8 +318,10 @@ Future<List<int>> createExcel(String type,
 
       /// Date
       sheet.getRangeByName('A3:G3').merge();
+      // sheet.getRangeByName('A3:G3').setText(
+      //     'Date                    : ${DateFormat.yMMMM().format(DateTime.now())}');
       sheet.getRangeByName('A3:G3').setText(
-          'Date                    : ${DateFormat.yMMMM().format(DateTime.now())}');
+          'Date                    : ${DateFormat.MMMM().format(DateTime(DateTime.now().year, date))} ${DateTime.now().year}');
 
       /// Name
       sheet.getRangeByName('A4:G4').merge();
@@ -378,7 +381,8 @@ Future<List<int>> createExcel(String type,
         sheet.getRangeByName('A${i + 10}').cellStyle.vAlign = VAlignType.center;
 
         for (int j = 0; j < presence!.length; j++) {
-          if (DateTime(DateTime.now().year, DateTime.now().month, i + 1)
+          // if (DateTime(DateTime.now().year, DateTime.now().month, i + 1)
+          if (DateTime(DateTime.now().year, date, i + 1)
                   .toIso8601String()
                   .split('T')[0] ==
               presence[j].masuk.split('T')[0]) {
