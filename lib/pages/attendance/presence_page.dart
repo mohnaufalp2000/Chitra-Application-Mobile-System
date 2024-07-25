@@ -799,7 +799,7 @@ class _PresencePageState extends State<PresencePage> {
           ],
         ),
         color: Colors.blue,
-        function: (selectedDate == '')
+        function: (selectedDate == -1)
             ? null
             : () async {
                 context.read<AttendanceBloc>().add(SaveCsvPresenceEvent(

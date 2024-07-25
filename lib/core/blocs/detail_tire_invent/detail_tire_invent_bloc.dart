@@ -236,6 +236,7 @@ class DetailTireInventBloc
               'Scrap': resultScrap,
             }));
           } catch (e) {
+            log('error detail inventory : $e');
             emit(DetailTireInventErrorState());
           }
         } else {

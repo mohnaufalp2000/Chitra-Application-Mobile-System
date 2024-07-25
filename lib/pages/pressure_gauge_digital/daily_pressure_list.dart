@@ -49,8 +49,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   }
 
   Future<void> getUnits() async {
-    // jika user office tidak perlu ambil dari cache
-    if (await getIdSitePreferences() != '1' ||
+    // jika user site ambil dari cache
+    if (await getIdSitePreferences() != '1' &&
         await getIdSitePreferences() != '2') {
       // belum ganti bulan
 
@@ -62,6 +62,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         units = await ApiService.getUnits(idSite);
       }
     } else {
+      // jika user office tidak perlu ambil dari cache
       units = await ApiService.getUnits(idSite);
     }
   }
