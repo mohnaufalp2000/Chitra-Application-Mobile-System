@@ -758,6 +758,8 @@ import 'package:camos/main.dart';
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:card_swiper/card_swiper.dart';
+import 'package:carousel_slider/carousel_controller.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -2258,97 +2260,210 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             height: 12,
                                           ),
 
-                                          // SizedBox(
-                                          //   width: double.infinity,
-                                          //   height: 45,
-                                          //   child: ElevatedButton(
-                                          //       style: ElevatedButton.styleFrom(
-                                          //           backgroundColor:
-                                          //               Colors.deepOrange,
-                                          //           shape:
-                                          //               RoundedRectangleBorder(
-                                          //             borderRadius:
-                                          //                 BorderRadius.circular(
-                                          //                     12),
-                                          //           )),
-                                          //       onPressed: () async {
-                                          //         requestCameraPermission();
-                                          //         final ImagePicker picker =
-                                          //             ImagePicker();
-                                          //         final XFile? image =
-                                          //             await picker.pickImage(
-                                          //                 imageQuality: 50,
-                                          //                 source: ImageSource
-                                          //                     .camera);
-                                          //         try {
-                                          //           if (image != null) {
-                                          //             // Read image as a file
-                                          //             File imageFile =
-                                          //                 File(image.path);
+                                          SizedBox(
+                                            width: double.infinity,
+                                            height: 45,
+                                            child: ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.deepOrange,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    )),
+                                                onPressed: () async {
+                                                  requestCameraPermission();
+                                                  final ImagePicker picker =
+                                                      ImagePicker();
+                                                  final XFile? image =
+                                                      await picker.pickImage(
+                                                          imageQuality: 50,
+                                                          source: ImageSource
+                                                              .camera);
+                                                  try {
+                                                    if (image != null) {
+                                                      // Read image as a file
+                                                      File imageFile =
+                                                          File(image.path);
 
-                                          //             // Compress the image if needed (optional)
-                                          //             final compressedImageFile =
-                                          //                 await FlutterImageCompress
-                                          //                     .compressAndGetFile(
-                                          //               imageFile.path,
-                                          //               imageFile.path +
-                                          //                   '_compressed.jpg',
-                                          //               quality: 50,
-                                          //             );
+                                                      log('gambar : ${imageFile.path}');
 
-                                          //             // Convert image to base64
-                                          //             List<int> imageBytes =
-                                          //                 await compressedImageFile!
-                                          //                     .readAsBytes();
-                                          //             String base64String =
-                                          //                 base64Encode(
-                                          //                     imageBytes);
+                                                      // Compress the image if needed (optional)
+                                                      final compressedImageFile =
+                                                          await FlutterImageCompress
+                                                              .compressAndGetFile(
+                                                        imageFile.path,
+                                                        imageFile.path +
+                                                            '_compressed.jpg',
+                                                        quality: 50,
+                                                      );
 
-                                          //             List<String> chunks = [];
-                                          //             for (int i = 0;
-                                          //                 i <
-                                          //                     base64String
-                                          //                         .length;
-                                          //                 i++) {
-                                          //               int end = (i + 1000 <
-                                          //                       base64String
-                                          //                           .length)
-                                          //                   ? i + 1000
-                                          //                   : base64String
-                                          //                       .length;
-                                          //               chunks.add(base64String
-                                          //                   .substring(i, end));
-                                          //             }
-                                          //             log('gambar string : ${chunks}');
-                                          //           }
-                                          //         } catch (e) {
-                                          //           log('error gambar string : $e');
-                                          //         }
+                                                      listImg.add(
+                                                          '${compressedImageFile?.path}|${position[index]['position']}' ??
+                                                              '');
+                                                      log('listImg : $listImg');
 
-                                          //         setState(() {});
-                                          //       },
-                                          //       child: Row(
-                                          //         mainAxisAlignment:
-                                          //             MainAxisAlignment.center,
-                                          //         children: [
-                                          //           Icon(
-                                          //             Icons.camera_alt,
-                                          //             color: white,
-                                          //           ),
-                                          //           const SizedBox(
-                                          //             width: 12,
-                                          //           ),
-                                          //           Text(
-                                          //             'Take Picture',
-                                          //             style:
-                                          //                 getWhiteTextStyle(),
-                                          //           ),
-                                          //         ],
-                                          //       )),
-                                          // ),
-                                          // const SizedBox(
-                                          //   height: 12,
-                                          // ),
+                                                      // // Convert image to base64
+                                                      // List<int> imageBytes =
+                                                      //     await compressedImageFile!
+                                                      //         .readAsBytes();
+                                                      // String base64String =
+                                                      //     base64Encode(
+                                                      //         imageBytes);
+
+                                                      // List<String> chunks = [];
+                                                      // for (int i = 0;
+                                                      //     i <
+                                                      //         base64String
+                                                      //             .length;
+                                                      //     i++) {
+                                                      //   int end = (i + 1000 <
+                                                      //           base64String
+                                                      //               .length)
+                                                      //       ? i + 1000
+                                                      //       : base64String
+                                                      //           .length;
+                                                      //   chunks.add(base64String
+                                                      //       .substring(i, end));
+                                                      // }
+                                                    }
+                                                  } catch (e) {
+                                                    log('error gambar string : $e');
+                                                  }
+
+                                                  setState(() {});
+                                                },
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.camera_alt,
+                                                      color: white,
+                                                    ),
+                                                    const SizedBox(
+                                                      width: 12,
+                                                    ),
+                                                    Text(
+                                                      'Take Picture',
+                                                      style:
+                                                          getWhiteTextStyle(),
+                                                    ),
+                                                  ],
+                                                )),
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          (listImg.isNotEmpty)
+                                              ? Column(
+                                                  children: [
+                                                    SizedBox(
+                                                      width: double.infinity,
+                                                      height: 45,
+                                                      child: ElevatedButton(
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .orange,
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            12),
+                                                                  )),
+                                                          onPressed: () async {
+                                                            final CarouselController
+                                                                _controller =
+                                                                CarouselController();
+
+                                                            showDialog(
+                                                                context:
+                                                                    context,
+                                                                builder:
+                                                                    (BuildContext
+                                                                        context) {
+                                                                  return AlertDialog(
+                                                                    content:
+                                                                        Padding(
+                                                                      padding: const EdgeInsets
+                                                                          .all(
+                                                                          24.0),
+                                                                      child:
+                                                                          Column(
+                                                                        mainAxisSize:
+                                                                            MainAxisSize.min,
+                                                                        children: [
+                                                                          Text(
+                                                                            'Show Image',
+                                                                            style:
+                                                                                getBlackTextStyle(),
+                                                                          ),
+                                                                          const SizedBox(
+                                                                            height:
+                                                                                12,
+                                                                          ),
+                                                                          Container(
+                                                                            width:
+                                                                                400,
+                                                                            height:
+                                                                                400,
+                                                                            child:
+                                                                                CarouselSlider(
+                                                                              carouselController: _controller,
+                                                                              items: listImg.map((img) {
+                                                                                final splitImg = img.split('|');
+
+                                                                                if ((position[index]['position']).toString() == splitImg[1]) {
+                                                                                  return Image.file(File(splitImg[0]));
+                                                                                }
+                                                                                return Container();
+                                                                              }).toList(),
+                                                                              options: CarouselOptions(
+                                                                                aspectRatio: 3.0,
+                                                                                height: 400,
+                                                                                enableInfiniteScroll: false,
+                                                                                enlargeCenterPage: true,
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                });
+                                                            setState(() {});
+                                                          },
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              Icon(
+                                                                Icons.image,
+                                                                color: white,
+                                                              ),
+                                                              const SizedBox(
+                                                                width: 12,
+                                                              ),
+                                                              Text(
+                                                                'Show Image',
+                                                                style:
+                                                                    getWhiteTextStyle(),
+                                                              ),
+                                                            ],
+                                                          )),
+                                                    ),
+                                                    const SizedBox(
+                                                      height: 12,
+                                                    ),
+                                                  ],
+                                                )
+                                              : Container(),
+
                                           Row(
                                             children: [
                                               Expanded(
@@ -2696,8 +2811,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             .update({
                                           'id': id.v4(),
                                           'id_site': idSite,
-                                          'user': user['username'] ??
-                                              auth.currentUser!.email,
+                                          'user':
+                                              user['username'] ?? 'username',
+                                          'user_email': auth.currentUser!.email,
                                           'unit': unit.unitNumber,
                                           'serial_number': unit.sn,
                                           'condition': position[i]['condition']
@@ -2724,7 +2840,17 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'last_update':
                                               DateTime.now().toIso8601String(),
                                           'is_done': false,
-                                          'images': [],
+                                          'images': (listImg.isNotEmpty)
+                                              ? listImg.map((img) {
+                                                  final splitImg =
+                                                      img.split('|');
+                                                  if (splitImg[1] ==
+                                                      (position[i]['position'])
+                                                          .toString()) {
+                                                    return splitImg[0];
+                                                  }
+                                                }).toList()
+                                              : [],
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
@@ -2733,8 +2859,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         await firestore.collection('task').add({
                                           'id': id.v4(),
                                           'id_site': idSite,
-                                          'user': user['username'] ??
-                                              auth.currentUser!.email,
+                                          'user':
+                                              user['username'] ?? 'username',
+                                          'user_email': auth.currentUser!.email,
                                           'unit': unit.unitNumber,
                                           'serial_number': unit.sn,
                                           'condition': position[i]['condition']
@@ -2761,7 +2888,17 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'last_update':
                                               DateTime.now().toIso8601String(),
                                           'is_done': false,
-                                          'images': [],
+                                          'images': (listImg.isNotEmpty)
+                                              ? listImg.map((img) {
+                                                  final splitImg =
+                                                      img.split('|');
+                                                  if (splitImg[1] ==
+                                                      (position[i]['position'])
+                                                          .toString()) {
+                                                    return splitImg[0];
+                                                  }
+                                                }).toList()
+                                              : [],
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,

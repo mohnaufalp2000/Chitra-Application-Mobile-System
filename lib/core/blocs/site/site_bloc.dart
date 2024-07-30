@@ -27,7 +27,7 @@ class SiteBloc extends Bloc<SiteEvent, SiteState> {
         );
         listSite.insert(
           2,
-          Site(idSite: '3', site: 'PAMA-TRIAL', lastUpdate: '2024-05-22'),
+          Site(idSite: '3', site: 'PAMA', lastUpdate: '2024-05-22'),
         );
         emit(SiteLoadedState(listSite: listSite));
       } catch (e) {

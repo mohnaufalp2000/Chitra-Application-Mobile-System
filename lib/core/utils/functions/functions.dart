@@ -804,23 +804,8 @@ Future<List<int>> createExcel(String type,
         //     }
         //     final file = File(urlImage[j]);
         //     final bytes = await file.readAsBytes();
-
-        //     // sheet.getRangeByIndex(3, j + 18).setText('Image (Link)');
-        //     // sheet.getRangeByIndex(3, j + 18).cellStyle.hAlign =
-        //     //     HAlignType.center;
-        //     // sheet.getRangeByIndex(4, j + 18).setText('${urlImage[j]}');
-
-        //     // final List<int> img = await ApiService.fetchImageData(urlImage[j]);
-
         //     final resizedImage =
         //         await resizeImage(Uint8List.fromList(bytes), 150, 185);
-        //     // sheet.pictures.addStream(i + 4, j + 18, resizedImage);
-
-        //     // sheet.getRangeByIndex(i + 4, j + 18).rowHeight = 130;
-        //     // sheet.getRangeByIndex(i + 4, j + 18).columnWidth = 100;
-        //     // sheet.getRangeByIndex(i + 4, j + 18).cellStyle.hAlign =
-        //     //     HAlignType.center;
-        //     // sheet.getRangeByIndex(i + 4, j + 18).cellStyle.vAlign =
         //     //     VAlignType.center;
         //     sheet.pictures.addStream(i + 7, j + 21, resizedImage);
 
