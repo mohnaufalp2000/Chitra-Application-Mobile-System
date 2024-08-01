@@ -2287,7 +2287,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                       // Read image as a file
                                                       File imageFile =
                                                           File(image.path);
-
+                                                      // data size fotonya
                                                       log('gambar : ${imageFile.path}');
 
                                                       // Compress the image if needed (optional)
@@ -2414,14 +2414,25 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                             child:
                                                                                 CarouselSlider(
                                                                               carouselController: _controller,
-                                                                              items: listImg.map((img) {
-                                                                                final splitImg = img.split('|');
+                                                                              // items: listImg.map((img) {
+                                                                              //   final splitImg = img.split('|');
 
-                                                                                if ((position[index]['position']).toString() == splitImg[1]) {
-                                                                                  return Image.file(File(splitImg[0]));
-                                                                                }
-                                                                                return Container();
-                                                                              }).toList(),
+                                                                              //   if ((position[index]['position']).toString() == splitImg[1]) {
+                                                                              //     return Image.file(File(splitImg[0]));
+                                                                              //   }
+                                                                              //   return Container();
+                                                                              // }).toList(),
+                                                                              items: listImg
+                                                                                  .where((img) {
+                                                                                    final splitImg = img.split('|');
+                                                                                    return splitImg[1] == (position[index]['position']).toString();
+                                                                                  })
+                                                                                  .toList()
+                                                                                  .map((img2) {
+                                                                                    final splitImg2 = img2.split('|');
+                                                                                    return Image.file(File(splitImg2[0]));
+                                                                                  })
+                                                                                  .toList(),
                                                                               options: CarouselOptions(
                                                                                 aspectRatio: 3.0,
                                                                                 height: 400,
@@ -2716,6 +2727,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       id: id.v4(),
                                       idSite: idSite,
                                       user: auth.currentUser!.email ?? '',
+                                      userEmail: auth.currentUser!.email ?? '',
                                       unit: idUnit.text,
                                       position:
                                           int.parse(savedTires.posisi ?? '0'),
@@ -2841,15 +2853,23 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               DateTime.now().toIso8601String(),
                                           'is_done': false,
                                           'images': (listImg.isNotEmpty)
-                                              ? listImg.map((img) {
-                                                  final splitImg =
-                                                      img.split('|');
-                                                  if (splitImg[1] ==
-                                                      (position[i]['position'])
-                                                          .toString()) {
-                                                    return splitImg[0];
-                                                  }
-                                                }).toList()
+                                              ? listImg
+                                                  .where((img) {
+                                                    final splitImg =
+                                                        img.split('|');
+                                                    return splitImg[1] ==
+                                                        (position[i]
+                                                                ['position'])
+                                                            .toString();
+                                                  })
+                                                  .toList()
+                                                  .map((img2) {
+                                                    final splitImg2 =
+                                                        img2.split('|');
+                                                    return (splitImg2[0])
+                                                        .toString();
+                                                  })
+                                                  .toList()
                                               : [],
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
@@ -2889,15 +2909,23 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               DateTime.now().toIso8601String(),
                                           'is_done': false,
                                           'images': (listImg.isNotEmpty)
-                                              ? listImg.map((img) {
-                                                  final splitImg =
-                                                      img.split('|');
-                                                  if (splitImg[1] ==
-                                                      (position[i]['position'])
-                                                          .toString()) {
-                                                    return splitImg[0];
-                                                  }
-                                                }).toList()
+                                              ? listImg
+                                                  .where((img) {
+                                                    final splitImg =
+                                                        img.split('|');
+                                                    return splitImg[1] ==
+                                                        (position[i]
+                                                                ['position'])
+                                                            .toString();
+                                                  })
+                                                  .toList()
+                                                  .map((img2) {
+                                                    final splitImg2 =
+                                                        img2.split('|');
+                                                    return (splitImg2[0])
+                                                        .toString();
+                                                  })
+                                                  .toList()
                                               : [],
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
@@ -2915,14 +2943,21 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                     final endOfDay = DateTime(today.year,
                                         today.month, today.day, 23, 59, 59);
 
-                                    final querySnapshot = await firestore
-                                        .collection('daily_pressure')
-                                        .where('unit', isEqualTo: idUnit.text)
-                                        .where('tanggal',
-                                            isGreaterThanOrEqualTo: startOfDay)
-                                        .where('tanggal',
-                                            isLessThanOrEqualTo: endOfDay)
-                                        .get();
+                                    final querySnapshot =
+                                        await FirebaseFirestore.instance
+                                            .collection('daily_pressure')
+                                            .where(
+                                                'unit',
+                                                isEqualTo:
+                                                    dataUnit['unitNumber'])
+                                            .where('tanggal',
+                                                isGreaterThanOrEqualTo:
+                                                    startOfDay
+                                                        .toIso8601String())
+                                            .where('tanggal',
+                                                isLessThanOrEqualTo:
+                                                    endOfDay.toIso8601String())
+                                            .get();
 
                                     print(
                                         'Documents found: ${querySnapshot.docs.length}');

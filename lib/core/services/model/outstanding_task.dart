@@ -2,6 +2,7 @@ class OutstandingTask {
   final String id;
   final String idSite;
   final String user;
+  final String userEmail;
   final String unit;
   final String serialNumber;
   final List<String> condition;
@@ -25,6 +26,7 @@ class OutstandingTask {
     required this.id,
     required this.idSite,
     required this.user,
+    required this.userEmail,
     required this.unit,
     required this.serialNumber,
     required this.condition,
@@ -47,6 +49,6 @@ class OutstandingTask {
 
   @override
   String toString() {
-    return 'OutstandingTask{id: $id, idSite: $idSite, user: $user, unit: $unit, serialNumber: $serialNumber, condition: $condition, tireSize: $tireSize, position: $position, brand: $brand, tireDamage: $tireDamage, remarks: $remarks, rtd: $rtd, pressure: $pressure, lastUpdate: $lastUpdate, isDone: $isDone, images: $images, sn: $sn, kunciUnit: $kunciUnit, kunciTire: $kunciTire}';
+    return 'OutstandingTask{id: $id, idSite: $idSite, user: $user, userEmail: $userEmail, unit: $unit, serialNumber: $serialNumber, condition: $condition, tireSize: $tireSize, position: $position, brand: $brand, tireDamage: $tireDamage, remarks: $remarks, rtd: $rtd, pressure: $pressure, lastUpdate: $lastUpdate, isDone: $isDone, images: $images, sn: $sn, kunciUnit: $kunciUnit, kunciTire: $kunciTire}';
   }
 }

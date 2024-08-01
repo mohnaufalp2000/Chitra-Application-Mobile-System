@@ -1062,40 +1062,126 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                             width: double.infinity,
                             child: ElevatedButton(
                                 onPressed: () async {
-                                  final id = Uuid();
-                                  print('tugas : $filteredItemTask');
-                                  // print('terpesona $filteredItemTask');
-                                  // final file = await createFolderPath(id.v4(), 'outstanding');
-                                  print(
-                                      'site mana : ${filteredItemTask[0]['id_site']}');
+                                  // try {
+                                  //   final id = Uuid();
+                                  //   print('tugas : $filteredItemTask');
+                                  //   // print('terpesona $filteredItemTask');
+                                  //   // final file = await createFolderPath(id.v4(), 'outstanding');
+                                  //   print(
+                                  //       'site mana : ${filteredItemTask[0]['id_site']}');
 
-                                  final file = await createFolderPath(
-                                      id.v4(), 'outstanding',
-                                      email: auth.currentUser?.email ?? '',
-                                      site: filteredItemTask[0]['id_site']);
-                                  final bytes = await createExcel(
-                                    'outstanding',
-                                    task: filteredItemTask,
-                                  );
-                                  final saved = await file.writeAsBytes(bytes,
-                                      flush: true);
-                                  print('laper : $saved');
-                                  ScaffoldMessenger.of(context)
-                                      .showSnackBar(SnackBar(
-                                          backgroundColor: green00968A,
-                                          content: Text(
-                                            'Successfull Save Data!',
-                                            style: getWhiteTextStyle(),
-                                          )));
-                                  final result = await OpenFile.open(file.path);
+                                  //   final filteredOnlyUser =
+                                  //       filteredItemTask.where((item) {
+                                  //     final userEmail =
+                                  //         item['user_email'] ?? '';
+                                  //     final currentUserEmail =
+                                  //         auth.currentUser?.email ?? '';
+                                  //     final itemUser = item['user'] ?? '';
+                                  //     final mapUsername = map['username'] ?? '';
 
-                                  if (result.type == ResultType.done) {
-                                    print('File berhasil dibuka');
-                                  } else {
-                                    print(result.message);
-                                    if (result.type == ResultType.noAppToOpen) {
-                                      openPlayStore('attendance');
+                                  //     return userEmail == currentUserEmail ||
+                                  //         (itemUser == mapUsername &&
+                                  //             itemUser != 'username');
+                                  //   }).toList();
+
+                                  //   final file = await createFolderPath(
+                                  //       id.v4(), 'outstanding',
+                                  //       email: auth.currentUser?.email ?? '',
+                                  //       site: filteredOnlyUser[0]['id_site']);
+                                  //   final bytes = await createExcel(
+                                  //     'outstanding',
+                                  //     task: filteredItemTask,
+                                  //   );
+                                  //   final saved = await file.writeAsBytes(bytes,
+                                  //       flush: true);
+                                  //   print('laper : $saved');
+                                  //   ScaffoldMessenger.of(context)
+                                  //       .showSnackBar(SnackBar(
+                                  //           backgroundColor: green00968A,
+                                  //           content: Text(
+                                  //             'Successfull Save Data!',
+                                  //             style: getWhiteTextStyle(),
+                                  //           )));
+                                  //   final result =
+                                  //       await OpenFile.open(file.path);
+
+                                  //   if (result.type == ResultType.done) {
+                                  //     print('File berhasil dibuka');
+                                  //   } else {
+                                  //     print(result.message);
+                                  //     if (result.type ==
+                                  //         ResultType.noAppToOpen) {
+                                  //       openPlayStore('attendance');
+                                  //     }
+                                  //   }
+                                  // } catch (e) {
+                                  //   print('error export $e');
+                                  // }
+
+                                  try {
+                                    final id = Uuid();
+                                    print('tugas : $filteredItemTask');
+                                    print(
+                                        'site mana : ${filteredItemTask[0]['id_site']}');
+
+                                    final filteredOnlyUser =
+                                        filteredItemTask.where((item) {
+                                      final userEmail =
+                                          item['user_email'] ?? '';
+                                      final currentUserEmail =
+                                          auth.currentUser?.email ?? '';
+                                      final itemUser = item['user'] ?? '';
+                                      final mapUsername = map['username'] ?? '';
+
+                                      return userEmail == currentUserEmail ||
+                                          itemUser == currentUserEmail ||
+                                          (itemUser == mapUsername &&
+                                              itemUser != 'username');
+                                    }).toList();
+
+                                    print(
+                                        'filteredOnlyUser: $filteredOnlyUser');
+
+                                    final file = await createFolderPath(
+                                        id.v4(), 'outstanding',
+                                        email: auth.currentUser?.email ?? '',
+                                        site: filteredOnlyUser[0]['id_site'] ??
+                                            'default_site' // Default value to avoid null
+                                        );
+                                    print('File path: ${file.path}');
+
+                                    final bytes = await createExcel(
+                                      'outstanding',
+                                      task: filteredOnlyUser,
+                                    );
+                                    print('Excel created');
+
+                                    final saved = await file.writeAsBytes(bytes,
+                                        flush: true);
+                                    print('laper : $saved');
+
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                      backgroundColor: green00968A,
+                                      content: Text(
+                                        'Successfull Save Data!',
+                                        style: getWhiteTextStyle(),
+                                      ),
+                                    ));
+
+                                    final result =
+                                        await OpenFile.open(file.path);
+                                    if (result.type == ResultType.done) {
+                                      print('File berhasil dibuka');
+                                    } else {
+                                      print(result.message);
+                                      if (result.type ==
+                                          ResultType.noAppToOpen) {
+                                        openPlayStore('attendance');
+                                      }
                                     }
+                                  } catch (e) {
+                                    print('error export $e');
                                   }
                                 },
                                 child: Container(
@@ -1751,16 +1837,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                                   id: task['id'] ?? '',
                                                   idSite: task['id_site'] ?? '',
                                                   user: task['user'] ?? '',
+                                                  userEmail:
+                                                      task['user_email'] ?? '',
                                                   unit: task['unit'] ?? '',
-                                                  serialNumber:
-                                                      task['serial_number'] ??
-                                                          '',
+                                                  serialNumber: task['serial_number'] ??
+                                                      '',
                                                   condition: (task['condition'] != null)
                                                       ? List<String>.from(
                                                           task['condition'].map(
-                                                              (condition) =>
-                                                                  condition
-                                                                      .toString()))
+                                                              (condition) => condition
+                                                                  .toString()))
                                                       : [],
                                                   tireSize:
                                                       task['tire_size'] ?? '',

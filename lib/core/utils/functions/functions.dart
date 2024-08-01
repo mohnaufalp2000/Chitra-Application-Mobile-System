@@ -654,169 +654,202 @@ Future<List<int>> createExcel(String type,
     case 'outstanding':
       final Workbook workbook = Workbook();
       final Worksheet sheet = workbook.worksheets[0];
-      log(task.toString());
+      log('function export' + task.toString());
 
       /// title
-      sheet.getRangeByName('A1:Q1').merge();
-      sheet.getRangeByName('A1:Q1').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('A1:Q1').setText('Outstanding task');
+      // sheet.getRangeByName('A1:Q1').merge();
+      // sheet.getRangeByName('A1:Q1').cellStyle.hAlign = HAlignType.center;
+      // sheet.getRangeByName('A1:Q1').setText('Outstanding task');
 
-      sheet.getRangeByName('A2:Q2').merge();
-      sheet.getRangeByName('A2:Q2').setText('Site : ${task?[0]['id_site']}');
+      // sheet.getRangeByName('A2:Q2').merge();
+      // sheet.getRangeByName('A2:Q2').setText('Site : ${task?[0]['id_site']}');
 
-      sheet.getRangeByName('A3:D3').merge();
-      sheet.getRangeByName('A3:D3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('A3:D3').setText('Inspector');
+      // sheet.getRangeByName('A3:D3').merge();
+      // sheet.getRangeByName('A3:D3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('A1').setText('Inspector');
 
-      sheet.getRangeByName('E3:F3').merge();
-      sheet.getRangeByName('E3:F3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('E3:F3').setText('Date');
+      // sheet.getRangeByName('E3:F3').merge();
+      // sheet.getRangeByName('E3:F3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('B1').setText('Date');
 
-      sheet.getRangeByName('G3:H3').merge();
-      sheet.getRangeByName('G3:H3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('G3:H3').setText('Unit Number');
+      // sheet.getRangeByName('G3:H3').merge();
+      // sheet.getRangeByName('G3:H3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('C1').setText('Unit Number');
 
-      sheet.getRangeByName('I3:J3').merge();
-      sheet.getRangeByName('I3:J3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('I3:J3').setText('Tire Position');
+      // sheet.getRangeByName('I3:J3').merge();
+      // sheet.getRangeByName('I3:J3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('D1').setText('Tire Position');
 
-      sheet.getRangeByName('K3:L3').merge();
-      sheet.getRangeByName('K3:L3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('K3:L3').setText('Pressure');
+      // sheet.getRangeByName('K3:L3').merge();
+      // sheet.getRangeByName('K3:L3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('E1').setText('Pressure');
 
-      sheet.getRangeByName('M3:Q3').merge();
-      sheet.getRangeByName('M3:Q3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('M3:Q3').setText('Tire Damage');
+      // sheet.getRangeByName('M3:Q3').merge();
+      // sheet.getRangeByName('M3:Q3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('F1').setText('Tire Damage');
 
-      sheet.getRangeByName('R3:S3').merge();
-      sheet.getRangeByName('R3:S3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('R3:S3').setText('RTD');
+      // sheet.getRangeByName('R3:S3').merge();
+      // sheet.getRangeByName('R3:S3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('G1').setText('RTD 1');
 
-      sheet.getRangeByName('T3:U3').merge();
-      sheet.getRangeByName('T3:U3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('T3:U3').setText('RTD');
+      // sheet.getRangeByName('T3:U3').merge();
+      // sheet.getRangeByName('T3:U3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('H1').setText('RTD 2');
 
-      sheet.getRangeByName('V3:Z3').merge();
-      sheet.getRangeByName('V3:Z3').cellStyle.hAlign = HAlignType.center;
-      sheet.getRangeByName('V3:Z3').setText('Broken Component');
+      // sheet.getRangeByName('V3:Z3').merge();
+      // sheet.getRangeByName('V3:Z3').cellStyle.hAlign = HAlignType.center;
+      sheet.getRangeByName('I1').setText('Adj. Pressure');
+      sheet.getRangeByName('J1').setText('Gambar_1');
 
       for (var i = 0; i < task!.length; i++) {
         // inspector
-        sheet.getRangeByName('A${i + 4}:D${i + 4}').merge();
-        sheet.getRangeByName('A${i + 4}:D${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('A${i + 4}:D${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
-        sheet.getRangeByName('A${i + 4}:D${i + 4}').setText(task[i]['user']);
+        // sheet.getRangeByName('A${i + 1}').merge();
+        sheet.getRangeByName('A${i + 2}').cellStyle.hAlign = HAlignType.center;
+        sheet.getRangeByName('A${i + 2}').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('A${i + 2}').setText(task[i]['user']);
 
         // tanggal
         DateTime originalDateTime = DateTime.parse(task[i]['last_update']);
         String formattedDate =
             "${originalDateTime.year}-${_twoDigits(originalDateTime.month)}-${_twoDigits(originalDateTime.day)}";
-        sheet.getRangeByName('E${i + 4}:F${i + 4}').merge();
-        sheet.getRangeByName('E${i + 4}:F${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('E${i + 4}:F${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
-        sheet.getRangeByName('E${i + 4}:F${i + 4}').setText(formattedDate);
+        // sheet.getRangeByName('E${i + 4}:F${i + 4}').merge();
+        sheet.getRangeByName('B${i + 2}').cellStyle.hAlign = HAlignType.center;
+        sheet.getRangeByName('B${i + 2}').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('B${i + 2}').setText(formattedDate);
 
         // unit number
-        sheet.getRangeByName('G${i + 4}:H${i + 4}').merge();
-        sheet.getRangeByName('G${i + 4}:H${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('G${i + 4}:H${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
-        sheet.getRangeByName('G${i + 4}:H${i + 4}').setText(task[i]['unit']);
+        // sheet.getRangeByName('G${i + 4}:H${i + 4}').merge();
+        sheet.getRangeByName('C${i + 2}').cellStyle.hAlign = HAlignType.center;
+        sheet.getRangeByName('C${i + 2}').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('C${i + 2}').setText(task[i]['unit']);
 
         // tire position
-        sheet.getRangeByName('I${i + 4}:J${i + 4}').merge();
-        sheet.getRangeByName('I${i + 4}:J${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('I${i + 4}:J${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
+        // sheet.getRangeByName('I${i + 4}:J${i + 4}').merge();
+        sheet.getRangeByName('D${i + 2}').cellStyle.hAlign = HAlignType.center;
+        sheet.getRangeByName('D${i + 2}').cellStyle.vAlign = VAlignType.center;
         sheet
-            .getRangeByName('I${i + 4}:J${i + 4}')
+            .getRangeByName('D${i + 2}')
             .setText(task[i]['position'].toString());
 
         // pressure
-        sheet.getRangeByName('K${i + 4}:L${i + 4}').merge();
-        sheet.getRangeByName('K${i + 4}:L${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('K${i + 4}:L${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
-        sheet
-            .getRangeByName('K${i + 4}:L${i + 4}')
-            .setText('${task[i]['pressure']} Psi');
+        // sheet.getRangeByName('E${i + 2}').merge();
+        try {
+          sheet.getRangeByName('E${i + 2}').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('E${i + 2}').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('E${i + 2}').setText(
+              (task[i]['pressure'] == '' || task[i]['pressure'] == null)
+                  ? '0 Psi'
+                  : task[i]['pressure'] + 'Psi');
+        } catch (e) {}
 
         // TIRE DAMAGE
-        sheet.getRangeByName('M${i + 4}:Q${i + 4}').merge();
-        sheet.getRangeByName('M${i + 4}:Q${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('M${i + 4}:Q${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
-        sheet.getRangeByName('M${i + 4}:Q${i + 4}').setText(
+        // sheet.getRangeByName('F${i + 2}').merge();
+        sheet.getRangeByName('F${i + 2}').cellStyle.hAlign = HAlignType.center;
+        sheet.getRangeByName('F${i + 2}').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('F${i + 2}').setText(
             (task[i]['tire_damage'] is List<dynamic>)
                 ? (task[i]['tire_damage'] as List<dynamic>).join('\n')
                 : task[i]['tire_damage']);
 
-        //RTD
-        sheet.getRangeByName('R${i + 4}:S${i + 4}').merge();
-        sheet.getRangeByName('R${i + 4}:S${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('R${i + 4}:S${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
-        sheet.getRangeByName('R${i + 4}:S${i + 4}').setText(task[i]['rtd']);
+        try {
+          //RTD 1
+          // sheet.getRangeByName('G${i + 1}').merge();
+          if (task[i]['rtd'] != '/') {
+            final splitRtd = (task[i]['rtd'] as String).split('/');
+            sheet.getRangeByName('G${i + 2}').cellStyle.hAlign =
+                HAlignType.center;
+            sheet.getRangeByName('G${i + 2}').cellStyle.vAlign =
+                VAlignType.center;
+            sheet.getRangeByName('G${i + 2}').setText(splitRtd[0]);
+
+            //RTD 2
+            // sheet.getRangeByName('I${i + 4}').merge();
+            sheet.getRangeByName('H${i + 2}').cellStyle.hAlign =
+                HAlignType.center;
+            sheet.getRangeByName('H${i + 2}').cellStyle.vAlign =
+                VAlignType.center;
+            sheet.getRangeByName('H${i + 2}').setText(splitRtd[1]);
+          } else {
+            sheet.getRangeByName('G${i + 2}').cellStyle.hAlign =
+                HAlignType.center;
+            sheet.getRangeByName('G${i + 2}').cellStyle.vAlign =
+                VAlignType.center;
+            sheet.getRangeByName('G${i + 2}').setText('0');
+
+            //RTD 2
+            // sheet.getRangeByName('I${i + 4}').merge();
+            sheet.getRangeByName('H${i + 2}').cellStyle.hAlign =
+                HAlignType.center;
+            sheet.getRangeByName('H${i + 2}').cellStyle.vAlign =
+                VAlignType.center;
+            sheet.getRangeByName('H${i + 2}').setText('0');
+          }
+        } catch (e) {
+          log('error rtd : $e');
+        }
 
         //ADJUSMNET PRESSURE
-        sheet.getRangeByName('T${i + 4}:U${i + 4}').merge();
-        sheet.getRangeByName('T${i + 4}:U${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('T${i + 4}:U${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
-        sheet.getRangeByName('T${i + 4}:U${i + 4}').setText(
+        // sheet.getRangeByName('T${i + 4}:U${i + 4}').merge();
+        sheet.getRangeByName('I${i + 2}').cellStyle.hAlign = HAlignType.center;
+        sheet.getRangeByName('I${i + 2}').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('I${i + 2}').setText(
             (task[i]['adjusmentPressure'] == '' ||
                     task[i]['adjusmentPressure'] == null)
                 ? '0 Psi'
                 : task[i]['adjusmentPressure'] + 'Psi');
 
-        // BROKEN COMPONENT
-        sheet.getRangeByName('V${i + 4}:Z${i + 4}').merge();
-        sheet.getRangeByName('V${i + 4}:Z${i + 4}').cellStyle.hAlign =
-            HAlignType.center;
-        sheet.getRangeByName('V${i + 4}:Z${i + 4}').cellStyle.vAlign =
-            VAlignType.center;
-        sheet.getRangeByName('V${i + 4}:Z${i + 4}').setText(
-            (task[i]['condition'] is List<dynamic>)
-                ? (task[i]['condition'] as List<dynamic>).join('\n')
-                : task[i]['condition']);
-
         // IMAGE TIRE
-        // final urlImage = task[i]['images'];
-        // if (urlImage != null) {
-        //   for (var j = 0; j < urlImage.length; j++) {
-        //     log('gambar dari firebase : ${urlImage[j]}');
+        int columnBroken = 11;
+        final urlImage = task[i]['images'];
+        if (urlImage != null) {
+          for (var j = 0; j < urlImage.length; j++) {
+            log('gambar dari firebase : ${urlImage[j]}');
 
-        //     try {
-        //       final file = File(urlImage[j]);
-        //       final bytes = await file.readAsBytes();
-        //     } catch (e) {
-        //       log('kenapa gambar error : $e');
-        //     }
-        //     final file = File(urlImage[j]);
-        //     final bytes = await file.readAsBytes();
-        //     final resizedImage =
-        //         await resizeImage(Uint8List.fromList(bytes), 150, 185);
-        //     //     VAlignType.center;
-        //     sheet.pictures.addStream(i + 7, j + 21, resizedImage);
+            try {
+              if (urlImage[j] != null) {
+                final file = File(urlImage[j]);
+                final bytes = await file.readAsBytes();
+                final base64String = base64Encode(bytes);
 
-        //     sheet.getRangeByIndex(i + 7, j + 21).rowHeight = 130;
-        //     sheet.getRangeByIndex(i + 7, j + 21).columnWidth = 100;
-        //     sheet.getRangeByIndex(i + 7, j + 21).cellStyle.hAlign =
-        //         HAlignType.center;
-        //     sheet.getRangeByIndex(i + 7, j + 21).cellStyle.vAlign =
-        //         VAlignType.center;
-        //   }
-        // }
+                if (j == 0) {
+                  sheet.getRangeByName('J${i + 2}').cellStyle.hAlign =
+                      HAlignType.center;
+                  sheet.getRangeByName('J${i + 2}').cellStyle.vAlign =
+                      VAlignType.center;
+                  sheet.getRangeByName('J${i + 2}').setText(base64String);
+                }
+                // else {
+                //   sheet.getRangeByIndex(i + 2, j + 10).setText(base64String);
+                //   sheet.getRangeByIndex(1, j + 10).setText('Gambar_${j + 1}');
+                //   sheet.getRangeByIndex(1, j + 10).cellStyle.hAlign =
+                //       HAlignType.center;
+                //   sheet.getRangeByIndex(i + 2, j + 10).cellStyle.hAlign =
+                //       HAlignType.center;
+                //   sheet.getRangeByIndex(i + 2, j + 10).cellStyle.vAlign =
+                //       VAlignType.center;
+                //   columnBroken += j;
+                // }
+              }
+            } catch (e) {
+              log('kenapa gambar error : $e');
+            }
+          }
+        }
+
+        // BROKEN COMPONENT
+        sheet.getRangeByName('K1').setText('Broken Component');
+        sheet.getRangeByName('K1').cellStyle.hAlign = HAlignType.center;
+        sheet.getRangeByName('K1').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('K${i + 2}').setText(
+            (task[i]['condition'] == null ||
+                    (task[i]['condition'] is List<dynamic> &&
+                        (task[i]['condition'] as List<dynamic>).isEmpty))
+                ? ' '
+                : (task[i]['condition'] is List<dynamic>)
+                    ? (task[i]['condition'] as List<dynamic>).join(', ')
+                    : task[i]['condition']);
       }
 
       final List<int> bytes = workbook.saveAsStream();
@@ -926,6 +959,19 @@ Future<String> savePdf(pw.Document pdf, File outputFile) async {
   }
   print('gambar ${outputFile.path}');
   return outputFile.path;
+}
+
+int getLetterPosition(String letter) {
+  // Pastikan huruf yang diberikan hanya satu karakter
+  // if (letter.length != 1) {
+  //   throw ArgumentError('Input should be a single letter.');
+  // }
+
+  // Mengubah huruf ke huruf kecil untuk konsistensi
+  letter = letter.toLowerCase();
+
+  // Menghitung posisi huruf dalam alfabet
+  return letter.codeUnitAt(0) - 'a'.codeUnitAt(0) + 1;
 }
 
 /// membuka playstore secara otomatis

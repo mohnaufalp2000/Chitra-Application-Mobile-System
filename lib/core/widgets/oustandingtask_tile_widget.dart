@@ -171,6 +171,14 @@ class OustandingTileWidget extends StatelessWidget {
                     fontWeight: w700,
                   ),
                 ),
+                (task.userEmail != '' || task.userEmail != null)
+                    ? Text(
+                        task.userEmail,
+                        style: getWhiteTextStyle(
+                          fontWeight: w700,
+                        ),
+                      )
+                    : Container()
               ],
             ),
             const SizedBox(
