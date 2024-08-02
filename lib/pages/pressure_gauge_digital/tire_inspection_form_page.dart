@@ -1102,6 +1102,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                   'rtd1': '',
                   'rtd2': '',
                   'remarks': '',
+                  'image': [],
                   'condition': [
                     {'name': 'Reseal Oring', 'checked': false},
                     {'name': 'Rim Condition', 'checked': false},
@@ -2266,7 +2267,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             child: ElevatedButton(
                                                 style: ElevatedButton.styleFrom(
                                                     backgroundColor:
-                                                        Colors.deepOrange,
+                                                        Colors.green,
                                                     shape:
                                                         RoundedRectangleBorder(
                                                       borderRadius:
@@ -2299,35 +2300,15 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                             '_compressed.jpg',
                                                         quality: 50,
                                                       );
-
-                                                      listImg.add(
-                                                          '${compressedImageFile?.path}|${position[index]['position']}' ??
-                                                              '');
-                                                      log('listImg : $listImg');
+                                                      // listImg.add(
+                                                      //     '${compressedImageFile?.path}|${position[index]['position']}' ??
+                                                      //         '');
+                                                      position[index]
+                                                          ['image'] = [
+                                                        '${compressedImageFile?.path}|${position[index]['position']}'
+                                                      ];
 
                                                       // // Convert image to base64
-                                                      // List<int> imageBytes =
-                                                      //     await compressedImageFile!
-                                                      //         .readAsBytes();
-                                                      // String base64String =
-                                                      //     base64Encode(
-                                                      //         imageBytes);
-
-                                                      // List<String> chunks = [];
-                                                      // for (int i = 0;
-                                                      //     i <
-                                                      //         base64String
-                                                      //             .length;
-                                                      //     i++) {
-                                                      //   int end = (i + 1000 <
-                                                      //           base64String
-                                                      //               .length)
-                                                      //       ? i + 1000
-                                                      //       : base64String
-                                                      //           .length;
-                                                      //   chunks.add(base64String
-                                                      //       .substring(i, end));
-                                                      // }
                                                     }
                                                   } catch (e) {
                                                     log('error gambar string : $e');
@@ -2357,7 +2338,16 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           const SizedBox(
                                             height: 12,
                                           ),
-                                          (listImg.isNotEmpty)
+                                          Text(
+                                            '*You can only take one picture. If you take another picture, the previous one will be deleted.',
+                                            style: getRedTextStyle(),
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          ((position[index]['image']
+                                                      as List<dynamic>)
+                                                  .isNotEmpty)
                                               ? Column(
                                                   children: [
                                                     SizedBox(
@@ -2368,7 +2358,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                               .styleFrom(
                                                                   backgroundColor:
                                                                       Colors
-                                                                          .orange,
+                                                                          .deepOrange,
                                                                   shape:
                                                                       RoundedRectangleBorder(
                                                                     borderRadius:
@@ -2376,76 +2366,48 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                             12),
                                                                   )),
                                                           onPressed: () async {
-                                                            final CarouselController
-                                                                _controller =
-                                                                CarouselController();
-
                                                             showDialog(
                                                                 context:
                                                                     context,
                                                                 builder:
-                                                                    (BuildContext
-                                                                        context) {
+                                                                    (context) {
                                                                   return AlertDialog(
                                                                     content:
-                                                                        Padding(
-                                                                      padding: const EdgeInsets
-                                                                          .all(
-                                                                          24.0),
-                                                                      child:
-                                                                          Column(
-                                                                        mainAxisSize:
-                                                                            MainAxisSize.min,
-                                                                        children: [
-                                                                          Text(
-                                                                            'Show Image',
-                                                                            style:
-                                                                                getBlackTextStyle(),
-                                                                          ),
-                                                                          const SizedBox(
-                                                                            height:
-                                                                                12,
-                                                                          ),
-                                                                          Container(
-                                                                            width:
-                                                                                400,
-                                                                            height:
-                                                                                400,
-                                                                            child:
-                                                                                CarouselSlider(
-                                                                              carouselController: _controller,
-                                                                              // items: listImg.map((img) {
-                                                                              //   final splitImg = img.split('|');
-
-                                                                              //   if ((position[index]['position']).toString() == splitImg[1]) {
-                                                                              //     return Image.file(File(splitImg[0]));
-                                                                              //   }
-                                                                              //   return Container();
-                                                                              // }).toList(),
-                                                                              items: listImg
-                                                                                  .where((img) {
-                                                                                    final splitImg = img.split('|');
-                                                                                    return splitImg[1] == (position[index]['position']).toString();
-                                                                                  })
-                                                                                  .toList()
-                                                                                  .map((img2) {
-                                                                                    final splitImg2 = img2.split('|');
-                                                                                    return Image.file(File(splitImg2[0]));
-                                                                                  })
-                                                                                  .toList(),
-                                                                              options: CarouselOptions(
-                                                                                aspectRatio: 3.0,
-                                                                                height: 400,
-                                                                                enableInfiniteScroll: false,
-                                                                                enlargeCenterPage: true,
-                                                                              ),
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
+                                                                        Text(
+                                                                      'Are you sure you want to delete this image?',
+                                                                      style:
+                                                                          getBlackTextStyle(),
                                                                     ),
+                                                                    actions: [
+                                                                      TextButton(
+                                                                          onPressed:
+                                                                              () {
+                                                                            Navigator.pop(context);
+                                                                          },
+                                                                          child:
+                                                                              Text(
+                                                                            'Cancel',
+                                                                            style:
+                                                                                getGreyTextStyle(grey8391A1),
+                                                                          )),
+                                                                      TextButton(
+                                                                          onPressed:
+                                                                              () {
+                                                                            position[index]['image'] =
+                                                                                [];
+                                                                            Navigator.pop(context);
+                                                                            setState(() {});
+                                                                          },
+                                                                          child:
+                                                                              Text(
+                                                                            'Yes',
+                                                                            style:
+                                                                                getRedTextStyle(),
+                                                                          )),
+                                                                    ],
                                                                   );
                                                                 });
+
                                                             setState(() {});
                                                           },
                                                           child: Row(
@@ -2454,14 +2416,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                     .center,
                                                             children: [
                                                               Icon(
-                                                                Icons.image,
+                                                                Icons.delete,
                                                                 color: white,
                                                               ),
                                                               const SizedBox(
                                                                 width: 12,
                                                               ),
                                                               Text(
-                                                                'Show Image',
+                                                                'Delete Picture',
                                                                 style:
                                                                     getWhiteTextStyle(),
                                                               ),
@@ -2471,9 +2433,145 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                     const SizedBox(
                                                       height: 12,
                                                     ),
+                                                    Container(
+                                                        width: double.infinity,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(12),
+                                                        ),
+                                                        child: Image.file(File(
+                                                            (position[index][
+                                                                        'image'][0]
+                                                                    as String)
+                                                                .split(
+                                                                    '|')[0]))),
+                                                    const SizedBox(
+                                                      height: 12,
+                                                    ),
                                                   ],
                                                 )
                                               : Container(),
+
+                                          // Show More Images
+                                          // (listImg.isNotEmpty)
+                                          //     ? Column(
+                                          //         children: [
+                                          //           SizedBox(
+                                          //             width: double.infinity,
+                                          //             height: 45,
+                                          //             child: ElevatedButton(
+                                          //                 style: ElevatedButton
+                                          //                     .styleFrom(
+                                          //                         backgroundColor:
+                                          //                             Colors
+                                          //                                 .orange,
+                                          //                         shape:
+                                          //                             RoundedRectangleBorder(
+                                          //                           borderRadius:
+                                          //                               BorderRadius.circular(
+                                          //                                   12),
+                                          //                         )),
+                                          //                 onPressed: () async {
+                                          //                   final CarouselController
+                                          //                       _controller =
+                                          //                       CarouselController();
+
+                                          //                   showDialog(
+                                          //                       context:
+                                          //                           context,
+                                          //                       builder:
+                                          //                           (BuildContext
+                                          //                               context) {
+                                          //                         return AlertDialog(
+                                          //                           content:
+                                          //                               Padding(
+                                          //                             padding: const EdgeInsets
+                                          //                                 .all(
+                                          //                                 24.0),
+                                          //                             child:
+                                          //                                 Column(
+                                          //                               mainAxisSize:
+                                          //                                   MainAxisSize.min,
+                                          //                               children: [
+                                          //                                 Text(
+                                          //                                   'Show Image',
+                                          //                                   style:
+                                          //                                       getBlackTextStyle(),
+                                          //                                 ),
+                                          //                                 const SizedBox(
+                                          //                                   height:
+                                          //                                       12,
+                                          //                                 ),
+                                          //                                 Container(
+                                          //                                   width:
+                                          //                                       400,
+                                          //                                   height:
+                                          //                                       400,
+                                          //                                   child:
+                                          //                                       CarouselSlider(
+                                          //                                     carouselController: _controller,
+                                          //                                     // items: listImg.map((img) {
+                                          //                                     //   final splitImg = img.split('|');
+
+                                          //                                     //   if ((position[index]['position']).toString() == splitImg[1]) {
+                                          //                                     //     return Image.file(File(splitImg[0]));
+                                          //                                     //   }
+                                          //                                     //   return Container();
+                                          //                                     // }).toList(),
+                                          //                                     items: listImg
+                                          //                                         .where((img) {
+                                          //                                           final splitImg = img.split('|');
+                                          //                                           return splitImg[1] == (position[index]['position']).toString();
+                                          //                                         })
+                                          //                                         .toList()
+                                          //                                         .map((img2) {
+                                          //                                           final splitImg2 = img2.split('|');
+                                          //                                           return Image.file(File(splitImg2[0]));
+                                          //                                         })
+                                          //                                         .toList(),
+                                          //                                     options: CarouselOptions(
+                                          //                                       aspectRatio: 3.0,
+                                          //                                       height: 400,
+                                          //                                       enableInfiniteScroll: false,
+                                          //                                       enlargeCenterPage: true,
+                                          //                                     ),
+                                          //                                   ),
+                                          //                                 ),
+                                          //                               ],
+                                          //                             ),
+                                          //                           ),
+                                          //                         );
+                                          //                       });
+                                          //                   setState(() {});
+                                          //                 },
+                                          //                 child: Row(
+                                          //                   mainAxisAlignment:
+                                          //                       MainAxisAlignment
+                                          //                           .center,
+                                          //                   children: [
+                                          //                     Icon(
+                                          //                       Icons.image,
+                                          //                       color: white,
+                                          //                     ),
+                                          //                     const SizedBox(
+                                          //                       width: 12,
+                                          //                     ),
+                                          //                     Text(
+                                          //                       'Show Image',
+                                          //                       style:
+                                          //                           getWhiteTextStyle(),
+                                          //                     ),
+                                          //                   ],
+                                          //                 )),
+                                          //           ),
+                                          //           const SizedBox(
+                                          //             height: 12,
+                                          //           ),
+                                          //         ],
+                                          //       )
+                                          //     : Container(),
 
                                           Row(
                                             children: [
@@ -2852,24 +2950,33 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'last_update':
                                               DateTime.now().toIso8601String(),
                                           'is_done': false,
-                                          'images': (listImg.isNotEmpty)
-                                              ? listImg
-                                                  .where((img) {
-                                                    final splitImg =
-                                                        img.split('|');
-                                                    return splitImg[1] ==
-                                                        (position[i]
-                                                                ['position'])
-                                                            .toString();
-                                                  })
-                                                  .toList()
-                                                  .map((img2) {
-                                                    final splitImg2 =
-                                                        img2.split('|');
-                                                    return (splitImg2[0])
-                                                        .toString();
-                                                  })
-                                                  .toList()
+                                          // 'images': (listImg.isNotEmpty)
+                                          //     ? listImg
+                                          //         .where((img) {
+                                          //           final splitImg =
+                                          //               img.split('|');
+                                          //           return splitImg[1] ==
+                                          //               (position[i]
+                                          //                       ['position'])
+                                          //                   .toString();
+                                          //         })
+                                          //         .toList()
+                                          //         .map((img2) {
+                                          //           final splitImg2 =
+                                          //               img2.split('|');
+                                          //           return (splitImg2[0])
+                                          //               .toString();
+                                          //         })
+                                          //         .toList()
+                                          //     : [],
+                                          'images': ((position[i]['image']
+                                                      as List<dynamic>)
+                                                  .isNotEmpty)
+                                              ? [
+                                                  (position[i]['image'][0]
+                                                          as String)
+                                                      .split('|')[0]
+                                                ]
                                               : [],
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
@@ -2908,25 +3015,34 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'last_update':
                                               DateTime.now().toIso8601String(),
                                           'is_done': false,
-                                          'images': (listImg.isNotEmpty)
-                                              ? listImg
-                                                  .where((img) {
-                                                    final splitImg =
-                                                        img.split('|');
-                                                    return splitImg[1] ==
-                                                        (position[i]
-                                                                ['position'])
-                                                            .toString();
-                                                  })
-                                                  .toList()
-                                                  .map((img2) {
-                                                    final splitImg2 =
-                                                        img2.split('|');
-                                                    return (splitImg2[0])
-                                                        .toString();
-                                                  })
-                                                  .toList()
+                                          'images': ((position[i]['image']
+                                                      as List<dynamic>)
+                                                  .isNotEmpty)
+                                              ? [
+                                                  (position[i]['image'][0]
+                                                          as String)
+                                                      .split('|')[0]
+                                                ]
                                               : [],
+                                          // 'images': (listImg.isNotEmpty)
+                                          //     ? listImg
+                                          //         .where((img) {
+                                          //           final splitImg =
+                                          //               img.split('|');
+                                          //           return splitImg[1] ==
+                                          //               (position[i]
+                                          //                       ['position'])
+                                          //                   .toString();
+                                          //         })
+                                          //         .toList()
+                                          //         .map((img2) {
+                                          //           final splitImg2 =
+                                          //               img2.split('|');
+                                          //           return (splitImg2[0])
+                                          //               .toString();
+                                          //         })
+                                          //         .toList()
+                                          //     : [],
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
