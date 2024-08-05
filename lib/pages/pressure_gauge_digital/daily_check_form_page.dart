@@ -1345,21 +1345,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     style: getWhiteTextStyle(),
                   )));
               try {
-                // final today = DateTime.now();
-                // final startOfDay = DateTime(today.year, today.month, today.day);
-                // log('hari ini 1 : ${startOfDay}');
-                // final endOfDay =
-                //     DateTime(today.year, today.month, today.day, 23, 59, 59);
-                // final formatDate = DateFormat('yyyy-MM-dd').format(today);
-                // log('hari ini 2 : ${endOfDay}');
-
-                // final querySnapshot = await firestore
-                //     .collection('daily_pressure')
-                //     .where('unit', isEqualTo: dataUnit['unitNumber'])
-                //     .where('tanggal', isGreaterThanOrEqualTo: startOfDay)
-                //     .where('tanggal', isLessThanOrEqualTo: endOfDay)
-                //     .get();
-
                 final today = DateTime.now();
                 final startOfDay = DateTime(today.year, today.month, today.day);
                 final endOfDay =
@@ -1399,6 +1384,44 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
                   });
                 } else {
+                  final queryYesterdaySnapshot = await FirebaseFirestore
+                      .instance
+                      .collection('daily_pressure')
+                      .where('unit', isEqualTo: dataUnit['unitNumber'])
+                      .where('tanggal',
+                          isGreaterThanOrEqualTo: DateTime(
+                                  today.year,
+                                  today.month,
+                                  today.subtract(Duration(days: 1)).day)
+                              .toIso8601String())
+                      .where('tanggal',
+                          isLessThanOrEqualTo: endOfDay.toIso8601String())
+                      .get();
+
+                  if (queryYesterdaySnapshot.docs.isEmpty) {
+                    // tambah data kemarin
+                    await firestore.collection('daily_pressure').add({
+                      // 'nama': (user),
+                      'idSite': idSite,
+                      'user': user['username'] ?? auth.currentUser!.email,
+                      'tanggal': DateTime.now()
+                          .subtract(Duration(days: 1))
+                          .toIso8601String(),
+                      'unit': dataUnit['unitNumber'],
+                      'hm': hmCtrl.text,
+                      'posisi': position.map((p) {
+                        final pIndex = position.indexOf(p);
+                        return {
+                          'pos': '${pIndex + 1}',
+                          'pressure': (p['pressure']) ?? '0',
+                          'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
+                          'luka': (selectedType == 0) ? '' : p['damage']
+                        };
+                      }),
+                      'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
+                    });
+                  }
+
                   // tambah data
                   await firestore.collection('daily_pressure').add({
                     // 'nama': (user),

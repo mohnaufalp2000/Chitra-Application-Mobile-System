@@ -3105,7 +3105,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'luka': p['damageTire']
                                           };
                                         }),
-                                        'pit': 'Default',
+                                        'pit': 'WS',
                                       });
                                     } else {
                                       // tambah data
@@ -3132,7 +3132,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'luka': p['damageTire']
                                           };
                                         }),
-                                        'pit': 'Default',
+                                        'pit': 'WS',
                                       });
                                     }
                                   } catch (e) {
