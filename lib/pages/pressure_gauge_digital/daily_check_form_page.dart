@@ -212,6 +212,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       context.read<TireBloc>().add(GetUnitTiresEvent(
           idSite: idSite, unitNumber: dataUnit['unitNumber']));
     }
+
+    setState(() {
+      if (idSite == '52') {
+        pit.add('PIT');
+        pit.add('WS');
+      }
+    });
   }
 
   getUser() async {
@@ -278,6 +285,67 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    selectedType = 0;
+                                  });
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.resolveWith<Color>(
+                                          (Set<MaterialState> states) {
+                                    if (selectedType == 0) {
+                                      return Colors.lightGreen;
+                                    }
+                                    return greyDADADA;
+                                  }),
+                                ),
+                                child: Text(
+                                  'PG Digital',
+                                  style: getWhiteTextStyle(fontWeight: w700),
+                                )),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 12,
+                        ),
+                        Expanded(
+                          child: SizedBox(
+                            height: 50,
+                            child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    selectedType = 1;
+                                  });
+                                },
+                                style: ButtonStyle(
+                                  backgroundColor:
+                                      MaterialStateProperty.resolveWith<Color>(
+                                          (Set<MaterialState> states) {
+                                    if (selectedType == 1) {
+                                      return Colors.lightGreen;
+                                    }
+                                    return greyDADADA;
+                                  }),
+                                ),
+                                child: Text(
+                                  'Manual',
+                                  style: getWhiteTextStyle(fontWeight: w700),
+                                )),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 24,
+                    ),
                     // UNIT NUMBER DAN HM UNIT
                     Row(
                       children: [
@@ -358,67 +426,61 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     const SizedBox(
                       height: 24,
                     ),
+
+                    (pit.isNotEmpty)
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.ev_station,
+                                size: 38,
+                              ),
+                              const SizedBox(
+                                width: 12,
+                              ),
+                              Text(
+                                'Unit Location',
+                                style: getBlackTextStyle(
+                                    fontSize: 18, fontWeight: w700),
+                              ),
+                            ],
+                          )
+                        : Container(),
+                    SizedBox(
+                      height: (pit.isNotEmpty) ? 24 : 0,
+                    ),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 50,
-                            child: ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    selectedType = 0;
-                                  });
-                                },
-                                style: ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.resolveWith<Color>(
-                                          (Set<MaterialState> states) {
-                                    if (selectedType == 0) {
-                                      return Colors.lightGreen;
-                                    }
-                                    return greyDADADA;
-                                  }),
-                                ),
-                                child: Text(
-                                  'PG Digital',
-                                  style: getWhiteTextStyle(fontWeight: w700),
-                                )),
+                      children: pit.map((e) {
+                        final pitIndex = pit.indexOf(e);
+                        return Expanded(
+                            child: Padding(
+                          padding: EdgeInsets.only(
+                              right: (pitIndex == 0) ? 12 : 0,
+                              left: (pitIndex == pit.length - 1) ? 12 : 0),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: (selectedPit == pitIndex)
+                                    ? Colors.orange
+                                    : greyF7F8F9),
+                            onPressed: () {
+                              setState(() {
+                                selectedPit = pitIndex;
+                              });
+                            },
+                            child: Text(
+                              e,
+                              style: (selectedPit == pitIndex)
+                                  ? getWhiteTextStyle()
+                                  : getBlackTextStyle(),
+                            ),
                           ),
-                        ),
-                        const SizedBox(
-                          width: 12,
-                        ),
-                        Expanded(
-                          child: SizedBox(
-                            height: 50,
-                            child: ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    selectedType = 1;
-                                  });
-                                },
-                                style: ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.resolveWith<Color>(
-                                          (Set<MaterialState> states) {
-                                    if (selectedType == 1) {
-                                      return Colors.lightGreen;
-                                    }
-                                    return greyDADADA;
-                                  }),
-                                ),
-                                child: Text(
-                                  'Manual',
-                                  style: getWhiteTextStyle(fontWeight: w700),
-                                )),
-                          ),
-                        ),
-                      ],
+                        ));
+                      }).toList(),
                     ),
-                    const SizedBox(
-                      height: 24,
+                    SizedBox(
+                      height: (pit.isNotEmpty) ? 12 : 0,
                     ),
+
                     // PG Digital Inspect
                     (selectedType == 0)
                         ? Column(
@@ -1241,6 +1303,22 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           height: 52,
           child: ElevatedButton(
             onPressed: () async {
+              // jika belum memeilih pit
+              if (idSite == '52') {
+                if (selectedPit == -1) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.red,
+                      content: Text(
+                        'Please select location of unit first!',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  );
+                  return;
+                }
+              }
+
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
               if (isProcessing) {
@@ -1318,7 +1396,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'luka': (selectedType == 0) ? '' : p['damage']
                       };
                     }),
-                    'pit': 'Default',
+                    'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
                   });
                 } else {
                   // tambah data
@@ -1338,7 +1416,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'luka': (selectedType == 0) ? '' : p['damage']
                       };
                     }),
-                    'pit': 'Default',
+                    'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
                   });
                 }
               } catch (e) {

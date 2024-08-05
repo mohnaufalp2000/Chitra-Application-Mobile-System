@@ -336,9 +336,10 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                             width: 12,
                                           ),
                                           Text(
-                                            dailyMap['unit'],
+                                            dailyMap['unit'] +
+                                                '${((dailyMap['pit'] != 'Default') ? ' - ' + dailyMap['pit'] : '')}',
                                             style: getWhiteTextStyle(
-                                                fontWeight: w700, fontSize: 24),
+                                                fontWeight: w700, fontSize: 18),
                                           )
                                         ],
                                       ),
