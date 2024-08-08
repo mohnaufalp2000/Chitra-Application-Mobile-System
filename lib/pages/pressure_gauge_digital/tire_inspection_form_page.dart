@@ -882,6 +882,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     'Stud and Nut',
   ];
 
+  List<String> pit = [];
+  int selectedPit = -1;
+
   @override
   void initState() {
     super.initState();
@@ -911,6 +914,17 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   String tmpPressure = '';
   final Box<TireInspectPictureEntity> imageBox =
       store.box<TireInspectPictureEntity>();
+
+  insertPit() {
+    setState(() {
+      if (idSite == '15') {
+        pit.add('Utara');
+        pit.add('Selatan');
+        pit.add('RML');
+        pit.add('WS');
+      }
+    });
+  }
 
   startScanBluetooth() async {
     bluetoothSerial.startDiscovery().listen((device) {
@@ -1002,6 +1016,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             idSite: idSite, unitNumber: dataUnit['unitNumber']));
       }
     }
+
+    insertPit();
   }
 
   void handleDataRemarks(String remarks, int index) {
@@ -1409,6 +1425,59 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
                       children: [
+                        (pit.isNotEmpty)
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Icon(
+                                    Icons.ev_station,
+                                    size: 38,
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Text(
+                                    'Unit Location',
+                                    style: getBlackTextStyle(
+                                        fontSize: 18, fontWeight: w700),
+                                  ),
+                                ],
+                              )
+                            : Container(),
+                        SizedBox(
+                          height: (pit.isNotEmpty) ? 24 : 0,
+                        ),
+                        (pit.isNotEmpty)
+                            ? Center(
+                                child: Wrap(
+                                  spacing: 8.0, // Jarak horizontal antar tombol
+                                  children: pit.map((e) {
+                                    final pitIndex = pit.indexOf(e);
+                                    return Flexible(
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor:
+                                              (selectedPit == pitIndex)
+                                                  ? Colors.orange
+                                                  : greyF7F8F9,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            selectedPit = pitIndex;
+                                          });
+                                        },
+                                        child: Text(
+                                          e,
+                                          style: (selectedPit == pitIndex)
+                                              ? getWhiteTextStyle()
+                                              : getBlackTextStyle(),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              )
+                            : Container(),
                         Row(
                           children: [
                             Expanded(
@@ -2860,6 +2929,22 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         )));
                               }
                             : () async {
+                                // jika belum memeilih pit
+                                if (idSite == '15') {
+                                  if (selectedPit == -1) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        backgroundColor: Colors.red,
+                                        content: Text(
+                                          'Please select location of unit first!',
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                }
+
                                 ScaffoldMessenger.of(context)
                                     .hideCurrentSnackBar();
                                 ScaffoldMessenger.of(context)
@@ -3105,7 +3190,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'luka': p['damageTire']
                                           };
                                         }),
-                                        'pit': 'WS',
+                                        'pit': pit[selectedPit],
                                       });
                                     } else {
                                       // tambah data
@@ -3132,7 +3217,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'luka': p['damageTire']
                                           };
                                         }),
-                                        'pit': 'WS',
+                                        'pit': pit[selectedPit],
                                       });
                                     }
                                   } catch (e) {

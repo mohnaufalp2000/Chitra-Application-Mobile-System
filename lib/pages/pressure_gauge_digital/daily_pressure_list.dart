@@ -34,6 +34,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   // untuk user office, actual id site menyimpan id site office
   String actualIdSite = '';
   List<String> pit = [];
+  int selectedPit = 0;
   int selectedMenu = 1;
   String searchQuery = '';
   Map<String, dynamic> user = {};
@@ -81,6 +82,17 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     log('id site : $idSite');
 
     await getUnits();
+
+    setState(() {
+      // BMB COYYY
+      if (idSite == '15') {
+        pit.add('All');
+        pit.add('Utara');
+        pit.add('Selatan');
+        pit.add('RML');
+        pit.add('WS');
+      }
+    });
   }
 
   @override
@@ -93,6 +105,64 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
             padding: const EdgeInsets.all(24.0),
             child: Column(
               children: [
+                (selectedMenu != 1)
+                    ? Center(
+                        child: Column(
+                          children: [
+                            Wrap(
+                              spacing: 4.0, // Jarak horizontal antar tombol
+                              children: pit.map((e) {
+                                final pitIndex = pit.indexOf(e);
+                                if (pitIndex == 0) {
+                                  return Container(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            (selectedPit == pitIndex)
+                                                ? Colors.orange
+                                                : greyF7F8F9,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          selectedPit = pitIndex;
+                                        });
+                                      },
+                                      child: Text(
+                                        'All',
+                                        style: (selectedPit == pitIndex)
+                                            ? getWhiteTextStyle()
+                                            : getBlackTextStyle(),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return Flexible(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: (selectedPit == pitIndex)
+                                          ? Colors.orange
+                                          : greyF7F8F9,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedPit = pitIndex;
+                                      });
+                                    },
+                                    child: Text(
+                                      e,
+                                      style: (selectedPit == pitIndex)
+                                          ? getWhiteTextStyle()
+                                          : getBlackTextStyle(),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Container(),
                 const SizedBox(
                   height: 12,
                 ),
@@ -115,13 +185,11 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                   child: ElevatedButton(
                       onPressed: () async {
                         final id = Uuid();
-                        // print('tugas : $filteredItemTask');
-                        // print('terpesona $filteredItemTask');
-                        // final file = await createFolderPath(id.v4(), 'outstanding');
                         final file = await createFolderPath(
                             id.v4(), 'daily-check',
                             email: user['email'] ?? '',
                             site: user['siteName'] ?? '',
+                            pit: (pit.isNotEmpty) ? pit[selectedPit] : '',
                             date:
                                 "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
 
@@ -226,6 +294,23 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                         final dateString = data['tanggal'] as String;
                         final dateTime = DateTime.parse(dateString);
                         final now = DateTime.now();
+
+                        // pilih all pit
+                        if (pit[selectedPit] == 'All') {
+                          return dateTime.year == now.year &&
+                              dateTime.month == now.month &&
+                              dateTime.day == now.day &&
+                              data['idSite'] == idSite;
+                        }
+
+                        // ada pit
+                        if (data['pit'] != 'Default') {
+                          return dateTime.year == now.year &&
+                              dateTime.month == now.month &&
+                              dateTime.day == now.day &&
+                              data['idSite'] == idSite &&
+                              data['pit'] == pit[selectedPit];
+                        }
 
                         // tidak ada pit
                         return dateTime.year == now.year &&

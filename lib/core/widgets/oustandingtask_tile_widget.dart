@@ -17,73 +17,322 @@ class OustandingTileWidget extends StatelessWidget {
     required this.task,
   }) : super(key: key);
 
+  // final List<Map<String, dynamic>> task;
   final OutstandingTask task;
 
   @override
   Widget build(BuildContext context) {
-    if (task.unit == 'CO2068') {
-      log('adjusment : ${task.adjusmentPressure}');
-    }
-    // return Container(
-    //   width: double.infinity,
-    //   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-    //   decoration: BoxDecoration(
-    //     color: Colors.grey.withOpacity(0.2),
-    //     borderRadius: BorderRadius.circular(12),
-    //   ),
-    //   child: Row(
-    //     children: [
-    //       CircleAvatar(
-    //         backgroundColor: Color(0xff447362),
-    //         child: Icon(
-    //           Icons.monetization_on,
-    //           color: green39D2C0,
-    //         ),
+    // task.sort((a, b) {
+    //   final first = (a['position']).toString();
+    //   final second = (b['position']).toString();
+
+    //   return first.compareTo(second);
+    // });
+
+    // return Card(
+    //     elevation: 2,
+    //     shape: RoundedRectangleBorder(
+    //       borderRadius: BorderRadius.circular(12),
+    //     ),
+    //     color: green00968A,
+    //     child: Container(
+    //       width: double.infinity,
+    //       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 24),
+    //       decoration: BoxDecoration(
+    //         color: green00968A,
+    //         borderRadius: BorderRadius.circular(12),
     //       ),
-    //       const SizedBox(
-    //         width: 12,
-    //       ),
-    //       Expanded(
-    //         child: Column(
-    //           crossAxisAlignment: CrossAxisAlignment.start,
+    //       child: ExpansionTile(
+    //         tilePadding: EdgeInsets.zero,
+    //         childrenPadding: EdgeInsets.all(0),
+    //         title: Row(
     //           children: [
-    //             Container(
-    //               width: 150,
-    //               child: Text(
-    //                 task.code,
-    //                 style: getWhiteTextStyle(
-    //                   fontSize: 18,
-    //                   fontWeight: w700,
-    //                 ),
-    //               ),
+    //             Icon(
+    //               Icons.task,
+    //               color: white,
+    //               size: 36,
     //             ),
+    //             const SizedBox(
+    //               width: 12,
+    //             ),
+    //             // Text(
+    //             //   dailyMap['unit'] +
+    //             //       '${((dailyMap['pit'] != 'Default') ? ' - ' + dailyMap['pit'] : '')}',
+    //             //   style: getWhiteTextStyle(
+    //             //       fontWeight: w700,
+    //             //       fontSize: 18),
+    //             // )
     //             Text(
-    //               task.status,
-    //               style: getWhiteTextStyle(),
-    //             ),
+    //               task[0]['unit'],
+    //               style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+    //             )
     //           ],
     //         ),
-    //       ),
-    //       Column(
-    //         crossAxisAlignment: CrossAxisAlignment.end,
+    //         trailing: SizedBox(
+    //           width: 90,
+    //           child: Icon(Icons.arrow_drop_down),
+    //         ),
     //         children: [
-    //           Text(
-    //             task.tireSize,
-    //             style: getWhiteTextStyle(
-    //               fontSize: 12,
-    //             ),
+    //           const SizedBox(
+    //             height: 12,
     //           ),
-    //           Text(
-    //             'Position ${task.position}',
-    //             style: getWhiteTextStyle(
-    //               fontSize: 12,
-    //             ),
+    //           Row(
+    //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //             children: [
+    //               Text(
+    //                 'Name',
+    //                 style: getWhiteTextStyle(fontSize: 18),
+    //               ),
+    //               Container(
+    //                 width: 250,
+    //                 child: Text(
+    //                   task[0]['user'],
+    //                   textAlign: TextAlign.end,
+    //                   style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+    //                 ),
+    //               ),
+    //             ],
     //           ),
+    //           const SizedBox(
+    //             height: 12,
+    //           ),
+    //           Row(
+    //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //             children: [
+    //               Text(
+    //                 'Tanggal',
+    //                 style: getWhiteTextStyle(fontSize: 18),
+    //               ),
+    //               Text(
+    //                 task[0]['last_update'].split('T')[0],
+    //                 style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+    //               ),
+    //             ],
+    //           ),
+    //           const SizedBox(
+    //             height: 12,
+    //           ),
+    //           Row(
+    //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //             children: [
+    //               Text(
+    //                 'Waktu',
+    //                 style: getWhiteTextStyle(fontSize: 18),
+    //               ),
+    //               Text(
+    //                 task[0]['last_update'].split('T')[1].substring(0, 5),
+    //                 style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+    //               ),
+    //             ],
+    //           ),
+    //           const SizedBox(
+    //             height: 12,
+    //           ),
+    //           Row(
+    //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //             children: [
+    //               Text(
+    //                 'HM Unit',
+    //                 style: getWhiteTextStyle(fontSize: 18),
+    //               ),
+    //               Text(
+    //                 ' dailyMap[hm]',
+    //                 style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+    //               ),
+    //             ],
+    //           ),
+    //           const SizedBox(
+    //             height: 12,
+    //           ),
+    //           // Row(
+    //           //   mainAxisAlignment:
+    //           //       MainAxisAlignment.spaceBetween,
+    //           //   children: [
+    //           //     Text(
+    //           //       'Pit',
+    //           //       style: getWhiteTextStyle(
+    //           //           fontSize: 18),
+    //           //     ),
+    //           //     Text(
+    //           //       dailyMap['pit'],
+    //           //       style: getWhiteTextStyle(
+    //           //           fontWeight: w700,
+    //           //           fontSize: 18),
+    //           //     ),
+    //           //   ],
+    //           // ),
+    //           // const SizedBox(
+    //           //   height: 12,
+    //           // ),
+    //           Column(
+    //             children: task.map((pl) {
+    //               List<dynamic> luka = [];
+
+    //               if (pl['tire_damage'] != null &&
+    //                   pl['tire_damage'] is! String) {
+    //                 luka = pl['tire_damage'] as List<dynamic>;
+    //               }
+
+    //               return Column(
+    //                 children: [
+    //                   Row(
+    //                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //                     crossAxisAlignment: CrossAxisAlignment.center,
+    //                     children: [
+    //                       Text(
+    //                         'Pos. ${pl['position']}',
+    //                         style: getWhiteTextStyle(fontSize: 18),
+    //                       ),
+    //                       Column(
+    //                         crossAxisAlignment: CrossAxisAlignment.end,
+    //                         mainAxisAlignment: MainAxisAlignment.center,
+    //                         children: [
+    //                           Column(
+    //                             crossAxisAlignment: CrossAxisAlignment.end,
+    //                             children: [
+    //                               Text(
+    //                                 '${(pl['pressure'] == '' || pl['pressure'] == null) ? '0' : (pl['pressure']).toString()} Psi',
+    //                                 style: getWhiteTextStyle(
+    //                                     fontWeight: w700, fontSize: 18),
+    //                               ),
+    //                               // (pl['adjusmentPressure'] != null &&
+    //                               //         pl['adjusmentPressure'] !=
+    //                               //             '0' &&
+    //                               //         pl['adjusmentPressure'] !=
+    //                               //             '')
+    //                               //     ? Text(
+    //                               //         '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
+    //                               //         style: getWhiteTextStyle(
+    //                               //             fontWeight:
+    //                               //                 w700,
+    //                               //             fontSize:
+    //                               //                 18),
+    //                               //       )
+    //                               //     : Container(),
+    //                             ],
+    //                           ),
+    //                           (luka.isEmpty || luka == null)
+    //                               ? Container()
+    //                               : Text(
+    //                                   pl['tire_damage'].join('\n'),
+    //                                   textAlign: TextAlign.end,
+    //                                   style: getWhiteTextStyle(
+    //                                       fontWeight: w700, fontSize: 18),
+    //                                 ),
+    //                           const SizedBox(
+    //                             height: 12,
+    //                           ),
+    //                         ],
+    //                       ),
+    //                     ],
+    //                   ),
+    //                   Divider(
+    //                     color: white,
+    //                     thickness: 1.5,
+    //                   ),
+    //                 ],
+    //               );
+    //             }).toList(),
+    //           ),
+    //           // Column(
+    //           //   children: positionList.map((pl) {
+    //           //     final plIndex =
+    //           //         positionList.indexOf(pl);
+    //           //     List<dynamic> luka = [];
+
+    //           //     if (pl['luka'] != null &&
+    //           //         pl['luka'] is! String) {
+    //           //       luka =
+    //           //           pl['luka'] as List<dynamic>;
+    //           //     }
+
+    //           //     return Column(
+    //           //       children: [
+    //           //         Row(
+    //           //           mainAxisAlignment:
+    //           //               MainAxisAlignment
+    //           //                   .spaceBetween,
+    //           //           crossAxisAlignment:
+    //           //               CrossAxisAlignment
+    //           //                   .center,
+    //           //           children: [
+    //           //             Text(
+    //           //               'Pos. ${pl['pos']}',
+    //           //               style:
+    //           //                   getWhiteTextStyle(
+    //           //                       fontSize: 18),
+    //           //             ),
+    //           //             Column(
+    //           //               crossAxisAlignment:
+    //           //                   CrossAxisAlignment
+    //           //                       .end,
+    //           //               mainAxisAlignment:
+    //           //                   MainAxisAlignment
+    //           //                       .center,
+    //           //               children: [
+    //           //                 Column(
+    //           //                   crossAxisAlignment:
+    //           //                       CrossAxisAlignment
+    //           //                           .end,
+    //           //                   children: [
+    //           //                     Text(
+    //           //                       '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
+    //           //                       style: getWhiteTextStyle(
+    //           //                           fontWeight:
+    //           //                               w700,
+    //           //                           fontSize:
+    //           //                               18),
+    //           //                     ),
+    //           //                     (pl['adjusmentPressure'] != null &&
+    //           //                             pl['adjusmentPressure'] !=
+    //           //                                 '0' &&
+    //           //                             pl['adjusmentPressure'] !=
+    //           //                                 '')
+    //           //                         ? Text(
+    //           //                             '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
+    //           //                             style: getWhiteTextStyle(
+    //           //                                 fontWeight:
+    //           //                                     w700,
+    //           //                                 fontSize:
+    //           //                                     18),
+    //           //                           )
+    //           //                         : Container(),
+    //           //                   ],
+    //           //                 ),
+    //           //                 (luka.isEmpty ||
+    //           //                         luka == null)
+    //           //                     ? Container()
+    //           //                     : Text(
+    //           //                         pl['luka']
+    //           //                             .join(
+    //           //                                 '\n'),
+    //           //                         textAlign:
+    //           //                             TextAlign
+    //           //                                 .end,
+    //           //                         style: getWhiteTextStyle(
+    //           //                             fontWeight:
+    //           //                                 w700,
+    //           //                             fontSize:
+    //           //                                 18),
+    //           //                       ),
+    //           //                 const SizedBox(
+    //           //                   height: 12,
+    //           //                 ),
+    //           //               ],
+    //           //             ),
+    //           //           ],
+    //           //         ),
+    //           //         Divider(
+    //           //           color: white,
+    //           //           thickness: 1.5,
+    //           //         ),
+    //           //       ],
+    //           //     );
+    //           //   }).toList(),
+    //           // ),
     //         ],
-    //       )
-    //     ],
-    //   ),
-    // );
+    //       ),
+    //     ));
 
     return Card(
       elevation: 2,

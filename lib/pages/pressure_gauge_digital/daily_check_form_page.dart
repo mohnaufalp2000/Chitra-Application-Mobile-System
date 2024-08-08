@@ -214,8 +214,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     }
 
     setState(() {
-      if (idSite == '52') {
-        pit.add('PIT');
+      if (idSite == '15') {
+        pit.add('Utara');
+        pit.add('Selatan');
+        pit.add('RML');
         pit.add('WS');
       }
     });
@@ -449,34 +451,37 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     SizedBox(
                       height: (pit.isNotEmpty) ? 24 : 0,
                     ),
-                    Row(
-                      children: pit.map((e) {
-                        final pitIndex = pit.indexOf(e);
-                        return Expanded(
-                            child: Padding(
-                          padding: EdgeInsets.only(
-                              right: (pitIndex == 0) ? 12 : 0,
-                              left: (pitIndex == pit.length - 1) ? 12 : 0),
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                                backgroundColor: (selectedPit == pitIndex)
-                                    ? Colors.orange
-                                    : greyF7F8F9),
-                            onPressed: () {
-                              setState(() {
-                                selectedPit = pitIndex;
-                              });
-                            },
-                            child: Text(
-                              e,
-                              style: (selectedPit == pitIndex)
-                                  ? getWhiteTextStyle()
-                                  : getBlackTextStyle(),
+                    (pit.isNotEmpty)
+                        ? Center(
+                            child: Wrap(
+                              spacing: 8.0, // Jarak horizontal antar tombol
+                              children: pit.map((e) {
+                                final pitIndex = pit.indexOf(e);
+                                return Flexible(
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: (selectedPit == pitIndex)
+                                          ? Colors.orange
+                                          : greyF7F8F9,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedPit = pitIndex;
+                                      });
+                                    },
+                                    child: Text(
+                                      e,
+                                      style: (selectedPit == pitIndex)
+                                          ? getWhiteTextStyle()
+                                          : getBlackTextStyle(),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
                             ),
-                          ),
-                        ));
-                      }).toList(),
-                    ),
+                          )
+                        : Container(),
+
                     SizedBox(
                       height: (pit.isNotEmpty) ? 12 : 0,
                     ),

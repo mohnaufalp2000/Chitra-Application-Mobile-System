@@ -8,6 +8,7 @@ import 'package:camos/core/blocs/site/site_bloc.dart';
 import 'package:camos/core/blocs/tire/tire_bloc.dart';
 import 'package:camos/core/blocs/tire_condition/tire_condition_bloc.dart';
 import 'package:camos/core/blocs/tire_invent/tire_invent_bloc.dart';
+import 'package:camos/core/blocs/unit/unit_bloc.dart';
 import 'package:camos/core/navigator/navigation_route.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/local_database/outstanding_task/outstanding_task_entity.dart';
@@ -1204,310 +1205,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           const SizedBox(
                             height: 12,
                           ),
-                          // BlocBuilder<OutstandingTaskBloc,
-                          //     OutstandingTaskState>(
-                          //   builder: (context, state) {
-                          //     if (state is OutStandingTaskEmptyState) {
-                          //       return Column(
-                          //         children: [
-                          //           const SizedBox(
-                          //             height: 72,
-                          //           ),
-                          //           Center(
-                          //             child: Text(
-                          //               'There is no task',
-                          //               style: getBlackTextStyle(),
-                          //             ),
-                          //           ),
-                          //         ],
-                          //       );
-                          //     }
-                          //     if (state is OutStandingTaskLoadedState) {
-                          //       final initialTask = state.initialTasks;
-                          //       final tasks = state.tasks;
-
-                          //       return Column(
-                          //         children: [
-                          //           InkWell(
-                          //             onTap: () {
-                          //               showModalBottomSheet(
-                          //                   isScrollControlled: true,
-                          //                   context: context,
-                          //                   builder: (BuildContext context) {
-                          //                     return SingleChildScrollView(
-                          //                         child: Padding(
-                          //                       padding: EdgeInsets.only(
-                          //                           bottom:
-                          //                               MediaQuery.of(context)
-                          //                                   .viewInsets
-                          //                                   .bottom),
-                          //                       child: StatefulBuilder(
-                          //                         builder:
-                          //                             (BuildContext context,
-                          //                                 setState) {
-                          //                           if (isAccessed) {
-                          //                             List<String> taskDates =
-                          //                                 initialTask.map((e) {
-                          //                               return e.lastUpdate;
-                          //                             }).toList();
-
-                          //                             setUniqueDate(taskDates);
-                          //                             onAllClicked(allChecked);
-                          //                             isAccessed = false;
-                          //                           }
-
-                          //                           return Container(
-                          //                             padding:
-                          //                                 EdgeInsets.symmetric(
-                          //                                     vertical: 16),
-                          //                             child: Column(
-                          //                               mainAxisSize:
-                          //                                   MainAxisSize.min,
-                          //                               children: [
-                          //                                 Padding(
-                          //                                   padding:
-                          //                                       const EdgeInsets
-                          //                                               .symmetric(
-                          //                                           horizontal:
-                          //                                               16.0),
-                          //                                   child: Row(
-                          //                                     mainAxisAlignment:
-                          //                                         MainAxisAlignment
-                          //                                             .spaceBetween,
-                          //                                     children: [
-                          //                                       Text(
-                          //                                         'Filter Outstanding Task',
-                          //                                         style:
-                          //                                             getBlackTextStyle(),
-                          //                                       ),
-                          //                                       GestureDetector(
-                          //                                           onTap: () {
-                          //                                             Navigator.pop(
-                          //                                                 context);
-                          //                                           },
-                          //                                           child: Icon(
-                          //                                               Icons
-                          //                                                   .clear))
-                          //                                     ],
-                          //                                   ),
-                          //                                 ),
-                          //                                 SizedBox(
-                          //                                   height: 8,
-                          //                                 ),
-                          //                                 ListTile(
-                          //                                   onTap: () {
-                          //                                     setState(() {
-                          //                                       onAllClicked(
-                          //                                           allChecked);
-                          //                                     });
-                          //                                   },
-                          //                                   leading: Checkbox(
-                          //                                     value: allChecked
-                          //                                         .value,
-                          //                                     onChanged:
-                          //                                         (value) {
-                          //                                       setState(() {
-                          //                                         onAllClicked(
-                          //                                             allChecked);
-                          //                                       });
-                          //                                     },
-                          //                                   ),
-                          //                                   title: Text(
-                          //                                     'All',
-                          //                                     style:
-                          //                                         getBlackTextStyle(),
-                          //                                   ),
-                          //                                 ),
-                          //                                 ...checkBoxList
-                          //                                     .map((item) {
-                          //                                   return ListTile(
-                          //                                     onTap: () {
-                          //                                       setState(() {
-                          //                                         onItemClicked(
-                          //                                             item);
-                          //                                       });
-                          //                                     },
-                          //                                     leading: Checkbox(
-                          //                                       value:
-                          //                                           item.value,
-                          //                                       onChanged:
-                          //                                           (value) {
-                          //                                         setState(() {
-                          //                                           onItemClicked(
-                          //                                               item);
-                          //                                         });
-                          //                                       },
-                          //                                     ),
-                          //                                     title: Text(
-                          //                                       item.title,
-                          //                                       style:
-                          //                                           getBlackTextStyle(),
-                          //                                     ),
-                          //                                   );
-                          //                                 }),
-                          //                                 Container(
-                          //                                     width: double
-                          //                                         .infinity,
-                          //                                     padding: EdgeInsets
-                          //                                         .symmetric(
-                          //                                             horizontal:
-                          //                                                 12),
-                          //                                     child:
-                          //                                         ElevatedButton(
-                          //                                             onPressed:
-                          //                                                 () {
-                          //                                               Navigator.pop(
-                          //                                                   context);
-                          //                                               refreshPageData();
-                          //                                             },
-                          //                                             child:
-                          //                                                 Text(
-                          //                                               'Save',
-                          //                                               style:
-                          //                                                   getWhiteTextStyle(),
-                          //                                             ))),
-                          //                               ],
-                          //                             ),
-                          //                           );
-                          //                         },
-                          //                       ),
-                          //                     ));
-                          //                   });
-                          //             },
-                          //             child: Container(
-                          //               // height: 40,
-                          //               width: double.infinity,
-                          //               padding: const EdgeInsets.fromLTRB(
-                          //                   10, 6, 7.5, 6),
-                          //               margin: EdgeInsets.only(right: 8),
-                          //               decoration: BoxDecoration(
-                          //                 borderRadius: const BorderRadius.all(
-                          //                   Radius.circular(8),
-                          //                 ),
-                          //                 border: Border.all(
-                          //                   color: const Color(0xff313131),
-                          //                 ),
-                          //               ),
-                          //               child: Row(
-                          //                 mainAxisSize: MainAxisSize.min,
-                          //                 mainAxisAlignment:
-                          //                     MainAxisAlignment.spaceBetween,
-                          //                 children: [
-                          //                   Builder(builder: (context) {
-                          //                     final formated =
-                          //                         checkBoxTitleSelected
-                          //                             .map((title) {
-                          //                       String inputDateString = title;
-                          //                       DateFormat inputFormat =
-                          //                           DateFormat(
-                          //                               'EEEE, d MMMM y, H:m:s');
-                          //                       DateTime inputDate = inputFormat
-                          //                           .parse(inputDateString);
-
-                          //                       DateFormat outputFormat =
-                          //                           DateFormat(
-                          //                               "EEEE, d MMMM y");
-                          //                       return outputFormat
-                          //                           .format(inputDate);
-                          //                     }).toList();
-                          //                     return Text(
-                          //                       (allChecked.value)
-                          //                           ? 'All'
-                          //                           : '${formated.join('\n')}',
-                          //                       style: getBlackTextStyle(),
-                          //                     );
-                          //                   }),
-                          //                   Container(
-                          //                     padding: const EdgeInsets.only(
-                          //                         bottom: 4),
-                          //                     child: Transform.rotate(
-                          //                       angle: (22 / 7) / -2,
-                          //                       child: const Icon(
-                          //                         Icons.arrow_back_ios,
-                          //                         color: Color(0xffC5C6C6),
-                          //                         size: 15,
-                          //                       ),
-                          //                     ),
-                          //                   ),
-                          //                 ],
-                          //               ),
-                          //             ),
-                          //           ),
-                          //           const SizedBox(
-                          //             height: 12,
-                          //           ),
-                          //           ListView.builder(
-                          //               shrinkWrap: true,
-                          //               physics: NeverScrollableScrollPhysics(),
-                          //               itemCount: tasks.length,
-                          //               itemBuilder: (context, index) {
-                          //                 final task = tasks[index];
-                          //                 final outstandingTask =
-                          //                     OutstandingTask(
-                          //                   id: task.idTask,
-                          //                   idSite: task.idSite,
-                          //                   user: task.user,
-                          //                   unit: task.unit,
-                          //                   serialNumber: task.serialNumber,
-                          //                   condition: task.condition,
-                          //                   tireSize: task.tireSize,
-                          //                   position: task.position,
-                          //                   brand: task.brand,
-                          //                   tireDamage: task.tireDamage,
-                          //                   remarks: task.remarks,
-                          //                   pressure: task.pressure,
-                          //                   lastUpdate: task.lastUpdate,
-                          //                 );
-                          //                 return Dismissible(
-                          //                     key: Key('${task.id}'),
-                          //                     onDismissed: (direction) {
-                          //                       // context
-                          //                       //     .read<OutstandingTaskBloc>()
-                          //                       //     .add(DeleteOutStandingTaskEvent(
-                          //                       //         id: task.id));
-                          //                       // context
-                          //                       //     .read<OutstandingTaskBloc>()
-                          //                       //     .add(
-                          //                       //         ReadOutStandingTaskEvent());
-                          //                       ScaffoldMessenger.of(context)
-                          //                           .hideCurrentSnackBar();
-                          //                       ScaffoldMessenger.of(context)
-                          //                           .showSnackBar(SnackBar(
-                          //                               content: Text(
-                          //                         'Succesful delete outstanding task',
-                          //                         style: getWhiteTextStyle(),
-                          //                       )));
-                          //                     },
-                          //                     background: Container(
-                          //                         color: Colors.red,
-                          //                         padding: const EdgeInsets
-                          //                                 .symmetric(
-                          //                             horizontal: 24),
-                          //                         child: const Row(
-                          //                           mainAxisAlignment:
-                          //                               MainAxisAlignment
-                          //                                   .spaceBetween,
-                          //                           children: [
-                          //                             Icon(
-                          //                               Icons.delete,
-                          //                               color: white,
-                          //                             ),
-                          //                             Icon(
-                          //                               Icons.delete,
-                          //                               color: white,
-                          //                             )
-                          //                           ],
-                          //                         )),
-                          //                     child: OustandingTileWidget(
-                          //                       task: outstandingTask,
-                          //                     ));
-                          //               })
-                          //         ],
-                          //       );
-                          //     }
-                          //     return Container();
-                          //   },
-                          // ),
                           TextField(
                             controller: searchTaskController,
                             onChanged: (value) {
@@ -1618,6 +1315,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         .contains(searchTaskText.toLowerCase());
                                   }).toList();
                                 }
+                                Map<String, dynamic> groupedData = {};
+
+                                for (var doc in filteredTask) {
+                                  var item = doc.data() as Map<String, dynamic>;
+                                  String unit = item['unit'];
+
+                                  if (groupedData.containsKey(unit)) {
+                                    groupedData[unit]['data'].add(item);
+                                  } else {
+                                    groupedData[unit] = {
+                                      'unit': unit,
+                                      'data': [item]
+                                    };
+                                  }
+                                }
+
+                                List<Map<String, dynamic>> result = groupedData
+                                    .values
+                                    .map((e) => e as Map<String, dynamic>)
+                                    .toList();
+
+                                // Print hasilnya
+                                print(
+                                    'tire inspection result : ${result.length}');
 
                                 return Column(
                                   children: [
@@ -1824,13 +1545,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ListView.builder(
                                         shrinkWrap: true,
                                         physics: NeverScrollableScrollPhysics(),
-                                        itemCount: filteredTask.length,
+                                        itemCount: result.length,
                                         itemBuilder: (context, index) {
                                           Map<String, dynamic> task =
-                                              // docs[index].data() as Map<
-                                              //     String, dynamic>;
                                               filteredTask[index].data()
                                                   as Map<String, dynamic>;
+
+                                          // return OustandingTileWidget(
+                                          //   task: result[index]['data'],
+                                          // );
 
                                           return OustandingTileWidget(
                                               task: OutstandingTask(
