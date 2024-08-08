@@ -214,7 +214,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     }
 
     setState(() {
-      if (idSite == '15') {
+      if (idSite == '52') {
         pit.add('Utara');
         pit.add('Selatan');
         pit.add('RML');

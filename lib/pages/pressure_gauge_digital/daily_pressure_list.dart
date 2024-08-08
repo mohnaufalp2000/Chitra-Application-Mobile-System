@@ -85,7 +85,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
 
     setState(() {
       // BMB COYYY
-      if (idSite == '15') {
+      if (idSite == '52') {
         pit.add('All');
         pit.add('Utara');
         pit.add('Selatan');
@@ -296,20 +296,22 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                         final now = DateTime.now();
 
                         // pilih all pit
-                        if (pit[selectedPit] == 'All') {
-                          return dateTime.year == now.year &&
-                              dateTime.month == now.month &&
-                              dateTime.day == now.day &&
-                              data['idSite'] == idSite;
-                        }
+                        if (pit.isNotEmpty) {
+                          if (pit[selectedPit] == 'All') {
+                            return dateTime.year == now.year &&
+                                dateTime.month == now.month &&
+                                dateTime.day == now.day &&
+                                data['idSite'] == idSite;
+                          }
 
-                        // ada pit
-                        if (data['pit'] != 'Default') {
-                          return dateTime.year == now.year &&
-                              dateTime.month == now.month &&
-                              dateTime.day == now.day &&
-                              data['idSite'] == idSite &&
-                              data['pit'] == pit[selectedPit];
+                          // ada pit
+                          if (data['pit'] != 'Default') {
+                            return dateTime.year == now.year &&
+                                dateTime.month == now.month &&
+                                dateTime.day == now.day &&
+                                data['idSite'] == idSite &&
+                                data['pit'] == pit[selectedPit];
+                          }
                         }
 
                         // tidak ada pit

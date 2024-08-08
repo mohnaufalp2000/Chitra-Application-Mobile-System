@@ -917,7 +917,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
   insertPit() {
     setState(() {
-      if (idSite == '15') {
+      if (idSite == '52') {
         pit.add('Utara');
         pit.add('Selatan');
         pit.add('RML');
@@ -2930,7 +2930,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               }
                             : () async {
                                 // jika belum memeilih pit
-                                if (idSite == '15') {
+                                if (idSite == '52') {
                                   if (selectedPit == -1) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(

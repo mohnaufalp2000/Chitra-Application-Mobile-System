@@ -71,9 +71,11 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
     setState(() {
       // BMB COYYY
       if (idSite == '52') {
+        pit.add('All');
         pit.add('Utara');
         pit.add('Selatan');
         pit.add('RML');
+        pit.add('WS');
       }
     });
   }
@@ -116,6 +118,67 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                 ),
               ),
             ),
+            (pit.isNotEmpty && selectedMenu == 0)
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Center(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Wrap(
+                            spacing: 4.0, // Jarak horizontal antar tombol
+                            children: pit.map((e) {
+                              final pitIndex = pit.indexOf(e);
+                              if (pitIndex == 0) {
+                                return Container(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: (selectedPit == pitIndex)
+                                          ? Colors.orange
+                                          : greyF7F8F9,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedPit = pitIndex;
+                                      });
+                                    },
+                                    child: Text(
+                                      'All',
+                                      style: (selectedPit == pitIndex)
+                                          ? getWhiteTextStyle()
+                                          : getBlackTextStyle(),
+                                    ),
+                                  ),
+                                );
+                              }
+                              return Flexible(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: (selectedPit == pitIndex)
+                                        ? Colors.orange
+                                        : greyF7F8F9,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      selectedPit = pitIndex;
+                                    });
+                                  },
+                                  child: Text(
+                                    e,
+                                    style: (selectedPit == pitIndex)
+                                        ? getWhiteTextStyle()
+                                        : getBlackTextStyle(),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : Container(),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: TextField(
@@ -150,7 +213,9 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                             site: user['siteName'] ?? '',
                             pit: pit[selectedPit] ?? '',
                             date:
-                                "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
+                                "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}");
+                        // date:
+                        //     "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
 
                         final bytes = await createExcel('daily-check',
                             daily: filteredItemTask);
@@ -237,6 +302,25 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                     String formattedDate =
                         "${dateOnly.year}-${(dateOnly.month).toString().padLeft(2, '0')}-${(dateOnly.day).toString().padLeft(2, '0')}";
                     final formattedDateTime = DateTime.parse(formattedDate);
+
+                    // pilih all pit
+                    if (pit.isNotEmpty) {
+                      if (pit[selectedPit] == 'All') {
+                        return dateTime.year == selectedDate.year &&
+                            dateTime.month == selectedDate.month &&
+                            dateTime.day == selectedDate.day &&
+                            data['idSite'] == idSite;
+                      }
+
+                      // ada pit
+                      if (data['pit'] != 'Default') {
+                        return dateTime.year == selectedDate.year &&
+                            dateTime.month == selectedDate.month &&
+                            dateTime.day == selectedDate.day &&
+                            data['idSite'] == idSite &&
+                            data['pit'] == pit[selectedPit];
+                      }
+                    }
 
                     // tidak ada pit
                     return formattedDateTime.year == selectedDate.year &&
@@ -505,11 +589,11 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                                       fontSize:
                                                                           18),
                                                             ),
-                                                            (pl['adjusmentPressure'] ==
+                                                            (pl['adjusmentPressure'] !=
                                                                         null &&
-                                                                    pl['adjusmentPressure'] ==
+                                                                    pl['adjusmentPressure'] !=
                                                                         '0' &&
-                                                                    pl['adjusmentPressure'] ==
+                                                                    pl['adjusmentPressure'] !=
                                                                         '')
                                                                 ? Text(
                                                                     '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
