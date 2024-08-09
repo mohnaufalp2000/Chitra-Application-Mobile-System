@@ -70,13 +70,13 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
 
     setState(() {
       // BMB COYYY
-      if (idSite == '52') {
-        pit.add('All');
-        pit.add('Utara');
-        pit.add('Selatan');
-        pit.add('RML');
-        pit.add('WS');
-      }
+      // if (idSite == '52') {
+      //   pit.add('All');
+      //   pit.add('Utara');
+      //   pit.add('Selatan');
+      //   pit.add('RML');
+      //   pit.add('WS');
+      // }
     });
   }
 
@@ -84,6 +84,14 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   Widget build(BuildContext context) {
     getUnits();
     log('count unit : ${units.length}');
+    pit.clear();
+    if (idSite == '52') {
+      pit.add('All');
+      pit.add('Utara');
+      pit.add('Selatan');
+      pit.add('RML');
+      pit.add('WS');
+    }
 
     return Scaffold(
       appBar: appBarWidget('History', context),
@@ -152,24 +160,22 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                   ),
                                 );
                               }
-                              return Flexible(
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: (selectedPit == pitIndex)
-                                        ? Colors.orange
-                                        : greyF7F8F9,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      selectedPit = pitIndex;
-                                    });
-                                  },
-                                  child: Text(
-                                    e,
-                                    style: (selectedPit == pitIndex)
-                                        ? getWhiteTextStyle()
-                                        : getBlackTextStyle(),
-                                  ),
+                              return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: (selectedPit == pitIndex)
+                                      ? Colors.orange
+                                      : greyF7F8F9,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    selectedPit = pitIndex;
+                                  });
+                                },
+                                child: Text(
+                                  e,
+                                  style: (selectedPit == pitIndex)
+                                      ? getWhiteTextStyle()
+                                      : getBlackTextStyle(),
                                 ),
                               );
                             }).toList(),

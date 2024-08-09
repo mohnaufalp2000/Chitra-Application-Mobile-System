@@ -213,14 +213,14 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           idSite: idSite, unitNumber: dataUnit['unitNumber']));
     }
 
-    setState(() {
-      if (idSite == '52') {
-        pit.add('Utara');
-        pit.add('Selatan');
-        pit.add('RML');
-        pit.add('WS');
-      }
-    });
+    // setState(() {
+    //   if (idSite == '52') {
+    //     pit.add('Utara');
+    //     pit.add('Selatan');
+    //     pit.add('RML');
+    //     pit.add('WS');
+    //   }
+    // });
   }
 
   getUser() async {
@@ -267,6 +267,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
             listener: (context, state) {
               if (state is TiresLoadedState) {
                 //? BLOC TER EKSEKUSI dua kali dan mengambil jumlah tire sebelumnya
+                pit.clear();
+                if (idSite == '52') {
+                  pit.add('Utara');
+                  pit.add('Selatan');
+                  pit.add('RML');
+                  pit.add('WS');
+                }
                 for (var i = 0; i < state.units.length; i++) {
                   if (position.length < state.units.length) {
                     position.add({
@@ -457,24 +464,22 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                               spacing: 8.0, // Jarak horizontal antar tombol
                               children: pit.map((e) {
                                 final pitIndex = pit.indexOf(e);
-                                return Flexible(
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: (selectedPit == pitIndex)
-                                          ? Colors.orange
-                                          : greyF7F8F9,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        selectedPit = pitIndex;
-                                      });
-                                    },
-                                    child: Text(
-                                      e,
-                                      style: (selectedPit == pitIndex)
-                                          ? getWhiteTextStyle()
-                                          : getBlackTextStyle(),
-                                    ),
+                                return ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: (selectedPit == pitIndex)
+                                        ? Colors.orange
+                                        : greyF7F8F9,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      selectedPit = pitIndex;
+                                    });
+                                  },
+                                  child: Text(
+                                    e,
+                                    style: (selectedPit == pitIndex)
+                                        ? getWhiteTextStyle()
+                                        : getBlackTextStyle(),
                                   ),
                                 );
                               }).toList(),

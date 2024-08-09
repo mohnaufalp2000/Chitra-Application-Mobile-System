@@ -917,12 +917,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
   insertPit() {
     setState(() {
-      if (idSite == '52') {
-        pit.add('Utara');
-        pit.add('Selatan');
-        pit.add('RML');
-        pit.add('WS');
-      }
+      // if (idSite == '52') {
+      //   pit.add('Utara');
+      //   pit.add('Selatan');
+      //   pit.add('RML');
+      //   pit.add('WS');
+      // }
     });
   }
 
@@ -1032,6 +1032,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
   @override
   Widget build(BuildContext context) {
+    pit.clear();
+    if (idSite == '52') {
+      pit.add('All');
+      pit.add('Utara');
+      pit.add('Selatan');
+      pit.add('RML');
+      pit.add('WS');
+    }
     print('dipanggil (pgd)');
     dataUnit =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
@@ -1453,25 +1461,23 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   spacing: 8.0, // Jarak horizontal antar tombol
                                   children: pit.map((e) {
                                     final pitIndex = pit.indexOf(e);
-                                    return Flexible(
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              (selectedPit == pitIndex)
-                                                  ? Colors.orange
-                                                  : greyF7F8F9,
-                                        ),
-                                        onPressed: () {
-                                          setState(() {
-                                            selectedPit = pitIndex;
-                                          });
-                                        },
-                                        child: Text(
-                                          e,
-                                          style: (selectedPit == pitIndex)
-                                              ? getWhiteTextStyle()
-                                              : getBlackTextStyle(),
-                                        ),
+                                    return ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            (selectedPit == pitIndex)
+                                                ? Colors.orange
+                                                : greyF7F8F9,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          selectedPit = pitIndex;
+                                        });
+                                      },
+                                      child: Text(
+                                        e,
+                                        style: (selectedPit == pitIndex)
+                                            ? getWhiteTextStyle()
+                                            : getBlackTextStyle(),
                                       ),
                                     );
                                   }).toList(),
