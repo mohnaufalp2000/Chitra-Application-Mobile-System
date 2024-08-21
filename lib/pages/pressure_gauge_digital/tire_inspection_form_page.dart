@@ -735,6 +735,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:app_settings/app_settings.dart';
+import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
 import 'package:camos/core/blocs/tire/tire_bloc.dart';
 import 'package:camos/core/blocs/unit/unit_bloc.dart';
@@ -1033,8 +1035,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   @override
   Widget build(BuildContext context) {
     pit.clear();
-    if (idSite == '52') {
-      pit.add('All');
+    if (idSite == '15') {
       pit.add('Utara');
       pit.add('Selatan');
       pit.add('RML');
@@ -1121,7 +1122,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                   'position': i + 1,
                   'pressure': '',
                   'adjusmentPressure': '',
-                  'hm': hmUnit.text,
+                  'hm': '',
                   'damageTire': [],
                   'rtd1': '',
                   'rtd2': '',
@@ -2360,21 +2361,39 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                               .camera);
                                                   try {
                                                     if (image != null) {
+                                                      Directory? directory;
+
+                                                      if (Platform.isAndroid) {
+                                                        // path = await getExternalStorageDirectory();
+                                                        directory =
+                                                            await DownloadsPath
+                                                                .downloadsDirectory();
+                                                      }
+
+                                                      if (Platform.isIOS) {
+                                                        // final directory = await getApplicationDocumentsDirectory();
+                                                        // path = directory;
+                                                        directory =
+                                                            await getApplicationDocumentsDirectory();
+                                                      }
+
                                                       // Read image as a file
                                                       File imageFile =
                                                           File(image.path);
                                                       // data size fotonya
-                                                      log('gambar : ${imageFile.path}');
+                                                      final compressedFilePath =
+                                                          '${directory?.path}/${DateTime.now().millisecondsSinceEpoch}_tireinspectionimage_compressed.jpg';
 
                                                       // Compress the image if needed (optional)
                                                       final compressedImageFile =
                                                           await FlutterImageCompress
                                                               .compressAndGetFile(
                                                         imageFile.path,
-                                                        imageFile.path +
-                                                            '_compressed.jpg',
+                                                        compressedFilePath,
                                                         quality: 50,
                                                       );
+                                                      log('gambar : ${compressedFilePath}');
+
                                                       // listImg.add(
                                                       //     '${compressedImageFile?.path}|${position[index]['position']}' ??
                                                       //         '');
@@ -2936,7 +2955,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               }
                             : () async {
                                 // jika belum memeilih pit
-                                if (idSite == '52') {
+                                if (idSite == '15') {
                                   if (selectedPit == -1) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -2981,6 +3000,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                     final id = Uuid();
 
                                     if (position[i]['pressure'] != '' ||
+                                        position[i]['hm'] != '' ||
                                         position[i]['damageTire'] != [] ||
                                         position[i]['damageTire'][0] !=
                                             damageType[0] ||
@@ -3072,6 +3092,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
+                                          'pit': pit[selectedPit]
                                         });
                                       } else {
                                         await firestore.collection('task').add({
@@ -3137,6 +3158,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
+                                          'pit': pit[selectedPit]
                                         });
                                       }
                                     }

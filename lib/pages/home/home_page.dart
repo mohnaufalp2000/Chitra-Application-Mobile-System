@@ -1244,16 +1244,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   return elementMap['last_update'] as String;
                                 }).toList();
 
-                                print('lapar $listTaskDate');
-
                                 if (isAccessed) {
                                   setUniqueDate(listTaskDate);
                                   onAllClicked(allChecked);
                                   isAccessed = false;
                                 }
-
-                                List<DocumentSnapshot> filteredDocsExcel =
-                                    snapshot.data!.docs;
 
                                 DateFormat inputFormat =
                                     DateFormat('EEEE, d MMMM y, H:m:s');
@@ -1315,30 +1310,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         .contains(searchTaskText.toLowerCase());
                                   }).toList();
                                 }
-                                Map<String, dynamic> groupedData = {};
 
-                                for (var doc in filteredTask) {
-                                  var item = doc.data() as Map<String, dynamic>;
-                                  String unit = item['unit'];
+                                // (didalam widget berisi 1 Unit menampilkan 6 tire sekaligus)
+                                // Map<String, dynamic> groupedData = {};
 
-                                  if (groupedData.containsKey(unit)) {
-                                    groupedData[unit]['data'].add(item);
-                                  } else {
-                                    groupedData[unit] = {
-                                      'unit': unit,
-                                      'data': [item]
-                                    };
-                                  }
-                                }
+                                // for (var doc in filteredTask) {
+                                //   var item = doc.data() as Map<String, dynamic>;
+                                //   String unit = item['unit'];
 
-                                List<Map<String, dynamic>> result = groupedData
-                                    .values
-                                    .map((e) => e as Map<String, dynamic>)
-                                    .toList();
+                                //   if (groupedData.containsKey(unit)) {
+                                //     groupedData[unit]['data'].add(item);
+                                //   } else {
+                                //     groupedData[unit] = {
+                                //       'unit': unit,
+                                //       'data': [item]
+                                //     };
+                                //   }
+                                // }
 
-                                // Print hasilnya
-                                print(
-                                    'tire inspection result : ${result.length}');
+                                // hasilnya
+                                // List<Map<String, dynamic>> result = groupedData
+                                //     .values
+                                //     .map((e) => e as Map<String, dynamic>)
+                                //     .toList();
 
                                 return Column(
                                   children: [
@@ -1545,7 +1539,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     ListView.builder(
                                         shrinkWrap: true,
                                         physics: NeverScrollableScrollPhysics(),
-                                        itemCount: result.length,
+                                        itemCount: filteredTask.length,
+                                        // itemCount: filteredTask.length,
                                         itemBuilder: (context, index) {
                                           Map<String, dynamic> task =
                                               filteredTask[index].data()

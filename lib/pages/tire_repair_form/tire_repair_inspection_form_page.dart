@@ -1,10 +1,15 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:camos/core/styles/color.dart';
+import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 class TireRepairInspectionFormPage extends StatefulWidget {
   static const routeName = '/tire-repair-inspection-form-page';
@@ -17,7 +22,11 @@ class TireRepairInspectionFormPage extends StatefulWidget {
 
 class _TireRepairInspectionFormPageState
     extends State<TireRepairInspectionFormPage> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseStorage storage = FirebaseStorage.instance;
+
   DateTime? _selectedDate;
+  DateTime? _selectedReceivedDate;
   TextEditingController customerCtrl = TextEditingController(text: '');
   TextEditingController siteCtrl = TextEditingController(text: '');
   TextEditingController reportNameCtrl = TextEditingController(text: '');
@@ -40,18 +49,54 @@ class _TireRepairInspectionFormPageState
   List<String> beadPic = [];
   List<String> innerLinerPic = [];
 
-  Future<void> _selectDate(BuildContext context) async {
+  List<String> serialNumberPictFirebase = [];
+  List<String> sidewallPicFirebase = [];
+  List<String> shoulderPicFirebase = [];
+  List<String> threatPicFirebase = [];
+  List<String> beadPicFirebase = [];
+  List<String> innerLinerPicFirebase = [];
+
+  Future<void> _selectDate(BuildContext context, String type) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
+      initialDate: (type == 'inspect')
+          ? _selectedDate
+          : _selectedReceivedDate ?? DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
+    if (type == 'inspect') {
+      if (picked != null && picked != _selectedDate) {
+        setState(() {
+          _selectedDate = picked;
+          log('tanggal sekarang : $_selectedDate');
+        });
+      }
+    } else {
+      if (picked != null && picked != _selectedReceivedDate) {
+        setState(() {
+          _selectedReceivedDate = picked;
+          log('tanggal sekarang : $_selectedDate');
+        });
+      }
     }
+  }
+
+  Future<void> uploadImage() async {
+    if (serialNumberPict.isNotEmpty) {
+      for (int i = 0; i < serialNumberPict.length; i++) {
+        final ref = storage.ref().child(
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+        final uploadTask = ref.putFile(File(serialNumberPict[i]));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final urlDownload = await snapshot.ref.getDownloadURL();
+
+        serialNumberPictFirebase.add(urlDownload);
+      }
+    }
+    await firestore
+        .collection('tire_repair_ins_report')
+        .add({'sn_pic': serialNumberPictFirebase});
   }
 
   @override
@@ -145,7 +190,7 @@ class _TireRepairInspectionFormPageState
                   ),
                   const SizedBox(height: 10),
                   GestureDetector(
-                    onTap: () => _selectDate(context),
+                    onTap: () => _selectDate(context, 'inspect'),
                     child: Container(
                       padding: const EdgeInsets.only(
                           right: 199.0, left: 20.0, top: 15, bottom: 15),
@@ -165,7 +210,7 @@ class _TireRepairInspectionFormPageState
                       child: Text(
                         _selectedDate == null
                             ? 'Select Date'
-                            : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                            : '${_selectedDate?.day}/${_selectedDate?.month}/${_selectedDate?.year}',
                         style: const TextStyle(color: Colors.black),
                       ),
                     ),
@@ -479,42 +524,6 @@ class _TireRepairInspectionFormPageState
                   Align(
                     alignment: Alignment.topLeft,
                     child: Text(
-                      'No. CM',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: noCM,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
                       'Date Received',
                       style: TextStyle(
                         color: Colors.black,
@@ -524,7 +533,7 @@ class _TireRepairInspectionFormPageState
                   ),
                   const SizedBox(height: 10),
                   GestureDetector(
-                    onTap: () => _selectDate(context),
+                    onTap: () => _selectDate(context, 'received'),
                     child: Container(
                       padding: const EdgeInsets.only(
                           right: 199.0, left: 20.0, top: 15, bottom: 15),
@@ -542,9 +551,9 @@ class _TireRepairInspectionFormPageState
                         ],
                       ),
                       child: Text(
-                        _selectedDate == null
+                        _selectedReceivedDate == null
                             ? 'Select Date'
-                            : '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}',
+                            : '${_selectedReceivedDate?.day}/${_selectedReceivedDate?.month}/${_selectedReceivedDate?.year}',
                         style: const TextStyle(color: Colors.black),
                       ),
                     ),
@@ -589,7 +598,7 @@ class _TireRepairInspectionFormPageState
                   Align(
                     alignment: Alignment.topLeft,
                     child: Text(
-                      'Cargo Manifest',
+                      'No. Cargo Manifest',
                       style: TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.bold,
@@ -733,272 +742,18 @@ class _TireRepairInspectionFormPageState
                   ),
                   const SizedBox(height: 20.0),
                   // Serial Number Picture
-                  InkWell(
-                    onTap: () async {
-                      requestCameraPermission();
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(
-                          imageQuality: 50, source: ImageSource.camera);
-                      try {
-                        if (image != null) {
-                          // Read image as a file
-                          File imageFile = File(image.path);
-                          // data size fotonya
-                          log('gambar : ${imageFile.path}');
-
-                          // Compress the image if needed (optional)
-                          final compressedImageFile =
-                              await FlutterImageCompress.compressAndGetFile(
-                            imageFile.path,
-                            imageFile.path + '_compressed.jpg',
-                            quality: 50,
-                          );
-                          // listImg.add(
-                          //     '${compressedImageFile?.path}|${position[index]['position']}' ??
-                          //         '');
-                          // // Convert image to base64
-                        }
-                      } catch (e) {
-                        log('error gambar string : $e');
-                      }
-
-                      setState(() {});
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Serial Number',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.black,
-                            size: 24.0,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  takePictureButton('Serial Number'),
                   const SizedBox(height: 20.0),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Area Sidewall',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            print('Box tapped');
-                          },
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.black,
-                            size: 24.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  takePictureButton('Area Sidewall'),
                   const SizedBox(height: 20.0),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Area Shoulder',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            print('Box tapped');
-                          },
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.black,
-                            size: 24.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  takePictureButton('Area Shoulder'),
                   const SizedBox(height: 20.0),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Area Threat',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            print('Box tapped');
-                          },
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.black,
-                            size: 24.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  takePictureButton('Area Threat'),
                   const SizedBox(height: 20.0),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Area Bead',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            print('Box tapped');
-                          },
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.black,
-                            size: 24.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  takePictureButton('Area Bead'),
                   const SizedBox(height: 20.0),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Area Inner LInner',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            print('Box tapped');
-                          },
-                          child: Icon(
-                            Icons.arrow_forward_ios,
-                            color: Colors.black,
-                            size: 24.0,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  takePictureButton('Area Inner Linner'),
+                  const SizedBox(height: 20.0),
                   const SizedBox(height: 99.0),
                 ],
               ),
@@ -1011,7 +766,69 @@ class _TireRepairInspectionFormPageState
         height: 60,
         width: 350.0,
         child: ElevatedButton(
-          onPressed: () {},
+          onPressed: () async {
+            showDialog(
+                context: context,
+                builder: (context) {
+                  return AlertDialog(
+                    content: Text(
+                      'Are you sure you want to submit?',
+                      style: getBlackTextStyle(),
+                    ),
+                    actions: [
+                      TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'Cancel',
+                            style: getGreyTextStyle(grey8391A1),
+                          )),
+                      TextButton(
+                          onPressed: () async {
+                            try {
+                              await uploadImage();
+
+                              log('serial number : ${serialNumberPictFirebase}');
+
+                              // await firestore
+                              //     .collection('tire_repair_ins_report')
+                              //     .add({
+                              //   'date_inspect':
+                              //       '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}',
+                              //   'customer': customerCtrl.text,
+                              //   'site': siteCtrl.text,
+                              //   'report_by': reportNameCtrl.text,
+                              //   'tire_size': tireSizeCtrl.text,
+                              //   'sn': serialNumberCtrl.text,
+                              //   'brand': brandCtrl.text,
+                              //   'type_construction': typeConstCtrl.text,
+                              //   'pattern': patternCtrl.text,
+                              //   'date_received':
+                              //       '${DateFormat('yyyy-MM-dd').format(_selectedReceivedDate!)}',
+                              //   'status': statusCtrl.text,
+                              //   'no_cargo_manifest': cargoManifestCtrl.text,
+                              //   'rtd1': rtd1Ctrl.text,
+                              //   'rtd2': rtd2Ctrl.text,
+                              //   'remarks': remarksCtrl.text,
+                              //   'sn_pic': serialNumberPictFirebase,
+                              //   'sidewall_pic': sidewallPicFirebase,
+                              //   'shoulder_pic': shoulderPicFirebase,
+                              //   'threat_pic': threatPicFirebase,
+                              //   'bead_pic': beadPicFirebase,
+                              //   'inner_linner_pic': innerLinerPicFirebase,
+                              // });
+                            } catch (e) {}
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'Yes',
+                            style: getRedTextStyle(),
+                          )),
+                    ],
+                  );
+                });
+          },
           style: ElevatedButton.styleFrom(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30.0),
@@ -1039,6 +856,250 @@ class _TireRepairInspectionFormPageState
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget takePictureButton(String type) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.5),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                type,
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              InkWell(
+                  onTap: () async {
+                    requestCameraPermission();
+                    final ImagePicker picker = ImagePicker();
+                    final XFile? image = await picker.pickImage(
+                        imageQuality: 50, source: ImageSource.camera);
+                    try {
+                      if (image != null) {
+                        // Read image as a file
+                        File imageFile = File(image.path);
+                        // data size fotonya
+                        log('gambar : ${imageFile.path}');
+
+                        // Compress the image if needed (optional)
+                        final compressedImageFile =
+                            await FlutterImageCompress.compressAndGetFile(
+                          imageFile.path,
+                          imageFile.path + '_compressed.jpg',
+                          quality: 50,
+                        );
+
+                        switch (type) {
+                          case 'Serial Number':
+                            serialNumberPict
+                                .add('${compressedImageFile?.path}' ?? '');
+                            break;
+                          case 'Area Sidewall':
+                            sidewallPic
+                                .add('${compressedImageFile?.path}' ?? '');
+                            break;
+                          case 'Area Shoulder':
+                            shoulderPic
+                                .add('${compressedImageFile?.path}' ?? '');
+                            break;
+                          case 'Area Threat':
+                            threatPic.add('${compressedImageFile?.path}' ?? '');
+                            break;
+                          case 'Area Bead':
+                            beadPic.add('${compressedImageFile?.path}' ?? '');
+                            break;
+                          case 'Area Inner Linner':
+                            innerLinerPic
+                                .add('${compressedImageFile?.path}' ?? '');
+                            break;
+                        }
+                        // listImg.add(
+                        //     '${compressedImageFile?.path}|${position[index]['position']}' ??
+                        //         '');
+                        // // Convert image to base64
+                      }
+                    } catch (e) {
+                      log('error gambar string : $e');
+                    }
+
+                    setState(() {});
+                  },
+                  child: BoxCamera())
+            ],
+          ),
+          const SizedBox(
+            height: 12,
+          ),
+          Builder(builder: (context) {
+            switch (type) {
+              case 'Serial Number':
+                if (serialNumberPict.isNotEmpty) {
+                  return itemPicture(context, serialNumberPict);
+                }
+                return Container();
+              case 'Area Sidewall':
+                if (sidewallPic.isNotEmpty) {
+                  return itemPicture(context, sidewallPic);
+                }
+                return Container();
+              case 'Area Shoulder':
+                if (shoulderPic.isNotEmpty) {
+                  return itemPicture(context, shoulderPic);
+                }
+                return Container();
+              case 'Area Threat':
+                if (threatPic.isNotEmpty) {
+                  return itemPicture(context, threatPic);
+                }
+                return Container();
+              case 'Area Bead':
+                if (beadPic.isNotEmpty) {
+                  return itemPicture(context, beadPic);
+                }
+                return Container();
+              case 'Area Inner Linner':
+                if (innerLinerPic.isNotEmpty) {
+                  return itemPicture(context, innerLinerPic);
+                }
+                return Container();
+            }
+            return Container();
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget itemPicture(BuildContext context, List<String> img) {
+    return Column(
+      children: img.map((i) {
+        final imgIndex = img.indexOf(i);
+        return Column(
+          children: [
+            Stack(
+              children: [
+                Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Image.file(File((i as String)))),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 45,
+                    child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepOrange.withOpacity(0.3),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            )),
+                        onPressed: () async {
+                          showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  content: Text(
+                                    'Are you sure you want to delete this image?',
+                                    style: getBlackTextStyle(),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          'Cancel',
+                                          style: getGreyTextStyle(grey8391A1),
+                                        )),
+                                    TextButton(
+                                        onPressed: () {
+                                          img.removeWhere((element) {
+                                            log('poto : $element | poto 2 : $i');
+                                            return element == i;
+                                          });
+                                          Navigator.pop(context);
+                                          setState(() {});
+                                        },
+                                        child: Text(
+                                          'Yes',
+                                          style: getRedTextStyle(),
+                                        )),
+                                  ],
+                                );
+                              });
+
+                          setState(() {});
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.delete,
+                              color: white,
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Text(
+                              'Delete Picture',
+                              style: getWhiteTextStyle(),
+                            ),
+                          ],
+                        )),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(
+              height: 12,
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+class BoxCamera extends StatelessWidget {
+  const BoxCamera({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 70.0,
+      height: 40.0,
+      decoration: BoxDecoration(
+        color: Colors.green,
+        borderRadius: BorderRadius.circular(24.0),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.camera_alt,
+          color: Colors.white,
         ),
       ),
     );

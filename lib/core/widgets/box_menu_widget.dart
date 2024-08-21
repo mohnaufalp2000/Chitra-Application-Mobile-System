@@ -65,7 +65,8 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
         // }
         break;
       case 4:
-        push(context, TireRepairInspectionPage.routeName);
+        // push(context, TireRepairInspectionPage.routeName);
+        push(context, CtsPage.routeName);
 
         break;
       case 5:
