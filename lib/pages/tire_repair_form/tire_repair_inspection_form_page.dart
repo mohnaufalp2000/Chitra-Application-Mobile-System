@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class _TireRepairInspectionFormPageState
     extends State<TireRepairInspectionFormPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseStorage storage = FirebaseStorage.instance;
+  String _selectedButton = '';
 
   DateTime? _selectedDate;
   DateTime? _selectedReceivedDate;
@@ -56,6 +58,13 @@ class _TireRepairInspectionFormPageState
   List<String> beadPicFirebase = [];
   List<String> innerLinerPicFirebase = [];
 
+  final Map<String, String> buttonLabels = {
+    'R1': '*Max 4 days',
+    'R2': '*Max 8 days',
+    'R3': '*Max 12 days',
+    'R4': '*Max 18 days',
+  };
+
   Future<void> _selectDate(BuildContext context, String type) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -84,19 +93,35 @@ class _TireRepairInspectionFormPageState
 
   Future<void> uploadImage() async {
     if (serialNumberPict.isNotEmpty) {
-      for (int i = 0; i < serialNumberPict.length; i++) {
-        final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
-        final uploadTask = ref.putFile(File(serialNumberPict[i]));
-        final snapshot = await uploadTask.whenComplete(() {});
-        final urlDownload = await snapshot.ref.getDownloadURL();
-
-        serialNumberPictFirebase.add(urlDownload);
-      }
+      loopingImage(serialNumberPict);
     }
-    await firestore
-        .collection('tire_repair_ins_report')
-        .add({'sn_pic': serialNumberPictFirebase});
+    if (sidewallPic.isNotEmpty) {
+      loopingImage(sidewallPic);
+    }
+    if (shoulderPic.isNotEmpty) {
+      loopingImage(shoulderPic);
+    }
+    if (threatPic.isNotEmpty) {
+      loopingImage(threatPic);
+    }
+    if (beadPic.isNotEmpty) {
+      loopingImage(beadPic);
+    }
+    if (innerLinerPic.isNotEmpty) {
+      loopingImage(innerLinerPic);
+    }
+  }
+
+  Future<void> loopingImage(List<String> images) async {
+    for (int i = 0; i < images.length; i++) {
+      final ref = storage.ref().child(
+          'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+      final uploadTask = ref.putFile(File(images[i]));
+      final snapshot = await uploadTask.whenComplete(() {});
+      final urlDownload = await snapshot.ref.getDownloadURL();
+
+      images.add(urlDownload);
+    }
   }
 
   @override
@@ -140,6 +165,8 @@ class _TireRepairInspectionFormPageState
 
   @override
   Widget build(BuildContext context) {
+    log('repair duration : $_selectedButton');
+
     return Scaffold(
       backgroundColor: const Color(0xFFF1F1F1),
       appBar: AppBar(
@@ -741,6 +768,59 @@ class _TireRepairInspectionFormPageState
                     ),
                   ),
                   const SizedBox(height: 20.0),
+                  Container(
+                    padding: EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFE2E2E2), // Hex color #E2E2E2
+                      borderRadius: BorderRadius.circular(
+                          20), // Optional: Adjust border radius if needed
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize
+                          .min, // Use min to avoid unnecessary space
+                      children: [
+                        Align(
+                          alignment: Alignment
+                              .topCenter, // Align text to the top center
+                          child: Text(
+                            'Repair Duration', // Replace with the content you want
+                            style: TextStyle(
+                              color: Color(0xFF45625E), // Text color
+                              fontSize: 20, // Adjust text size if needed
+                              fontWeight: FontWeight
+                                  .bold, // Optional: Adjust text weight if needed
+                            ),
+                            textAlign: TextAlign
+                                .center, // Center align text within the widget
+                          ),
+                        ),
+                        SizedBox(height: 15), // Space between text and buttons
+                        // Use a Column to stack the rows of buttons
+                        Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceEvenly, // Distribute space evenly
+                              children: [
+                                _buildButton('R1', 'R1'),
+                                _buildButton('R2', 'R2'),
+                              ],
+                            ),
+                            SizedBox(height: 12), // Space between rows
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment
+                                  .spaceEvenly, // Distribute space evenly
+                              children: [
+                                _buildButton('R3', 'R3'),
+                                _buildButton('R4', 'R4'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
                   // Serial Number Picture
                   takePictureButton('Serial Number'),
                   const SizedBox(height: 20.0),
@@ -786,40 +866,57 @@ class _TireRepairInspectionFormPageState
                           )),
                       TextButton(
                           onPressed: () async {
+                            if (_selectedButton == '') {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context)
+                                  .hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Text(
+                                  'Please choose repair duration first!',
+                                  style: getWhiteTextStyle(),
+                                ),
+                                backgroundColor: Colors.red,
+                              ));
+                              return;
+                            }
+
                             try {
                               await uploadImage();
 
                               log('serial number : ${serialNumberPictFirebase}');
 
-                              // await firestore
-                              //     .collection('tire_repair_ins_report')
-                              //     .add({
-                              //   'date_inspect':
-                              //       '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}',
-                              //   'customer': customerCtrl.text,
-                              //   'site': siteCtrl.text,
-                              //   'report_by': reportNameCtrl.text,
-                              //   'tire_size': tireSizeCtrl.text,
-                              //   'sn': serialNumberCtrl.text,
-                              //   'brand': brandCtrl.text,
-                              //   'type_construction': typeConstCtrl.text,
-                              //   'pattern': patternCtrl.text,
-                              //   'date_received':
-                              //       '${DateFormat('yyyy-MM-dd').format(_selectedReceivedDate!)}',
-                              //   'status': statusCtrl.text,
-                              //   'no_cargo_manifest': cargoManifestCtrl.text,
-                              //   'rtd1': rtd1Ctrl.text,
-                              //   'rtd2': rtd2Ctrl.text,
-                              //   'remarks': remarksCtrl.text,
-                              //   'sn_pic': serialNumberPictFirebase,
-                              //   'sidewall_pic': sidewallPicFirebase,
-                              //   'shoulder_pic': shoulderPicFirebase,
-                              //   'threat_pic': threatPicFirebase,
-                              //   'bead_pic': beadPicFirebase,
-                              //   'inner_linner_pic': innerLinerPicFirebase,
-                              // });
+                              await firestore
+                                  .collection('tire_repair_ins_report')
+                                  .add({
+                                'date_inspect':
+                                    '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}',
+                                'customer': customerCtrl.text,
+                                'site': siteCtrl.text,
+                                'report_by': reportNameCtrl.text,
+                                'tire_size': tireSizeCtrl.text,
+                                'sn': serialNumberCtrl.text,
+                                'brand': brandCtrl.text,
+                                'type_construction': typeConstCtrl.text,
+                                'pattern': patternCtrl.text,
+                                'date_received':
+                                    '${DateFormat('yyyy-MM-dd').format(_selectedReceivedDate!)}',
+                                'status': statusCtrl.text,
+                                'no_cargo_manifest': cargoManifestCtrl.text,
+                                'rtd1': rtd1Ctrl.text,
+                                'rtd2': rtd2Ctrl.text,
+                                'repair_duration': _selectedButton,
+                                'remarks': remarksCtrl.text,
+                                'sn_pic': serialNumberPictFirebase,
+                                'sidewall_pic': sidewallPicFirebase,
+                                'shoulder_pic': shoulderPicFirebase,
+                                'threat_pic': threatPicFirebase,
+                                'bead_pic': beadPicFirebase,
+                                'inner_linner_pic': innerLinerPicFirebase,
+                              });
                             } catch (e) {}
-                            Navigator.pop(context);
+                            Navigator.pushReplacementNamed(
+                                context, TireRepairInspectionPage.routeName);
                           },
                           child: Text(
                             'Yes',
@@ -1081,6 +1178,58 @@ class _TireRepairInspectionFormPageState
         );
       }).toList(),
     );
+  }
+
+  Widget _buildButton(String id, String label) {
+    bool isSelected = _selectedButton == id;
+
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: () => _handleButtonClick(id),
+          style: ButtonStyle(
+            minimumSize: MaterialStateProperty.all(
+                Size(130, 50)), // Set width and height
+            backgroundColor: MaterialStateProperty.all(
+              isSelected
+                  ? Colors.white
+                  : Colors.white, // Button background color
+            ),
+            side: MaterialStateProperty.all(
+              BorderSide(
+                color: isSelected ? Color(0xFF45625E) : Colors.transparent,
+                width: 3,
+              ),
+            ),
+            foregroundColor: MaterialStateProperty.all(Color(0xFF45625E)
+                // Change text color to black
+                ),
+          ),
+          child: Text(
+            id,
+            style: TextStyle(
+              fontSize: 18, // Set the desired text size here
+              fontWeight:
+                  FontWeight.bold, // Optional: Set the desired font weight
+            ),
+          ),
+        ),
+        SizedBox(height: 12), // Space between button and text
+        Text(
+          buttonLabels[id] ?? 'Max 4 days', // Default text if label not set
+          style: TextStyle(
+            fontSize: 14, // Adjust text size if needed
+            color: Color(0xFF45625E), // Adjust text color if needed
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _handleButtonClick(String buttonId) {
+    setState(() {
+      _selectedButton = buttonId;
+    });
   }
 }
 

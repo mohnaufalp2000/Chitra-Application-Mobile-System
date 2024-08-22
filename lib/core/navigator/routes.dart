@@ -34,6 +34,7 @@ import 'package:camos/pages/site_condition/site_condition_report_page.dart';
 import 'package:camos/pages/tire_condition/detail_tire_condition_page.dart';
 import 'package:camos/pages/tire_condition/tire_condition_page.dart';
 import 'package:camos/pages/tire_inventory/tire_inventory_page.dart';
+import 'package:camos/pages/tire_repair_form/detail_tire_repair_inspection_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:camos/pages/tkph_calculator/result_tkph_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
@@ -84,4 +85,6 @@ var routes = {
   HistorySiteConditionPage.routeName: (context) => HistorySiteConditionPage(),
   TireInspectionFormPage.routeName: (context) => TireInspectionFormPage(),
   TireRepairInspectionPage.routeName: (context) => TireRepairInspectionPage(),
+  DetailTireRepairInspection.routeName: (context) =>
+      DetailTireRepairInspection(),
 };

@@ -1,7 +1,10 @@
+import 'package:camos/core/styles/color.dart';
+import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/tire_repair_form/detail_tire_repair_inspection_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_form_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class TireRepairInspectionPage extends StatefulWidget {
@@ -16,6 +19,7 @@ class TireRepairInspectionPage extends StatefulWidget {
 class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
     with TickerProviderStateMixin {
   late AnimationController _controller;
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   final double containerWidthFactor = 0.8;
   void initState() {
@@ -43,97 +47,138 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
       backgroundColor: const Color(0xFFF1F1F1),
       appBar: appBarWidget('Tire Repair Inspection Report', context),
       body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Center(
-              child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => GradientBackground(),
-                    ),
-                  );
-                },
-                child: Container(
-                  width: MediaQuery.of(context).size.width * 0.9,
-                  height: 107,
-                  padding: const EdgeInsets.all(5.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20.0),
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFF67ADFF),
-                        const Color(0xFF4778B2),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
+        child: StreamBuilder(
+            stream: firestore.collection('tire_repair_ins_report').snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+              List<Map<String, dynamic>> dataList = [];
+              List<DocumentSnapshot> docs = snapshot.data!.docs;
+
+              for (var doc in docs) {
+                Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+                dataList.add(data);
+              }
+              if (dataList.isEmpty) {
+                return Center(
+                  child: Text(
+                    'Empty',
+                    style: getBlackTextStyle(
+                      fontSize: 24,
                     ),
                   ),
-                  child: Stack(
+                );
+              }
+
+              return Column(
+                children: dataList.map((data) {
+                  return Column(
                     children: [
-                      Row(
-                        children: [
-                          Image.asset(
-                            'assets/images/ban.png',
-                            width: 100.0,
-                            height: 120.0,
-                          ),
-                          const SizedBox(width: 10.0),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'S9S00394',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.black,
-                                  fontSize: 25.0,
+                      const SizedBox(height: 20),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            // Navigator.push(
+                            //   context,
+                            //   MaterialPageRoute(
+                            //     builder: (context) =>
+                            //         DetailTireRepairInspection(),
+                            //   ),
+                            // );
+                            Navigator.pushNamed(
+                                context, DetailTireRepairInspection.routeName,
+                                arguments: data['id']);
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * 0.9,
+                            height: 107,
+                            padding: const EdgeInsets.all(5.0),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20.0),
+                                color: (data['repair_duration'] == 'R1')
+                                    ? green00968A
+                                    : (data['repair_duration'] == 'R2')
+                                        ? Colors.yellow[700]
+                                        : (data['repair_duration'] == 'R3')
+                                            ? blue344BEF
+                                            : Colors.red
+                                // gradient: LinearGradient(
+                                //   colors: [
+                                //     const Color(0xFF67ADFF),
+                                //     const Color(0xFF4778B2),
+                                //   ],
+                                //   begin: Alignment.topCenter,
+                                //   end: Alignment.bottomCenter,
+                                // ),
                                 ),
-                              ),
-                              const SizedBox(height: 4.0),
-                              Container(
-                                width: 120.0,
-                                height: 2.0,
-                                color: Colors.black,
-                              ),
-                              const SizedBox(height: 4.0),
-                              Text(
-                                'BRIDGESTNE',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black,
-                                  fontSize: 12.0,
+                            child: Stack(
+                              children: [
+                                Row(
+                                  children: [
+                                    Image.asset(
+                                      'assets/images/ban.png',
+                                      width: 100.0,
+                                      height: 120.0,
+                                    ),
+                                    const SizedBox(width: 10.0),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          data['sn'],
+                                          style: getWhiteTextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w700),
+                                        ),
+                                        const SizedBox(height: 4.0),
+                                        Container(
+                                          width: 120.0,
+                                          height: 2.0,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(height: 4.0),
+                                        Text(data['brand'],
+                                            style: getWhiteTextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700)),
+                                      ],
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            '37.888R57\n27 Mei 2024',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 12.0,
+                                Align(
+                                  alignment: Alignment.topRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text('${data['repair_duration']}',
+                                        style: getWhiteTextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w700)),
+                                  ),
+                                ),
+                                Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                        '${data['tire_size']}\n${data['date_inspect']}',
+                                        style: getWhiteTextStyle(
+                                            fontWeight: FontWeight.w700)),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                       ),
                     ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 100),
-          ],
-        ),
+                  );
+                }).toList(),
+              );
+            }),
       ),
       floatingActionButton: Container(
         decoration: BoxDecoration(
