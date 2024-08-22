@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
 
 class TireRepairInspectionFormPage extends StatefulWidget {
   static const routeName = '/tire-repair-inspection-form-page';
@@ -93,22 +94,70 @@ class _TireRepairInspectionFormPageState
 
   Future<void> uploadImage() async {
     if (serialNumberPict.isNotEmpty) {
-      loopingImage(serialNumberPict);
+      for (int i = 0; i < serialNumberPict.length; i++) {
+        final ref = storage.ref().child(
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+        final uploadTask = ref.putFile(File(serialNumberPict[i]));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final urlDownload = await snapshot.ref.getDownloadURL();
+
+        serialNumberPictFirebase.add(urlDownload);
+      }
     }
     if (sidewallPic.isNotEmpty) {
-      loopingImage(sidewallPic);
+      for (int i = 0; i < sidewallPic.length; i++) {
+        final ref = storage.ref().child(
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+        final uploadTask = ref.putFile(File(sidewallPic[i]));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final urlDownload = await snapshot.ref.getDownloadURL();
+
+        sidewallPicFirebase.add(urlDownload);
+      }
     }
     if (shoulderPic.isNotEmpty) {
-      loopingImage(shoulderPic);
+      for (int i = 0; i < shoulderPic.length; i++) {
+        final ref = storage.ref().child(
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+        final uploadTask = ref.putFile(File(shoulderPic[i]));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final urlDownload = await snapshot.ref.getDownloadURL();
+
+        shoulderPicFirebase.add(urlDownload);
+      }
     }
     if (threatPic.isNotEmpty) {
-      loopingImage(threatPic);
+      for (int i = 0; i < threatPic.length; i++) {
+        final ref = storage.ref().child(
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+        final uploadTask = ref.putFile(File(threatPic[i]));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final urlDownload = await snapshot.ref.getDownloadURL();
+
+        threatPicFirebase.add(urlDownload);
+      }
     }
     if (beadPic.isNotEmpty) {
-      loopingImage(beadPic);
+      for (int i = 0; i < beadPic.length; i++) {
+        final ref = storage.ref().child(
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+        final uploadTask = ref.putFile(File(beadPic[i]));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final urlDownload = await snapshot.ref.getDownloadURL();
+
+        beadPicFirebase.add(urlDownload);
+      }
     }
     if (innerLinerPic.isNotEmpty) {
-      loopingImage(innerLinerPic);
+      for (int i = 0; i < innerLinerPic.length; i++) {
+        final ref = storage.ref().child(
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+        final uploadTask = ref.putFile(File(innerLinerPic[i]));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final urlDownload = await snapshot.ref.getDownloadURL();
+
+        innerLinerPicFirebase.add(urlDownload);
+      }
     }
   }
 
@@ -120,7 +169,7 @@ class _TireRepairInspectionFormPageState
       final snapshot = await uploadTask.whenComplete(() {});
       final urlDownload = await snapshot.ref.getDownloadURL();
 
-      images.add(urlDownload);
+      serialNumberPictFirebase.add(urlDownload);
     }
   }
 
@@ -884,11 +933,12 @@ class _TireRepairInspectionFormPageState
                             try {
                               await uploadImage();
 
-                              log('serial number : ${serialNumberPictFirebase}');
-
+                              log('serial number : ${sidewallPicFirebase}');
+                              final id = Uuid().v4();
                               await firestore
                                   .collection('tire_repair_ins_report')
                                   .add({
+                                'id': id,
                                 'date_inspect':
                                     '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}',
                                 'customer': customerCtrl.text,

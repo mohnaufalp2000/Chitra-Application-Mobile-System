@@ -6,6 +6,7 @@ import 'package:camos/pages/tire_repair_form/detail_tire_repair_inspection_page.
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_form_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TireRepairInspectionPage extends StatefulWidget {
   static const routeName = '/tire-repair-inspection';
@@ -28,6 +29,21 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+  }
+
+  int repairDurationMatrix(String repairDuration) {
+    switch (repairDuration) {
+      case 'R1':
+        return 5;
+      case 'R2':
+        return 9;
+      case 'R3':
+        return 13;
+      case 'R4':
+        return 17;
+    }
+
+    return 0;
   }
 
   @override
@@ -73,6 +89,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
 
               return Column(
                 children: dataList.map((data) {
+                  DateFormat date = DateFormat('dd-MM-yy');
                   return Column(
                     children: [
                       const SizedBox(height: 20),
@@ -92,14 +109,14 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.9,
-                            height: 107,
+                            height: 150,
                             padding: const EdgeInsets.all(5.0),
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(20.0),
                                 color: (data['repair_duration'] == 'R1')
                                     ? green00968A
                                     : (data['repair_duration'] == 'R2')
-                                        ? Colors.yellow[700]
+                                        ? Colors.yellow[800]
                                         : (data['repair_duration'] == 'R3')
                                             ? blue344BEF
                                             : Colors.red
@@ -121,7 +138,6 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                       width: 100.0,
                                       height: 120.0,
                                     ),
-                                    const SizedBox(width: 10.0),
                                     Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
@@ -141,10 +157,24 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                           color: Colors.white,
                                         ),
                                         const SizedBox(height: 4.0),
-                                        Text(data['brand'],
+                                        Text(
+                                            '${data['brand']} / ${data['tire_size']}',
                                             style: getWhiteTextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w700)),
+                                        const SizedBox(height: 4.0),
+                                        Text(
+                                            'Inspected : ${date.format(DateTime.parse('${data['date_inspect']}'))}',
+                                            style: getWhiteTextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700)),
+                                        const SizedBox(height: 4.0),
+                                        Text(
+                                            'Repair Completed : ${date.format(DateTime.parse('${data['date_inspect']}').add(Duration(days: repairDurationMatrix('${data['repair_duration']}'))))}',
+                                            style: getWhiteTextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700)),
+                                        const SizedBox(height: 4.0),
                                       ],
                                     ),
                                   ],
@@ -156,16 +186,6 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                     child: Text('${data['repair_duration']}',
                                         style: getWhiteTextStyle(
                                             fontSize: 20,
-                                            fontWeight: FontWeight.w700)),
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Text(
-                                        '${data['tire_size']}\n${data['date_inspect']}',
-                                        style: getWhiteTextStyle(
                                             fontWeight: FontWeight.w700)),
                                   ),
                                 ),

@@ -246,6 +246,7 @@ Future<File> createFolderPath(String id, String type,
     String email = '',
     String date = '',
     String username = '',
+    String customer = '',
     String pit = '',
     String sn = ''}) async {
   /// final output = await getApplicationDocumentsDirectory();
@@ -271,6 +272,11 @@ Future<File> createFolderPath(String id, String type,
       // final outputFile = File("${path?.path}/Site-$id.pdf");
       final outputFile = File(
           "${path?.path}/SiteCondition_${date}_${site}_${email}_CAMOS_${id.substring(0, 4)}.pdf");
+      return outputFile;
+    case 'repair':
+      // final outputFile = File("${path?.path}/Site-$id.pdf");
+      final outputFile = File(
+          "${path?.path}/TireRepairInspectionReport_${date}_${customer}_${sn}_CAMOS_${id.substring(0, 4)}.pdf");
       return outputFile;
     case 'attendance':
       // final outputFile = File("${path?.path}/Attendance-$id.xlsx");

@@ -1,5 +1,16 @@
+import 'dart:developer';
+
+import 'package:camos/core/styles/asset_path.dart';
+import 'package:camos/core/styles/color.dart';
+import 'package:camos/core/styles/text_manager.dart';
+import 'package:camos/core/utils/functions/functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as p;
+import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 class DetailTireRepairInspection extends StatefulWidget {
   static const routeName = '/detail-tire-repair-inspection';
@@ -12,6 +23,15 @@ class DetailTireRepairInspection extends StatefulWidget {
 class _DetailTireRepairInspectionState
     extends State<DetailTireRepairInspection> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  Future<Uint8List> getImageFromUrl(String url) async {
+    final response = await http.get(Uri.parse(url));
+    if (response.statusCode == 200) {
+      return response.bodyBytes;
+    } else {
+      throw Exception('Failed to load image');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -131,8 +151,163 @@ class _DetailTireRepairInspectionState
                         ),
                         SizedBox(height: 20),
                         GestureDetector(
-                          onTap: () {
+                          onTap: () async {
                             print('Red box tapped');
+                            final pdf = p.Document();
+
+                            final Uint8List imageData =
+                                await getImageFromUrl('${data['sn_pic'][0]}');
+                            final image = p.MemoryImage(imageData);
+
+                            final Uint8List imageSidewall =
+                                await getImageFromUrl(
+                                    '${data['sidewall_pic'][0]}');
+                            final imageSd = p.MemoryImage(imageSidewall);
+
+                            final logoCp = (await rootBundle
+                                    .load('${imagePath}/cp_logo_image.png'))
+                                .buffer
+                                .asUint8List();
+                            pdf.addPage(p.MultiPage(
+                                pageFormat: PdfPageFormat.a4,
+                                orientation: p.PageOrientation.landscape,
+                                build: (p.Context context) {
+                                  return [
+                                    p.Column(
+                                        crossAxisAlignment:
+                                            p.CrossAxisAlignment.start,
+                                        children: [
+                                          p.Row(
+                                              mainAxisAlignment: p
+                                                  .MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                p.SizedBox(
+                                                  width: 150,
+                                                  height: 100,
+                                                  child: p.Image(
+                                                      p.MemoryImage(logoCp)),
+                                                ),
+                                                p.Text(
+                                                    'Tire Repair Inspection Report',
+                                                    style: p.TextStyle(
+                                                      fontSize: 26,
+                                                    )),
+                                                p.Container(
+                                                  width: 150,
+                                                  height: 100,
+                                                ),
+                                              ]),
+                                          p.SizedBox(
+                                            height: 30,
+                                          ),
+                                          p.Row(
+                                              mainAxisAlignment: p
+                                                  .MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                p.Column(
+                                                    crossAxisAlignment: p
+                                                        .CrossAxisAlignment
+                                                        .start,
+                                                    children: [
+                                                      p.Text(
+                                                          'Date Inspect : ${data['date_inspect']}'),
+                                                      p.Text(
+                                                          'Customer : ${data['customer']}'),
+                                                      p.Text(
+                                                          'Site : ${data['site']}'),
+                                                      p.SizedBox(
+                                                        height: 60,
+                                                      ),
+                                                      p.Text(
+                                                          'Tire Size : ${data['tire_size']}'),
+                                                      p.Text(
+                                                          'Serial Number : ${data['sn']}'),
+                                                      p.Text(
+                                                          'Brand : ${data['brand']}'),
+                                                      p.Text(
+                                                          'Type Construction : ${data['type_construction']}'),
+                                                      p.Text(
+                                                          'Pattern : ${data['pattern']}'),
+                                                      p.Text(
+                                                          'RTD ( mm ) : ${data['rtd1']}/${data['rtd2']}'),
+                                                      p.Text(
+                                                          'No. Cargo Manifest : ${data['no_cargo_manifest']}'),
+                                                      p.Text(
+                                                          'Date Received : ${data['date_received']}'),
+                                                      p.Text(
+                                                          'Status: ${data['status']}'),
+                                                      p.Text(
+                                                          'Remarks: ${data['remark'] ?? 'None'}'),
+                                                    ]),
+                                                p.Column(children: [
+                                                  p.Row(children: [
+                                                    p.Column(children: [
+                                                      p.SizedBox(
+                                                        width: 400,
+                                                        height: 150,
+                                                        child: p.Image(image),
+                                                      ),
+                                                      p.Text('Serial Number')
+                                                    ]),
+                                                    p.SizedBox(width: 12),
+                                                    p.Column(children: [
+                                                      p.SizedBox(
+                                                        width: 400,
+                                                        height: 150,
+                                                        child: p.Image(imageSd),
+                                                      ),
+                                                      p.Text('Area Sidewall')
+                                                    ])
+                                                  ]),
+                                                  p.SizedBox(height: 24),
+                                                  p.Row(children: [
+                                                    p.Column(children: [
+                                                      p.SizedBox(
+                                                        width: 400,
+                                                        height: 150,
+                                                        child: p.Image(imageSd),
+                                                      ),
+                                                      p.Text('Area Sidewall')
+                                                    ]),
+                                                    p.SizedBox(width: 12),
+                                                    p.Column(children: [
+                                                      p.SizedBox(
+                                                        width: 400,
+                                                        height: 150,
+                                                        child: p.Image(imageSd),
+                                                      ),
+                                                      p.Text('Area Sidewall')
+                                                    ])
+                                                  ]),
+                                                ]),
+                                              ]),
+                                        ])
+                                  ];
+                                }));
+                            final id = Uuid();
+                            final outputFile = await createFolderPath(
+                                '${id.v4()}', 'repair',
+                                // email: user['email'] ?? '',
+                                // site: user['siteName'] ?? '',
+                                customer: data['customer'],
+                                sn: data['sn'],
+                                date:
+                                    "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
+                            final filePath = await savePdf(pdf, outputFile);
+
+                            log('save baru : $filePath');
+
+                            if (filePath != null || filePath != '') {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                      backgroundColor: green00968A,
+                                      content: Text(
+                                        'Successfull Save Data!',
+                                        style: getWhiteTextStyle(),
+                                      )));
+                            }
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.9,
@@ -368,6 +543,32 @@ class _DetailTireRepairInspectionState
                                   ),
                                 ),
                                 SizedBox(height: 16),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children:
+                                      data['sidewall_pic'].map<Widget>((e) {
+                                    return Column(
+                                      children: [
+                                        Center(
+                                          child: SizedBox(
+                                            width:
+                                                200, // Atur lebar sesuai kebutuhan
+                                            height:
+                                                300, // Atur tinggi sesuai kebutuhan
+                                            child: Image.network(
+                                              e,
+                                              fit: BoxFit
+                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        )
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
                               ],
                             ),
                           ),
@@ -399,6 +600,32 @@ class _DetailTireRepairInspectionState
                                   ),
                                 ),
                                 SizedBox(height: 16),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children:
+                                      data['shoulder_pic'].map<Widget>((e) {
+                                    return Column(
+                                      children: [
+                                        Center(
+                                          child: SizedBox(
+                                            width:
+                                                200, // Atur lebar sesuai kebutuhan
+                                            height:
+                                                300, // Atur tinggi sesuai kebutuhan
+                                            child: Image.network(
+                                              e,
+                                              fit: BoxFit
+                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        )
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
                               ],
                             ),
                           ),
@@ -430,6 +657,31 @@ class _DetailTireRepairInspectionState
                                   ),
                                 ),
                                 SizedBox(height: 16),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: data['bead_pic'].map<Widget>((e) {
+                                    return Column(
+                                      children: [
+                                        Center(
+                                          child: SizedBox(
+                                            width:
+                                                200, // Atur lebar sesuai kebutuhan
+                                            height:
+                                                300, // Atur tinggi sesuai kebutuhan
+                                            child: Image.network(
+                                              e,
+                                              fit: BoxFit
+                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        )
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
                               ],
                             ),
                           ),
@@ -461,6 +713,31 @@ class _DetailTireRepairInspectionState
                                   ),
                                 ),
                                 SizedBox(height: 16),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: data['threat_pic'].map<Widget>((e) {
+                                    return Column(
+                                      children: [
+                                        Center(
+                                          child: SizedBox(
+                                            width:
+                                                200, // Atur lebar sesuai kebutuhan
+                                            height:
+                                                300, // Atur tinggi sesuai kebutuhan
+                                            child: Image.network(
+                                              e,
+                                              fit: BoxFit
+                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        )
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
                               ],
                             ),
                           ),
@@ -490,6 +767,35 @@ class _DetailTireRepairInspectionState
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                   ),
+                                ),
+                                const SizedBox(
+                                  height: 16,
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children:
+                                      data['inner_linner_pic'].map<Widget>((e) {
+                                    return Column(
+                                      children: [
+                                        Center(
+                                          child: SizedBox(
+                                            width:
+                                                200, // Atur lebar sesuai kebutuhan
+                                            height:
+                                                300, // Atur tinggi sesuai kebutuhan
+                                            child: Image.network(
+                                              e,
+                                              fit: BoxFit
+                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        )
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
                               ],
                             ),
