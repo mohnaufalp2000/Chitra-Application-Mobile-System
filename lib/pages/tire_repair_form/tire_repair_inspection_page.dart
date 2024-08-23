@@ -89,6 +89,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
 
               return Column(
                 children: dataList.map((data) {
+                  final index = dataList.indexOf(data);
                   DateFormat date = DateFormat('dd-MM-yy');
                   return Column(
                     children: [
@@ -96,20 +97,16 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                       Center(
                         child: GestureDetector(
                           onTap: () {
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) =>
-                            //         DetailTireRepairInspection(),
-                            //   ),
-                            // );
                             Navigator.pushNamed(
                                 context, DetailTireRepairInspection.routeName,
                                 arguments: data['id']);
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.9,
-                            height: 150,
+                            height: 180,
+                            margin: EdgeInsets.only(
+                                bottom:
+                                    (index == dataList.length - 1) ? 96 : 0),
                             padding: const EdgeInsets.all(5.0),
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(20.0),
@@ -119,16 +116,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                         ? Colors.yellow[800]
                                         : (data['repair_duration'] == 'R3')
                                             ? blue344BEF
-                                            : Colors.red
-                                // gradient: LinearGradient(
-                                //   colors: [
-                                //     const Color(0xFF67ADFF),
-                                //     const Color(0xFF4778B2),
-                                //   ],
-                                //   begin: Alignment.topCenter,
-                                //   end: Alignment.bottomCenter,
-                                // ),
-                                ),
+                                            : Colors.red),
                             child: Stack(
                               children: [
                                 Row(
@@ -171,6 +159,11 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                         const SizedBox(height: 4.0),
                                         Text(
                                             'Repair Completed : ${date.format(DateTime.parse('${data['date_inspect']}').add(Duration(days: repairDurationMatrix('${data['repair_duration']}'))))}',
+                                            style: getWhiteTextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700)),
+                                        const SizedBox(height: 4.0),
+                                        Text('Customer : ${data['customer']}',
                                             style: getWhiteTextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w700)),

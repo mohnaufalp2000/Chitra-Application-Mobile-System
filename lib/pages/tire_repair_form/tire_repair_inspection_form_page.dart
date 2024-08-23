@@ -33,13 +33,13 @@ class _TireRepairInspectionFormPageState
   TextEditingController customerCtrl = TextEditingController(text: '');
   TextEditingController siteCtrl = TextEditingController(text: '');
   TextEditingController reportNameCtrl = TextEditingController(text: '');
-  TextEditingController tireSizeCtrl = TextEditingController(text: '');
+  TextEditingController tireSizeCtrl = TextEditingController(text: '27.00R49');
   TextEditingController serialNumberCtrl = TextEditingController(text: '');
   TextEditingController brandCtrl = TextEditingController(text: '');
   TextEditingController typeConstCtrl = TextEditingController(text: '');
   TextEditingController patternCtrl = TextEditingController(text: '');
   TextEditingController noCM = TextEditingController(text: '');
-  TextEditingController statusCtrl = TextEditingController(text: '');
+  TextEditingController statusCtrl = TextEditingController(text: 'REPAIR');
   TextEditingController cargoManifestCtrl = TextEditingController(text: '');
   TextEditingController rtd1Ctrl = TextEditingController(text: '');
   TextEditingController rtd2Ctrl = TextEditingController(text: '');
@@ -59,12 +59,52 @@ class _TireRepairInspectionFormPageState
   List<String> beadPicFirebase = [];
   List<String> innerLinerPicFirebase = [];
 
+  List<String> listSize = [
+    '18.00R33',
+    '21.00R33',
+    '21.00R35',
+    '24.00R35',
+    '27.00R49',
+    '33.00R51',
+    '37.00R57',
+    '40.00R57',
+    '53/80R63',
+    '55/80R70',
+    '59/80R63',
+    '59/80R70',
+  ];
+
+  List<String> listStatus = ['REPAIR', 'RETREAD', 'REJECT'];
+
   final Map<String, String> buttonLabels = {
     'R1': '*Max 4 days',
     'R2': '*Max 8 days',
     'R3': '*Max 12 days',
     'R4': '*Max 18 days',
   };
+
+  List<String> listCustomer = [
+    'PT ABADI JAYA LAXMINDO',
+    'PT BINUANG MITRA BERSAMA',
+    'PT Cipta Kridatama',
+    'PT Diesel Utama Mineral',
+    'PT. Hasnur Riung Sinergi',
+    'PT KALIMANTAN PRIMA PERSADA',
+    'PT Mega Global Energi',
+    'PT Pelsart Tambang Kencana',
+    'PT PUTRA PERKASA ABADI',
+    'PT RPP Contractor Indonesia',
+    'PT Ryan Eka Pratama',
+    'PT Rimba Perkasa Utama',
+    'PT Saptaindra Sejati',
+    'PT Thiess Contractors Indonesia',
+    'PT TRAKINDO UTAMA',
+    'TRUST'
+  ];
+
+  String selectedSize = '27.00R49';
+  String selectedStatus = 'REPAIR';
+  String selectedCustomer = 'PT ABADI JAYA LAXMINDO';
 
   Future<void> _selectDate(BuildContext context, String type) async {
     final DateTime? picked = await showDatePicker(
@@ -317,14 +357,22 @@ class _TireRepairInspectionFormPageState
                         ),
                       ],
                     ),
-                    child: TextField(
-                      controller: customerCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      value: selectedCustomer,
+                      items: listCustomer.map((customer) {
+                        return DropdownMenuItem<String>(
+                          value: customer,
+                          child: Text(customer),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedCustomer = newValue ?? '';
+                          customerCtrl.text = newValue ?? '';
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(height: 20.0),
@@ -442,16 +490,25 @@ class _TireRepairInspectionFormPageState
                         ),
                       ],
                     ),
-                    child: TextField(
-                      controller: tireSizeCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      value: selectedSize,
+                      items: listSize.map((size) {
+                        return DropdownMenuItem<String>(
+                          value: size,
+                          child: Text(size),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedSize = newValue ?? '';
+                          tireSizeCtrl.text = newValue ?? '';
+                        });
+                      },
                     ),
                   ),
+
                   const SizedBox(height: 20.0),
                   Align(
                     alignment: Alignment.topLeft,
@@ -660,16 +717,80 @@ class _TireRepairInspectionFormPageState
                         ),
                       ],
                     ),
-                    child: TextField(
-                      controller: statusCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      value: selectedStatus,
+                      hint: Text('Choose Status'),
+                      items: listStatus.map((status) {
+                        return DropdownMenuItem<String>(
+                          value: status,
+                          child: Text(status),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedStatus = newValue ?? '';
+                          statusCtrl.text = newValue ?? '';
+                        });
+                      },
                     ),
                   ),
+                  const SizedBox(height: 20.0),
+                  (selectedStatus == 'REJECT')
+                      ? Container()
+                      : Container(
+                          padding: EdgeInsets.all(9),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFE2E2E2), // Hex color #E2E2E2
+                            borderRadius: BorderRadius.circular(
+                                20), // Optional: Adjust border radius if needed
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize
+                                .min, // Use min to avoid unnecessary space
+                            children: [
+                              Align(
+                                alignment: Alignment
+                                    .topCenter, // Align text to the top center
+                                child: Text(
+                                  'Repair Duration', // Replace with the content you want
+                                  style: TextStyle(
+                                    color: Color(0xFF45625E), // Text color
+                                    fontSize: 20, // Adjust text size if needed
+                                    fontWeight: FontWeight
+                                        .bold, // Optional: Adjust text weight if needed
+                                  ),
+                                  textAlign: TextAlign
+                                      .center, // Center align text within the widget
+                                ),
+                              ),
+                              SizedBox(
+                                  height: 15), // Space between text and buttons
+                              Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment
+                                        .spaceEvenly, // Distribute space evenly
+                                    children: [
+                                      _buildButton('R1', 'R1'),
+                                      _buildButton('R2', 'R2'),
+                                    ],
+                                  ),
+                                  SizedBox(height: 12), // Space between rows
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment
+                                        .spaceEvenly, // Distribute space evenly
+                                    children: [
+                                      _buildButton('R3', 'R3'),
+                                      _buildButton('R4', 'R4'),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
                   const SizedBox(height: 20.0),
                   Align(
                     alignment: Alignment.topLeft,
@@ -816,59 +937,7 @@ class _TireRepairInspectionFormPageState
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20.0),
-                  Container(
-                    padding: EdgeInsets.all(9),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFE2E2E2), // Hex color #E2E2E2
-                      borderRadius: BorderRadius.circular(
-                          20), // Optional: Adjust border radius if needed
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize
-                          .min, // Use min to avoid unnecessary space
-                      children: [
-                        Align(
-                          alignment: Alignment
-                              .topCenter, // Align text to the top center
-                          child: Text(
-                            'Repair Duration', // Replace with the content you want
-                            style: TextStyle(
-                              color: Color(0xFF45625E), // Text color
-                              fontSize: 20, // Adjust text size if needed
-                              fontWeight: FontWeight
-                                  .bold, // Optional: Adjust text weight if needed
-                            ),
-                            textAlign: TextAlign
-                                .center, // Center align text within the widget
-                          ),
-                        ),
-                        SizedBox(height: 15), // Space between text and buttons
-                        // Use a Column to stack the rows of buttons
-                        Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment
-                                  .spaceEvenly, // Distribute space evenly
-                              children: [
-                                _buildButton('R1', 'R1'),
-                                _buildButton('R2', 'R2'),
-                              ],
-                            ),
-                            SizedBox(height: 12), // Space between rows
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment
-                                  .spaceEvenly, // Distribute space evenly
-                              children: [
-                                _buildButton('R3', 'R3'),
-                                _buildButton('R4', 'R4'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+
                   const SizedBox(height: 20.0),
                   // Serial Number Picture
                   takePictureButton('Serial Number'),
@@ -915,7 +984,8 @@ class _TireRepairInspectionFormPageState
                           )),
                       TextButton(
                           onPressed: () async {
-                            if (_selectedButton == '') {
+                            if (_selectedButton == '' &&
+                                statusCtrl.text != 'REJECT') {
                               Navigator.pop(context);
                               ScaffoldMessenger.of(context)
                                   .hideCurrentSnackBar();
