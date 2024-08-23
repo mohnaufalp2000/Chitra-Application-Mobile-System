@@ -2955,7 +2955,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               }
                             : () async {
                                 // jika belum memeilih pit
-                                if (idSite == '15') {
+                                if (idSite == '52') {
                                   if (selectedPit == -1) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -2970,21 +2970,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   }
                                 }
 
-                                ScaffoldMessenger.of(context)
-                                    .hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  content: Text(
-                                    'Successful save data, please check in home page',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                  backgroundColor: green00968A,
-                                ));
-
                                 // input ke tire inspection
                                 try {
-                                  log('apakah pressure tire kosong : ${(position[0]['damageTire'] as List<dynamic>) == null}');
-
                                   position.removeWhere((element) =>
                                       element['pressure'] == '' &&
                                       (element['damageTire'] as List<dynamic>)
@@ -2993,7 +2980,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       element['rtd1'] == '' &&
                                       element['rtd2'] == '' &&
                                       element['remarks'] == '');
-                                  log('tire tire : ${position}');
 
                                   for (int i = 0; i < position.length; i++) {
                                     final unit = state.units[i];
@@ -3009,6 +2995,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         position[i]['rtd1'] != '' ||
                                         position[i]['rtd2'] != '' ||
                                         position[i]['remarks'] != '') {
+                                      final today = DateTime.now();
+                                      final startOfDay = DateTime(
+                                          today.year, today.month, today.day);
+                                      final endOfDay = DateTime(today.year,
+                                          today.month, today.day, 23, 59, 59);
+
                                       final querySnapshot = await firestore
                                           .collection('task')
                                           .where('kunci_unit',
@@ -3018,6 +3010,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           .where('position',
                                               isEqualTo: position[i]
                                                   ['position'])
+                                          .where('last_update',
+                                              isGreaterThanOrEqualTo:
+                                                  startOfDay.toIso8601String())
+                                          .where('last_update',
+                                              isLessThanOrEqualTo:
+                                                  endOfDay.toIso8601String())
                                           .get();
 
                                       log('adakah query : ${querySnapshot.docs.isNotEmpty}');
@@ -3026,6 +3024,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         // Update the existing document
                                         final docId =
                                             querySnapshot.docs.first.id;
+                                        // try {
+                                        //   log('kenapa gagal 3 ${position[i]['image'] as List<dynamic>}');
+                                        // } catch (e) {
+                                        //   log('kenapa gagal 4 ${e}');
+                                        // }
+
                                         await firestore
                                             .collection('task')
                                             .doc(docId)
@@ -3092,7 +3096,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
-                                          'pit': pit[selectedPit]
+                                          'pit': (idSite == '52')
+                                              ? pit[selectedPit]
+                                              : 'Default'
                                         });
                                       } else {
                                         await firestore.collection('task').add({
@@ -3158,7 +3164,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
-                                          'pit': pit[selectedPit]
+                                          'pit': (idSite == '52')
+                                              ? pit[selectedPit]
+                                              : 'Default'
                                         });
                                       }
                                     }
@@ -3251,6 +3259,16 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   } catch (e) {
                                     print('error bmb : $e');
                                   }
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentSnackBar();
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                    content: Text(
+                                      'Successful save data, please check in home page',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                    backgroundColor: green00968A,
+                                  ));
                                 } catch (e) {
                                   log('kenapa gagal : $e');
                                 }
