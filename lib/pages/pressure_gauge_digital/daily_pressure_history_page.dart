@@ -7,6 +7,8 @@ import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/export_excel_button.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';
@@ -129,60 +131,14 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
             (pit.isNotEmpty && selectedMenu == 0)
                 ? Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Center(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Wrap(
-                            spacing: 4.0, // Jarak horizontal antar tombol
-                            children: pit.map((e) {
-                              final pitIndex = pit.indexOf(e);
-                              if (pitIndex == 0) {
-                                return Container(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: (selectedPit == pitIndex)
-                                          ? Colors.orange
-                                          : greyF7F8F9,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        selectedPit = pitIndex;
-                                      });
-                                    },
-                                    child: Text(
-                                      'All',
-                                      style: (selectedPit == pitIndex)
-                                          ? getWhiteTextStyle()
-                                          : getBlackTextStyle(),
-                                    ),
-                                  ),
-                                );
-                              }
-                              return ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: (selectedPit == pitIndex)
-                                      ? Colors.orange
-                                      : greyF7F8F9,
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    selectedPit = pitIndex;
-                                  });
-                                },
-                                child: Text(
-                                  e,
-                                  style: (selectedPit == pitIndex)
-                                      ? getWhiteTextStyle()
-                                      : getBlackTextStyle(),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: SelectPitButton(
+                        pit: pit,
+                        selectedPit: selectedPit,
+                        onSelectedPitChanged: (index) {
+                          setState(() {
+                            selectedPit = index;
+                          });
+                        }),
                   )
                 : Container(),
             Padding(
@@ -203,74 +159,14 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
               height: 24,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        final id = Uuid();
-                        // print('tugas : $filteredItemTask');
-                        // print('terpesona $filteredItemTask');
-                        // final file = await createFolderPath(id.v4(), 'outstanding');
-                        final file = await createFolderPath(
-                            id.v4(), 'daily-check',
-                            email: user['email'] ?? '',
-                            site: user['siteName'] ?? '',
-                            pit: pit[selectedPit] ?? '',
-                            date:
-                                "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}");
-                        // date:
-                        //     "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
-
-                        final bytes = await createExcel('daily-check',
-                            daily: filteredItemTask);
-                        final saved =
-                            await file.writeAsBytes(bytes, flush: true);
-                        // print('laper : $saved');
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            backgroundColor: green00968A,
-                            content: Text(
-                              'Successfull Save Data!',
-                              style: getWhiteTextStyle(),
-                            )));
-                        final result = await OpenFile.open(file.path);
-
-                        if (result.type == ResultType.done) {
-                          print('File berhasil dibuka');
-                        } else {
-                          print(result.message);
-                          if (result.type == ResultType.noAppToOpen) {
-                            openPlayStore('attendance');
-                          }
-                        }
-                      } catch (e) {
-                        log('error export bmb : $e');
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.lightBlue),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.table_chart,
-                            color: Colors.white,
-                          ),
-                          const SizedBox(
-                            width: 12,
-                          ),
-                          Text(
-                            'Export to Excel',
-                            style: getWhiteTextStyle(),
-                          ),
-                        ],
-                      ),
-                    )),
-              ),
-            ),
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: ExportExcelButton(
+                    user: user,
+                    pit: pit,
+                    selectedPit: selectedPit,
+                    filteredItemTask: filteredItemTask,
+                    date:
+                        "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}")),
             const SizedBox(
               height: 12,
             ),
