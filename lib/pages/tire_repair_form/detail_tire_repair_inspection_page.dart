@@ -4,6 +4,8 @@ import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection_form_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,9 +22,10 @@ class DetailTireRepairInspection extends StatefulWidget {
       _DetailTireRepairInspectionState();
 }
 
-class _DetailTireRepairInspectionState
-    extends State<DetailTireRepairInspection> {
+class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
+    with TickerProviderStateMixin {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  late AnimationController _controller;
 
   Future<Uint8List> getImageFromUrl(String url) async {
     final response = await http.get(Uri.parse(url));
@@ -34,8 +37,28 @@ class _DetailTireRepairInspectionState
   }
 
   @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  @override
   Widget build(BuildContext context) {
     final id = ModalRoute.of(context)?.settings.arguments as String;
+
+    final tween =
+        Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero);
+    final animation = tween.animate(_controller);
 
     return Scaffold(
         body: SafeArea(
@@ -93,9 +116,105 @@ class _DetailTireRepairInspectionState
                         Positioned(
                           top: 16,
                           right: 16,
-                          child: IconButton(
+                          child: PopupMenuButton<String>(
                             icon: Icon(Icons.more_vert, color: Colors.black),
-                            onPressed: () {},
+                            onSelected: (String result) async {
+                              if (result == 'edit') {
+                                Navigator.pushNamed(context,
+                                    TireRepairInspectionFormPage.routeName,
+                                    arguments: id);
+                              } else if (result == 'delete') {
+                                showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        content: Text(
+                                          'Are you sure you want to delete this data?',
+                                          style: getBlackTextStyle(),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                'Cancel',
+                                                style: getGreyTextStyle(
+                                                    grey8391A1),
+                                              )),
+                                          TextButton(
+                                              onPressed: () async {
+                                                try {
+                                                  final querySnapshot =
+                                                      await firestore
+                                                          .collection(
+                                                              'tire_repair_ins_report')
+                                                          .where('id',
+                                                              isEqualTo: id)
+                                                          .get();
+
+                                                  for (var doc
+                                                      in querySnapshot.docs) {
+                                                    await doc.reference
+                                                        .delete(); // Menghapus dokumen
+                                                  }
+
+                                                  Navigator.pushReplacementNamed(
+                                                      context,
+                                                      TireRepairInspectionPage
+                                                          .routeName);
+                                                } catch (e) {}
+                                              },
+                                              child: Text(
+                                                'Yes',
+                                                style: getRedTextStyle(),
+                                              )),
+                                        ],
+                                      );
+                                    });
+                              }
+                            },
+                            itemBuilder: (BuildContext context) =>
+                                <PopupMenuEntry<String>>[
+                              PopupMenuItem<String>(
+                                value: 'edit',
+                                child: Container(
+                                    child: Row(
+                                  children: [
+                                    Text(
+                                      'Edit',
+                                      style: getBlackTextStyle(fontWeight: w700)
+                                          .copyWith(color: Colors.yellow[800]),
+                                    ),
+                                    const SizedBox(
+                                      width: 12,
+                                    ),
+                                    Icon(
+                                      Icons.edit,
+                                      color: Colors.yellow[800],
+                                    )
+                                  ],
+                                )),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'Delete',
+                                      style: getRedTextStyle(fontWeight: w700),
+                                    ),
+                                    const SizedBox(
+                                      width: 12,
+                                    ),
+                                    Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
+                                    )
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -207,6 +326,10 @@ class _DetailTireRepairInspectionState
                                               data: data,
                                               type: 'Area Inner Linner',
                                               mapType: 'inner_linner_pic'),
+                                          ImageContainer(
+                                              data: data,
+                                              type: 'Area Chaffer',
+                                              mapType: 'chaffer_pic'),
                                         ],
                                       ),
                                     ),
@@ -823,7 +946,7 @@ class _DetailTireRepairInspectionState
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  'Area Inner LInner',
+                                  'Area Inner Linner',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
@@ -836,6 +959,65 @@ class _DetailTireRepairInspectionState
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children:
                                       data['inner_linner_pic'].map<Widget>((e) {
+                                    return Column(
+                                      children: [
+                                        Center(
+                                          child: SizedBox(
+                                            width:
+                                                200, // Atur lebar sesuai kebutuhan
+                                            height:
+                                                300, // Atur tinggi sesuai kebutuhan
+                                            child: Image.network(
+                                              e,
+                                              fit: BoxFit
+                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        )
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.9,
+                          decoration: BoxDecoration(
+                            color: Color(0xFFC8FDB0),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                offset: Offset(0, 4),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(30.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  'Area Chaffer',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 16,
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children:
+                                      data['chaffer_pic'].map<Widget>((e) {
                                     return Column(
                                       children: [
                                         Center(
@@ -906,16 +1088,19 @@ class _DetailTireRepairInspectionState
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                rightText,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+            Container(
+              width: 150,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  rightText,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.right,
+                  // overflow: TextOverflow.ellipsis,
                 ),
-                textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

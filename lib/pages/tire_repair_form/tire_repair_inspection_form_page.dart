@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
@@ -28,8 +29,11 @@ class _TireRepairInspectionFormPageState
   FirebaseStorage storage = FirebaseStorage.instance;
   String _selectedButton = '';
 
-  DateTime? _selectedDate;
-  DateTime? _selectedReceivedDate;
+  String? id = '';
+
+  DateTime? selectedDate;
+  DateTime? selectedReceivedDate;
+
   TextEditingController customerCtrl = TextEditingController(text: '');
   TextEditingController siteCtrl = TextEditingController(text: '');
   TextEditingController reportNameCtrl = TextEditingController(text: '');
@@ -51,6 +55,7 @@ class _TireRepairInspectionFormPageState
   List<String> threatPic = [];
   List<String> beadPic = [];
   List<String> innerLinerPic = [];
+  List<String> chafferPic = [];
 
   List<String> serialNumberPictFirebase = [];
   List<String> sidewallPicFirebase = [];
@@ -58,6 +63,7 @@ class _TireRepairInspectionFormPageState
   List<String> threatPicFirebase = [];
   List<String> beadPicFirebase = [];
   List<String> innerLinerPicFirebase = [];
+  List<String> chafferPicFirebase = [];
 
   List<String> listSize = [
     '18.00R33',
@@ -83,50 +89,33 @@ class _TireRepairInspectionFormPageState
     'R4': '*Max 18 days',
   };
 
-  List<String> listCustomer = [
-    'PT ABADI JAYA LAXMINDO',
-    'PT BINUANG MITRA BERSAMA',
-    'PT Cipta Kridatama',
-    'PT Diesel Utama Mineral',
-    'PT. Hasnur Riung Sinergi',
-    'PT KALIMANTAN PRIMA PERSADA',
-    'PT Mega Global Energi',
-    'PT Pelsart Tambang Kencana',
-    'PT PUTRA PERKASA ABADI',
-    'PT RPP Contractor Indonesia',
-    'PT Ryan Eka Pratama',
-    'PT Rimba Perkasa Utama',
-    'PT Saptaindra Sejati',
-    'PT Thiess Contractors Indonesia',
-    'PT TRAKINDO UTAMA',
-    'TRUST'
-  ];
-
   String selectedSize = '27.00R49';
   String selectedStatus = 'REPAIR';
-  String selectedCustomer = 'PT ABADI JAYA LAXMINDO';
+  String? selectedCustomer;
+  String idSite = '';
+  Map<String, dynamic> user = {};
 
   Future<void> _selectDate(BuildContext context, String type) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: (type == 'inspect')
-          ? _selectedDate
-          : _selectedReceivedDate ?? DateTime.now(),
+          ? selectedDate
+          : selectedReceivedDate ?? DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime(2100),
     );
     if (type == 'inspect') {
-      if (picked != null && picked != _selectedDate) {
+      if (picked != null && picked != selectedDate) {
         setState(() {
-          _selectedDate = picked;
-          log('tanggal sekarang : $_selectedDate');
+          selectedDate = picked;
+          log('tanggal sekarang : $selectedDate');
         });
       }
     } else {
-      if (picked != null && picked != _selectedReceivedDate) {
+      if (picked != null && picked != selectedReceivedDate) {
         setState(() {
-          _selectedReceivedDate = picked;
-          log('tanggal sekarang : $_selectedDate');
+          selectedReceivedDate = picked;
+          log('tanggal sekarang : $selectedDate');
         });
       }
     }
@@ -136,7 +125,7 @@ class _TireRepairInspectionFormPageState
     if (serialNumberPict.isNotEmpty) {
       for (int i = 0; i < serialNumberPict.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
         final uploadTask = ref.putFile(File(serialNumberPict[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -147,7 +136,7 @@ class _TireRepairInspectionFormPageState
     if (sidewallPic.isNotEmpty) {
       for (int i = 0; i < sidewallPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
         final uploadTask = ref.putFile(File(sidewallPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -158,7 +147,7 @@ class _TireRepairInspectionFormPageState
     if (shoulderPic.isNotEmpty) {
       for (int i = 0; i < shoulderPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
         final uploadTask = ref.putFile(File(shoulderPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -169,7 +158,7 @@ class _TireRepairInspectionFormPageState
     if (threatPic.isNotEmpty) {
       for (int i = 0; i < threatPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
         final uploadTask = ref.putFile(File(threatPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -180,7 +169,7 @@ class _TireRepairInspectionFormPageState
     if (beadPic.isNotEmpty) {
       for (int i = 0; i < beadPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
         final uploadTask = ref.putFile(File(beadPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -191,7 +180,7 @@ class _TireRepairInspectionFormPageState
     if (innerLinerPic.isNotEmpty) {
       for (int i = 0; i < innerLinerPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
         final uploadTask = ref.putFile(File(innerLinerPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -199,18 +188,35 @@ class _TireRepairInspectionFormPageState
         innerLinerPicFirebase.add(urlDownload);
       }
     }
+
+    if (chafferPic.isNotEmpty) {
+      for (int i = 0; i < innerLinerPic.length; i++) {
+        final ref = storage.ref().child(
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+        final uploadTask = ref.putFile(File(chafferPic[i]));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final urlDownload = await snapshot.ref.getDownloadURL();
+
+        chafferPic.add(urlDownload);
+      }
+    }
   }
 
-  Future<void> loopingImage(List<String> images) async {
-    for (int i = 0; i < images.length; i++) {
-      final ref = storage.ref().child(
-          'tire_repair/${DateFormat('yyyy-MM-dd').format(_selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
-      final uploadTask = ref.putFile(File(images[i]));
-      final snapshot = await uploadTask.whenComplete(() {});
-      final urlDownload = await snapshot.ref.getDownloadURL();
+  Future<void> getIdSite() async {
+    idSite = await getIdSitePreferences();
+    user = await getUserPreferences();
+  }
 
-      serialNumberPictFirebase.add(urlDownload);
-    }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      id = ModalRoute.of(context)?.settings.arguments as String?;
+      if (id != null) {
+        await _fetchData(id ?? '');
+      }
+    });
+    getIdSite();
   }
 
   @override
@@ -218,6 +224,50 @@ class _TireRepairInspectionFormPageState
     disposeTextCtrl();
 
     super.dispose();
+  }
+
+  Future<void> _fetchData(String id) async {
+    try {
+      final querySnapshot = await firestore
+          .collection('tire_repair_ins_report')
+          .where('id', isEqualTo: id)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final doc = querySnapshot.docs.first;
+        final data = doc.data();
+
+        setState(() {
+          log('tanggal sekarang : ${data['date_inspect']}');
+          selectedDate = DateTime.parse(data['date_inspect']);
+          selectedReceivedDate = DateTime.parse(data['date_received']);
+
+          selectedCustomer = data['customer'];
+          customerCtrl.text = data['customer'];
+
+          selectedSize = data['tire_size'];
+          tireSizeCtrl.text = data['tire_size'];
+
+          selectedStatus = data['status'];
+          statusCtrl.text = data['status'];
+
+          siteCtrl.text = data['site'];
+          reportNameCtrl.text = data['report_by'];
+          tireSizeCtrl.text = data['tire_size'];
+          serialNumberCtrl.text = data['sn'];
+          brandCtrl.text = data['brand'];
+          typeConstCtrl.text = data['type_construction'];
+          patternCtrl.text = data['pattern'];
+          cargoManifestCtrl.text = data['no_cargo_manifest'];
+          rtd1Ctrl.text = data['rtd1'];
+          rtd2Ctrl.text = data['rtd2'];
+          remarksCtrl.text = data['remarks'];
+          _selectedButton = data['repair_duration'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching data: $e');
+    }
   }
 
   void disposeTextCtrl() {
@@ -324,9 +374,9 @@ class _TireRepairInspectionFormPageState
                         ],
                       ),
                       child: Text(
-                        _selectedDate == null
+                        selectedDate == null
                             ? 'Select Date'
-                            : '${_selectedDate?.day}/${_selectedDate?.month}/${_selectedDate?.year}',
+                            : '${selectedDate?.day}/${selectedDate?.month}/${selectedDate?.year}',
                         style: const TextStyle(color: Colors.black),
                       ),
                     ),
@@ -343,38 +393,55 @@ class _TireRepairInspectionFormPageState
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      value: selectedCustomer,
-                      items: listCustomer.map((customer) {
-                        return DropdownMenuItem<String>(
-                          value: customer,
-                          child: Text(customer),
+                  StreamBuilder(
+                      stream: firestore.collection('list_customer').snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        }
+
+                        List<Map<String, dynamic>> dataList =
+                            snapshot.data!.docs.map((doc) {
+                          return doc.data() as Map<String, dynamic>;
+                        }).toList();
+
+                        List<dynamic> customers = dataList[0]['customer'];
+                        selectedCustomer ??= customers[0];
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            padding: EdgeInsets.symmetric(horizontal: 24),
+                            value: selectedCustomer,
+                            items: customers.map((customer) {
+                              return DropdownMenuItem<String>(
+                                value: customer,
+                                child: Text(customer),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedCustomer = newValue ?? '';
+                                customerCtrl.text = newValue ?? '';
+                              });
+                            },
+                          ),
                         );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedCustomer = newValue ?? '';
-                          customerCtrl.text = newValue ?? '';
-                        });
-                      },
-                    ),
-                  ),
+                      }),
                   const SizedBox(height: 20.0),
                   Align(
                     alignment: Alignment.topLeft,
@@ -508,7 +575,6 @@ class _TireRepairInspectionFormPageState
                       },
                     ),
                   ),
-
                   const SizedBox(height: 20.0),
                   Align(
                     alignment: Alignment.topLeft,
@@ -684,9 +750,9 @@ class _TireRepairInspectionFormPageState
                         ],
                       ),
                       child: Text(
-                        _selectedReceivedDate == null
+                        selectedReceivedDate == null
                             ? 'Select Date'
-                            : '${_selectedReceivedDate?.day}/${_selectedReceivedDate?.month}/${_selectedReceivedDate?.year}',
+                            : '${selectedReceivedDate?.day}/${selectedReceivedDate?.month}/${selectedReceivedDate?.year}',
                         style: const TextStyle(color: Colors.black),
                       ),
                     ),
@@ -937,22 +1003,29 @@ class _TireRepairInspectionFormPageState
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20.0),
-                  // Serial Number Picture
-                  takePictureButton('Serial Number'),
-                  const SizedBox(height: 20.0),
-                  takePictureButton('Area Sidewall'),
-                  const SizedBox(height: 20.0),
-                  takePictureButton('Area Shoulder'),
-                  const SizedBox(height: 20.0),
-                  takePictureButton('Area Threat'),
-                  const SizedBox(height: 20.0),
-                  takePictureButton('Area Bead'),
-                  const SizedBox(height: 20.0),
-                  takePictureButton('Area Inner Linner'),
-                  const SizedBox(height: 20.0),
-                  const SizedBox(height: 99.0),
+                  (id == null)
+                      ? Column(
+                          children: [
+                            // Serial Number Picture
+                            takePictureButton('Serial Number'),
+                            const SizedBox(height: 20.0),
+                            takePictureButton('Area Sidewall'),
+                            const SizedBox(height: 20.0),
+                            takePictureButton('Area Shoulder'),
+                            const SizedBox(height: 20.0),
+                            takePictureButton('Area Threat'),
+                            const SizedBox(height: 20.0),
+                            takePictureButton('Area Bead'),
+                            const SizedBox(height: 20.0),
+                            takePictureButton('Area Inner Linner'),
+                            const SizedBox(height: 20.0),
+                            takePictureButton('Area Chaffer'),
+                            const SizedBox(height: 20.0),
+                            const SizedBox(height: 99.0),
+                          ],
+                        )
+                      : const SizedBox(height: 99.0),
                 ],
               ),
             ),
@@ -1000,17 +1073,23 @@ class _TireRepairInspectionFormPageState
                               return;
                             }
 
-                            try {
-                              await uploadImage();
+                            final querySnapshot = await firestore
+                                .collection('tire_repair_ins_report')
+                                .where('id', isEqualTo: id)
+                                .get();
 
-                              log('serial number : ${sidewallPicFirebase}');
-                              final id = Uuid().v4();
+                            if (querySnapshot.docs.isNotEmpty) {
+                              // Ambil dokumen pertama yang ditemukan
+                              final doc = querySnapshot.docs.first;
+                              final docId = doc.id; // Ambil ID dokumen
+
                               await firestore
                                   .collection('tire_repair_ins_report')
-                                  .add({
-                                'id': id,
+                                  .doc(
+                                      docId) // Gunakan ID dokumen yang ingin diperbarui
+                                  .update({
                                 'date_inspect':
-                                    '${DateFormat('yyyy-MM-dd').format(_selectedDate!)}',
+                                    '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
                                 'customer': customerCtrl.text,
                                 'site': siteCtrl.text,
                                 'report_by': reportNameCtrl.text,
@@ -1020,21 +1099,60 @@ class _TireRepairInspectionFormPageState
                                 'type_construction': typeConstCtrl.text,
                                 'pattern': patternCtrl.text,
                                 'date_received':
-                                    '${DateFormat('yyyy-MM-dd').format(_selectedReceivedDate!)}',
+                                    '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
                                 'status': statusCtrl.text,
                                 'no_cargo_manifest': cargoManifestCtrl.text,
                                 'rtd1': rtd1Ctrl.text,
                                 'rtd2': rtd2Ctrl.text,
                                 'repair_duration': _selectedButton,
                                 'remarks': remarksCtrl.text,
-                                'sn_pic': serialNumberPictFirebase,
-                                'sidewall_pic': sidewallPicFirebase,
-                                'shoulder_pic': shoulderPicFirebase,
-                                'threat_pic': threatPicFirebase,
-                                'bead_pic': beadPicFirebase,
-                                'inner_linner_pic': innerLinerPicFirebase,
+                                'repair_location': (idSite == '1')
+                                    ? 'Workshop Office'
+                                    : user['siteName']
                               });
-                            } catch (e) {}
+                            } else {
+                              try {
+                                await uploadImage();
+
+                                log('serial number : ${sidewallPicFirebase}');
+                                final id = Uuid().v4();
+                                await firestore
+                                    .collection('tire_repair_ins_report')
+                                    .doc('${DateTime.now().toIso8601String()}')
+                                    .set({
+                                  'id': id,
+                                  'date_inspect':
+                                      '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+                                  'customer': customerCtrl.text,
+                                  'site': siteCtrl.text,
+                                  'report_by': reportNameCtrl.text,
+                                  'tire_size': tireSizeCtrl.text,
+                                  'sn': serialNumberCtrl.text,
+                                  'brand': brandCtrl.text,
+                                  'type_construction': typeConstCtrl.text,
+                                  'pattern': patternCtrl.text,
+                                  'date_received':
+                                      '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+                                  'status': statusCtrl.text,
+                                  'no_cargo_manifest': cargoManifestCtrl.text,
+                                  'rtd1': rtd1Ctrl.text,
+                                  'rtd2': rtd2Ctrl.text,
+                                  'repair_duration': _selectedButton,
+                                  'remarks': remarksCtrl.text,
+                                  'sn_pic': serialNumberPictFirebase,
+                                  'sidewall_pic': sidewallPicFirebase,
+                                  'shoulder_pic': shoulderPicFirebase,
+                                  'threat_pic': threatPicFirebase,
+                                  'bead_pic': beadPicFirebase,
+                                  'inner_linner_pic': innerLinerPicFirebase,
+                                  'chaffer_pic': chafferPicFirebase,
+                                  'repair_location': (idSite == '1')
+                                      ? 'Workshop Office'
+                                      : user['siteName']
+                                });
+                              } catch (e) {}
+                            }
+
                             Navigator.pushReplacementNamed(
                                 context, TireRepairInspectionPage.routeName);
                           },
@@ -1151,6 +1269,10 @@ class _TireRepairInspectionFormPageState
                             innerLinerPic
                                 .add('${compressedImageFile?.path}' ?? '');
                             break;
+                          case 'Area Chaffer':
+                            chafferPic
+                                .add('${compressedImageFile?.path}' ?? '');
+                            break;
                         }
                         // listImg.add(
                         //     '${compressedImageFile?.path}|${position[index]['position']}' ??
@@ -1199,6 +1321,11 @@ class _TireRepairInspectionFormPageState
               case 'Area Inner Linner':
                 if (innerLinerPic.isNotEmpty) {
                   return itemPicture(context, innerLinerPic);
+                }
+                return Container();
+              case 'Area Chaffer':
+                if (chafferPic.isNotEmpty) {
+                  return itemPicture(context, chafferPic);
                 }
                 return Container();
             }
