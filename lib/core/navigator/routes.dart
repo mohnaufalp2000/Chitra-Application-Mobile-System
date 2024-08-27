@@ -22,6 +22,8 @@ import 'package:camos/pages/pressure_gauge_digital/tire_inspection_form_page.dar
 import 'package:camos/pages/pressure_gauge_digital/select_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_history_trial_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_list_trial_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';
 import 'package:camos/pages/settings/edit_profile_page.dart';
 import 'package:camos/pages/settings/feedback_page.dart';
@@ -90,4 +92,8 @@ var routes = {
   TireRepairInspectionPage.routeName: (context) => TireRepairInspectionPage(),
   DetailTireRepairInspection.routeName: (context) =>
       DetailTireRepairInspection(),
+  DailyPressureListTrialPage.routeName: (context) =>
+      DailyPressureListTrialPage(),
+  DailyPressureHistoryTrialPage.routeName: (context) =>
+      DailyPressureHistoryTrialPage(),
 };

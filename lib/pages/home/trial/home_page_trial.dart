@@ -111,10 +111,10 @@ class _HomePageTrialState extends State<HomePageTrial> {
                                         childAspectRatio: 0.9),
                                 itemCount: 3,
                                 itemBuilder: (context, index) {
-                                  bool isEnabled = index == 0;
+                                  // bool isEnabled = index == 0;
                                   return BoxMenuWidget(
                                     menu: menus[index],
-                                    isEnabled: isEnabled,
+                                    isEnabled: true,
                                     argument: {'idSite': idSite},
                                   );
                                 }),

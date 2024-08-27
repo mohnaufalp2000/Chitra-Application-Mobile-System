@@ -8,6 +8,7 @@ import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
+import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_list_trial_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -538,7 +539,8 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
           Expanded(
             child: InkWell(
               onTap: () async {
-                Navigator.pushNamed(context, DailyPressureListPage.routeName);
+                Navigator.pushNamed(
+                    context, DailyPressureListTrialPage.routeName);
               },
               child: Container(
                 padding: EdgeInsets.all(24),
