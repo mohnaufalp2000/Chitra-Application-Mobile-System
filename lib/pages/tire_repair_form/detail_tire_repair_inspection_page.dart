@@ -4,6 +4,7 @@ import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
+import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_form_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,6 +27,15 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
     with TickerProviderStateMixin {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   late AnimationController _controller;
+  Map<String, dynamic> selectedImage = {
+    'Serial Number': [],
+    'Area Sidewall': [],
+    'Area Shoulder': [],
+    'Area Bead': [],
+    'Area Threat': [],
+    'Area Inner Linner': [],
+    'Area Chaffer': [],
+  };
 
   Future<Uint8List> getImageFromUrl(String url) async {
     final response = await http.get(Uri.parse(url));
@@ -274,63 +284,637 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                             showDialog(
                                 context: context,
                                 builder: (context) {
-                                  return AlertDialog(
-                                    content: SingleChildScrollView(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(
-                                            'Please Choose Image!',
-                                            style: getBlackTextStyle(
-                                                fontSize: 18, fontWeight: w700),
-                                          ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          ImageContainer(
+                                  return WillPopScope(
+                                    onWillPop: () async {
+                                      selectedImage.forEach((key, value) {
+                                        if (value is List) {
+                                          value.clear();
+                                        }
+                                      });
+                                      return true;
+                                    },
+                                    child: AlertDialog(
+                                      content: SingleChildScrollView(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Please Choose Image!',
+                                                  style: getBlackTextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight: w700),
+                                                ),
+                                                IconButton(
+                                                    onPressed: () {
+                                                      selectedImage.forEach(
+                                                          (key, value) {
+                                                        if (value is List) {
+                                                          value.clear();
+                                                        }
+                                                      });
+                                                      Navigator.pop(context);
+                                                    },
+                                                    icon: Icon(Icons.close))
+                                              ],
+                                            ),
+                                            Text(
+                                              '*Max. 1 Serial Number Image & \nMax. 3 Tire Injury Image',
+                                              style: getRedTextStyle(
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            ImageContainer(
                                               data: data,
                                               type: 'Serial Number',
-                                              mapType: 'sn_pic'),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          ImageContainer(
+                                              mapType: 'sn_pic',
+                                              addSelectedImage: (value) {
+                                                List<dynamic> image =
+                                                    selectedImage[
+                                                        'Serial Number'];
+                                                if (image.contains(value)) {
+                                                  selectedImage['Serial Number']
+                                                      .remove(value);
+                                                } else {
+                                                  selectedImage['Serial Number']
+                                                      .add(value);
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            ImageContainer(
                                               data: data,
                                               type: 'Area Sidewall',
-                                              mapType: 'sidewall_pic'),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          ImageContainer(
+                                              mapType: 'sidewall_pic',
+                                              addSelectedImage: (value) {
+                                                List<dynamic> image =
+                                                    selectedImage[
+                                                        'Area Sidewall'];
+                                                if (image.contains(value)) {
+                                                  selectedImage['Area Sidewall']
+                                                      .remove(value);
+                                                } else {
+                                                  selectedImage['Area Sidewall']
+                                                      .add(value);
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            ImageContainer(
                                               data: data,
                                               type: 'Area Shoulder',
-                                              mapType: 'shoulder_pic'),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          ImageContainer(
+                                              mapType: 'shoulder_pic',
+                                              addSelectedImage: (value) {
+                                                List<dynamic> image =
+                                                    selectedImage[
+                                                        'Area Shoulder'];
+                                                if (image.contains(value)) {
+                                                  selectedImage['Area Shoulder']
+                                                      .remove(value);
+                                                } else {
+                                                  selectedImage['Area Shoulder']
+                                                      .add(value);
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            ImageContainer(
                                               data: data,
                                               type: 'Area Bead',
-                                              mapType: 'bead_pic'),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          ImageContainer(
+                                              mapType: 'bead_pic',
+                                              addSelectedImage: (value) {
+                                                List<dynamic> image =
+                                                    selectedImage['Area Bead'];
+                                                if (image.contains(value)) {
+                                                  selectedImage['Area Bead']
+                                                      .remove(value);
+                                                } else {
+                                                  selectedImage['Area Bead']
+                                                      .add(value);
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            ImageContainer(
                                               data: data,
                                               type: 'Area Threat',
-                                              mapType: 'threat_pic'),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          ImageContainer(
+                                              mapType: 'threat_pic',
+                                              addSelectedImage: (value) {
+                                                List<dynamic> image =
+                                                    selectedImage[
+                                                        'Area Threat'];
+                                                if (image.contains(value)) {
+                                                  selectedImage['Area Threat']
+                                                      .remove(value);
+                                                } else {
+                                                  selectedImage['Area Threat']
+                                                      .add(value);
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            ImageContainer(
                                               data: data,
                                               type: 'Area Inner Linner',
-                                              mapType: 'inner_linner_pic'),
-                                          ImageContainer(
+                                              mapType: 'inner_linner_pic',
+                                              addSelectedImage: (value) {
+                                                List<dynamic> image =
+                                                    selectedImage[
+                                                        'Area Inner Linner'];
+                                                if (image.contains(value)) {
+                                                  selectedImage[
+                                                          'Area Inner Linner']
+                                                      .remove(value);
+                                                } else {
+                                                  selectedImage[
+                                                          'Area Inner Linner']
+                                                      .add(value);
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            ImageContainer(
                                               data: data,
                                               type: 'Area Chaffer',
-                                              mapType: 'chaffer_pic'),
-                                        ],
+                                              mapType: 'chaffer_pic',
+                                              addSelectedImage: (value) {
+                                                List<dynamic> image =
+                                                    selectedImage[
+                                                        'Area Chaffer'];
+                                                if (image.contains(value)) {
+                                                  selectedImage['Area Chaffer']
+                                                      .remove(value);
+                                                } else {
+                                                  selectedImage['Area Chaffer']
+                                                      .add(value);
+                                                }
+                                              },
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            // Generate PDF after select image
+                                            ButtonWidget(
+                                              name: Text(
+                                                'Generate PDF',
+                                                style: getWhiteTextStyle(),
+                                              ),
+                                              color: Colors.red,
+                                              function: () async {
+                                                List<dynamic> snImages =
+                                                    selectedImage[
+                                                        'Serial Number'];
+                                                List<dynamic> sidewallImages =
+                                                    selectedImage[
+                                                        'Area Sidewall'];
+                                                List<dynamic> shoulderImages =
+                                                    selectedImage[
+                                                        'Area Shoulder'];
+                                                List<dynamic> beadImages =
+                                                    selectedImage['Area Bead'];
+                                                List<dynamic> threatImages =
+                                                    selectedImage[
+                                                        'Area Threat'];
+                                                List<dynamic>
+                                                    innerLinnerImages =
+                                                    selectedImage[
+                                                        'Area Inner Linner'];
+                                                List<dynamic> chafferImages =
+                                                    selectedImage[
+                                                        'Area Chaffer'];
+                                                int count = sidewallImages
+                                                        .length +
+                                                    shoulderImages.length +
+                                                    beadImages.length +
+                                                    threatImages.length +
+                                                    innerLinnerImages.length +
+                                                    chafferImages.length;
+                                                if (snImages.length > 1) {
+                                                  log('list selected image : error sn');
+                                                  errorImage(
+                                                      context, 'Serial Number');
+                                                } else if (count > 3) {
+                                                  log('list selected image : error injury');
+                                                  errorImage(context, 'Injury');
+                                                } else {
+                                                  log('list selected image : ${selectedImage}');
+                                                  List<Map<String, dynamic>>
+                                                      combinedList = [];
+                                                  List<Map<String, String>>
+                                                      combinedList1 = [];
+
+                                                  selectedImage
+                                                      .forEach((key, value) {
+                                                    if (value is List) {
+                                                      value.forEach((url) {
+                                                        combinedList1.add({
+                                                          'type': key,
+                                                          'url': url,
+                                                        });
+                                                      });
+                                                    }
+                                                  });
+
+                                                  print(
+                                                      'test combined list : $combinedList1');
+
+                                                  selectedImage
+                                                      .forEach((key, value) {
+                                                    if (value is List) {
+                                                      combinedList.add({
+                                                        'type': key,
+                                                        'value': value
+                                                      });
+                                                    }
+                                                  });
+
+                                                  // Image 1
+                                                  final Uint8List imageData1 =
+                                                      await getImageFromUrl(
+                                                          '${combinedList1[0]['url']}');
+                                                  final image1 =
+                                                      p.MemoryImage(imageData1);
+
+                                                  // Image 2
+                                                  final Uint8List imageData2 =
+                                                      await getImageFromUrl(
+                                                          '${combinedList1[1]['url']}');
+                                                  final image2 =
+                                                      p.MemoryImage(imageData2);
+
+                                                  // Image 3
+                                                  final Uint8List imageData3 =
+                                                      await getImageFromUrl(
+                                                          '${combinedList1[2]['url']}');
+                                                  final image3 =
+                                                      p.MemoryImage(imageData3);
+
+                                                  // Image 4
+                                                  final Uint8List imageData4 =
+                                                      await getImageFromUrl(
+                                                          '${combinedList1[3]['url']}');
+                                                  final image4 =
+                                                      p.MemoryImage(imageData4);
+
+                                                  // Export PDF
+                                                  final pdf = p.Document();
+
+                                                  final logoCp =
+                                                      (await rootBundle.load(
+                                                              '${imagePath}/cp_logo_image.png'))
+                                                          .buffer
+                                                          .asUint8List();
+                                                  pdf.addPage(p.MultiPage(
+                                                      pageFormat:
+                                                          PdfPageFormat.a4,
+                                                      orientation: p
+                                                          .PageOrientation
+                                                          .landscape,
+                                                      build:
+                                                          (p.Context context) {
+                                                        return [
+                                                          p.Column(
+                                                              crossAxisAlignment:
+                                                                  p.CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                p.Row(
+                                                                    mainAxisAlignment: p
+                                                                        .MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                    children: [
+                                                                      p.SizedBox(
+                                                                        width:
+                                                                            150,
+                                                                        height:
+                                                                            100,
+                                                                        child: p.Image(
+                                                                            p.MemoryImage(logoCp)),
+                                                                      ),
+                                                                      p.Text(
+                                                                          'Tire Repair Inspection Report',
+                                                                          style:
+                                                                              p.TextStyle(
+                                                                            fontSize:
+                                                                                26,
+                                                                          )),
+                                                                      p.Container(
+                                                                        width:
+                                                                            150,
+                                                                        height:
+                                                                            100,
+                                                                      ),
+                                                                    ]),
+                                                                p.SizedBox(
+                                                                  height: 30,
+                                                                ),
+                                                                p.Row(
+                                                                    mainAxisAlignment: p
+                                                                        .MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                    children: [
+                                                                      p.Column(
+                                                                          crossAxisAlignment: p
+                                                                              .CrossAxisAlignment
+                                                                              .start,
+                                                                          children: [
+                                                                            p.Text('Date Inspect : ${data['date_inspect']}'),
+                                                                            p.Text('Customer : ${data['customer']}'),
+                                                                            p.Text('Site : ${data['site']}'),
+                                                                            p.SizedBox(
+                                                                              height: 60,
+                                                                            ),
+                                                                            p.Text('Tire Size : ${data['tire_size']}'),
+                                                                            p.Text('Serial Number : ${data['sn']}'),
+                                                                            p.Text('Brand : ${data['brand']}'),
+                                                                            p.Text('Type Construction : ${data['type_construction']}'),
+                                                                            p.Text('Pattern : ${data['pattern']}'),
+                                                                            p.Text('RTD ( mm ) : ${data['rtd1']}/${data['rtd2']}'),
+                                                                            p.Text('No. Cargo Manifest : ${data['no_cargo_manifest']}'),
+                                                                            p.Text('Date Received : ${data['date_received']}'),
+                                                                            p.Text('Status: ${data['status']}'),
+                                                                            p.Text('Remarks: ${data['remark'] ?? 'None'}'),
+                                                                          ]),
+                                                                      p.Column(
+                                                                          children: [
+                                                                            p.Row(children: [
+                                                                              p.Column(children: [
+                                                                                p.SizedBox(
+                                                                                  width: 400,
+                                                                                  height: 150,
+                                                                                  child: p.Image(image1),
+                                                                                ),
+                                                                                p.Text('Serial Number')
+                                                                              ]),
+                                                                              p.SizedBox(width: 12),
+                                                                              p.Column(children: [
+                                                                                p.SizedBox(
+                                                                                  width: 400,
+                                                                                  height: 150,
+                                                                                  child: p.Image(image2),
+                                                                                ),
+                                                                                p.Text('${combinedList1[1]['type']}')
+                                                                              ])
+                                                                            ]),
+                                                                            p.SizedBox(height: 24),
+                                                                            p.Row(children: [
+                                                                              p.Column(children: [
+                                                                                p.SizedBox(
+                                                                                  width: 400,
+                                                                                  height: 150,
+                                                                                  child: p.Image(image3),
+                                                                                ),
+                                                                                p.Text('${combinedList1[2]['type']}')
+                                                                              ]),
+                                                                              p.SizedBox(width: 12),
+                                                                              p.Column(children: [
+                                                                                p.SizedBox(
+                                                                                  width: 400,
+                                                                                  height: 150,
+                                                                                  child: p.Image(image4),
+                                                                                ),
+                                                                                p.Text('${combinedList1[3]['type']}')
+                                                                              ])
+                                                                            ]),
+                                                                          ]),
+                                                                    ]),
+                                                              ])
+                                                        ];
+                                                      }));
+                                                  final id = Uuid();
+                                                  final outputFile = await createFolderPath(
+                                                      '${id.v4()}', 'repair',
+                                                      // email: user['email'] ?? '',
+                                                      // site: user['siteName'] ?? '',
+                                                      customer:
+                                                          data['customer'],
+                                                      sn: data['sn'],
+                                                      date:
+                                                          "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
+                                                  final filePath =
+                                                      await savePdf(
+                                                          pdf, outputFile);
+
+                                                  if (filePath != null ||
+                                                      filePath != '') {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(SnackBar(
+                                                            backgroundColor:
+                                                                green00968A,
+                                                            content: Text(
+                                                              'Successfull Save Data!',
+                                                              style:
+                                                                  getWhiteTextStyle(),
+                                                            )));
+                                                  }
+                                                }
+                                              },
+                                              // function: () async {
+
+                                              //   // Export PDF
+                                              //   final pdf = p.Document();
+
+                                              //   // SN PIC
+                                              //   final Uint8List imageData =
+                                              //       await getImageFromUrl(
+                                              //           '${data['sn_pic'][0]}');
+                                              //   final image =
+                                              //       p.MemoryImage(imageData);
+
+                                              //   // Sidewall
+                                              //   final Uint8List imageSidewall =
+                                              //       await getImageFromUrl(
+                                              //           '${data['sidewall_pic'][0]}');
+                                              //   final imageSd = p.MemoryImage(
+                                              //       imageSidewall);
+
+                                              //   final logoCp =
+                                              //       (await rootBundle.load(
+                                              //               '${imagePath}/cp_logo_image.png'))
+                                              //           .buffer
+                                              //           .asUint8List();
+                                              //   pdf.addPage(p.MultiPage(
+                                              //       pageFormat:
+                                              //           PdfPageFormat.a4,
+                                              //       orientation: p
+                                              //           .PageOrientation
+                                              //           .landscape,
+                                              //       build: (p.Context context) {
+                                              //         return [
+                                              //           p.Column(
+                                              //               crossAxisAlignment: p
+                                              //                   .CrossAxisAlignment
+                                              //                   .start,
+                                              //               children: [
+                                              //                 p.Row(
+                                              //                     mainAxisAlignment: p
+                                              //                         .MainAxisAlignment
+                                              //                         .spaceBetween,
+                                              //                     children: [
+                                              //                       p.SizedBox(
+                                              //                         width:
+                                              //                             150,
+                                              //                         height:
+                                              //                             100,
+                                              //                         child: p.Image(
+                                              //                             p.MemoryImage(
+                                              //                                 logoCp)),
+                                              //                       ),
+                                              //                       p.Text(
+                                              //                           'Tire Repair Inspection Report',
+                                              //                           style: p
+                                              //                               .TextStyle(
+                                              //                             fontSize:
+                                              //                                 26,
+                                              //                           )),
+                                              //                       p.Container(
+                                              //                         width:
+                                              //                             150,
+                                              //                         height:
+                                              //                             100,
+                                              //                       ),
+                                              //                     ]),
+                                              //                 p.SizedBox(
+                                              //                   height: 30,
+                                              //                 ),
+                                              //                 p.Row(
+                                              //                     mainAxisAlignment: p
+                                              //                         .MainAxisAlignment
+                                              //                         .spaceBetween,
+                                              //                     children: [
+                                              //                       p.Column(
+                                              //                           crossAxisAlignment: p
+                                              //                               .CrossAxisAlignment
+                                              //                               .start,
+                                              //                           children: [
+                                              //                             p.Text(
+                                              //                                 'Date Inspect : ${data['date_inspect']}'),
+                                              //                             p.Text(
+                                              //                                 'Customer : ${data['customer']}'),
+                                              //                             p.Text(
+                                              //                                 'Site : ${data['site']}'),
+                                              //                             p.SizedBox(
+                                              //                               height:
+                                              //                                   60,
+                                              //                             ),
+                                              //                             p.Text(
+                                              //                                 'Tire Size : ${data['tire_size']}'),
+                                              //                             p.Text(
+                                              //                                 'Serial Number : ${data['sn']}'),
+                                              //                             p.Text(
+                                              //                                 'Brand : ${data['brand']}'),
+                                              //                             p.Text(
+                                              //                                 'Type Construction : ${data['type_construction']}'),
+                                              //                             p.Text(
+                                              //                                 'Pattern : ${data['pattern']}'),
+                                              //                             p.Text(
+                                              //                                 'RTD ( mm ) : ${data['rtd1']}/${data['rtd2']}'),
+                                              //                             p.Text(
+                                              //                                 'No. Cargo Manifest : ${data['no_cargo_manifest']}'),
+                                              //                             p.Text(
+                                              //                                 'Date Received : ${data['date_received']}'),
+                                              //                             p.Text(
+                                              //                                 'Status: ${data['status']}'),
+                                              //                             p.Text(
+                                              //                                 'Remarks: ${data['remark'] ?? 'None'}'),
+                                              //                           ]),
+                                              //                       p.Column(
+                                              //                           children: [
+                                              //                             p.Row(
+                                              //                                 children: [
+                                              //                                   p.Column(children: [
+                                              //                                     p.SizedBox(
+                                              //                                       width: 400,
+                                              //                                       height: 150,
+                                              //                                       child: p.Image(image),
+                                              //                                     ),
+                                              //                                     p.Text('Serial Number')
+                                              //                                   ]),
+                                              //                                   p.SizedBox(width: 12),
+                                              //                                   p.Column(children: [
+                                              //                                     p.SizedBox(
+                                              //                                       width: 400,
+                                              //                                       height: 150,
+                                              //                                       child: p.Image(imageSd),
+                                              //                                     ),
+                                              //                                     p.Text('Area Sidewall')
+                                              //                                   ])
+                                              //                                 ]),
+                                              //                             p.SizedBox(
+                                              //                                 height: 24),
+                                              //                             p.Row(
+                                              //                                 children: [
+                                              //                                   p.Column(children: [
+                                              //                                     p.SizedBox(
+                                              //                                       width: 400,
+                                              //                                       height: 150,
+                                              //                                       child: p.Image(imageSd),
+                                              //                                     ),
+                                              //                                     p.Text('Area Sidewall')
+                                              //                                   ]),
+                                              //                                   p.SizedBox(width: 12),
+                                              //                                   p.Column(children: [
+                                              //                                     p.SizedBox(
+                                              //                                       width: 400,
+                                              //                                       height: 150,
+                                              //                                       child: p.Image(imageSd),
+                                              //                                     ),
+                                              //                                     p.Text('Area Sidewall')
+                                              //                                   ])
+                                              //                                 ]),
+                                              //                           ]),
+                                              //                     ]),
+                                              //               ])
+                                              //         ];
+                                              //       }));
+                                              //   final id = Uuid();
+                                              //   final outputFile = await createFolderPath(
+                                              //       '${id.v4()}', 'repair',
+                                              //       // email: user['email'] ?? '',
+                                              //       // site: user['siteName'] ?? '',
+                                              //       customer: data['customer'],
+                                              //       sn: data['sn'],
+                                              //       date:
+                                              //           "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
+                                              //   final filePath = await savePdf(
+                                              //       pdf, outputFile);
+
+                                              //   if (filePath != null ||
+                                              //       filePath != '') {
+                                              //     ScaffoldMessenger.of(context)
+                                              //         .showSnackBar(SnackBar(
+                                              //             backgroundColor:
+                                              //                 green00968A,
+                                              //             content: Text(
+                                              //               'Successfull Save Data!',
+                                              //               style:
+                                              //                   getWhiteTextStyle(),
+                                              //             )));
+                                              //   }
+                                              // }
+                                            )
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   );
@@ -1071,6 +1655,28 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
     )));
   }
 
+  Future<dynamic> errorImage(BuildContext context, String type) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text((type == 'Serial Number')
+              ? 'You can only select 1 Serial Number image.'
+              : 'You can only select Max 3. Injury Tire image'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildTextWithDashedLine(String leftText, String rightText) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1180,16 +1786,34 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
   }
 }
 
-class ImageContainer extends StatelessWidget {
-  const ImageContainer(
-      {super.key,
-      required this.data,
-      required this.type,
-      required this.mapType});
+class ImageContainer extends StatefulWidget {
+  const ImageContainer({
+    super.key,
+    required this.data,
+    required this.type,
+    required this.mapType,
+    required this.addSelectedImage,
+  });
 
   final Map<String, dynamic> data;
   final String type;
   final String mapType;
+  final Function(String) addSelectedImage;
+
+  @override
+  State<ImageContainer> createState() => _ImageContainerState();
+}
+
+class _ImageContainerState extends State<ImageContainer> {
+  late List<bool> isCheckedList;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inisialisasi isCheckedList dengan false sebanyak jumlah gambar
+    isCheckedList =
+        List<bool>.filled(widget.data[widget.mapType].length, false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1209,34 +1833,57 @@ class ImageContainer extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(30.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Text(
-              type,
+              widget.type,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Text(
-              '*Choose ${type != 'Serial Number' ? '3' : '1'} Image',
+              '${widget.type == 'Serial Number' ? 'Choose 1 SN Picture' : ''}',
               style: getRedTextStyle(),
             ),
             SizedBox(height: 16),
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: data['${mapType}'].map<Widget>((e) {
+              children: widget.data[widget.mapType].map<Widget>((e) {
+                int index = widget.data[widget.mapType].indexOf(e);
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Center(
-                      child: SizedBox(
-                        width: 200, // Atur lebar sesuai kebutuhan
-                        height: 300, // Atur tinggi sesuai kebutuhan
-                        child: Image.network(
-                          e,
-                          fit: BoxFit
-                              .cover, // Sesuaikan cara gambar dipasang dalam kotak
-                        ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          isCheckedList[index] = !isCheckedList[index];
+                          widget.addSelectedImage(e);
+                        });
+                      },
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: SizedBox(
+                                width: 170,
+                                height: 270,
+                                child: Image.network(
+                                  e,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Checkbox(
+                            value: isCheckedList[index],
+                            onChanged: (bool? value) {
+                              setState(() {
+                                isCheckedList[index] = value ?? false;
+                              });
+                            },
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(
