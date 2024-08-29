@@ -212,7 +212,7 @@ class _TireRepairInspectionFormPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       id = ModalRoute.of(context)?.settings.arguments as String?;
-      if (id != null) {
+      if (id != null || id != '') {
         await _fetchData(id ?? '');
       }
     });
@@ -304,7 +304,8 @@ class _TireRepairInspectionFormPageState
 
   @override
   Widget build(BuildContext context) {
-    log('repair duration : $_selectedButton');
+    id ??= '';
+    log('repair duration : $id');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F1F1),
@@ -520,14 +521,25 @@ class _TireRepairInspectionFormPageState
                     color: Colors.grey,
                     margin: EdgeInsets.symmetric(vertical: 20),
                   ),
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: const Text(
-                      'Tire Detail',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                  InkWell(
+                    onTap: () async {
+                      final querySnapshot = await firestore
+                          .collection('tire_repair_ins_report')
+                          .where('id', isEqualTo: id)
+                          .get();
+
+                      log('apakah sama 1 : ${id}');
+                      log('apakah sama 2 : ${querySnapshot.docs.isNotEmpty}');
+                    },
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: const Text(
+                        'Tire Detail',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
                       ),
                     ),
                   ),
@@ -1004,7 +1016,7 @@ class _TireRepairInspectionFormPageState
                     ),
                   ),
                   const SizedBox(height: 20.0),
-                  (id == null)
+                  (id == "" || id == null)
                       ? Column(
                           children: [
                             // Serial Number Picture
@@ -1057,6 +1069,7 @@ class _TireRepairInspectionFormPageState
                           )),
                       TextButton(
                           onPressed: () async {
+                            // validate repair duration
                             if (_selectedButton == '' &&
                                 statusCtrl.text != 'REJECT') {
                               Navigator.pop(context);
@@ -1073,54 +1086,141 @@ class _TireRepairInspectionFormPageState
                               return;
                             }
 
-                            final querySnapshot = await firestore
-                                .collection('tire_repair_ins_report')
-                                .where('id', isEqualTo: id)
-                                .get();
+                            // validate date
+                            if (selectedDate == null ||
+                                selectedReceivedDate == null) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context)
+                                  .hideCurrentSnackBar();
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Text(
+                                  'Please choose date received and inspected first!',
+                                  style: getWhiteTextStyle(),
+                                ),
+                                backgroundColor: Colors.red,
+                              ));
+                              return;
+                            }
 
-                            if (querySnapshot.docs.isNotEmpty) {
-                              // Ambil dokumen pertama yang ditemukan
-                              final doc = querySnapshot.docs.first;
-                              final docId = doc.id; // Ambil ID dokumen
+                            // validate sn pic and injury pic
+                            int picsCount = serialNumberPict.length +
+                                sidewallPic.length +
+                                shoulderPic.length +
+                                beadPic.length +
+                                threatPic.length +
+                                innerLinerPic.length +
+                                chafferPic.length;
 
-                              await firestore
+                            if (id == '') {
+                              if (serialNumberPict.isEmpty) {
+                                Navigator.pop(context);
+                                errorImage(context, 'Serial Number');
+                                return;
+                              }
+
+                              if (picsCount <= 3) {
+                                Navigator.pop(context);
+                                errorImage(context, 'Injury Pict',
+                                    count: picsCount);
+                                return;
+                              }
+                            }
+
+                            if (id != '' || id != null) {
+                              log('cek kesamaan ${id != ''} & ${id != null}');
+                              final querySnapshot = await firestore
                                   .collection('tire_repair_ins_report')
-                                  .doc(
-                                      docId) // Gunakan ID dokumen yang ingin diperbarui
-                                  .update({
-                                'date_inspect':
-                                    '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
-                                'customer': customerCtrl.text,
-                                'site': siteCtrl.text,
-                                'report_by': reportNameCtrl.text,
-                                'tire_size': tireSizeCtrl.text,
-                                'sn': serialNumberCtrl.text,
-                                'brand': brandCtrl.text,
-                                'type_construction': typeConstCtrl.text,
-                                'pattern': patternCtrl.text,
-                                'date_received':
-                                    '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
-                                'status': statusCtrl.text,
-                                'no_cargo_manifest': cargoManifestCtrl.text,
-                                'rtd1': rtd1Ctrl.text,
-                                'rtd2': rtd2Ctrl.text,
-                                'repair_duration': _selectedButton,
-                                'remarks': remarksCtrl.text,
-                                'repair_location': (idSite == '1')
-                                    ? 'Workshop Office'
-                                    : user['siteName']
-                              });
+                                  .where('id', isEqualTo: id)
+                                  .get();
+                              log('cek kesamaan2 ${id}');
+
+                              if (querySnapshot.docs.isNotEmpty) {
+                                // Ambil dokumen pertama yang ditemukan
+                                final doc = querySnapshot.docs.first;
+                                final docId = doc.id; // Ambil ID dokumen
+
+                                await firestore
+                                    .collection('tire_repair_ins_report')
+                                    .doc(
+                                        docId) // Gunakan ID dokumen yang ingin diperbarui
+                                    .update({
+                                  'date_inspect':
+                                      '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+                                  'customer': customerCtrl.text,
+                                  'site': siteCtrl.text,
+                                  'report_by': reportNameCtrl.text,
+                                  'tire_size': tireSizeCtrl.text,
+                                  'sn': serialNumberCtrl.text,
+                                  'brand': brandCtrl.text,
+                                  'type_construction': typeConstCtrl.text,
+                                  'pattern': patternCtrl.text,
+                                  'date_received':
+                                      '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+                                  'status': statusCtrl.text,
+                                  'no_cargo_manifest': cargoManifestCtrl.text,
+                                  'rtd1': rtd1Ctrl.text,
+                                  'rtd2': rtd2Ctrl.text,
+                                  'repair_duration': _selectedButton,
+                                  'remarks': remarksCtrl.text,
+                                  'repair_location': (idSite == '1')
+                                      ? 'Workshop Office'
+                                      : user['siteName']
+                                });
+                              } else {
+                                try {
+                                  await uploadImage();
+
+                                  log('serial number : ${sidewallPicFirebase}');
+                                  final newId = Uuid().v4();
+                                  await firestore
+                                      .collection('tire_repair_ins_report')
+                                      .doc(
+                                          '${DateTime.now().toIso8601String()}')
+                                      .set({
+                                    'id': newId,
+                                    'date_inspect':
+                                        '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+                                    'customer': customerCtrl.text,
+                                    'site': siteCtrl.text,
+                                    'report_by': reportNameCtrl.text,
+                                    'tire_size': tireSizeCtrl.text,
+                                    'sn': serialNumberCtrl.text,
+                                    'brand': brandCtrl.text,
+                                    'type_construction': typeConstCtrl.text,
+                                    'pattern': patternCtrl.text,
+                                    'date_received':
+                                        '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+                                    'status': statusCtrl.text,
+                                    'no_cargo_manifest': cargoManifestCtrl.text,
+                                    'rtd1': rtd1Ctrl.text,
+                                    'rtd2': rtd2Ctrl.text,
+                                    'repair_duration': _selectedButton,
+                                    'remarks': remarksCtrl.text,
+                                    'sn_pic': serialNumberPictFirebase,
+                                    'sidewall_pic': sidewallPicFirebase,
+                                    'shoulder_pic': shoulderPicFirebase,
+                                    'threat_pic': threatPicFirebase,
+                                    'bead_pic': beadPicFirebase,
+                                    'inner_linner_pic': innerLinerPicFirebase,
+                                    'chaffer_pic': chafferPicFirebase,
+                                    'repair_location': (idSite == '1')
+                                        ? 'Workshop Office'
+                                        : user['siteName']
+                                  });
+                                } catch (e) {}
+                              }
                             } else {
                               try {
                                 await uploadImage();
 
                                 log('serial number : ${sidewallPicFirebase}');
-                                final id = Uuid().v4();
+                                final newId = Uuid().v4();
                                 await firestore
                                     .collection('tire_repair_ins_report')
                                     .doc('${DateTime.now().toIso8601String()}')
                                     .set({
-                                  'id': id,
+                                  'id': newId,
                                   'date_inspect':
                                       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
                                   'customer': customerCtrl.text,
@@ -1477,6 +1577,29 @@ class _TireRepairInspectionFormPageState
     setState(() {
       _selectedButton = buttonId;
     });
+  }
+
+  Future<dynamic> errorImage(BuildContext context, String type,
+      {int count = 0}) {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Error'),
+          content: Text((type == 'Serial Number')
+              ? 'Please take 1 (one) picture of serial number'
+              : 'Please take ${4 - count} more picture of tire damage'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 

@@ -146,6 +146,13 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                         doc.data() as Map<String, dynamic>;
                     dataList.add(data);
                   }
+
+                  dataList.sort((a, b) {
+                    DateTime dateA = DateTime.parse(a['date_inspect']);
+                    DateTime dateB = DateTime.parse(b['date_inspect']);
+                    return dateB.compareTo(
+                        dateA); // Urutkan dari tanggal terlama ke terbaru
+                  });
                   if (dataList.isEmpty) {
                     return Center(
                       child: Text(

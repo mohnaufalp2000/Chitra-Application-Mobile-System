@@ -10,6 +10,8 @@ import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as p;
 import 'package:uuid/uuid.dart';
@@ -49,6 +51,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
   @override
   void initState() {
     super.initState();
+    initializeIntl();
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 500),
@@ -61,7 +64,10 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
     super.dispose();
   }
 
-  @override
+  initializeIntl() async {
+    await initializeDateFormatting('id_ID', null);
+  }
+
   @override
   Widget build(BuildContext context) {
     final id = ModalRoute.of(context)?.settings.arguments as String;
@@ -584,120 +590,304 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                           .buffer
                                                           .asUint8List();
                                                   pdf.addPage(p.MultiPage(
-                                                      pageFormat:
-                                                          PdfPageFormat.a4,
+                                                      pageFormat: PdfPageFormat
+                                                          .a4.landscape,
+                                                      // .applyMargin(
+                                                      //     left: 0,
+                                                      //     top: 0,
+                                                      //     right: 0,
+                                                      //     bottom: 0),
+                                                      margin: p.EdgeInsets.zero,
                                                       orientation: p
                                                           .PageOrientation
                                                           .landscape,
                                                       build:
                                                           (p.Context context) {
                                                         return [
-                                                          p.Column(
-                                                              crossAxisAlignment:
-                                                                  p.CrossAxisAlignment
-                                                                      .start,
-                                                              children: [
-                                                                p.Row(
-                                                                    mainAxisAlignment: p
-                                                                        .MainAxisAlignment
-                                                                        .spaceBetween,
-                                                                    children: [
-                                                                      p.SizedBox(
-                                                                        width:
-                                                                            150,
-                                                                        height:
-                                                                            100,
-                                                                        child: p.Image(
-                                                                            p.MemoryImage(logoCp)),
-                                                                      ),
-                                                                      p.Text(
-                                                                          'Tire Repair Inspection Report',
-                                                                          style:
-                                                                              p.TextStyle(
-                                                                            fontSize:
-                                                                                26,
-                                                                          )),
-                                                                      p.Container(
-                                                                        width:
-                                                                            150,
-                                                                        height:
-                                                                            100,
-                                                                      ),
-                                                                    ]),
-                                                                p.SizedBox(
-                                                                  height: 30,
-                                                                ),
-                                                                p.Row(
-                                                                    mainAxisAlignment: p
-                                                                        .MainAxisAlignment
-                                                                        .spaceBetween,
-                                                                    children: [
-                                                                      p.Column(
-                                                                          crossAxisAlignment: p
-                                                                              .CrossAxisAlignment
-                                                                              .start,
-                                                                          children: [
-                                                                            p.Text('Date Inspect : ${data['date_inspect']}'),
-                                                                            p.Text('Customer : ${data['customer']}'),
-                                                                            p.Text('Site : ${data['site']}'),
-                                                                            p.SizedBox(
-                                                                              height: 60,
-                                                                            ),
-                                                                            p.Text('Tire Size : ${data['tire_size']}'),
-                                                                            p.Text('Serial Number : ${data['sn']}'),
-                                                                            p.Text('Brand : ${data['brand']}'),
-                                                                            p.Text('Type Construction : ${data['type_construction']}'),
-                                                                            p.Text('Pattern : ${data['pattern']}'),
-                                                                            p.Text('RTD ( mm ) : ${data['rtd1']}/${data['rtd2']}'),
-                                                                            p.Text('No. Cargo Manifest : ${data['no_cargo_manifest']}'),
-                                                                            p.Text('Date Received : ${data['date_received']}'),
-                                                                            p.Text('Status: ${data['status']}'),
-                                                                            p.Text('Remarks: ${data['remark'] ?? 'None'}'),
-                                                                          ]),
-                                                                      p.Column(
-                                                                          children: [
-                                                                            p.Row(children: [
-                                                                              p.Column(children: [
-                                                                                p.SizedBox(
-                                                                                  width: 400,
-                                                                                  height: 150,
-                                                                                  child: p.Image(image1),
-                                                                                ),
-                                                                                p.Text('Serial Number')
-                                                                              ]),
-                                                                              p.SizedBox(width: 12),
-                                                                              p.Column(children: [
-                                                                                p.SizedBox(
-                                                                                  width: 400,
-                                                                                  height: 150,
-                                                                                  child: p.Image(image2),
-                                                                                ),
-                                                                                p.Text('${combinedList1[1]['type']}')
-                                                                              ])
+                                                          p.Container(
+                                                            height: 570,
+                                                            width: 830,
+                                                            margin: p.EdgeInsets
+                                                                .only(
+                                                                    right: 12,
+                                                                    left: 12,
+                                                                    top: 12),
+                                                            padding:
+                                                                p.EdgeInsets
+                                                                    .all(24),
+                                                            decoration: p.BoxDecoration(
+                                                                border: p.Border.all(
+                                                                    color: PdfColors
+                                                                        .blue)),
+                                                            child: p.Column(
+                                                                crossAxisAlignment:
+                                                                    p.CrossAxisAlignment
+                                                                        .start,
+                                                                children: [
+                                                                  p.Row(
+                                                                      mainAxisAlignment: p
+                                                                          .MainAxisAlignment
+                                                                          .spaceBetween,
+                                                                      children: [
+                                                                        p.SizedBox(
+                                                                          width:
+                                                                              150,
+                                                                          height:
+                                                                              100,
+                                                                          child:
+                                                                              p.Image(p.MemoryImage(logoCp)),
+                                                                        ),
+                                                                        p.Text(
+                                                                            'TIRE REPAIR INSPECTION REPORT',
+                                                                            style:
+                                                                                p.TextStyle(
+                                                                              fontSize: 18,
+                                                                            )),
+                                                                        p.Container(
+                                                                          width:
+                                                                              150,
+                                                                          height:
+                                                                              100,
+                                                                        ),
+                                                                      ]),
+                                                                  p.SizedBox(
+                                                                    height: 10,
+                                                                  ),
+                                                                  p.Row(
+                                                                      mainAxisAlignment: p
+                                                                          .MainAxisAlignment
+                                                                          .spaceBetween,
+                                                                      children: [
+                                                                        p.Column(
+                                                                            crossAxisAlignment:
+                                                                                p.CrossAxisAlignment.start,
+                                                                            children: [
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150, // Sesuaikan lebar sesuai kebutuhan
+                                                                                    child: p.Text('Date Inspect', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${formatDate(data['date_inspect'])}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Customer', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['customer']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Site', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['site']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Report By', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['report_by']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Padding(padding: p.EdgeInsets.symmetric(vertical: 18), child: p.Container(color: PdfColors.black, width: 420, height: 4)),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Brand', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['brand']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Type Construction', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['type_construction']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Pattern', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['pattern']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('RTD ( mm )', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['rtd1']}/${data['rtd2']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('No. Cargo Manifest', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['no_cargo_manifest']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Date Received', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${formatDate(data['date_received'])}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Status', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['status']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Remarks', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['remark'] ?? 'None'}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
                                                                             ]),
-                                                                            p.SizedBox(height: 24),
-                                                                            p.Row(children: [
-                                                                              p.Column(children: [
-                                                                                p.SizedBox(
-                                                                                  width: 400,
-                                                                                  height: 150,
-                                                                                  child: p.Image(image3),
-                                                                                ),
-                                                                                p.Text('${combinedList1[2]['type']}')
+                                                                        p.Column(
+                                                                            children: [
+                                                                              p.Row(children: [
+                                                                                p.Column(children: [
+                                                                                  p.SizedBox(
+                                                                                    width: 360,
+                                                                                    height: 110,
+                                                                                    child: p.Image(image1),
+                                                                                  ),
+                                                                                  p.Text('Serial Number')
+                                                                                ]),
+                                                                                p.SizedBox(width: 12),
+                                                                                p.Column(children: [
+                                                                                  p.SizedBox(
+                                                                                    width: 360,
+                                                                                    height: 110,
+                                                                                    child: p.Image(image2),
+                                                                                  ),
+                                                                                  p.Text('${combinedList1[1]['type']}')
+                                                                                ])
                                                                               ]),
-                                                                              p.SizedBox(width: 12),
-                                                                              p.Column(children: [
-                                                                                p.SizedBox(
-                                                                                  width: 400,
-                                                                                  height: 150,
-                                                                                  child: p.Image(image4),
-                                                                                ),
-                                                                                p.Text('${combinedList1[3]['type']}')
-                                                                              ])
+                                                                              p.SizedBox(height: 24),
+                                                                              p.Row(children: [
+                                                                                p.Column(children: [
+                                                                                  p.SizedBox(
+                                                                                    width: 360,
+                                                                                    height: 110,
+                                                                                    child: p.Image(image3),
+                                                                                  ),
+                                                                                  p.Text('${combinedList1[2]['type']}')
+                                                                                ]),
+                                                                                p.SizedBox(width: 12),
+                                                                                p.Column(children: [
+                                                                                  p.SizedBox(
+                                                                                    width: 360,
+                                                                                    height: 110,
+                                                                                    child: p.Image(image4),
+                                                                                  ),
+                                                                                  p.Text('${combinedList1[3]['type']}')
+                                                                                ])
+                                                                              ]),
                                                                             ]),
-                                                                          ]),
-                                                                    ]),
-                                                              ])
+                                                                      ]),
+                                                                ]),
+                                                          )
                                                         ];
                                                       }));
                                                   final id = Uuid();
@@ -714,6 +904,8 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                       await savePdf(
                                                           pdf, outputFile);
 
+                                                  Navigator.pop(context);
+
                                                   if (filePath != null ||
                                                       filePath != '') {
                                                     ScaffoldMessenger.of(
@@ -729,189 +921,6 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                   }
                                                 }
                                               },
-                                              // function: () async {
-
-                                              //   // Export PDF
-                                              //   final pdf = p.Document();
-
-                                              //   // SN PIC
-                                              //   final Uint8List imageData =
-                                              //       await getImageFromUrl(
-                                              //           '${data['sn_pic'][0]}');
-                                              //   final image =
-                                              //       p.MemoryImage(imageData);
-
-                                              //   // Sidewall
-                                              //   final Uint8List imageSidewall =
-                                              //       await getImageFromUrl(
-                                              //           '${data['sidewall_pic'][0]}');
-                                              //   final imageSd = p.MemoryImage(
-                                              //       imageSidewall);
-
-                                              //   final logoCp =
-                                              //       (await rootBundle.load(
-                                              //               '${imagePath}/cp_logo_image.png'))
-                                              //           .buffer
-                                              //           .asUint8List();
-                                              //   pdf.addPage(p.MultiPage(
-                                              //       pageFormat:
-                                              //           PdfPageFormat.a4,
-                                              //       orientation: p
-                                              //           .PageOrientation
-                                              //           .landscape,
-                                              //       build: (p.Context context) {
-                                              //         return [
-                                              //           p.Column(
-                                              //               crossAxisAlignment: p
-                                              //                   .CrossAxisAlignment
-                                              //                   .start,
-                                              //               children: [
-                                              //                 p.Row(
-                                              //                     mainAxisAlignment: p
-                                              //                         .MainAxisAlignment
-                                              //                         .spaceBetween,
-                                              //                     children: [
-                                              //                       p.SizedBox(
-                                              //                         width:
-                                              //                             150,
-                                              //                         height:
-                                              //                             100,
-                                              //                         child: p.Image(
-                                              //                             p.MemoryImage(
-                                              //                                 logoCp)),
-                                              //                       ),
-                                              //                       p.Text(
-                                              //                           'Tire Repair Inspection Report',
-                                              //                           style: p
-                                              //                               .TextStyle(
-                                              //                             fontSize:
-                                              //                                 26,
-                                              //                           )),
-                                              //                       p.Container(
-                                              //                         width:
-                                              //                             150,
-                                              //                         height:
-                                              //                             100,
-                                              //                       ),
-                                              //                     ]),
-                                              //                 p.SizedBox(
-                                              //                   height: 30,
-                                              //                 ),
-                                              //                 p.Row(
-                                              //                     mainAxisAlignment: p
-                                              //                         .MainAxisAlignment
-                                              //                         .spaceBetween,
-                                              //                     children: [
-                                              //                       p.Column(
-                                              //                           crossAxisAlignment: p
-                                              //                               .CrossAxisAlignment
-                                              //                               .start,
-                                              //                           children: [
-                                              //                             p.Text(
-                                              //                                 'Date Inspect : ${data['date_inspect']}'),
-                                              //                             p.Text(
-                                              //                                 'Customer : ${data['customer']}'),
-                                              //                             p.Text(
-                                              //                                 'Site : ${data['site']}'),
-                                              //                             p.SizedBox(
-                                              //                               height:
-                                              //                                   60,
-                                              //                             ),
-                                              //                             p.Text(
-                                              //                                 'Tire Size : ${data['tire_size']}'),
-                                              //                             p.Text(
-                                              //                                 'Serial Number : ${data['sn']}'),
-                                              //                             p.Text(
-                                              //                                 'Brand : ${data['brand']}'),
-                                              //                             p.Text(
-                                              //                                 'Type Construction : ${data['type_construction']}'),
-                                              //                             p.Text(
-                                              //                                 'Pattern : ${data['pattern']}'),
-                                              //                             p.Text(
-                                              //                                 'RTD ( mm ) : ${data['rtd1']}/${data['rtd2']}'),
-                                              //                             p.Text(
-                                              //                                 'No. Cargo Manifest : ${data['no_cargo_manifest']}'),
-                                              //                             p.Text(
-                                              //                                 'Date Received : ${data['date_received']}'),
-                                              //                             p.Text(
-                                              //                                 'Status: ${data['status']}'),
-                                              //                             p.Text(
-                                              //                                 'Remarks: ${data['remark'] ?? 'None'}'),
-                                              //                           ]),
-                                              //                       p.Column(
-                                              //                           children: [
-                                              //                             p.Row(
-                                              //                                 children: [
-                                              //                                   p.Column(children: [
-                                              //                                     p.SizedBox(
-                                              //                                       width: 400,
-                                              //                                       height: 150,
-                                              //                                       child: p.Image(image),
-                                              //                                     ),
-                                              //                                     p.Text('Serial Number')
-                                              //                                   ]),
-                                              //                                   p.SizedBox(width: 12),
-                                              //                                   p.Column(children: [
-                                              //                                     p.SizedBox(
-                                              //                                       width: 400,
-                                              //                                       height: 150,
-                                              //                                       child: p.Image(imageSd),
-                                              //                                     ),
-                                              //                                     p.Text('Area Sidewall')
-                                              //                                   ])
-                                              //                                 ]),
-                                              //                             p.SizedBox(
-                                              //                                 height: 24),
-                                              //                             p.Row(
-                                              //                                 children: [
-                                              //                                   p.Column(children: [
-                                              //                                     p.SizedBox(
-                                              //                                       width: 400,
-                                              //                                       height: 150,
-                                              //                                       child: p.Image(imageSd),
-                                              //                                     ),
-                                              //                                     p.Text('Area Sidewall')
-                                              //                                   ]),
-                                              //                                   p.SizedBox(width: 12),
-                                              //                                   p.Column(children: [
-                                              //                                     p.SizedBox(
-                                              //                                       width: 400,
-                                              //                                       height: 150,
-                                              //                                       child: p.Image(imageSd),
-                                              //                                     ),
-                                              //                                     p.Text('Area Sidewall')
-                                              //                                   ])
-                                              //                                 ]),
-                                              //                           ]),
-                                              //                     ]),
-                                              //               ])
-                                              //         ];
-                                              //       }));
-                                              //   final id = Uuid();
-                                              //   final outputFile = await createFolderPath(
-                                              //       '${id.v4()}', 'repair',
-                                              //       // email: user['email'] ?? '',
-                                              //       // site: user['siteName'] ?? '',
-                                              //       customer: data['customer'],
-                                              //       sn: data['sn'],
-                                              //       date:
-                                              //           "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
-                                              //   final filePath = await savePdf(
-                                              //       pdf, outputFile);
-
-                                              //   if (filePath != null ||
-                                              //       filePath != '') {
-                                              //     ScaffoldMessenger.of(context)
-                                              //         .showSnackBar(SnackBar(
-                                              //             backgroundColor:
-                                              //                 green00968A,
-                                              //             content: Text(
-                                              //               'Successfull Save Data!',
-                                              //               style:
-                                              //                   getWhiteTextStyle(),
-                                              //             )));
-                                              //   }
-                                              // }
                                             )
                                           ],
                                         ),
@@ -919,163 +928,6 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                     ),
                                   );
                                 });
-
-                            // LANGSUNG GENERATE PDF
-                            // final pdf = p.Document();
-
-                            // // SN PIC
-                            // final Uint8List imageData =
-                            //     await getImageFromUrl('${data['sn_pic'][0]}');
-                            // final image = p.MemoryImage(imageData);
-
-                            // // Sidewall
-                            // final Uint8List imageSidewall =
-                            //     await getImageFromUrl(
-                            //         '${data['sidewall_pic'][0]}');
-                            // final imageSd = p.MemoryImage(imageSidewall);
-
-                            // final logoCp = (await rootBundle
-                            //         .load('${imagePath}/cp_logo_image.png'))
-                            //     .buffer
-                            //     .asUint8List();
-                            // pdf.addPage(p.MultiPage(
-                            //     pageFormat: PdfPageFormat.a4,
-                            //     orientation: p.PageOrientation.landscape,
-                            //     build: (p.Context context) {
-                            //       return [
-                            //         p.Column(
-                            //             crossAxisAlignment:
-                            //                 p.CrossAxisAlignment.start,
-                            //             children: [
-                            //               p.Row(
-                            //                   mainAxisAlignment: p
-                            //                       .MainAxisAlignment
-                            //                       .spaceBetween,
-                            //                   children: [
-                            //                     p.SizedBox(
-                            //                       width: 150,
-                            //                       height: 100,
-                            //                       child: p.Image(
-                            //                           p.MemoryImage(logoCp)),
-                            //                     ),
-                            //                     p.Text(
-                            //                         'Tire Repair Inspection Report',
-                            //                         style: p.TextStyle(
-                            //                           fontSize: 26,
-                            //                         )),
-                            //                     p.Container(
-                            //                       width: 150,
-                            //                       height: 100,
-                            //                     ),
-                            //                   ]),
-                            //               p.SizedBox(
-                            //                 height: 30,
-                            //               ),
-                            //               p.Row(
-                            //                   mainAxisAlignment: p
-                            //                       .MainAxisAlignment
-                            //                       .spaceBetween,
-                            //                   children: [
-                            //                     p.Column(
-                            //                         crossAxisAlignment: p
-                            //                             .CrossAxisAlignment
-                            //                             .start,
-                            //                         children: [
-                            //                           p.Text(
-                            //                               'Date Inspect : ${data['date_inspect']}'),
-                            //                           p.Text(
-                            //                               'Customer : ${data['customer']}'),
-                            //                           p.Text(
-                            //                               'Site : ${data['site']}'),
-                            //                           p.SizedBox(
-                            //                             height: 60,
-                            //                           ),
-                            //                           p.Text(
-                            //                               'Tire Size : ${data['tire_size']}'),
-                            //                           p.Text(
-                            //                               'Serial Number : ${data['sn']}'),
-                            //                           p.Text(
-                            //                               'Brand : ${data['brand']}'),
-                            //                           p.Text(
-                            //                               'Type Construction : ${data['type_construction']}'),
-                            //                           p.Text(
-                            //                               'Pattern : ${data['pattern']}'),
-                            //                           p.Text(
-                            //                               'RTD ( mm ) : ${data['rtd1']}/${data['rtd2']}'),
-                            //                           p.Text(
-                            //                               'No. Cargo Manifest : ${data['no_cargo_manifest']}'),
-                            //                           p.Text(
-                            //                               'Date Received : ${data['date_received']}'),
-                            //                           p.Text(
-                            //                               'Status: ${data['status']}'),
-                            //                           p.Text(
-                            //                               'Remarks: ${data['remark'] ?? 'None'}'),
-                            //                         ]),
-                            //                     p.Column(children: [
-                            //                       p.Row(children: [
-                            //                         p.Column(children: [
-                            //                           p.SizedBox(
-                            //                             width: 400,
-                            //                             height: 150,
-                            //                             child: p.Image(image),
-                            //                           ),
-                            //                           p.Text('Serial Number')
-                            //                         ]),
-                            //                         p.SizedBox(width: 12),
-                            //                         p.Column(children: [
-                            //                           p.SizedBox(
-                            //                             width: 400,
-                            //                             height: 150,
-                            //                             child: p.Image(imageSd),
-                            //                           ),
-                            //                           p.Text('Area Sidewall')
-                            //                         ])
-                            //                       ]),
-                            //                       p.SizedBox(height: 24),
-                            //                       p.Row(children: [
-                            //                         p.Column(children: [
-                            //                           p.SizedBox(
-                            //                             width: 400,
-                            //                             height: 150,
-                            //                             child: p.Image(imageSd),
-                            //                           ),
-                            //                           p.Text('Area Sidewall')
-                            //                         ]),
-                            //                         p.SizedBox(width: 12),
-                            //                         p.Column(children: [
-                            //                           p.SizedBox(
-                            //                             width: 400,
-                            //                             height: 150,
-                            //                             child: p.Image(imageSd),
-                            //                           ),
-                            //                           p.Text('Area Sidewall')
-                            //                         ])
-                            //                       ]),
-                            //                     ]),
-                            //                   ]),
-                            //             ])
-                            //       ];
-                            //     }));
-                            // final id = Uuid();
-                            // final outputFile = await createFolderPath(
-                            //     '${id.v4()}', 'repair',
-                            //     // email: user['email'] ?? '',
-                            //     // site: user['siteName'] ?? '',
-                            //     customer: data['customer'],
-                            //     sn: data['sn'],
-                            //     date:
-                            //         "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}");
-                            // final filePath = await savePdf(pdf, outputFile);
-
-                            // if (filePath != null || filePath != '') {
-                            //   ScaffoldMessenger.of(context)
-                            //       .showSnackBar(SnackBar(
-                            //           backgroundColor: green00968A,
-                            //           content: Text(
-                            //             'Successfull Save Data!',
-                            //             style: getWhiteTextStyle(),
-                            //           )));
-                            // }
                           },
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.9,
@@ -1134,7 +986,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                               children: [
                                 _buildTextWithDashedLine(
                                   'Date Inspect',
-                                  '${data['date_inspect']}',
+                                  '${formatDate(data['date_inspect'])}',
                                 ),
                                 _buildTextWithDashedLine(
                                   'Customer',
@@ -1221,7 +1073,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                 ),
                                 _buildTextWithDashedLine(
                                   'Date Received',
-                                  '${data['date_received']}',
+                                  '${formatDate(data['date_received'])}',
                                 ),
                                 _remarks('Remarks :', data),
                               ],
@@ -1675,6 +1527,16 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
         );
       },
     );
+  }
+
+  String formatDate(String dateStr) {
+    // Parsing string ke dalam DateTime
+    DateTime date = DateTime.parse(dateStr);
+
+    // Format tanggal sesuai keinginan
+    String formattedDate = DateFormat('d MMMM yyyy', 'id_ID').format(date);
+
+    return formattedDate;
   }
 
   Widget _buildTextWithDashedLine(String leftText, String rightText) {
