@@ -728,6 +728,36 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                                                 children: [
                                                                                   p.Container(
                                                                                     width: 150,
+                                                                                    child: p.Text('Tire Size', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['tire_size']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Serial Number', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                  p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                  p.Container(
+                                                                                    width: 300,
+                                                                                    child: p.Text('${data['sn']}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
                                                                                     child: p.Text('Brand', style: p.TextStyle(fontSize: 14)),
                                                                                   ),
                                                                                   p.Text(' : ', style: p.TextStyle(fontSize: 14)),
