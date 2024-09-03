@@ -770,7 +770,10 @@ Future<List<int>> createExcel(String type,
         // HM unit
         sheet.getRangeByName('F${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('F${i + 2}').cellStyle.vAlign = VAlignType.center;
-        sheet.getRangeByName('F${i + 2}').setText(task[i]['hm'].toString());
+        sheet.getRangeByName('F${i + 2}').setText(
+            (task[i]['hm'] == null || task[i]['hm'] == '')
+                ? '0'
+                : (task[i]['hm']).toString());
 
         //REMARK
         sheet.getRangeByName('G${i + 2}').cellStyle.hAlign = HAlignType.center;

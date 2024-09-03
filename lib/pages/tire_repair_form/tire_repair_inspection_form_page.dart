@@ -7,6 +7,7 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -27,6 +28,7 @@ class _TireRepairInspectionFormPageState
     extends State<TireRepairInspectionFormPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseStorage storage = FirebaseStorage.instance;
+  FirebaseAuth auth = FirebaseAuth.instance;
   String _selectedButton = '';
 
   String? id = '';
@@ -125,7 +127,7 @@ class _TireRepairInspectionFormPageState
     if (serialNumberPict.isNotEmpty) {
       for (int i = 0; i < serialNumberPict.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-sn');
         final uploadTask = ref.putFile(File(serialNumberPict[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -136,7 +138,7 @@ class _TireRepairInspectionFormPageState
     if (sidewallPic.isNotEmpty) {
       for (int i = 0; i < sidewallPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-sidewall');
         final uploadTask = ref.putFile(File(sidewallPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -147,7 +149,7 @@ class _TireRepairInspectionFormPageState
     if (shoulderPic.isNotEmpty) {
       for (int i = 0; i < shoulderPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-shoulder');
         final uploadTask = ref.putFile(File(shoulderPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -158,7 +160,7 @@ class _TireRepairInspectionFormPageState
     if (threatPic.isNotEmpty) {
       for (int i = 0; i < threatPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-tread');
         final uploadTask = ref.putFile(File(threatPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -169,7 +171,7 @@ class _TireRepairInspectionFormPageState
     if (beadPic.isNotEmpty) {
       for (int i = 0; i < beadPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-bead');
         final uploadTask = ref.putFile(File(beadPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -180,7 +182,7 @@ class _TireRepairInspectionFormPageState
     if (innerLinerPic.isNotEmpty) {
       for (int i = 0; i < innerLinerPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-inner');
         final uploadTask = ref.putFile(File(innerLinerPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -192,7 +194,7 @@ class _TireRepairInspectionFormPageState
     if (chafferPic.isNotEmpty) {
       for (int i = 0; i < innerLinerPic.length; i++) {
         final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}');
+            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-chaffer');
         final uploadTask = ref.putFile(File(chafferPic[i]));
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
@@ -1026,7 +1028,7 @@ class _TireRepairInspectionFormPageState
                             const SizedBox(height: 20.0),
                             takePictureButton('Area Shoulder'),
                             const SizedBox(height: 20.0),
-                            takePictureButton('Area Threat'),
+                            takePictureButton('Area Tread'),
                             const SizedBox(height: 20.0),
                             takePictureButton('Area Bead'),
                             const SizedBox(height: 20.0),
@@ -1148,6 +1150,7 @@ class _TireRepairInspectionFormPageState
                                   'date_inspect':
                                       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
                                   'customer': customerCtrl.text,
+                                  'email': auth.currentUser?.email ?? '',
                                   'site': siteCtrl.text,
                                   'report_by': reportNameCtrl.text,
                                   'tire_size': tireSizeCtrl.text,
@@ -1182,7 +1185,10 @@ class _TireRepairInspectionFormPageState
                                     'date_inspect':
                                         '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
                                     'customer': customerCtrl.text,
+                                    'created_at':
+                                        '${DateTime.now().toIso8601String()}',
                                     'site': siteCtrl.text,
+                                    'email': auth.currentUser?.email ?? '',
                                     'report_by': reportNameCtrl.text,
                                     'tire_size': tireSizeCtrl.text,
                                     'sn': serialNumberCtrl.text,
@@ -1224,6 +1230,9 @@ class _TireRepairInspectionFormPageState
                                   'date_inspect':
                                       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
                                   'customer': customerCtrl.text,
+                                  'email': auth.currentUser?.email ?? '',
+                                  'created_at':
+                                      '${DateTime.now().toIso8601String()}',
                                   'site': siteCtrl.text,
                                   'report_by': reportNameCtrl.text,
                                   'tire_size': tireSizeCtrl.text,
@@ -1359,7 +1368,7 @@ class _TireRepairInspectionFormPageState
                             shoulderPic
                                 .add('${compressedImageFile?.path}' ?? '');
                             break;
-                          case 'Area Threat':
+                          case 'Area Tread':
                             threatPic.add('${compressedImageFile?.path}' ?? '');
                             break;
                           case 'Area Bead':
@@ -1408,7 +1417,7 @@ class _TireRepairInspectionFormPageState
                   return itemPicture(context, shoulderPic);
                 }
                 return Container();
-              case 'Area Threat':
+              case 'Area Tread':
                 if (threatPic.isNotEmpty) {
                   return itemPicture(context, threatPic);
                 }

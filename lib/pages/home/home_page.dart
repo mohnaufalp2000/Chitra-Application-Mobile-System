@@ -49,6 +49,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -120,6 +121,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    initializeIntl();
     requestStoragePermission();
     requestGeolocatorPermission();
 
@@ -149,6 +151,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _streamController2.close();
     _authStateSubscription?.cancel();
     super.dispose();
+  }
+
+  initializeIntl() async {
+    await initializeDateFormatting('id_ID', null);
+  }
+
+  String formatDate(String dateStr) {
+    // Parsing string ke dalam DateTime
+    DateTime date = DateTime.parse(dateStr);
+
+    // Format tanggal sesuai keinginan
+    String formattedDate = DateFormat('d MMMM yyyy', 'id_ID').format(date);
+
+    return formattedDate;
   }
 
   void showPoster() {
@@ -655,8 +671,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
                                   if (state is SiteLoadedState) {
                                     final listSite = state.listSite;
+
                                     // menghilangkan office, ck dan pama
                                     listSite.removeRange(0, 3);
+
                                     // Mengupdate opsi dropdown hanya jika ada perubahan dalam listSite
                                     _siteOptions = listSite
                                         .map((site) => site.site ?? '')
@@ -1534,7 +1552,102 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       ),
                                     ),
                                     const SizedBox(
-                                      height: 4,
+                                      height: 12,
+                                    ),
+                                    ButtonWidget(
+                                      name: Text(
+                                        'See Inspector',
+                                        style: getWhiteTextStyle(),
+                                      ),
+                                      function: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            // Mengelompokkan data berdasarkan tanggal
+                                            final groupedTasks =
+                                                <String, List<String>>{};
+
+                                            filteredTask.forEach((task) {
+                                              final taskData = task.data()
+                                                  as Map<String, dynamic>;
+                                              final user = taskData['user'];
+
+                                              // Parsing last_update dan mengambil hanya tanggal
+                                              final DateTime lastUpdate =
+                                                  DateTime.parse(
+                                                      taskData['last_update']);
+                                              final String formattedDate =
+                                                  formatDate(lastUpdate
+                                                      .toIso8601String());
+
+                                              if (groupedTasks
+                                                  .containsKey(formattedDate)) {
+                                                if (!groupedTasks[
+                                                        formattedDate]!
+                                                    .contains(user)) {
+                                                  groupedTasks[formattedDate]!
+                                                      .add(user);
+                                                }
+                                              } else {
+                                                groupedTasks[formattedDate] = [
+                                                  user
+                                                ];
+                                              }
+                                            });
+
+                                            return AlertDialog(
+                                              title: Text('Inspector'),
+                                              content: SingleChildScrollView(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: groupedTasks.entries
+                                                      .map((entry) {
+                                                    final date = entry.key;
+                                                    final users = entry.value;
+
+                                                    return Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          date,
+                                                          style: TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
+                                                        ),
+                                                        ...users
+                                                            .map((user) =>
+                                                                Text(user))
+                                                            .toList(),
+                                                        SizedBox(
+                                                            height:
+                                                                10), // Spacer untuk jarak antar tanggal
+                                                      ],
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ),
+                                              actions: <Widget>[
+                                                TextButton(
+                                                  child: Text('OK'),
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                      },
+                                      color: blue344BEF,
+                                    ),
+                                    const SizedBox(
+                                      height: 12,
                                     ),
                                     ListView.builder(
                                         shrinkWrap: true,

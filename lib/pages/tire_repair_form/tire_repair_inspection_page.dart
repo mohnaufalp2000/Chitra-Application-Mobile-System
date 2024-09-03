@@ -148,8 +148,8 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                   }
 
                   dataList.sort((a, b) {
-                    DateTime dateA = DateTime.parse(a['date_inspect']);
-                    DateTime dateB = DateTime.parse(b['date_inspect']);
+                    DateTime dateA = DateTime.parse(a['created_at']);
+                    DateTime dateB = DateTime.parse(b['created_at']);
                     return dateB.compareTo(
                         dateA); // Urutkan dari tanggal terlama ke terbaru
                   });

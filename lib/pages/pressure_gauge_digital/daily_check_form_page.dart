@@ -205,7 +205,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   void callTires() async {
     idSite = await getIdSitePreferences();
     log('id site daliy check : $idSite');
-    if (idSite == '1') {
+    if (idSite == '1' ||
+        idSite == '2' ||
+        idSite == '52' ||
+        idSite == '35' ||
+        idSite == '137') {
       idSite = await getSelectedIdSitePreferences();
     }
     if (dataUnit != {} || dataUnit != null || dataUnit.isNotEmpty) {

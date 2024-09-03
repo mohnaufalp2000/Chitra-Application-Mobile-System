@@ -105,7 +105,7 @@ class _PgdTireCardWidgetState extends State<PgdTireCardWidget> {
   ];
 
   List<String> damageType = [
-    'Good Condition (Keep Monitoring)',
+    'Good Condition',
     'Accident',
     'Bead Crack',
     'Boulder',

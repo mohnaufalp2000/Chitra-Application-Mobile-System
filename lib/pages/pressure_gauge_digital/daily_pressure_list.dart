@@ -51,12 +51,42 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     getUser();
   }
 
+  // Future<void> getUnits() async {
+  //   // jika user site ambil dari cache
+  //   if (await getIdSitePreferences() != '1' &&
+  //       await getIdSitePreferences() != '2') {
+  //     if (idSite == '52' || idSite == '35' || idSite == '137') {
+  //       // untuk CK-BMB
+  //       units = await ApiService.getUnits(idSite);
+  //     } else {
+  //       // belum ganti bulan
+  //       if (await getSavedMonthYear() ==
+  //           "${DateTime.now().year}-${DateTime.now().month}") {
+  //         units = await ApiService.getCachedUnits();
+  //       } else {
+  //         // sudah ganti bulan
+  //         units = await ApiService.getUnits(idSite);
+  //       }
+  //     }
+
+  //     // if (await getSavedMonthYear() ==
+  //     //     "${DateTime.now().year}-${DateTime.now().month}") {
+  //     //   units = await ApiService.getCachedUnits();
+  //     // } else {
+  //     //   // sudah ganti bulan
+  //     //   units = await ApiService.getUnits(idSite);
+  //     // }
+  //   } else {
+  //     // jika user office tidak perlu ambil dari cache
+  //     units = await ApiService.getUnits(idSite);
+  //   }
+  // }
+
   Future<void> getUnits() async {
     // jika user site ambil dari cache
     if (await getIdSitePreferences() != '1' &&
         await getIdSitePreferences() != '2') {
-      // belum ganti bulan
-
+      //       // belum ganti bulan
       if (await getSavedMonthYear() ==
           "${DateTime.now().year}-${DateTime.now().month}") {
         units = await ApiService.getCachedUnits();
@@ -78,7 +108,11 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   insertPit() async {
     idSite = await getIdSitePreferences();
     actualIdSite = await getIdSitePreferences();
-    if (idSite == '1' || idSite == '2') {
+    if (idSite == '1' ||
+        idSite == '2' ||
+        idSite == '52' ||
+        idSite == '35' ||
+        idSite == '137') {
       idSite = await getSelectedIdSitePreferences();
     }
     log('id site : $idSite');

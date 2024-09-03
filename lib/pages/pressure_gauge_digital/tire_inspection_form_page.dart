@@ -841,7 +841,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   List<Map<String, dynamic>> position = [];
 
   List<String> damageType = [
-    'Good Condition (Keep Monitoring)',
+    'Good Condition',
     'Accident',
     'Bead Crack',
     'Boulder',
@@ -1035,7 +1035,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   @override
   Widget build(BuildContext context) {
     pit.clear();
-    if (idSite == '15') {
+    if (idSite == '52') {
       pit.add('Utara');
       pit.add('Selatan');
       pit.add('RML');

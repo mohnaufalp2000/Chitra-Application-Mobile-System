@@ -34,7 +34,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
     'Area Sidewall': [],
     'Area Shoulder': [],
     'Area Bead': [],
-    'Area Threat': [],
+    'Area Tread': [],
     'Area Inner Linner': [],
     'Area Chaffer': [],
   };
@@ -212,24 +212,24 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                   ],
                                 )),
                               ),
-                              PopupMenuItem<String>(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      'Delete',
-                                      style: getRedTextStyle(fontWeight: w700),
-                                    ),
-                                    const SizedBox(
-                                      width: 12,
-                                    ),
-                                    Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                    )
-                                  ],
-                                ),
-                              ),
+                              // PopupMenuItem<String>(
+                              //   value: 'delete',
+                              //   child: Row(
+                              //     children: [
+                              //       Text(
+                              //         'Delete',
+                              //         style: getRedTextStyle(fontWeight: w700),
+                              //       ),
+                              //       const SizedBox(
+                              //         width: 12,
+                              //       ),
+                              //       Icon(
+                              //         Icons.delete,
+                              //         color: Colors.red,
+                              //       )
+                              //     ],
+                              //   ),
+                              // ),
                             ],
                           ),
                         ),
@@ -418,17 +418,16 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                             ),
                                             ImageContainer(
                                               data: data,
-                                              type: 'Area Threat',
+                                              type: 'Area Tread',
                                               mapType: 'threat_pic',
                                               addSelectedImage: (value) {
                                                 List<dynamic> image =
-                                                    selectedImage[
-                                                        'Area Threat'];
+                                                    selectedImage['Area Tread'];
                                                 if (image.contains(value)) {
-                                                  selectedImage['Area Threat']
+                                                  selectedImage['Area Tread']
                                                       .remove(value);
                                                 } else {
-                                                  selectedImage['Area Threat']
+                                                  selectedImage['Area Tread']
                                                       .add(value);
                                                 }
                                               },
@@ -498,8 +497,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                 List<dynamic> beadImages =
                                                     selectedImage['Area Bead'];
                                                 List<dynamic> threatImages =
-                                                    selectedImage[
-                                                        'Area Threat'];
+                                                    selectedImage['Area Tread'];
                                                 List<dynamic>
                                                     innerLinnerImages =
                                                     selectedImage[
@@ -514,11 +512,17 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                     threatImages.length +
                                                     innerLinnerImages.length +
                                                     chafferImages.length;
+
+                                                if (snImages.isEmpty) {
+                                                  errorImage(
+                                                      context, 'Serial Number');
+                                                }
+
                                                 if (snImages.length > 1) {
                                                   log('list selected image : error sn');
                                                   errorImage(
                                                       context, 'Serial Number');
-                                                } else if (count > 3) {
+                                                } else if (count < 3) {
                                                   log('list selected image : error injury');
                                                   errorImage(context, 'Injury');
                                                 } else {
@@ -722,7 +726,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                                                 ],
                                                                               ),
                                                                               p.SizedBox(height: 8),
-                                                                              p.Padding(padding: p.EdgeInsets.symmetric(vertical: 18), child: p.Container(color: PdfColors.black, width: 420, height: 4)),
+                                                                              p.Padding(padding: p.EdgeInsets.symmetric(vertical: 12), child: p.Container(color: PdfColors.black, width: 420, height: 4)),
                                                                               p.Row(
                                                                                 crossAxisAlignment: p.CrossAxisAlignment.start,
                                                                                 children: [
@@ -868,7 +872,36 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                                                   p.Text(' : ', style: p.TextStyle(fontSize: 14)),
                                                                                   p.Container(
                                                                                     width: 300,
-                                                                                    child: p.Text('${data['remark'] ?? 'None'}', style: p.TextStyle(fontSize: 14)),
+                                                                                    child: p.Text('${data['remarks'] ?? 'None'}', style: p.TextStyle(fontSize: 14)),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                              (data['status'] != 'REJECT')
+                                                                                  ? p.Column(children: [
+                                                                                      p.SizedBox(height: 8),
+                                                                                      p.Row(
+                                                                                        crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                        children: [
+                                                                                          p.Container(
+                                                                                            width: 150,
+                                                                                            child: p.Text('Category', style: p.TextStyle(fontSize: 14)),
+                                                                                          ),
+                                                                                          p.Text(' : ', style: p.TextStyle(fontSize: 14)),
+                                                                                          p.Container(
+                                                                                            width: 300,
+                                                                                            child: p.Text('${data['repair_duration'] ?? 'None'}', style: p.TextStyle(fontSize: 14)),
+                                                                                          ),
+                                                                                        ],
+                                                                                      ),
+                                                                                    ])
+                                                                                  : p.Container(),
+                                                                              p.SizedBox(height: 8),
+                                                                              p.Row(
+                                                                                crossAxisAlignment: p.CrossAxisAlignment.start,
+                                                                                children: [
+                                                                                  p.Container(
+                                                                                    width: 150,
+                                                                                    child: p.Text('Warranty / No Warranty', style: p.TextStyle(fontSize: 14)),
                                                                                   ),
                                                                                 ],
                                                                               ),
@@ -1356,7 +1389,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
                                 Text(
-                                  'Area Threat',
+                                  'Area Tread',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
