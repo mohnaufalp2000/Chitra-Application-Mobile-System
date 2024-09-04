@@ -11,9 +11,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:path_provider/path_provider.dart';
 
 class TireRepairInspectionFormPage extends StatefulWidget {
   static const routeName = '/tire-repair-inspection-form-page';
@@ -1337,17 +1340,19 @@ class _TireRepairInspectionFormPageState
               InkWell(
                   onTap: () async {
                     requestCameraPermission();
+                    requestStoragePermission();
                     final ImagePicker picker = ImagePicker();
                     final XFile? image = await picker.pickImage(
                         imageQuality: 50, source: ImageSource.camera);
                     try {
                       if (image != null) {
+                        Directory? directory;
+
                         // Read image as a file
                         File imageFile = File(image.path);
                         // data size fotonya
                         log('gambar : ${imageFile.path}');
-
-                        // Compress the image if needed (optional)
+                        // // Compress the image if needed (optional)
                         final compressedImageFile =
                             await FlutterImageCompress.compressAndGetFile(
                           imageFile.path,
@@ -1355,6 +1360,16 @@ class _TireRepairInspectionFormPageState
                           quality: 50,
                         );
 
+                        final imageBytes =
+                            await compressedImageFile?.readAsBytes();
+
+                        // Save ke gallery
+                        final result = await ImageGallerySaver.saveImage(
+                            imageBytes!,
+                            name:
+                                'tire-repair-$type-${DateTime.now().millisecondsSinceEpoch}');
+
+                        // Compress the image if needed (optional)
                         switch (type) {
                           case 'Serial Number':
                             serialNumberPict
@@ -1586,6 +1601,26 @@ class _TireRepairInspectionFormPageState
     setState(() {
       _selectedButton = buttonId;
     });
+  }
+
+  void saveToGallery(XFile xFile) async {
+    Directory? directory;
+
+    if (Platform.isAndroid) {
+      // path = await getExternalStorageDirectory();
+      directory = await DownloadsPath.downloadsDirectory();
+    }
+
+    if (Platform.isIOS) {
+      // final directory = await getApplicationDocumentsDirectory();
+      // path = directory;
+      directory = await getApplicationDocumentsDirectory();
+
+      // Read image as a file
+
+      final compressedFilePath =
+          '${directory.path}/${DateTime.now().millisecondsSinceEpoch}_tireinspectionimage_compressed.jpg';
+    }
   }
 
   Future<dynamic> errorImage(BuildContext context, String type,

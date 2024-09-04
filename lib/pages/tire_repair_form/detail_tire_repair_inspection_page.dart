@@ -8,6 +8,7 @@ import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_form_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -28,6 +29,8 @@ class DetailTireRepairInspection extends StatefulWidget {
 class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
     with TickerProviderStateMixin {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseAuth auth = FirebaseAuth.instance;
+
   late AnimationController _controller;
   Map<String, dynamic> selectedImage = {
     'Serial Number': [],
@@ -38,6 +41,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
     'Area Inner Linner': [],
     'Area Chaffer': [],
   };
+  final String leaderRepair = 'renaldo@chitraparatama.co.id';
 
   Future<Uint8List> getImageFromUrl(String url) async {
     final response = await http.get(Uri.parse(url));
@@ -212,24 +216,27 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                   ],
                                 )),
                               ),
-                              // PopupMenuItem<String>(
-                              //   value: 'delete',
-                              //   child: Row(
-                              //     children: [
-                              //       Text(
-                              //         'Delete',
-                              //         style: getRedTextStyle(fontWeight: w700),
-                              //       ),
-                              //       const SizedBox(
-                              //         width: 12,
-                              //       ),
-                              //       Icon(
-                              //         Icons.delete,
-                              //         color: Colors.red,
-                              //       )
-                              //     ],
-                              //   ),
-                              // ),
+                              (auth.currentUser?.email == leaderRepair)
+                                  ? PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            'Delete',
+                                            style: getRedTextStyle(
+                                                fontWeight: w700),
+                                          ),
+                                          const SizedBox(
+                                            width: 12,
+                                          ),
+                                          Icon(
+                                            Icons.delete,
+                                            color: Colors.red,
+                                          )
+                                        ],
+                                      ),
+                                    )
+                                  : PopupMenuItem(child: Container())
                             ],
                           ),
                         ),
@@ -1176,15 +1183,15 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                     return Column(
                                       children: [
                                         Center(
-                                          child: SizedBox(
-                                            width:
-                                                200, // Atur lebar sesuai kebutuhan
+                                          child: Container(
+                                            width: double
+                                                .infinity, // Atur lebar sesuai kebutuhan
                                             height:
-                                                300, // Atur tinggi sesuai kebutuhan
+                                                200, // Atur tinggi sesuai kebutuhan
                                             child: Image.network(
                                               e,
                                               fit: BoxFit
-                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                                  .contain, // Sesuaikan cara gambar dipasang dalam kotak
                                             ),
                                           ),
                                         ),
@@ -1233,15 +1240,15 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                     return Column(
                                       children: [
                                         Center(
-                                          child: SizedBox(
-                                            width:
-                                                200, // Atur lebar sesuai kebutuhan
+                                          child: Container(
+                                            width: double
+                                                .infinity, // Atur lebar sesuai kebutuhan
                                             height:
-                                                300, // Atur tinggi sesuai kebutuhan
+                                                200, // Atur tinggi sesuai kebutuhan
                                             child: Image.network(
                                               e,
                                               fit: BoxFit
-                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                                  .contain, // Sesuaikan cara gambar dipasang dalam kotak
                                             ),
                                           ),
                                         ),
@@ -1290,15 +1297,15 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                     return Column(
                                       children: [
                                         Center(
-                                          child: SizedBox(
-                                            width:
-                                                200, // Atur lebar sesuai kebutuhan
+                                          child: Container(
+                                            width: double
+                                                .infinity, // Atur lebar sesuai kebutuhan
                                             height:
-                                                300, // Atur tinggi sesuai kebutuhan
+                                                200, // Atur tinggi sesuai kebutuhan
                                             child: Image.network(
                                               e,
                                               fit: BoxFit
-                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                                  .contain, // Sesuaikan cara gambar dipasang dalam kotak
                                             ),
                                           ),
                                         ),
@@ -1346,15 +1353,15 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                     return Column(
                                       children: [
                                         Center(
-                                          child: SizedBox(
-                                            width:
-                                                200, // Atur lebar sesuai kebutuhan
+                                          child: Container(
+                                            width: double
+                                                .infinity, // Atur lebar sesuai kebutuhan
                                             height:
-                                                300, // Atur tinggi sesuai kebutuhan
+                                                200, // Atur tinggi sesuai kebutuhan
                                             child: Image.network(
                                               e,
                                               fit: BoxFit
-                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                                  .contain, // Sesuaikan cara gambar dipasang dalam kotak
                                             ),
                                           ),
                                         ),
@@ -1402,15 +1409,15 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                     return Column(
                                       children: [
                                         Center(
-                                          child: SizedBox(
-                                            width:
-                                                200, // Atur lebar sesuai kebutuhan
+                                          child: Container(
+                                            width: double
+                                                .infinity, // Atur lebar sesuai kebutuhan
                                             height:
-                                                300, // Atur tinggi sesuai kebutuhan
+                                                200, // Atur tinggi sesuai kebutuhan
                                             child: Image.network(
                                               e,
                                               fit: BoxFit
-                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                                  .contain, // Sesuaikan cara gambar dipasang dalam kotak
                                             ),
                                           ),
                                         ),
@@ -1461,15 +1468,15 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                     return Column(
                                       children: [
                                         Center(
-                                          child: SizedBox(
-                                            width:
-                                                200, // Atur lebar sesuai kebutuhan
+                                          child: Container(
+                                            width: double
+                                                .infinity, // Atur lebar sesuai kebutuhan
                                             height:
-                                                300, // Atur tinggi sesuai kebutuhan
+                                                200, // Atur tinggi sesuai kebutuhan
                                             child: Image.network(
                                               e,
                                               fit: BoxFit
-                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                                  .contain, // Sesuaikan cara gambar dipasang dalam kotak
                                             ),
                                           ),
                                         ),
@@ -1520,15 +1527,15 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                     return Column(
                                       children: [
                                         Center(
-                                          child: SizedBox(
-                                            width:
-                                                200, // Atur lebar sesuai kebutuhan
+                                          child: Container(
+                                            width: double
+                                                .infinity, // Atur lebar sesuai kebutuhan
                                             height:
-                                                300, // Atur tinggi sesuai kebutuhan
+                                                200, // Atur tinggi sesuai kebutuhan
                                             child: Image.network(
                                               e,
                                               fit: BoxFit
-                                                  .cover, // Sesuaikan cara gambar dipasang dalam kotak
+                                                  .contain, // Sesuaikan cara gambar dipasang dalam kotak
                                             ),
                                           ),
                                         ),
@@ -1790,12 +1797,14 @@ class _ImageContainerState extends State<ImageContainer> {
                         children: [
                           Expanded(
                             child: Center(
-                              child: SizedBox(
-                                width: 170,
-                                height: 270,
+                              child: Container(
+                                width: double
+                                    .infinity, // Atur lebar sesuai kebutuhan
+                                height: 200, // Atur tinggi sesuai kebutuhan
                                 child: Image.network(
                                   e,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit
+                                      .contain, // Sesuaikan cara gambar dipasang dalam kotak
                                 ),
                               ),
                             ),

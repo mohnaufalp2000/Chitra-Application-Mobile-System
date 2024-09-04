@@ -89,6 +89,7 @@ dependencies:
   qr_code_tools: ^0.1.0
   gsheets: ^0.4.2
   flutter_image_compress: ^2.3.0
+  image_gallery_saver: ^2.0.3
   # flutter_blue: ^0.8.0
 
 dev_dependencies:
