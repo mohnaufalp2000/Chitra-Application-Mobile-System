@@ -551,6 +551,24 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                     }
                                                   });
 
+                                                  // Tampilkan loading indicator
+                                                  showDialog(
+                                                    context: context,
+                                                    barrierDismissible:
+                                                        false, // Agar dialog tidak bisa ditutup oleh user
+                                                    builder: (context) {
+                                                      return AlertDialog(
+                                                        content: Row(
+                                                          children: [
+                                                            CircularProgressIndicator(),
+                                                            SizedBox(width: 20),
+                                                            Text("Loading..."),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  );
+
                                                   print(
                                                       'test combined list : $combinedList1');
 
@@ -974,6 +992,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                       await savePdf(
                                                           pdf, outputFile);
 
+                                                  Navigator.pop(context);
                                                   Navigator.pop(context);
 
                                                   if (filePath != null ||

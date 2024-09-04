@@ -1132,6 +1132,24 @@ class _TireRepairInspectionFormPageState
                               }
                             }
 
+                            // Tampilkan loading indicator
+                            showDialog(
+                              context: context,
+                              barrierDismissible:
+                                  false, // Agar dialog tidak bisa ditutup oleh user
+                              builder: (context) {
+                                return AlertDialog(
+                                  content: Row(
+                                    children: [
+                                      CircularProgressIndicator(),
+                                      SizedBox(width: 20),
+                                      Text("Loading..."),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+
                             if (id != '' || id != null) {
                               log('cek kesamaan ${id != ''} & ${id != null}');
                               final querySnapshot = await firestore
@@ -1265,6 +1283,8 @@ class _TireRepairInspectionFormPageState
                               } catch (e) {}
                             }
 
+                            Navigator.pop(context);
+                            Navigator.pop(context);
                             Navigator.pushReplacementNamed(
                                 context, TireRepairInspectionPage.routeName);
                           },

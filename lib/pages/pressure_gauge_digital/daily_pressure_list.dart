@@ -108,11 +108,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   insertPit() async {
     idSite = await getIdSitePreferences();
     actualIdSite = await getIdSitePreferences();
-    if (idSite == '1' ||
-        idSite == '2' ||
-        idSite == '52' ||
-        idSite == '35' ||
-        idSite == '137') {
+    if (idSite == '1' || idSite == '2') {
       idSite = await getSelectedIdSitePreferences();
     }
     log('id site : $idSite');
