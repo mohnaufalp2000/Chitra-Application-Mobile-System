@@ -16,8 +16,6 @@ import 'package:camos/pages/home/trial/home_page_trial.dart';
 import 'package:camos/pages/opening/splash_screen.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
-import 'package:camos/pages/pressure_gauge_digital/detail_non_running_tire_inspection_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/non_running_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/tire_inspection_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
@@ -77,9 +75,6 @@ var routes = {
   DailyPressureListPage.routeName: (context) => DailyPressureListPage(),
   QrTpmsPage.routeName: (context) => QrTpmsPage(),
   DailyPressureHistoryPage.routeName: (context) => DailyPressureHistoryPage(),
-  NonRunningInspectionPage.routeName: (context) => NonRunningInspectionPage(),
-  DetailNonTireRunningTireInspection.routeName: (context) =>
-      DetailNonTireRunningTireInspection(),
   HomePageTrial.routeName: (context) => HomePageTrial(),
   DailyPressureTrialPage.routeName: (context) => DailyPressureTrialPage(),
   PresenceCameraPage.routeName: (context) => PresenceCameraPage(),

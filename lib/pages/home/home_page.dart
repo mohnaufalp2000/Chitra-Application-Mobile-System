@@ -20,6 +20,7 @@ import 'package:camos/core/services/sheets/model_sheets/attendance.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
+import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/core/utils/data/menu.dart';
 import 'package:camos/core/utils/data/oustanding_task.dart';
 import 'package:camos/core/utils/functions/functions.dart';
@@ -703,6 +704,37 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   return Container();
                                 })
                               : Container(),
+                          // TESTING GANTI AREA CK BMB CLUSTER
+                          // Builder(builder: (context) {
+                          //   if (idSite == bmbsitarum.idSite ||
+                          //       idSite == bmbtabuhan.idSite ||
+                          //       idSite == bmbhauling.idSite) {
+                          //     final listBmbSite = [
+                          //       bmbsitarum,
+                          //       bmbtabuhan,
+                          //       bmbhauling
+                          //     ];
+                          //     return DropdownButton<String>(
+                          //       isExpanded: true,
+                          //       padding: EdgeInsets.symmetric(horizontal: 24),
+                          //       value: _selectedSite,
+                          //       hint: Text('Choose Site'),
+                          //       items: listBmbSite.map((site) {
+                          //         return DropdownMenuItem<String>(
+                          //           value: site.idSite,
+                          //           child: Text(site.nameSite),
+                          //         );
+                          //       }).toList(),
+                          //       onChanged: (newValue) {
+                          //         setState(() {
+                          //           _selectedSite = newValue;
+                          //           saveIdSitePreferences(_selectedSite ?? '');
+                          //         });
+                          //       },
+                          //     );
+                          //   }
+                          //   return Container();
+                          // }),
                           BlocConsumer<TireInventBloc, TireInventState>(
                               builder: (context, state) {
                                 print('state saat ini :$state');

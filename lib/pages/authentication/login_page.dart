@@ -14,7 +14,6 @@ import 'package:camos/pages/authentication/image_profile_page.dart';
 import 'package:camos/pages/authentication/register_page.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/trial/home_page_trial.dart';
-import 'package:camos/pages/pressure_gauge_digital/non_running_inspection_page.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
 import 'package:camos/pages/tpms/tpms_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

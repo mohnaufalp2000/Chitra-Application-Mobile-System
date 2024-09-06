@@ -42,6 +42,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   Map<String, dynamic> user = {};
   List<Map<String, dynamic>> filteredItemTask = [];
   List<UnitTire> units = [];
+  bool isOnline = false;
 
   @override
   void initState() {
@@ -100,6 +101,24 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     }
   }
 
+  // coba buat variable offline dan online, jika tekan tombol online ambil dari cts, jika tekan tombol offline ambil dari local tapi kalau belum ambil dari cts, ambil dari cts dulu
+  // Future<void> getUnits() async {
+  //   // jika user site ambil dari cache
+  //   if (await getIdSitePreferences() != '1' &&
+  //       await getIdSitePreferences() != '2') {
+  //     //       // belum ganti bulan
+  //     if (!isOnline) {
+  //       units = await ApiService.getCachedUnits();
+  //     } else {
+  //       // sudah ganti bulan
+  //       units = await ApiService.getUnits(idSite);
+  //     }
+  //   } else {
+  //     // jika user office tidak perlu ambil dari cache
+  //     units = await ApiService.getUnits(idSite);
+  //   }
+  // }
+
   getUser() async {
     user = await getUserPreferences();
     log('username : ${user}');
@@ -155,6 +174,30 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                           });
                         })
                     : Container(),
+                const SizedBox(
+                  height: 12,
+                ),
+                // Row(
+                //   mainAxisAlignment: MainAxisAlignment.center,
+                //   children: [
+                //     Text(
+                //       isOnline ? 'Status: Online' : 'Status: Offline',
+                //       style: TextStyle(fontSize: 24),
+                //     ),
+                //     SizedBox(width: 20), // Spasi antar teks dan tombol
+                //     ElevatedButton(
+                //       onPressed: () {
+                //         setState(() {
+                //           isOnline = !isOnline; // Toggle the status
+                //         });
+                //       },
+                //       style: ElevatedButton.styleFrom(
+                //         primary: isOnline ? Colors.green : Colors.red,
+                //       ),
+                //       child: Text(isOnline ? 'Go Offline' : 'Go Online'),
+                //     ),
+                //   ],
+                // ),
                 const SizedBox(
                   height: 12,
                 ),

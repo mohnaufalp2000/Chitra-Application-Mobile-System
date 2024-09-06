@@ -1,12 +1,15 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/core/services/model/site.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<SharedPreferences> getSharedPreferences() async {
   return await SharedPreferences.getInstance();
 }
+
+String savedSiteCode = 'saved_sites';
 
 /**
  * 
@@ -118,4 +121,44 @@ Future<void> saveMonthYear(DateTime dateTime) async {
 Future<String?> getSavedMonthYear() async {
   final prefs = await SharedPreferences.getInstance();
   return prefs.getString('saved_month_year');
+}
+
+// menyimpan data id site
+Future<void> saveSiteToLocalPreferences(List<Site> listSite) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  // Convert listSite to a list of maps, then to JSON
+  List<String> siteListJson = listSite.map((site) {
+    return jsonEncode({
+      'idSite': site.idSite,
+      'site': site.site,
+      'lastUpdate': site.lastUpdate,
+    });
+  }).toList();
+
+  // Simpan ke SharedPreferences
+  await prefs.setStringList(savedSiteCode, siteListJson);
+}
+
+// mendapatkan data id site
+Future<List<Site>> getSiteFromLocalPreferences() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  // Ambil data yang disimpan
+  List<String>? siteListJson = prefs.getStringList(savedSiteCode);
+
+  // Jika data tidak ditemukan, kembalikan list kosong
+  if (siteListJson == null) {
+    return [];
+  }
+
+  // Convert JSON ke List<Site>
+  return siteListJson.map((siteJson) {
+    Map<String, dynamic> siteMap = jsonDecode(siteJson);
+    return Site(
+      idSite: siteMap['idSite'],
+      site: siteMap['site'],
+      lastUpdate: siteMap['lastUpdate'],
+    );
+  }).toList();
 }

@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/site.dart';
+import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:meta/meta.dart';
 
 part 'site_event.dart';
@@ -29,6 +30,8 @@ class SiteBloc extends Bloc<SiteEvent, SiteState> {
           2,
           Site(idSite: '3', site: 'PAMA', lastUpdate: '2024-05-22'),
         );
+        // simpan list site ke local
+        // saveSiteToLocalPreferences(listSite);
         emit(SiteLoadedState(listSite: listSite));
       } catch (e) {
         emit(SiteErrorState(message: e.toString()));
