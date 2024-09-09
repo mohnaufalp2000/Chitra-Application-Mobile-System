@@ -18,59 +18,63 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
     on<GetUnitsEvent>((event, emit) async {
       final connectivityResult = await Connectivity().checkConnectivity();
 
-      if (connectivityResult == ConnectivityResult.none) {
-        final cachedData = await ApiService.getCachedUnits();
-        emit(UnitLoadedState(units: cachedData));
+      if (event.isOnline) {
+        if (connectivityResult == ConnectivityResult.none) {
+          emit(UnitErrorState(
+            message: 'Please Check Your Internet Connection!',
+          ));
+        } else {
+          final units = await ApiService.getUnits(event.idSite);
+          emit(UnitLoadedState(units: units));
+        }
+
+        // return;
       } else {
+        log('id site unit bloc : ${event.idSite}');
+        final cachedData =
+            await ApiService.getCachedUnits(idSite: event.idSite);
+        emit(UnitLoadedState(units: cachedData));
+
         if (Platform.isAndroid) {
           await Permission.phone.request();
         }
-        final checkNetworkType =
-            await ConnectionNetworkType().currentNetworkStatus();
-        if (checkNetworkType == NetworkStatus.otherMobile) {
-          log('unit edge');
-
-          final cachedData = await ApiService.getCachedUnits();
-          emit(UnitLoadedState(units: cachedData));
-          return;
-        } else {
-          log('unit aman == ${await getSavedMonthYear()}, ${"${DateTime.now().year}-${DateTime.now().month}"}');
-          emit(UnitLoadingState());
-
-          // belum ganti bulan
-          if (await getSavedMonthYear() ==
-              "${DateTime.now().year}-${DateTime.now().month}") {
-            final cachedData = await ApiService.getCachedUnits();
-            emit(UnitLoadedState(units: cachedData));
-          } else {
-            // sudah ganti bulan
-            final units = await ApiService.getUnits(event.idSite);
-            emit(UnitLoadedState(units: units));
-          }
-        }
+        // return;
       }
-      // try {
-      //   emit(UnitLoadingState());
 
-      //   final units = await ApiService.getUnits(event.idSite);
-      //   emit(UnitLoadedState(units: units));
-      // } catch (e) {
-      //   final cachedData = await ApiService.getCachedUnits();
+      // if (connectivityResult == ConnectivityResult.none) {
+      //   final cachedData =
+      //       await ApiService.getCachedUnits(idSite: event.idSite);
       //   emit(UnitLoadedState(units: cachedData));
-      //   // emit(UnitErrorState());
+      // } else {
+      //   if (Platform.isAndroid) {
+      //     await Permission.phone.request();
+      //   }
+      //   final checkNetworkType =
+      //       await ConnectionNetworkType().currentNetworkStatus();
+      //   if (checkNetworkType == NetworkStatus.otherMobile) {
+      //     log('unit edge');
+
+      //     final cachedData =
+      //         await ApiService.getCachedUnits(idSite: event.idSite);
+      //     emit(UnitLoadedState(units: cachedData));
+      //     return;
+      //   } else {
+      //     log('unit aman == ${await getSavedMonthYear()}, ${"${DateTime.now().year}-${DateTime.now().month}"}');
+      //     emit(UnitLoadingState());
+
+      //     // belum ganti bulan
+      //     if (await getSavedMonthYear() ==
+      //         "${DateTime.now().year}-${DateTime.now().month}") {
+      //       final cachedData =
+      //           await ApiService.getCachedUnits(idSite: event.idSite);
+      //       emit(UnitLoadedState(units: cachedData));
+      //     } else {
+      //       // sudah ganti bulan
+      //       final units = await ApiService.getUnits(event.idSite);
+      //       emit(UnitLoadedState(units: units));
+      //     }
+      //   }
       // }
     });
-
-    // on<GetUnitTiresEvent>((event, emit) async {
-    //   try {
-    //     emit(UnitTiresLoadingState());
-
-    //     final units =
-    //         await ApiService.getUnitTires(event.idSite, event.unitNumber);
-    //     emit(UnitTiresLoadedState(units: units));
-    //   } catch (e) {
-    //     emit(UnitTiresErrorState());
-    //   }
-    // });
   }
 }

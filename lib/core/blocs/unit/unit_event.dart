@@ -10,9 +10,8 @@ abstract class UnitEvent extends Equatable {
 
 class GetUnitsEvent extends UnitEvent {
   final String idSite;
-  GetUnitsEvent({
-    required this.idSite,
-  });
+  final bool isOnline;
+  GetUnitsEvent({required this.idSite, required this.isOnline});
 }
 
 // class GetUnitTiresEvent extends UnitEvent {

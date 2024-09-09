@@ -129,7 +129,7 @@ class TireInventBloc extends Bloc<TireInventEvent, TireInventState> {
                 {'count': count, 'idSite': site.idSite, 'siteName': site.site});
             await prefs.setString('tire_spec', jsonData);
 
-            log('berjalan 2');
+            log('berjalan 2 : $jsonData');
 
             // menyimpan data detail tire inventory ke penyimpanan local
             // cek dulu apakah sudah ada data detail tire invetory di local?

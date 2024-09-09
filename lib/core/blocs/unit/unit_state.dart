@@ -19,7 +19,11 @@ class UnitLoadedState extends UnitState {
   });
 }
 
-class UnitErrorState extends UnitState {}
+class UnitErrorState extends UnitState {
+  final String message;
+
+  UnitErrorState({required this.message});
+}
 
 class UnitTiresLoadingState extends UnitState {}
 

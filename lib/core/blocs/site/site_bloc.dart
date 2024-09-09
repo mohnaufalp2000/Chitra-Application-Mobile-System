@@ -31,7 +31,7 @@ class SiteBloc extends Bloc<SiteEvent, SiteState> {
           Site(idSite: '3', site: 'PAMA', lastUpdate: '2024-05-22'),
         );
         // simpan list site ke local
-        // saveSiteToLocalPreferences(listSite);
+        saveSiteToLocalPreferences(listSite);
         emit(SiteLoadedState(listSite: listSite));
       } catch (e) {
         emit(SiteErrorState(message: e.toString()));

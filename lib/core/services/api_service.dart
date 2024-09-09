@@ -37,7 +37,9 @@ class ApiService {
         fixData.add(unit);
       });
 
-      await cacheUnits(listUnitTire);
+      // await cacheUnits(listUnitTire);
+      await cacheUnits(listUnitTire, site);
+
       // for check data unit monthly
       await saveMonthYear(DateTime.now());
       return fixData;
@@ -46,22 +48,42 @@ class ApiService {
     }
   }
 
-  static Future<void> cacheUnits(List<UnitTire> units) async {
+  // static Future<void> cacheUnits(List<UnitTire> units) async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final unitsJson = units.map((unit) => unit.toJson()).toList();
+  //     final unitsJsonString = jsonEncode(unitsJson);
+  //     await prefs.setString('cached_units', unitsJsonString);
+  //   } catch (e) {
+  //     // Handle error jika gagal menyimpan data.
+  //     throw Exception('Gagal menyimpan data ke penyimpanan lokal: $e');
+  //   }
+  // }
+
+  static Future<void> cacheUnits(List<UnitTire> units, String idSite) async {
     try {
       final prefs = await SharedPreferences.getInstance();
+
+      // Key unik berdasarkan idSite
+      final cacheKey = 'cached_units_$idSite';
+
       final unitsJson = units.map((unit) => unit.toJson()).toList();
       final unitsJsonString = jsonEncode(unitsJson);
-      await prefs.setString('cached_units', unitsJsonString);
+      await prefs.setString(cacheKey, unitsJsonString);
     } catch (e) {
       // Handle error jika gagal menyimpan data.
       throw Exception('Gagal menyimpan data ke penyimpanan lokal: $e');
     }
   }
 
-  static Future<List<UnitTire>> getCachedUnits({String unitNumber = ''}) async {
+  static Future<List<UnitTire>> getCachedUnits(
+      {String unitNumber = '', String idSite = ''}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final cachedData = prefs.getString('cached_units');
+
+      final cacheKey = 'cached_units_$idSite';
+
+      final cachedData = prefs.getString(cacheKey);
       List<UnitTire> fixData = [];
 
       if (cachedData != null) {

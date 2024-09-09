@@ -35,6 +35,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   Map<String, dynamic> user = {};
   List<UnitTire> units = [];
   int selectedMenu = 0;
+  bool isOnline = false;
 
   @override
   void initState() {
@@ -48,13 +49,30 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
     getUser();
   }
 
+  // Future<void> getUnits() async {
+  //   // belum ganti bulan
+  //   if (await getSavedMonthYear() ==
+  //       "${DateTime.now().year}-${DateTime.now().month}") {
+  //     units = await ApiService.getCachedUnits();
+  //   } else {
+  //     // sudah ganti bulan
+  //     units = await ApiService.getUnits(idSite);
+  //   }
+  // }
+
   Future<void> getUnits() async {
-    // belum ganti bulan
-    if (await getSavedMonthYear() ==
-        "${DateTime.now().year}-${DateTime.now().month}") {
-      units = await ApiService.getCachedUnits();
+    // jika user site ambil dari cache
+    if (await getIdSitePreferences() != '1' &&
+        await getIdSitePreferences() != '2') {
+      //       // belum ganti bulan
+      if (!isOnline) {
+        units = await ApiService.getCachedUnits(
+            idSite: await getIdSitePreferences());
+      } else {
+        units = await ApiService.getUnits(idSite);
+      }
     } else {
-      // sudah ganti bulan
+      // jika user office tidak perlu ambil dari cache
       units = await ApiService.getUnits(idSite);
     }
   }
@@ -141,6 +159,37 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                         }),
                   )
                 : Container(),
+            const SizedBox(
+              height: 12,
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  isOnline ? 'Status: Online' : 'Status: Offline',
+                  style: getBlackTextStyle(fontSize: 24),
+                ),
+                SizedBox(width: 20), // Spasi antar teks dan tombol
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      isOnline = !isOnline; // Toggle the status
+                      getUnits();
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    primary: isOnline ? Colors.green : Colors.red,
+                  ),
+                  child: Text(
+                    isOnline ? 'Go Offline' : 'Go Online',
+                    style: getWhiteTextStyle(),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(
+              height: 12,
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: TextField(
