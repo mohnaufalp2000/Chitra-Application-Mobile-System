@@ -25,13 +25,4 @@ class UnitErrorState extends UnitState {
   UnitErrorState({required this.message});
 }
 
-class UnitTiresLoadingState extends UnitState {}
-
-class UnitTiresLoadedState extends UnitState {
-  final List<UnitTire> units;
-  UnitTiresLoadedState({
-    required this.units,
-  });
-}
-
 class UnitTiresErrorState extends UnitState {}

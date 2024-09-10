@@ -76,13 +76,40 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
         child: Container(
           margin: EdgeInsets.only(top: 12),
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: BlocBuilder<UnitBloc, UnitState>(
+          child: BlocConsumer<UnitBloc, UnitState>(
+            listener: (context, state) {
+              if (state is UnitErrorState) {
+                setState(() {
+                  isOnline = !isOnline;
+                });
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        title: Text(
+                          'Please check your internet connection!',
+                          style: getBlackTextStyle(),
+                        ),
+                        actions: [
+                          TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                Navigator.pop(context);
+                              },
+                              child: Text('Okay'))
+                        ],
+                      );
+                    });
+              }
+            },
             builder: (context, state) {
               if (state is UnitLoadingState) {
                 return Center(child: CircularProgressIndicator());
               }
 
               if (state is UnitLoadedState) {
+                log('kondisi state : ${state.units.length}');
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -214,6 +241,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
                   ],
                 );
               }
+
               return Container();
             },
           ),

@@ -16,6 +16,7 @@ part 'unit_state.dart';
 class UnitBloc extends Bloc<UnitEvent, UnitState> {
   UnitBloc() : super(UnitInitial()) {
     on<GetUnitsEvent>((event, emit) async {
+      emit(UnitLoadingState());
       final connectivityResult = await Connectivity().checkConnectivity();
 
       if (event.isOnline) {
@@ -30,9 +31,9 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
 
         // return;
       } else {
-        log('id site unit bloc : ${event.idSite}');
         final cachedData =
             await ApiService.getCachedUnits(idSite: event.idSite);
+
         emit(UnitLoadedState(units: cachedData));
 
         if (Platform.isAndroid) {

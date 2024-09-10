@@ -735,6 +735,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:app_settings/app_settings.dart';
+import 'package:camos/core/utils/data/id_site.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
@@ -1035,11 +1036,25 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   @override
   Widget build(BuildContext context) {
     pit.clear();
-    if (idSite == '52') {
-      pit.add('Utara');
-      pit.add('Selatan');
-      pit.add('RML');
-      pit.add('WS');
+    // if (idSite == '52') {
+    //   pit.add('Utara');
+    //   pit.add('Selatan');
+    //   pit.add('RML');
+    //   pit.add('WS');
+    // }
+    switch (idSite) {
+      case '52':
+        pit.add('All');
+        pit.add('Utara');
+        pit.add('Selatan');
+        pit.add('RML');
+        pit.add('WS');
+        break;
+      case '137':
+        pit.add('All');
+        pit.add('Japun');
+        pit.add('PCE');
+        break;
     }
     print('dipanggil (pgd)');
     dataUnit =
@@ -2955,7 +2970,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               }
                             : () async {
                                 // jika belum memeilih pit
-                                if (idSite == '52') {
+                                if (idSite == bmbsitarum.idSite ||
+                                    idSite == bmbhauling.idSite) {
                                   if (selectedPit == -1) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -3096,7 +3112,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
-                                          'pit': (idSite == '52')
+                                          'pit': (idSite == bmbsitarum.idSite ||
+                                                  idSite == bmbtabuhan.idSite)
                                               ? pit[selectedPit]
                                               : 'Default'
                                         });
@@ -3164,7 +3181,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
-                                          'pit': (idSite == '52')
+                                          'pit': (idSite == bmbsitarum.idSite ||
+                                                  idSite == bmbtabuhan.idSite)
                                               ? pit[selectedPit]
                                               : 'Default'
                                         });
@@ -3226,7 +3244,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'luka': p['damageTire']
                                           };
                                         }),
-                                        'pit': (idSite == '52')
+                                        'pit': (idSite == bmbsitarum.idSite ||
+                                                idSite == bmbtabuhan.idSite)
                                             ? pit[selectedPit]
                                             : 'Default'
                                       });
@@ -3255,7 +3274,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'luka': p['damageTire']
                                           };
                                         }),
-                                        'pit': (idSite == '52')
+                                        'pit': (idSite == bmbsitarum.idSite ||
+                                                idSite == bmbtabuhan.idSite)
                                             ? pit[selectedPit]
                                             : 'Default'
                                       });

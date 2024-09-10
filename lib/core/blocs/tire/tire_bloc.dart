@@ -14,8 +14,8 @@ class TireBloc extends Bloc<TireEvent, TireState> {
   TireBloc() : super(TireInitial()) {
     on<GetUnitTiresEvent>((event, emit) async {
       emit(TireLoadingState());
-      final units =
-          await ApiService.getCachedUnits(unitNumber: event.unitNumber);
+      final units = await ApiService.getCachedUnits(
+          unitNumber: event.unitNumber, idSite: event.idSite);
       log('unitsunitsunits : ${units.length}');
       emit(TiresLoadedState(units: units));
       // try {

@@ -105,12 +105,26 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
     getUnits();
     log('count unit : ${units.length}');
     pit.clear();
-    if (idSite == '52') {
-      pit.add('All');
-      pit.add('Utara');
-      pit.add('Selatan');
-      pit.add('RML');
-      pit.add('WS');
+    // if (idSite == '52') {
+    //   pit.add('All');
+    //   pit.add('Utara');
+    //   pit.add('Selatan');
+    //   pit.add('RML');
+    //   pit.add('WS');
+    // }
+    switch (idSite) {
+      case '52':
+        pit.add('All');
+        pit.add('Utara');
+        pit.add('Selatan');
+        pit.add('RML');
+        pit.add('WS');
+        break;
+      case '137':
+        pit.add('All');
+        pit.add('Japun');
+        pit.add('PCE');
+        break;
     }
 
     return Scaffold(

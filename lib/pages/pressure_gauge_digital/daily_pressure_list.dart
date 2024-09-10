@@ -12,6 +12,7 @@ import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/export_excel_button.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -111,7 +112,33 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         units = await ApiService.getCachedUnits(
             idSite: await getIdSitePreferences());
       } else {
-        units = await ApiService.getUnits(idSite);
+        final connectivityResult = await Connectivity().checkConnectivity();
+
+        if (connectivityResult == ConnectivityResult.none) {
+          setState(() {
+            isOnline = !isOnline;
+          });
+          showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text(
+                    'Please check your internet connection!',
+                    style: getBlackTextStyle(),
+                  ),
+                  actions: [
+                    TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                        },
+                        child: Text('Okay'))
+                  ],
+                );
+              });
+        } else {
+          units = await ApiService.getUnits(idSite);
+        }
       }
     } else {
       // jika user office tidak perlu ambil dari cache
@@ -133,28 +160,31 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     log('id site : $idSite');
 
     await getUnits();
-
-    setState(() {
-      // BMB COYYY
-      // if (idSite == '52') {
-      //   pit.add('All');
-      //   pit.add('Utara');
-      //   pit.add('Selatan');
-      //   pit.add('RML');
-      //   pit.add('WS');
-      // }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     pit.clear();
-    if (idSite == '52') {
-      pit.add('All');
-      pit.add('Utara');
-      pit.add('Selatan');
-      pit.add('RML');
-      pit.add('WS');
+    // if (idSite == '52') {
+    //   pit.add('All');
+    //   pit.add('Utara');
+    //   pit.add('Selatan');
+    //   pit.add('RML');
+    //   pit.add('WS');
+    // }
+    switch (idSite) {
+      case '52':
+        pit.add('All');
+        pit.add('Utara');
+        pit.add('Selatan');
+        pit.add('RML');
+        pit.add('WS');
+        break;
+      case '137':
+        pit.add('All');
+        pit.add('Japun');
+        pit.add('PCE');
+        break;
     }
     return Scaffold(
       appBar: appBarWidget('Daily Pressure List', context),
@@ -357,7 +387,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                           const SizedBox(
                             height: 12,
                           ),
-                          (units.isEmpty || units == null)
+                          (units.isEmpty || units == null && selectedMenu == 1)
                               ? Column(
                                   children: [
                                     Text(

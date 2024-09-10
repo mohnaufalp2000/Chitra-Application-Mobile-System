@@ -5,6 +5,7 @@ import 'package:camos/core/blocs/tire/tire_bloc.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
+import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
@@ -268,11 +269,23 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
               if (state is TiresLoadedState) {
                 //? BLOC TER EKSEKUSI dua kali dan mengambil jumlah tire sebelumnya
                 pit.clear();
-                if (idSite == '52') {
-                  pit.add('Utara');
-                  pit.add('Selatan');
-                  pit.add('RML');
-                  pit.add('WS');
+                // if (idSite == '52') {
+                //   pit.add('Utara');
+                //   pit.add('Selatan');
+                //   pit.add('RML');
+                //   pit.add('WS');
+                // }
+                switch (idSite) {
+                  case '52':
+                    pit.add('Utara');
+                    pit.add('Selatan');
+                    pit.add('RML');
+                    pit.add('WS');
+                    break;
+                  case '137':
+                    pit.add('Japun');
+                    pit.add('PCE');
+                    break;
                 }
                 for (var i = 0; i < state.units.length; i++) {
                   if (position.length < state.units.length) {
@@ -1314,7 +1327,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           child: ElevatedButton(
             onPressed: () async {
               // jika belum memeilih pit
-              if (idSite == '52') {
+              if (idSite == bmbsitarum.idSite || idSite == bmbhauling.idSite) {
                 if (selectedPit == -1) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

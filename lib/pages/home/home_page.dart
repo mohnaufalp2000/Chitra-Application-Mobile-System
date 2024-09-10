@@ -717,8 +717,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               return DropdownButton<String>(
                                 isExpanded: true,
                                 padding: EdgeInsets.symmetric(horizontal: 24),
-                                value: _selectedSite,
-                                hint: Text('Choose Site'),
+                                value: _selectedSite ?? idSite,
                                 items: listBmbSite.map((site) {
                                   return DropdownMenuItem<String>(
                                     value: site.idSite,
