@@ -162,6 +162,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     await getUnits();
   }
 
+  Future<String> getActualIdSite() async {
+    final actIdSite = await getIdSitePreferences();
+
+    return actIdSite;
+  }
+
   @override
   Widget build(BuildContext context) {
     pit.clear();
@@ -207,31 +213,45 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                 const SizedBox(
                   height: 12,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      isOnline ? 'Status: Online' : 'Status: Offline',
-                      style: getBlackTextStyle(fontSize: 24),
-                    ),
-                    SizedBox(width: 20), // Spasi antar teks dan tombol
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          isOnline = !isOnline; // Toggle the status
-                          getUnits();
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        primary: isOnline ? Colors.green : Colors.red,
-                      ),
-                      child: Text(
-                        isOnline ? 'Go Offline' : 'Go Online',
-                        style: getWhiteTextStyle(),
-                      ),
-                    ),
-                  ],
-                ),
+                FutureBuilder(
+                    future: getActualIdSite(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Container();
+                      }
+
+                      final data = snapshot.data;
+                      log('id site future builder : $data');
+
+                      if (data != '1' && data != '2' && data != '3') {
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isOnline ? 'Status: Online' : 'Status: Offline',
+                              style: getBlackTextStyle(fontSize: 24),
+                            ),
+                            SizedBox(width: 20), // Spasi antar teks dan tombol
+                            ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  isOnline = !isOnline; // Toggle the status
+                                  getUnits();
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                primary: isOnline ? Colors.green : Colors.red,
+                              ),
+                              child: Text(
+                                isOnline ? 'Go Offline' : 'Go Online',
+                                style: getWhiteTextStyle(),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return Container();
+                    }),
                 const SizedBox(
                   height: 12,
                 ),
