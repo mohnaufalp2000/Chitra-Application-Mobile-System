@@ -109,6 +109,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         await getIdSitePreferences() != '2') {
       //       // belum ganti bulan
       if (!isOnline) {
+        log('apakah offline');
         units = await ApiService.getCachedUnits(
             idSite: await getIdSitePreferences());
       } else {

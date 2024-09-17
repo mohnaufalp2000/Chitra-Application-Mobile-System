@@ -202,7 +202,7 @@ class _TireRepairInspectionFormPageState
         final snapshot = await uploadTask.whenComplete(() {});
         final urlDownload = await snapshot.ref.getDownloadURL();
 
-        chafferPic.add(urlDownload);
+        chafferPicFirebase.add(urlDownload);
       }
     }
   }
