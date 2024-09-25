@@ -1024,6 +1024,13 @@ class _TireRepairInspectionFormPageState
                   (id == "" || id == null)
                       ? Column(
                           children: [
+                            Text(
+                              '*Please Take a Picture with Landscape Mode!',
+                              style: getRedTextStyle(
+                                fontSize: 18,
+                              ),
+                            ),
+                            const SizedBox(height: 12.0),
                             // Serial Number Picture
                             takePictureButton('Serial Number'),
                             const SizedBox(height: 20.0),
