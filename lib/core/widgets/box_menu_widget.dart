@@ -72,7 +72,8 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
       case 5:
         // push(context, SelectTpmsPage.routeName);
         // push(context, QrTpmsPage.routeName);
-        push(context, TpmsPage.routeName);
+        Navigator.pushNamed(context, TpmsPage.routeName,
+            arguments: widget.argument);
         break;
       case 6:
         push(

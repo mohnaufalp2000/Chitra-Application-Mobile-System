@@ -53,55 +53,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     getUser();
   }
 
-  // Future<void> getUnits() async {
-  //   // jika user site ambil dari cache
-  //   if (await getIdSitePreferences() != '1' &&
-  //       await getIdSitePreferences() != '2') {
-  //     if (idSite == '52' || idSite == '35' || idSite == '137') {
-  //       // untuk CK-BMB
-  //       units = await ApiService.getUnits(idSite);
-  //     } else {
-  //       // belum ganti bulan
-  //       if (await getSavedMonthYear() ==
-  //           "${DateTime.now().year}-${DateTime.now().month}") {
-  //         units = await ApiService.getCachedUnits();
-  //       } else {
-  //         // sudah ganti bulan
-  //         units = await ApiService.getUnits(idSite);
-  //       }
-  //     }
-
-  //     // if (await getSavedMonthYear() ==
-  //     //     "${DateTime.now().year}-${DateTime.now().month}") {
-  //     //   units = await ApiService.getCachedUnits();
-  //     // } else {
-  //     //   // sudah ganti bulan
-  //     //   units = await ApiService.getUnits(idSite);
-  //     // }
-  //   } else {
-  //     // jika user office tidak perlu ambil dari cache
-  //     units = await ApiService.getUnits(idSite);
-  //   }
-  // }
-
-  // Future<void> getUnits() async {
-  //   // jika user site ambil dari cache
-  //   if (await getIdSitePreferences() != '1' &&
-  //       await getIdSitePreferences() != '2') {
-  //     //       // belum ganti bulan
-  //     if (await getSavedMonthYear() ==
-  //         "${DateTime.now().year}-${DateTime.now().month}") {
-  //       units = await ApiService.getCachedUnits();
-  //     } else {
-  //       // sudah ganti bulan
-  //       units = await ApiService.getUnits(idSite);
-  //     }
-  //   } else {
-  //     // jika user office tidak perlu ambil dari cache
-  //     units = await ApiService.getUnits(idSite);
-  //   }
-  // }
-
   // coba buat variable offline dan online, jika tekan tombol online ambil dari cts, jika tekan tombol offline ambil dari local tapi kalau belum ambil dari cts, ambil dari cts dulu
   Future<void> getUnits() async {
     // jika user site ambil dari cache
@@ -110,8 +61,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
       //       // belum ganti bulan
       if (!isOnline) {
         log('apakah offline');
-        units = await ApiService.getCachedUnits(
-            idSite: await getIdSitePreferences());
+        // units = await ApiService.getCachedUnits(
+        //     idSite: await getIdSitePreferences());
+        context.read<UnitBloc>().add(GetUnitsEvent(
+            idSite: await getIdSitePreferences(), isOnline: isOnline));
       } else {
         final connectivityResult = await Connectivity().checkConnectivity();
 
@@ -138,7 +91,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                 );
               });
         } else {
-          units = await ApiService.getUnits(idSite);
+          // units = await ApiService.getUnits(idSite);
+          context.read<UnitBloc>().add(GetUnitsEvent(
+              idSite: await getIdSitePreferences(), isOnline: isOnline));
         }
       }
     } else {
@@ -161,6 +116,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     log('id site : $idSite');
 
     await getUnits();
+
+    int count = await getTodayDocumentCount();
+    log('jumlah unit dicek : $count');
   }
 
   Future<String> getActualIdSite() async {
@@ -169,16 +127,37 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     return actIdSite;
   }
 
+  Future<int> getTodayDocumentCount() async {
+    try {
+      // Mendapatkan waktu awal dan akhir untuk hari ini
+      DateTime now = DateTime.now();
+      DateTime startOfDay = DateTime(now.year, now.month, now.day);
+      DateTime endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+
+      // Query untuk menghitung dokumen yang `timestamp`-nya berada di antara startOfDay dan endOfDay
+      final query = FirebaseFirestore.instance
+          .collection('daily_pressure')
+          .where('idSite', isEqualTo: idSite)
+          .where('tanggal',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('tanggal', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay));
+
+      // Menggunakan aggregation query 'count()'
+      final snapshot = await query.count().get();
+
+      // Mendapatkan jumlah dokumen yang sesuai dengan query
+      return snapshot.count;
+    } catch (e) {
+      log('error count firebase : $e');
+    }
+
+    return 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     pit.clear();
-    // if (idSite == '52') {
-    //   pit.add('All');
-    //   pit.add('Utara');
-    //   pit.add('Selatan');
-    //   pit.add('RML');
-    //   pit.add('WS');
-    // }
+
     switch (idSite) {
       case '52':
         pit.add('All');
@@ -193,6 +172,276 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         pit.add('PCE');
         break;
     }
+    // return Scaffold(
+    //   appBar: appBarWidget('Daily Pressure List', context),
+    //   body: SafeArea(
+    //       child: SingleChildScrollView(
+    //     child: Padding(
+    //       padding: const EdgeInsets.all(24.0),
+    //       child: Column(
+    //         children: [
+    //           FutureBuilder(
+    //               future: getActualIdSite(),
+    //               builder: (context, snapshot) {
+    //                 if (snapshot.connectionState == ConnectionState.waiting) {
+    //                   return Container();
+    //                 }
+
+    //                 final data = snapshot.data;
+    //                 log('id site future builder : $data');
+
+    //                 if (data != '1' && data != '2' && data != '3') {
+    //                   return Row(
+    //                     mainAxisAlignment: MainAxisAlignment.center,
+    //                     children: [
+    //                       Text(
+    //                         isOnline ? 'Status: Online' : 'Status: Offline',
+    //                         style: getBlackTextStyle(fontSize: 24),
+    //                       ),
+    //                       SizedBox(width: 20), // Spasi antar teks dan tombol
+    //                       ElevatedButton(
+    //                         onPressed: () {
+    //                           setState(() {
+    //                             isOnline = !isOnline; // Toggle the status
+    //                             getUnits();
+    //                           });
+    //                         },
+    //                         style: ElevatedButton.styleFrom(
+    //                           primary: isOnline ? Colors.green : Colors.red,
+    //                         ),
+    //                         child: Text(
+    //                           isOnline ? 'Go Offline' : 'Go Online',
+    //                           style: getWhiteTextStyle(),
+    //                         ),
+    //                       ),
+    //                     ],
+    //                   );
+    //                 }
+    //                 return Container();
+    //               }),
+    //           const SizedBox(
+    //             height: 12,
+    //           ),
+    //           TextField(
+    //             onChanged: (value) {
+    //               setState(() {
+    //                 searchQuery = value;
+    //               });
+    //             },
+    //             decoration: InputDecoration(
+    //                 hintText: 'Search... (Unit Number or Model)',
+    //                 hintStyle: getGreyTextStyle(grey8391A1),
+    //                 prefixIcon: Icon(Icons.search)),
+    //           ),
+    //           const SizedBox(
+    //             height: 12,
+    //           ),
+    //           const SizedBox(
+    //             height: 12,
+    //           ),
+    //           ExportExcelButton(
+    //             user: user,
+    //             pit: pit,
+    //             selectedPit: selectedPit,
+    //             filteredItemTask: filteredItemTask,
+    //             date:
+    //                 "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
+    //           ),
+    //           const SizedBox(
+    //             height: 12,
+    //           ),
+    //           SizedBox(
+    //               width: double.infinity,
+    //               child: ElevatedButton(
+    //                   onPressed: () {
+    //                     Navigator.pushNamed(
+    //                         context, DailyPressureHistoryPage.routeName);
+    //                   },
+    //                   style: ElevatedButton.styleFrom(
+    //                       backgroundColor: Colors.orange),
+    //                   child: Container(
+    //                     padding: EdgeInsets.symmetric(vertical: 12),
+    //                     child: Row(
+    //                       mainAxisAlignment: MainAxisAlignment.center,
+    //                       children: [
+    //                         Icon(
+    //                           Icons.history,
+    //                           color: Colors.white,
+    //                         ),
+    //                         const SizedBox(
+    //                           width: 12,
+    //                         ),
+    //                         Text(
+    //                           'History',
+    //                           style: getWhiteTextStyle(),
+    //                         ),
+    //                       ],
+    //                     ),
+    //                   ))),
+    //           // Unit belum di cek
+    //           BlocConsumer<UnitBloc, UnitState>(builder: (context, state) {
+    //             if (state is UnitLoadingState) {
+    //               return Center(child: CircularProgressIndicator());
+    //             }
+
+    //             if (state is UnitLoadedState) {
+    //               log('kondisi state : ${state.units.length}');
+
+    //               return Column(
+    //                 crossAxisAlignment: CrossAxisAlignment.start,
+    //                 children: [
+    //                   const SizedBox(
+    //                     height: 12,
+    //                   ),
+    //                   Text(
+    //                     'Total Unit : ${state.units.length.toString()}',
+    //                     style: getGreyTextStyle(grey8391A1),
+    //                   ),
+    //                   const SizedBox(
+    //                     height: 12,
+    //                   ),
+    //                   (state.units == null || state.units.isEmpty)
+    //                       ? Text(
+    //                           'No Data, please go online to get data!',
+    //                           textAlign: TextAlign.center,
+    //                           style: getBlackTextStyle(fontSize: 18),
+    //                         )
+    //                       : Column(
+    //                           children: state.units.map((unit) {
+    //                             if (searchQuery.isNotEmpty &&
+    //                                 !unit.unitNumber!
+    //                                     .toLowerCase()
+    //                                     .contains(searchQuery) &&
+    //                                 !unit.model!
+    //                                     .toLowerCase()
+    //                                     .contains(searchQuery)) {
+    //                               return Container();
+    //                             }
+    //                             return InkWell(
+    //                               onTap: () {
+    //                                 // switch (inspectionType) {
+    //                                 //   case 'daily_check':
+    //                                 //     Navigator.pushNamed(
+    //                                 //         context, DailyCheckFormPage.routeName,
+    //                                 //         arguments: {
+    //                                 //           'unitNumber': unit.unitNumber,
+    //                                 //         });
+    //                                 //     break;
+    //                                 //   case 'tire_inspection':
+    //                                 //     Navigator.pushNamed(context,
+    //                                 //         TireInspectionFormPage.routeName,
+    //                                 //         arguments: {
+    //                                 //           'unitNumber': unit.unitNumber,
+    //                                 //           'hm': unit.hm,
+    //                                 //         });
+    //                                 //     break;
+    //                                 // }
+    //                               },
+    //                               child: Container(
+    //                                 margin: EdgeInsets.symmetric(vertical: 8.0),
+    //                                 padding: EdgeInsets.symmetric(vertical: 6),
+    //                                 decoration: BoxDecoration(
+    //                                   color: Colors.white,
+    //                                   borderRadius: BorderRadius.circular(12),
+    //                                   boxShadow: [
+    //                                     BoxShadow(
+    //                                       color: Colors.black.withOpacity(0.1),
+    //                                       spreadRadius: 2,
+    //                                       blurRadius: 5,
+    //                                       offset: Offset(0, 2),
+    //                                     ),
+    //                                   ],
+    //                                 ),
+    //                                 child: ListTile(
+    //                                   leading: Icon(
+    //                                     Icons.front_loader,
+    //                                     color: Colors.orange,
+    //                                   ),
+    //                                   title: Padding(
+    //                                     padding:
+    //                                         const EdgeInsets.only(bottom: 4.0),
+    //                                     child: Text(
+    //                                       '${unit.unitNumber}',
+    //                                       style: getBlackTextStyle(
+    //                                           fontWeight: FontWeight.w700),
+    //                                     ),
+    //                                   ),
+    //                                   subtitle: Text(
+    //                                     '${unit.model}',
+    //                                     style: getGreyTextStyle(grey6A707C),
+    //                                   ),
+    //                                   trailing: Icon(Icons.arrow_forward_ios),
+    //                                 ),
+    //                               ),
+    //                             );
+    //                           }).toList(),
+    //                         ),
+    //                 ],
+    //               );
+    //             }
+
+    //             return Container();
+    //           }, listener: (context, state) {
+    //             if (state is UnitErrorState) {
+    //               setState(() {
+    //                 isOnline = !isOnline;
+    //               });
+    //               showDialog(
+    //                   context: context,
+    //                   builder: (BuildContext context) {
+    //                     return AlertDialog(
+    //                       title: Text(
+    //                         'Please check your internet connection!',
+    //                         style: getBlackTextStyle(),
+    //                       ),
+    //                       actions: [
+    //                         TextButton(
+    //                             onPressed: () {
+    //                               Navigator.pop(context);
+    //                               Navigator.pop(context);
+    //                             },
+    //                             child: Text('Okay'))
+    //                       ],
+    //                     );
+    //                   });
+    //             }
+    //           }),
+    //           // Unit telah di cek
+    //           // StreamBuilder(
+    //           //     stream: firestore
+    //           //         .collection('daily_pressure')
+    //           //         .where('idSite', isEqualTo: idSite)
+    //           //         .snapshots(),
+    //           //     builder: (context, snapshot) {
+    //           //       if (snapshot.connectionState == ConnectionState.waiting) {
+    //           //         return CircularProgressIndicator();
+    //           //       }
+
+    //           //       List<DocumentSnapshot> documents = snapshot.data!.docs;
+
+    //           //       final filteredDocument = documents.where((doc) {
+    //           //         final Map<String, dynamic> data =
+    //           //             doc.data() as Map<String, dynamic>;
+
+    //           //         final dateString = data['tanggal'] as String;
+    //           //         final dateTime = DateTime.parse(dateString);
+    //           //         final now = DateTime.now();
+
+    //           //         return dateTime.year == now.year &&
+    //           //             dateTime.month == now.month &&
+    //           //             dateTime.day == now.day;
+    //           //       });
+
+    //           //       log('jumlah unit yang di cek hari ini : ${filteredDocument.length}');
+
+    //           //       return Container();
+    //           //     }),
+    //         ],
+    //       ),
+    //     ),
+    //   )),
+    // );
+
     return Scaffold(
       appBar: appBarWidget('Daily Pressure List', context),
       body: SafeArea(

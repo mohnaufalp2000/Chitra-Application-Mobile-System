@@ -1081,7 +1081,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     itemBuilder: (context, index) {
                                       return BoxMenuWidget(
                                         menu: menus[index],
-                                        argument: {'siteName': siteName},
+                                        argument: {
+                                          'siteName': siteName,
+                                          'idSite': (_selectedSite != null)
+                                              ? _selectedSite ?? ''
+                                              : idSite
+                                        },
                                       );
                                     }),
                                 const SizedBox(

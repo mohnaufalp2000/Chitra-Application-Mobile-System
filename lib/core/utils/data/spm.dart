@@ -35,6 +35,7 @@ class Spm {
   String press6;
   String totalpress;
   String sumPress;
+  String idSite;
 
   Spm({
     required this.idtpms,
@@ -63,6 +64,7 @@ class Spm {
     required this.press6,
     required this.totalpress,
     required this.sumPress,
+    required this.idSite,
   });
 
   factory Spm.fromJson(Map<String, dynamic> json) => Spm(
@@ -92,6 +94,7 @@ class Spm {
         press6: json["press6"] ?? '',
         totalpress: json["totalpress"] ?? '',
         sumPress: json["sum_press"] ?? '',
+        idSite: json["id_site"] ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -121,10 +124,11 @@ class Spm {
         "press6": press6,
         "totalpress": totalpress,
         "sum_press": sumPress,
+        "id_site": idSite,
       };
 
   @override
   String toString() {
-    return 'Spm{idtpms: $idtpms, timestamp: $timestamp, devicename: $devicename, lat: $lat, alt: $alt, lon: $lon, pressure1: $pressure1, pressure2: $pressure2, pressure3: $pressure3, pressure4: $pressure4, pressure5: $pressure5, pressure6: $pressure6, temperature1: $temperature1, temperature2: $temperature2, temperature3: $temperature3, temperature4: $temperature4, temperature5: $temperature5, temperature6: $temperature6, press1: $press1, press2: $press2, press3: $press3, press4: $press4, press5: $press5, press6: $press6, totalpress: $totalpress, sumPress: $sumPress}';
+    return 'Spm{idtpms: $idtpms, timestamp: $timestamp, devicename: $devicename, lat: $lat, alt: $alt, lon: $lon, pressure1: $pressure1, pressure2: $pressure2, pressure3: $pressure3, pressure4: $pressure4, pressure5: $pressure5, pressure6: $pressure6, temperature1: $temperature1, temperature2: $temperature2, temperature3: $temperature3, temperature4: $temperature4, temperature5: $temperature5, temperature6: $temperature6, press1: $press1, press2: $press2, press3: $press3, press4: $press4, press5: $press5, press6: $press6, totalpress: $totalpress, sumPress: $sumPress, idSite: $idSite}';
   }
 }

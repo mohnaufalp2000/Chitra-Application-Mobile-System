@@ -195,7 +195,6 @@ class ApiService {
 
       List<TireSpec> listTireInvent =
           List<TireSpec>.from(result['data'].map((invent) {
-        print('data detail inventory : $invent');
         if (invent['size'] != null) {
           invent['size'] = invent['size'].replaceAll("-", "R");
         }

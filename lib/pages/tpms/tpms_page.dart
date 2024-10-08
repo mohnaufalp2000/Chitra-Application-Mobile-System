@@ -4,6 +4,7 @@ import 'package:camos/core/blocs/spm/spm_bloc.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
+import 'package:camos/core/utils/data/spm.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/tire_widget.dart';
@@ -68,6 +69,11 @@ class _TpmsPageState extends State<TpmsPage> {
 
   @override
   Widget build(BuildContext context) {
+    Map<String, dynamic> data =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    String idSite = data['idSite'];
+    log('id site spm : $idSite');
+
     return Scaffold(
       appBar: appBarWidget('SPM Page', context),
       body: SafeArea(
@@ -105,12 +111,12 @@ class _TpmsPageState extends State<TpmsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             const Text(
-                              "Operator : CK-KIM",
+                              "Operator : CK",
                               style:
                                   TextStyle(fontSize: 16, color: Colors.white),
                             ),
                             Container(height: 10),
-                            Text('ID / SN : Project Synergy CP-CK',
+                            Text('Project Synergy CP-CK',
                                 style: TextStyle(
                                     fontSize: 16, color: Colors.grey[200])),
                           ],
@@ -227,7 +233,19 @@ class _TpmsPageState extends State<TpmsPage> {
                     }
 
                     if (state is SpmLoadedState) {
-                      var list = state.listSpm;
+                      List<Spm> actualList = state.listSpm;
+
+                      List<Spm> list = actualList
+                          .where((spm) => spm.idSite == idSite)
+                          .toList();
+
+                      if (list.isEmpty) {
+                        return Text(
+                          'No Unit Found!',
+                          style: getBlackTextStyle(),
+                        );
+                      }
+
                       if (searchQuery.length > 0) {
                         list = list.where((element) {
                           return element.devicename
