@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:camos/core/blocs/spm/spm_bloc.dart';
+import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -336,6 +337,27 @@ class _TpmsPageState extends State<TpmsPage> {
                                               fontWeight: w700,
                                             ),
                                           ),
+                                          const SizedBox(
+                                            height: 4,
+                                          ),
+                                          FutureBuilder(
+                                              future:
+                                                  ApiService.getSite(idSite),
+                                              builder: (context, snapshot) {
+                                                final data = snapshot.data;
+                                                log('future id site : $data');
+                                                if (snapshot.connectionState ==
+                                                    ConnectionState.waiting) {
+                                                  return Container();
+                                                }
+                                                return Text(
+                                                  'Site : ${data?.site ?? ''} (${unit.idSite})',
+                                                  style: getBlackTextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: w700,
+                                                  ),
+                                                );
+                                              }),
                                           SizedBox(
                                             height: 150,
                                             width: 100,
