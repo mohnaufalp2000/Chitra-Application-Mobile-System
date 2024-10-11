@@ -1,17 +1,35 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 
+import 'dart:io' show Platform;
+import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_state.dart';
+import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_state.dart'
+    as connectedDevicesState;
+import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_state.dart';
+import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_state.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
+import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_list_trial_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/bluetooth/bluetooth_on_off_toggle_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/bluetooth/list_of_connected_devices_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/bluetooth/list_of_scanned_devices_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+
+import '../../../core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
 
 class DailyPressureTrialPage extends StatefulWidget {
   static const routeName = 'daily-pressure-trial-page';
@@ -28,7 +46,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   FlutterBluetoothSerial bluetoothSerial = FlutterBluetoothSerial.instance;
   BluetoothConnection? connection;
   bool get isConnected => connection != null && connection!.isConnected;
-  List<BluetoothDevice> devices = [];
+  // List<BluetoothDevice> devices = [];
   List<Map<String, dynamic>> tires = [
     {
       'position': '1',
@@ -62,33 +80,46 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
     },
   ];
 
+  ValueNotifier<List<int>> readCharValue = ValueNotifier([]);
+
   int selectedTire = -1;
   TextEditingController unitCtrl = TextEditingController(text: '');
   TextEditingController hmCtrl = TextEditingController(text: '');
 
-  startScanBluetooth() async {
-    StreamSubscription<BluetoothDiscoveryResult>? scanSubscription;
+  String pressure = '';
 
-    scanSubscription = bluetoothSerial.startDiscovery().listen((device) {
-      if (!devices.contains(device.device)) {
-        log('device yg tersedia ' + device.device.toString());
-        setState(() {
-          devices.add(device.device);
-        });
-      }
-    }, onDone: () {
-      setState(() {});
-    });
-
-    // Tunda pembatalan pemindaian setelah beberapa waktu (misalnya 10 detik)
-    await Future.delayed(Duration(seconds: 10));
-
-    // Setelah tunda, batalkan pemindaian
-    if (scanSubscription != null) {
-      scanSubscription.cancel();
-      log('Bluetooth scan stopped');
+  @override
+  void initState() {
+    if (BlocProvider.of<BluetoothOnOffCubit>(context).state
+        is BluetoothOnState) {
+      BlocProvider.of<ConnectedDevicesCubit>(context).fetchConnectedDevices();
     }
+    super.initState();
   }
+
+  // startScanBluetooth() async {
+  //   StreamSubscription<BluetoothDiscoveryResult>? scanSubscription;
+
+  //   scanSubscription = bluetoothSerial.startDiscovery().listen((device) {
+  //     if (!devices.contains(device.device)) {
+  //       log('device yg tersedia ' + device.device.toString());
+  //       setState(() {
+  //         devices.add(device.device);
+  //       });
+  //     }
+  //   }, onDone: () {
+  //     setState(() {});
+  //   });
+
+  //   // Tunda pembatalan pemindaian setelah beberapa waktu (misalnya 10 detik)
+  //   await Future.delayed(Duration(seconds: 10));
+
+  //   // Setelah tunda, batalkan pemindaian
+  //   if (scanSubscription != null) {
+  //     scanSubscription.cancel();
+  //     log('Bluetooth scan stopped');
+  //   }
+  // }
 
   stopScanBluetooth() async {
     bluetoothSerial.cancelDiscovery();
@@ -127,6 +158,22 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
     });
   }
 
+  void scanDevices(BuildContext context) {
+    BlocProvider.of<ScanDevicesCubit>(context).scanDevices();
+    BlocProvider.of<ConnectedDevicesCubit>(context).fetchConnectedDevices();
+  }
+
+  void readChar(BluetoothCharacteristic char) async {
+    // readCharValue.value = await widget.char.read();
+    if (char.properties.read) {
+      try {
+        readCharValue.value = await char.read();
+      } catch (e) {
+        debugPrint("debugReadChar: ${e.toString()}");
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     idSite = ModalRoute.of(context)?.settings.arguments as String;
@@ -142,84 +189,129 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
               const SizedBox(
                 height: 24,
               ),
-              ButtonWidget(
-                  name: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.bluetooth,
-                        color: white,
-                      ),
-                      const SizedBox(
-                        width: 6,
-                      ),
-                      Text(
-                        'Connect Pressure Gauge Digital',
-                        style: getWhiteTextStyle(),
-                      ),
-                    ],
-                  ),
-                  function: () async {
-                    log('tombol pressure gauge');
-                    if (connection != null) {
-                      stopScanBluetooth();
-                      connection?.close();
-                    }
-                    requestBluetoothPermission();
-                    startScanBluetooth();
-                    setState(() {
-                      devices.clear();
-                    });
-                    // AppSettings.openBluetoothSettings();
-                  }),
+              // ButtonWidget(
+              //     name: Row(
+              //       mainAxisAlignment: MainAxisAlignment.center,
+              //       children: [
+              //         Icon(
+              //           Icons.bluetooth,
+              //           color: white,
+              //         ),
+              //         const SizedBox(
+              //           width: 6,
+              //         ),
+              //         Text(
+              //           'Connect Pressure Gauge Digital',
+              //           style: getWhiteTextStyle(),
+              //         ),
+              //       ],
+              //     ),
+              //     function: () async {
+              //       log('tombol pressure gauge');
+              //       if (connection != null) {
+              //         stopScanBluetooth();
+              //         connection?.close();
+              //       }
+              //       requestBluetoothPermission();
+              //       startScanBluetooth();
+              //       setState(() {
+              //         devices.clear();
+              //       });
+              //       // AppSettings.openBluetoothSettings();
+              //     }),
+              BlocBuilder<BluetoothOnOffCubit, BluetoothOnOffState>(
+                builder: (context, onOffState) {
+                  if (onOffState is BluetoothOnState) {
+                    return BlocBuilder<ConnectedDevicesCubit,
+                        connectedDevicesState.ConnectedDevicesState>(
+                      builder: (context, state) {
+                        if (state is connectedDevicesState
+                            .ConnectedDevicesLoadedState) {
+                          if (state.connectedDevices.isNotEmpty) {
+                            BlocProvider.of<DiscoverServicesCubit>(context)
+                                .discoverServices(state.connectedDevices[0]);
+                          }
+
+                          return RefreshIndicator(
+                            onRefresh: () async => scanDevices(context),
+                            child: Column(
+                              children: [
+                                ListOfConnectedDevicesWidget(
+                                    connectedDevices: state.connectedDevices),
+                                BlocBuilder<DiscoverServicesCubit,
+                                    DiscoverServiceState>(
+                                  builder: (context, discoverState) {
+                                    if (discoverState
+                                        is ErrorLoadingServiceState) {
+                                      return Center(
+                                        child: Text('Error'),
+                                      );
+                                    } else if (discoverState
+                                        is ServicesLoadedState) {
+                                      final services = discoverState.services;
+                                      log('services pgd : $services');
+
+                                      for (BluetoothService service
+                                          in services) {
+                                        for (BluetoothCharacteristic characteristic
+                                            in service.characteristics) {
+                                          characteristic.lastValueStream
+                                              .listen((event) {
+                                            String notifInString =
+                                                String.fromCharCodes(event);
+                                            debugPrint(
+                                                "debugBluetoothNotification*************");
+                                            debugPrint(
+                                                "debugBluetoothNotification: charName: ${BluetoothUtils.getBluetoothChar(characteristic.characteristicUuid.str)}");
+
+                                            debugPrint(
+                                                "notifhohoho: stringNotif: $notifInString");
+                                            debugPrint(
+                                                "notifhahaha: jsonNotif: ${jsonDecode(notifInString)}");
+                                            setState(() {
+                                              pressure = notifInString;
+                                            });
+                                            debugPrint(
+                                                "debugBluetoothNotification*************");
+                                          });
+                                        }
+                                      }
+
+                                      Text('Pressure' + pressure);
+                                    }
+                                    return Container();
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        } else if (state
+                            is connectedDevicesState.LoadingState) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+                        return const SizedBox();
+                      },
+                    );
+                  } else if (onOffState is BluetoothOffState) {
+                    return const Center(
+                      child: Text("Bluetooth is turned off"),
+                    );
+                  } else if (onOffState is BluetoothNotSupportedState) {
+                    return Center(
+                      child: Text(onOffState.failData.msg),
+                    );
+                  }
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+              ),
               const SizedBox(
                 height: 12,
               ),
-              Column(
-                children: devices.map((device) {
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      device.name ?? 'Uknown Device',
-                      style: getBlackTextStyle(),
-                    ),
-                    subtitle: Text(
-                      device.address,
-                      style: getGreyTextStyle(
-                        grey6A707C,
-                      ),
-                    ),
-                    trailing: SizedBox(
-                        width: 110,
-                        height: 60,
-                        child: ButtonWidget(
-                            name: Text(
-                              (isConnected) ? 'Disconnect' : 'Connect',
-                              style: getWhiteTextStyle(),
-                            ),
-                            function: () async {
-                              if (isConnected) {
-                                await connection!.close();
-                                devices.clear();
-                                setState(() {});
-                              } else {
-                                try {
-                                  connection =
-                                      await BluetoothConnection.toAddress(
-                                          device.address);
-                                  print('Connected to the device');
-                                  _listenForData();
-                                  devices.clear();
-                                  devices.add(device);
-                                  setState(() {});
-                                } catch (e) {
-                                  print('Cannot connect to the device: $e');
-                                }
-                              }
-                            })),
-                  );
-                }).toList(),
-              ),
+
+              Text('Pressure : $pressure'),
               Container(
                 child: TextFormField(
                   controller: unitCtrl,

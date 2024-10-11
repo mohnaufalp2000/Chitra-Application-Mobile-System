@@ -12,6 +12,7 @@ import 'package:camos/pages/pressure_gauge_digital/tire_inspection_form_page.dar
 import 'package:camos/pages/pressure_gauge_digital/select_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/trial/dashboard_daily_page.dart';
 import 'package:camos/pages/site_condition/site_condition_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
@@ -46,7 +47,7 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
         // push(context, SelectUnitPage.routeName);
         log('argumentasi dimensi : ${widget.argument?['idSite']}');
         if (widget.argument?['idSite'] == '3') {
-          Navigator.pushNamed(context, DailyPressureTrialPage.routeName,
+          Navigator.pushNamed(context, DashboardDailyPage.routeName,
               arguments: widget.argument?['idSite']);
         } else {
           push(context, SelectInspectionPage.routeName);

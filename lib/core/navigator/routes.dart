@@ -23,6 +23,8 @@ import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_history_trial_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_list_trial_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/trial/dashboard_daily_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
 import 'package:camos/pages/settings/edit_profile_page.dart';
 import 'package:camos/pages/settings/feedback_page.dart';
 import 'package:camos/pages/settings/settings_page.dart';
@@ -91,4 +93,6 @@ var routes = {
       DailyPressureListTrialPage(),
   DailyPressureHistoryTrialPage.routeName: (context) =>
       DailyPressureHistoryTrialPage(),
+  ScanDevicePage.routeName: (context) => ScanDevicePage(),
+  DashboardDailyPage.routeName: (context) => DashboardDailyPage(),
 };

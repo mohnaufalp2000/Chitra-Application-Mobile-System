@@ -3,6 +3,11 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:camos/core/blocs/attendance/attendance_bloc.dart';
 import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
+import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/pair_device_cubit/pair_device_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
 import 'package:camos/core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
 import 'package:camos/core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart';
 import 'package:camos/core/blocs/network/network_bloc.dart';
@@ -101,6 +106,13 @@ class MyApp extends StatelessWidget {
             create: (context) => DetailTireConditionBloc()),
         // mendapatkan nilai spm
         BlocProvider<SpmBloc>(create: (context) => SpmBloc()),
+
+        // bluetooth
+        BlocProvider(create: ((context) => BluetoothOnOffCubit())),
+        BlocProvider(create: ((context) => ScanDevicesCubit())),
+        BlocProvider(create: ((context) => ConnectedDevicesCubit())),
+        BlocProvider(create: ((context) => PairDeviceCubit())),
+        BlocProvider(create: ((context) => DiscoverServicesCubit())),
       ],
       child: MaterialApp(
         title: 'Material App',
