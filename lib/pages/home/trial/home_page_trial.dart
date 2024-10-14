@@ -121,9 +121,17 @@ class _HomePageTrialState extends State<HomePageTrial> {
                             const SizedBox(
                               height: 12,
                             ),
-                            Text(
-                              'App Version : ${_packageInfo.version}',
-                              style: getBlackTextStyle(fontWeight: w700),
+                            InkWell(
+                              onTap: () async {
+                                // context
+                                //     .read<AuthenticationBloc>()
+                                //     .add(AuthenticationEventLogout());
+                                // pushRemoveUntil(context, LoginPage.routeName);
+                              },
+                              child: Text(
+                                'App Version : ${_packageInfo.version}',
+                                style: getBlackTextStyle(fontWeight: w700),
+                              ),
                             ),
                             const SizedBox(
                               height: 12,

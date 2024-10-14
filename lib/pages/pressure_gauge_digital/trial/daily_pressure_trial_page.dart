@@ -11,6 +11,7 @@ import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_serv
 import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_state.dart';
 import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
 import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_state.dart';
+import 'package:camos/core/navigator/navigation_route.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
@@ -174,6 +175,40 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
     }
   }
 
+  checkSelectionTire() {
+    if (selectedTire == -1) {
+      showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              content: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Please choose one tire position before send data!',
+                    style: getBlackTextStyle(
+                      fontSize: 16,
+                      fontWeight: w600,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                    onPressed: () {
+                      back(context);
+                    },
+                    child: Text(
+                      'Close',
+                      style: getGreyTextStyle(grey8391A1),
+                    )),
+              ],
+            );
+          });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     idSite = ModalRoute.of(context)?.settings.arguments as String;
@@ -185,6 +220,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: SingleChildScrollView(
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(
                 height: 24,
@@ -222,68 +258,81 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
               BlocBuilder<BluetoothOnOffCubit, BluetoothOnOffState>(
                 builder: (context, onOffState) {
                   if (onOffState is BluetoothOnState) {
-                    return BlocBuilder<ConnectedDevicesCubit,
+                    return BlocConsumer<ConnectedDevicesCubit,
                         connectedDevicesState.ConnectedDevicesState>(
-                      builder: (context, state) {
+                      listener: (context, state) {
                         if (state is connectedDevicesState
                             .ConnectedDevicesLoadedState) {
                           if (state.connectedDevices.isNotEmpty) {
                             BlocProvider.of<DiscoverServicesCubit>(context)
                                 .discoverServices(state.connectedDevices[0]);
                           }
+                        }
+                      },
+                      builder: (context, state) {
+                        if (state is connectedDevicesState
+                            .ConnectedDevicesLoadedState) {
+                          return Column(
+                            children: [
+                              ListOfConnectedDevicesWidget(
+                                  connectedDevices: state.connectedDevices),
+                              BlocConsumer<DiscoverServicesCubit,
+                                  DiscoverServiceState>(
+                                listener: (context, discoverState) {
+                                  if (discoverState is ServicesLoadedState) {
+                                    final services = discoverState.services;
+                                    log('services pgd : $services');
 
-                          return RefreshIndicator(
-                            onRefresh: () async => scanDevices(context),
-                            child: Column(
-                              children: [
-                                ListOfConnectedDevicesWidget(
-                                    connectedDevices: state.connectedDevices),
-                                BlocBuilder<DiscoverServicesCubit,
-                                    DiscoverServiceState>(
-                                  builder: (context, discoverState) {
-                                    if (discoverState
-                                        is ErrorLoadingServiceState) {
-                                      return Center(
-                                        child: Text('Error'),
-                                      );
-                                    } else if (discoverState
-                                        is ServicesLoadedState) {
-                                      final services = discoverState.services;
-                                      log('services pgd : $services');
+                                    for (BluetoothService service in services) {
+                                      for (BluetoothCharacteristic characteristic
+                                          in service.characteristics) {
+                                        characteristic.lastValueStream
+                                            .listen((event) {
+                                          String notifInString =
+                                              String.fromCharCodes(event);
+                                          debugPrint(
+                                              "debugBluetoothNotification*************");
+                                          debugPrint(
+                                              "debugBluetoothNotification: charName: ${BluetoothUtils.getBluetoothChar(characteristic.characteristicUuid.str)}");
 
-                                      for (BluetoothService service
-                                          in services) {
-                                        for (BluetoothCharacteristic characteristic
-                                            in service.characteristics) {
-                                          characteristic.lastValueStream
-                                              .listen((event) {
-                                            String notifInString =
-                                                String.fromCharCodes(event);
-                                            debugPrint(
-                                                "debugBluetoothNotification*************");
-                                            debugPrint(
-                                                "debugBluetoothNotification: charName: ${BluetoothUtils.getBluetoothChar(characteristic.characteristicUuid.str)}");
+                                          debugPrint(
+                                              "notifhohoho: stringNotif: $notifInString");
+                                          debugPrint(
+                                              "notifhahaha: jsonNotif: ${jsonDecode(notifInString)}");
 
-                                            debugPrint(
-                                                "notifhohoho: stringNotif: $notifInString");
-                                            debugPrint(
-                                                "notifhahaha: jsonNotif: ${jsonDecode(notifInString)}");
-                                            setState(() {
-                                              pressure = notifInString;
-                                            });
-                                            debugPrint(
-                                                "debugBluetoothNotification*************");
+                                          setState(() {
+                                            // pressure = notifInString;
+                                            int floorPressure =
+                                                double.parse(notifInString)
+                                                    .floor();
+                                            pressure = floorPressure.toString();
+                                            if (selectedTire != -1) {
+                                              tires[selectedTire]['pressure'] =
+                                                  pressure;
+                                            } else {
+                                              checkSelectionTire();
+                                            }
+                                            log('pressure dibulatkan : $pressure');
                                           });
-                                        }
-                                      }
 
-                                      Text('Pressure' + pressure);
+                                          debugPrint(
+                                              "debugBluetoothNotification*************");
+                                        });
+                                      }
                                     }
-                                    return Container();
-                                  },
-                                ),
-                              ],
-                            ),
+                                  }
+                                },
+                                builder: (context, discoverState) {
+                                  if (discoverState
+                                      is ErrorLoadingServiceState) {
+                                    return Center(
+                                      child: Text('Error'),
+                                    );
+                                  }
+                                  return Container();
+                                },
+                              ),
+                            ],
                           );
                         } else if (state
                             is connectedDevicesState.LoadingState) {
@@ -310,8 +359,11 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
               const SizedBox(
                 height: 12,
               ),
+              // Text(
+              //   'Pressure : $pressure',
+              //   textAlign: TextAlign.start,
+              // ),
 
-              Text('Pressure : $pressure'),
               Container(
                 child: TextFormField(
                   controller: unitCtrl,

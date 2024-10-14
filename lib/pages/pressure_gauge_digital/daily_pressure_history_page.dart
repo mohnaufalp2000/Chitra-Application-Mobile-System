@@ -145,10 +145,10 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                 horizontal: 12,
               ),
               child: DatePicker(
-                DateTime.now().subtract(Duration(days: 5)),
+                DateTime.now().subtract(Duration(days: 10)),
                 height: 100,
                 width: 80,
-                daysCount: 5,
+                daysCount: 10,
                 locale: 'id_ID',
                 initialSelectedDate: DateTime.now().subtract(Duration(days: 1)),
                 selectionColor: green00968A,

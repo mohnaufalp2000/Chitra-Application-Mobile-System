@@ -3,6 +3,8 @@ import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_o
 import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
 import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
 import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_state.dart';
+import 'package:camos/core/styles/color.dart';
+import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/bluetooth/list_of_scanned_devices_widget.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +35,9 @@ class _ScanDevicePageState extends State<ScanDevicePage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        const SizedBox(
+                          height: 24,
+                        ),
                         Container(
                           color: Colors.white,
                           child: Column(
@@ -45,20 +50,71 @@ class _ScanDevicePageState extends State<ScanDevicePage> {
                               ),
                               if (state is ScanSuccessState ||
                                   state is ScanFailState)
-                                ElevatedButton(
-                                    onPressed: () {
-                                      scanDevices(context);
-                                    },
-                                    child: const Text("Scan Again"))
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12.0),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                        onPressed: () {
+                                          scanDevices(context);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blueAccent,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.bluetooth_searching,
+                                              color: white,
+                                            ),
+                                            const SizedBox(
+                                              width: 6,
+                                            ),
+                                            Text(
+                                              "Scan Again",
+                                              style: getWhiteTextStyle(),
+                                            ),
+                                          ],
+                                        )),
+                                  ),
+                                )
                             ],
                           ),
                         ),
                         if (state is InitialState)
-                          ElevatedButton(
-                              onPressed: () {
-                                scanDevices(context);
-                              },
-                              child: const Text("Scan Devices"))
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 12.0),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                  onPressed: () {
+                                    scanDevices(context);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blueAccent,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.bluetooth_searching,
+                                        color: white,
+                                      ),
+                                      const SizedBox(
+                                        width: 6,
+                                      ),
+                                      Text(
+                                        "Scan Devices",
+                                        style: getWhiteTextStyle(),
+                                      ),
+                                    ],
+                                  )),
+                            ),
+                          )
                         else if (state is ScanningState)
                           const Center(child: CircularProgressIndicator())
                         else if (state is ScanSuccessState)

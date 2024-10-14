@@ -43,6 +43,7 @@ class _DashboardDailyPageState extends State<DashboardDailyPage> {
 
     return Scaffold(
         floatingActionButton: const BluetoothToggleWidget(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
         bottomNavigationBar: ValueListenableBuilder(
           valueListenable: navAt,
           builder: (context, currentIndex, child) {

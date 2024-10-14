@@ -15,23 +15,31 @@ class BluetoothToggleWidget extends StatelessWidget {
     return BlocBuilder<BluetoothOnOffCubit, BluetoothOnOffState>(
       builder: (context, state) {
         if (state is BluetoothOffState || state is BluetoothOnState) {
-          return CupertinoSwitch(
-            value: state is BluetoothOffState ? false : true,
-            onChanged: (makeOn) async {
-              if (Platform.isAndroid) {
-                makeOn ? FlutterBluePlus.turnOn() : FlutterBluePlus.turnOff();
-              } else {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return const AlertDialog(
-                      title: Text(
-                          "In iOS, On/Off cannot be performed from the app itself."),
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Icon(Icons.bluetooth_sharp),
+              CupertinoSwitch(
+                value: state is BluetoothOffState ? false : true,
+                onChanged: (makeOn) async {
+                  if (Platform.isAndroid) {
+                    makeOn
+                        ? FlutterBluePlus.turnOn()
+                        : FlutterBluePlus.turnOff();
+                  } else {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return const AlertDialog(
+                          title: Text(
+                              "In iOS, On/Off cannot be performed from the app itself."),
+                        );
+                      },
                     );
-                  },
-                );
-              }
-            },
+                  }
+                },
+              ),
+            ],
           );
         }
         return const CircularProgressIndicator();
