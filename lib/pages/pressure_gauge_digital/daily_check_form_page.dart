@@ -286,6 +286,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     pit.add('Japun');
                     pit.add('PCE');
                     break;
+                  case '35':
+                    pit.add('Tabuhan');
+                    pit.add('EBL');
+                    pit.add('Workshop');
+                    break;
                 }
                 for (var i = 0; i < state.units.length; i++) {
                   if (position.length < state.units.length) {
@@ -1327,7 +1332,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           child: ElevatedButton(
             onPressed: () async {
               // jika belum memeilih pit
-              if (idSite == bmbsitarum.idSite || idSite == bmbhauling.idSite) {
+              if (idSite == bmbsitarum.idSite ||
+                  idSite == bmbhauling.idSite ||
+                  idSite == bmbtabuhan.idSite) {
                 if (selectedPit == -1) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

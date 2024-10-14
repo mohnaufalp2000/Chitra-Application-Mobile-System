@@ -125,6 +125,12 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
         pit.add('Japun');
         pit.add('PCE');
         break;
+      case '35':
+        pit.add('All');
+        pit.add('Tabuhan');
+        pit.add('EBL');
+        pit.add('Workshop');
+        break;
     }
 
     return Scaffold(

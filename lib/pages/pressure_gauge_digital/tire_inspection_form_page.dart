@@ -1044,16 +1044,19 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     // }
     switch (idSite) {
       case '52':
-        pit.add('All');
         pit.add('Utara');
         pit.add('Selatan');
         pit.add('RML');
         pit.add('WS');
         break;
       case '137':
-        pit.add('All');
         pit.add('Japun');
         pit.add('PCE');
+        break;
+      case '35':
+        pit.add('Tabuhan');
+        pit.add('EBL');
+        pit.add('Workshop');
         break;
     }
     print('dipanggil (pgd)');
@@ -1500,6 +1503,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                 ),
                               )
                             : Container(),
+                        SizedBox(
+                          height: (pit.isNotEmpty) ? 24 : 0,
+                        ),
                         Row(
                           children: [
                             Expanded(
@@ -2971,7 +2977,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                             : () async {
                                 // jika belum memeilih pit
                                 if (idSite == bmbsitarum.idSite ||
-                                    idSite == bmbhauling.idSite) {
+                                    idSite == bmbhauling.idSite ||
+                                    idSite == bmbtabuhan.idSite) {
                                   if (selectedPit == -1) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -3112,7 +3119,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
-                                          'pit': (idSite == bmbsitarum.idSite)
+                                          'pit': (idSite == bmbsitarum.idSite ||
+                                                  idSite == bmbhauling.idSite ||
+                                                  idSite == bmbtabuhan.idSite)
                                               ? pit[selectedPit]
                                               : 'Default'
                                         });
@@ -3180,7 +3189,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'sn': unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
-                                          'pit': (idSite == bmbsitarum.idSite)
+                                          'pit': (idSite == bmbsitarum.idSite ||
+                                                  idSite == bmbhauling.idSite ||
+                                                  idSite == bmbtabuhan.idSite)
                                               ? pit[selectedPit]
                                               : 'Default'
                                         });
@@ -3242,7 +3253,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'luka': p['damageTire']
                                           };
                                         }),
-                                        'pit': (idSite == bmbsitarum.idSite)
+                                        'pit': (idSite == bmbsitarum.idSite ||
+                                                idSite == bmbhauling.idSite ||
+                                                idSite == bmbtabuhan.idSite)
                                             ? pit[selectedPit]
                                             : 'Default'
                                       });
@@ -3271,7 +3284,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'luka': p['damageTire']
                                           };
                                         }),
-                                        'pit': (idSite == bmbsitarum.idSite)
+                                        'pit': (idSite == bmbsitarum.idSite ||
+                                                idSite == bmbhauling.idSite ||
+                                                idSite == bmbtabuhan.idSite)
                                             ? pit[selectedPit]
                                             : 'Default'
                                       });
