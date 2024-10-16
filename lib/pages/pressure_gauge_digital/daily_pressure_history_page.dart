@@ -60,6 +60,12 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   //   }
   // }
 
+  Future<String> getActualIdSite() async {
+    final actIdSite = await getIdSitePreferences();
+
+    return actIdSite;
+  }
+
   Future<void> getUnits() async {
     // jika user site ambil dari cache
     if (await getIdSitePreferences() != '1' &&
@@ -182,31 +188,50 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
             const SizedBox(
               height: 12,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  isOnline ? 'Status: Online' : 'Status: Offline',
-                  style: getBlackTextStyle(fontSize: 24),
-                ),
-                SizedBox(width: 20), // Spasi antar teks dan tombol
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      isOnline = !isOnline; // Toggle the status
-                      getUnits();
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    primary: isOnline ? Colors.green : Colors.red,
-                  ),
-                  child: Text(
-                    isOnline ? 'Go Offline' : 'Go Online',
-                    style: getWhiteTextStyle(),
-                  ),
-                ),
-              ],
-            ),
+            FutureBuilder(
+                future: getActualIdSite(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Container();
+                  }
+
+                  final data = snapshot.data;
+                  log('id site future builder : $data');
+
+                  if (data != '1' && data != '2' && data != '3') {
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            isOnline = !isOnline; // Toggle the status
+                            getUnits();
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          primary: Colors.green,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.fire_truck,
+                              color: white,
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Text(
+                              'Get Unit',
+                              style: getWhiteTextStyle(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+                  return Container();
+                }),
             const SizedBox(
               height: 12,
             ),

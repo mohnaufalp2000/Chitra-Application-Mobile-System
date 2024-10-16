@@ -16,6 +16,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,12 +39,13 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   String actualIdSite = '';
   List<String> pit = [];
   int selectedPit = 0;
-  int selectedMenu = 1;
+  int selectedMenu = 0;
   String searchQuery = '';
   Map<String, dynamic> user = {};
   List<Map<String, dynamic>> filteredItemTask = [];
   List<UnitTire> units = [];
   bool isOnline = false;
+  int unitChecked = 0;
 
   @override
   void initState() {
@@ -178,317 +180,30 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         pit.add('Workshop');
         break;
     }
-    // return Scaffold(
-    //   appBar: appBarWidget('Daily Pressure List', context),
-    //   body: SafeArea(
-    //       child: SingleChildScrollView(
-    //     child: Padding(
-    //       padding: const EdgeInsets.all(24.0),
-    //       child: Column(
-    //         children: [
-    //           FutureBuilder(
-    //               future: getActualIdSite(),
-    //               builder: (context, snapshot) {
-    //                 if (snapshot.connectionState == ConnectionState.waiting) {
-    //                   return Container();
-    //                 }
-
-    //                 final data = snapshot.data;
-    //                 log('id site future builder : $data');
-
-    //                 if (data != '1' && data != '2' && data != '3') {
-    //                   return Row(
-    //                     mainAxisAlignment: MainAxisAlignment.center,
-    //                     children: [
-    //                       Text(
-    //                         isOnline ? 'Status: Online' : 'Status: Offline',
-    //                         style: getBlackTextStyle(fontSize: 24),
-    //                       ),
-    //                       SizedBox(width: 20), // Spasi antar teks dan tombol
-    //                       ElevatedButton(
-    //                         onPressed: () {
-    //                           setState(() {
-    //                             isOnline = !isOnline; // Toggle the status
-    //                             getUnits();
-    //                           });
-    //                         },
-    //                         style: ElevatedButton.styleFrom(
-    //                           primary: isOnline ? Colors.green : Colors.red,
-    //                         ),
-    //                         child: Text(
-    //                           isOnline ? 'Go Offline' : 'Go Online',
-    //                           style: getWhiteTextStyle(),
-    //                         ),
-    //                       ),
-    //                     ],
-    //                   );
-    //                 }
-    //                 return Container();
-    //               }),
-    //           const SizedBox(
-    //             height: 12,
-    //           ),
-    //           TextField(
-    //             onChanged: (value) {
-    //               setState(() {
-    //                 searchQuery = value;
-    //               });
-    //             },
-    //             decoration: InputDecoration(
-    //                 hintText: 'Search... (Unit Number or Model)',
-    //                 hintStyle: getGreyTextStyle(grey8391A1),
-    //                 prefixIcon: Icon(Icons.search)),
-    //           ),
-    //           const SizedBox(
-    //             height: 12,
-    //           ),
-    //           const SizedBox(
-    //             height: 12,
-    //           ),
-    //           ExportExcelButton(
-    //             user: user,
-    //             pit: pit,
-    //             selectedPit: selectedPit,
-    //             filteredItemTask: filteredItemTask,
-    //             date:
-    //                 "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
-    //           ),
-    //           const SizedBox(
-    //             height: 12,
-    //           ),
-    //           SizedBox(
-    //               width: double.infinity,
-    //               child: ElevatedButton(
-    //                   onPressed: () {
-    //                     Navigator.pushNamed(
-    //                         context, DailyPressureHistoryPage.routeName);
-    //                   },
-    //                   style: ElevatedButton.styleFrom(
-    //                       backgroundColor: Colors.orange),
-    //                   child: Container(
-    //                     padding: EdgeInsets.symmetric(vertical: 12),
-    //                     child: Row(
-    //                       mainAxisAlignment: MainAxisAlignment.center,
-    //                       children: [
-    //                         Icon(
-    //                           Icons.history,
-    //                           color: Colors.white,
-    //                         ),
-    //                         const SizedBox(
-    //                           width: 12,
-    //                         ),
-    //                         Text(
-    //                           'History',
-    //                           style: getWhiteTextStyle(),
-    //                         ),
-    //                       ],
-    //                     ),
-    //                   ))),
-    //           // Unit belum di cek
-    //           BlocConsumer<UnitBloc, UnitState>(builder: (context, state) {
-    //             if (state is UnitLoadingState) {
-    //               return Center(child: CircularProgressIndicator());
-    //             }
-
-    //             if (state is UnitLoadedState) {
-    //               log('kondisi state : ${state.units.length}');
-
-    //               return Column(
-    //                 crossAxisAlignment: CrossAxisAlignment.start,
-    //                 children: [
-    //                   const SizedBox(
-    //                     height: 12,
-    //                   ),
-    //                   Text(
-    //                     'Total Unit : ${state.units.length.toString()}',
-    //                     style: getGreyTextStyle(grey8391A1),
-    //                   ),
-    //                   const SizedBox(
-    //                     height: 12,
-    //                   ),
-    //                   (state.units == null || state.units.isEmpty)
-    //                       ? Text(
-    //                           'No Data, please go online to get data!',
-    //                           textAlign: TextAlign.center,
-    //                           style: getBlackTextStyle(fontSize: 18),
-    //                         )
-    //                       : Column(
-    //                           children: state.units.map((unit) {
-    //                             if (searchQuery.isNotEmpty &&
-    //                                 !unit.unitNumber!
-    //                                     .toLowerCase()
-    //                                     .contains(searchQuery) &&
-    //                                 !unit.model!
-    //                                     .toLowerCase()
-    //                                     .contains(searchQuery)) {
-    //                               return Container();
-    //                             }
-    //                             return InkWell(
-    //                               onTap: () {
-    //                                 // switch (inspectionType) {
-    //                                 //   case 'daily_check':
-    //                                 //     Navigator.pushNamed(
-    //                                 //         context, DailyCheckFormPage.routeName,
-    //                                 //         arguments: {
-    //                                 //           'unitNumber': unit.unitNumber,
-    //                                 //         });
-    //                                 //     break;
-    //                                 //   case 'tire_inspection':
-    //                                 //     Navigator.pushNamed(context,
-    //                                 //         TireInspectionFormPage.routeName,
-    //                                 //         arguments: {
-    //                                 //           'unitNumber': unit.unitNumber,
-    //                                 //           'hm': unit.hm,
-    //                                 //         });
-    //                                 //     break;
-    //                                 // }
-    //                               },
-    //                               child: Container(
-    //                                 margin: EdgeInsets.symmetric(vertical: 8.0),
-    //                                 padding: EdgeInsets.symmetric(vertical: 6),
-    //                                 decoration: BoxDecoration(
-    //                                   color: Colors.white,
-    //                                   borderRadius: BorderRadius.circular(12),
-    //                                   boxShadow: [
-    //                                     BoxShadow(
-    //                                       color: Colors.black.withOpacity(0.1),
-    //                                       spreadRadius: 2,
-    //                                       blurRadius: 5,
-    //                                       offset: Offset(0, 2),
-    //                                     ),
-    //                                   ],
-    //                                 ),
-    //                                 child: ListTile(
-    //                                   leading: Icon(
-    //                                     Icons.front_loader,
-    //                                     color: Colors.orange,
-    //                                   ),
-    //                                   title: Padding(
-    //                                     padding:
-    //                                         const EdgeInsets.only(bottom: 4.0),
-    //                                     child: Text(
-    //                                       '${unit.unitNumber}',
-    //                                       style: getBlackTextStyle(
-    //                                           fontWeight: FontWeight.w700),
-    //                                     ),
-    //                                   ),
-    //                                   subtitle: Text(
-    //                                     '${unit.model}',
-    //                                     style: getGreyTextStyle(grey6A707C),
-    //                                   ),
-    //                                   trailing: Icon(Icons.arrow_forward_ios),
-    //                                 ),
-    //                               ),
-    //                             );
-    //                           }).toList(),
-    //                         ),
-    //                 ],
-    //               );
-    //             }
-
-    //             return Container();
-    //           }, listener: (context, state) {
-    //             if (state is UnitErrorState) {
-    //               setState(() {
-    //                 isOnline = !isOnline;
-    //               });
-    //               showDialog(
-    //                   context: context,
-    //                   builder: (BuildContext context) {
-    //                     return AlertDialog(
-    //                       title: Text(
-    //                         'Please check your internet connection!',
-    //                         style: getBlackTextStyle(),
-    //                       ),
-    //                       actions: [
-    //                         TextButton(
-    //                             onPressed: () {
-    //                               Navigator.pop(context);
-    //                               Navigator.pop(context);
-    //                             },
-    //                             child: Text('Okay'))
-    //                       ],
-    //                     );
-    //                   });
-    //             }
-    //           }),
-    //           // Unit telah di cek
-    //           // StreamBuilder(
-    //           //     stream: firestore
-    //           //         .collection('daily_pressure')
-    //           //         .where('idSite', isEqualTo: idSite)
-    //           //         .snapshots(),
-    //           //     builder: (context, snapshot) {
-    //           //       if (snapshot.connectionState == ConnectionState.waiting) {
-    //           //         return CircularProgressIndicator();
-    //           //       }
-
-    //           //       List<DocumentSnapshot> documents = snapshot.data!.docs;
-
-    //           //       final filteredDocument = documents.where((doc) {
-    //           //         final Map<String, dynamic> data =
-    //           //             doc.data() as Map<String, dynamic>;
-
-    //           //         final dateString = data['tanggal'] as String;
-    //           //         final dateTime = DateTime.parse(dateString);
-    //           //         final now = DateTime.now();
-
-    //           //         return dateTime.year == now.year &&
-    //           //             dateTime.month == now.month &&
-    //           //             dateTime.day == now.day;
-    //           //       });
-
-    //           //       log('jumlah unit yang di cek hari ini : ${filteredDocument.length}');
-
-    //           //       return Container();
-    //           //     }),
-    //         ],
-    //       ),
-    //     ),
-    //   )),
-    // );
-
     return Scaffold(
       appBar: appBarWidget('Daily Pressure List', context),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              children: [
-                (selectedMenu != 1)
-                    ? SelectPitButton(
-                        pit: pit,
-                        selectedPit: selectedPit,
-                        onSelectedPitChanged: (index) {
-                          setState(() {
-                            selectedPit = index;
-                          });
-                        })
-                    : Container(),
-                const SizedBox(
-                  height: 12,
-                ),
-                FutureBuilder(
-                    future: getActualIdSite(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Container();
-                      }
+          child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              FutureBuilder(
+                  future: getActualIdSite(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Container();
+                    }
 
-                      final data = snapshot.data;
-                      log('id site future builder : $data');
+                    final data = snapshot.data;
+                    log('id site future builder : $data');
 
-                      if (data != '1' && data != '2' && data != '3') {
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              isOnline ? 'Status: Online' : 'Status: Offline',
-                              style: getBlackTextStyle(fontSize: 24),
-                            ),
-                            SizedBox(width: 20), // Spasi antar teks dan tombol
-                            ElevatedButton(
+                    if (data != '1' && data != '2' && data != '3') {
+                      return Column(
+                        children: [
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
                               onPressed: () {
                                 setState(() {
                                   isOnline = !isOnline; // Toggle the status
@@ -496,537 +211,680 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                primary: isOnline ? Colors.green : Colors.red,
+                                primary: Colors.green,
                               ),
-                              child: Text(
-                                isOnline ? 'Go Offline' : 'Go Online',
-                                style: getWhiteTextStyle(),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.fire_truck,
+                                    color: white,
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Text(
+                                    'Get New Unit',
+                                    style: getWhiteTextStyle(),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        );
-                      }
-                      return Container();
-                    }),
-                const SizedBox(
-                  height: 12,
-                ),
-                TextField(
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                      hintText: 'Search... (Unit Number or Model)',
-                      hintStyle: getGreyTextStyle(grey8391A1),
-                      prefixIcon: Icon(Icons.search)),
-                ),
-                const SizedBox(
-                  height: 12,
-                ),
-                ExportExcelButton(
-                  user: user,
-                  pit: pit,
-                  selectedPit: selectedPit,
-                  filteredItemTask: filteredItemTask,
-                  date:
-                      "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
-                ),
-                const SizedBox(
-                  height: 12,
-                ),
-                SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(
-                              context, DailyPressureHistoryPage.routeName);
-                        },
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.history,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(
-                                width: 12,
-                              ),
-                              Text(
-                                'History',
-                                style: getWhiteTextStyle(),
-                              ),
-                            ],
                           ),
-                        ))),
-                StreamBuilder(
-                    stream: firestore.collection('daily_pressure').snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator();
-                      }
+                          const SizedBox(
+                            height: 6,
+                          ),
+                          Text(
+                            'Press this if unit is not updated!',
+                            style: getGreyTextStyle(grey8391A1, fontSize: 12),
+                          ),
+                        ],
+                      );
+                    }
+                    return Container();
+                  }),
+              const SizedBox(
+                height: 12,
+              ),
+              TextField(
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                    hintText: 'Search... (Unit Number or Model)',
+                    hintStyle: getGreyTextStyle(grey8391A1),
+                    prefixIcon: Icon(Icons.search)),
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              ExportExcelButton(
+                user: user,
+                pit: pit,
+                selectedPit: selectedPit,
+                filteredItemTask: filteredItemTask,
+                date:
+                    "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(
+                            context, DailyPressureHistoryPage.routeName);
+                      },
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange),
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.history,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Text(
+                              'History',
+                              style: getWhiteTextStyle(),
+                            ),
+                          ],
+                        ),
+                      ))),
+              // Unit belum di cek
+              BlocConsumer<UnitBloc, UnitState>(builder: (context, state) {
+                if (state is UnitLoadingState) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-                      List<DocumentSnapshot> documents = snapshot.data!.docs;
+                if (state is UnitLoadedState) {
+                  log('kondisi state : ${state.units.length}');
 
-                      if (searchQuery.length > 0) {
-                        documents = documents.where((element) {
-                          return element
-                              .get('unit')
-                              .toString()
-                              .toLowerCase()
-                              .contains(searchQuery.toLowerCase());
-                        }).toList();
-                      }
+                  List<UnitTire> filteredUnits = state.units.where((unit) {
+                    // Cek apakah unit sudah dicek (berada di filteredItemTask)
+                    return !filteredItemTask
+                        .any((task) => task['unit'] == unit.unitNumber);
+                  }).toList();
 
-                      final filteredDocument = documents.where((doc) {
-                        final Map<String, dynamic> data =
-                            doc.data() as Map<String, dynamic>;
+                  log('kondisi unit : ${filteredUnits.length}');
 
-                        final dateString = data['tanggal'] as String;
-                        final dateTime = DateTime.parse(dateString);
-                        final now = DateTime.now();
-
-                        // pilih all pit
-                        if (pit.isNotEmpty) {
-                          if (pit[selectedPit] == 'All') {
-                            return dateTime.year == now.year &&
-                                dateTime.month == now.month &&
-                                dateTime.day == now.day &&
-                                data['idSite'] == idSite;
-                          }
-
-                          // ada pit
-                          if (data['pit'] != 'Default') {
-                            return dateTime.year == now.year &&
-                                dateTime.month == now.month &&
-                                dateTime.day == now.day &&
-                                data['idSite'] == idSite &&
-                                data['pit'] == pit[selectedPit];
-                          }
-                        }
-
-                        // tidak ada pit
-                        return dateTime.year == now.year &&
-                            dateTime.month == now.month &&
-                            dateTime.day == now.day &&
-                            data['idSite'] == idSite;
-                      }).toList();
-
-                      filteredDocument.sort((a, b) {
-                        Map<String, dynamic> first =
-                            a.data() as Map<String, dynamic>;
-                        Map<String, dynamic> second =
-                            b.data() as Map<String, dynamic>;
-                        ;
-                        // Ambil nilai last_update dari masing-masing DocumentSnapshot
-                        DateTime timeA = DateTime.parse(first['tanggal']);
-                        DateTime timeB = DateTime.parse(second['tanggal']);
-
-                        // Bandingkan waktu last_update dari kedua DocumentSnapshot
-                        return timeB.compareTo(
-                            timeA); // Dari yang terbaru ke yang terlama
-                      });
-
-                      // untuk data export excel
-                      filteredItemTask.clear();
-                      filteredDocument.forEach((item) {
-                        Map<String, dynamic> cast =
-                            item.data() as Map<String, dynamic>;
-
-                        units.removeWhere(
-                            (element) => element.unitNumber == cast['unit']);
-                        filteredItemTask.add(cast);
-                      });
-                      log('dailyexcel: $filteredItemTask');
-                      log('jumlah kendaraan : ${units.length}');
-
+                  return Builder(builder: (context) {
+                    if (selectedMenu == 1) {
                       return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(
                             height: 12,
                           ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12.0),
-                            child: Text(
-                              (selectedMenu == 0)
-                                  ? 'Total Unit : ${filteredDocument.length}'
-                                  : 'Total Unit : ${units.length}',
-                              style: getBlackTextStyle(fontSize: 20),
-                            ),
+                          Text(
+                            'Total Unit : ${filteredUnits.length.toString()}',
+                            style: getBlackTextStyle(fontSize: 20),
                           ),
                           const SizedBox(
                             height: 12,
                           ),
-                          (units.isEmpty || units == null && selectedMenu == 1)
-                              ? Column(
-                                  children: [
-                                    Text(
-                                      'Data is Empty. Please Go Online to Get Data!',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                  ],
+                          (filteredUnits == null || filteredUnits.isEmpty)
+                              ? Text(
+                                  'No Data, please press Get Unit to get data!',
+                                  textAlign: TextAlign.center,
+                                  style: getBlackTextStyle(fontSize: 18),
                                 )
-                              : ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  itemCount: (selectedMenu == 0)
-                                      ? filteredDocument.length
-                                      : units.length,
-                                  itemBuilder: (context, index) {
-                                    if (selectedMenu == 0) {
-                                      final Map<String, dynamic> dailyMap =
-                                          filteredDocument[index].data()
-                                              as Map<String, dynamic>;
-                                      final positionList =
-                                          dailyMap['posisi'] as List<dynamic>;
-
-                                      log('subsub : $positionList');
-
-                                      return Card(
-                                          elevation: 2,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
+                              : Column(
+                                  children: filteredUnits.map((unit) {
+                                    if (searchQuery.isNotEmpty &&
+                                        !unit.unitNumber!
+                                            .toLowerCase()
+                                            .contains(searchQuery) &&
+                                        !unit.model!
+                                            .toLowerCase()
+                                            .contains(searchQuery)) {
+                                      return Container();
+                                    }
+                                    return InkWell(
+                                      onTap: (actualIdSite == '1' ||
+                                              actualIdSite == '2' ||
+                                              actualIdSite == '3')
+                                          ? () {}
+                                          : () {
+                                              Navigator.pushNamed(context,
+                                                  DailyCheckFormPage.routeName,
+                                                  arguments: {
+                                                    'unitNumber':
+                                                        unit.unitNumber,
+                                                  });
+                                            },
+                                      child: Container(
+                                        margin:
+                                            EdgeInsets.symmetric(vertical: 8.0),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.black.withOpacity(0.1),
+                                              spreadRadius: 2,
+                                              blurRadius: 5,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ListTile(
+                                          leading: Icon(
+                                            Icons.front_loader,
+                                            color: Colors.orange,
                                           ),
-                                          color: green00968A,
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 24),
-                                            decoration: BoxDecoration(
-                                              color: green00968A,
+                                          title: Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 4.0),
+                                            child: Text(
+                                              '${unit.unitNumber}',
+                                              style: getBlackTextStyle(
+                                                  fontWeight: FontWeight.w700),
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            '${unit.model}',
+                                            style: getGreyTextStyle(grey6A707C),
+                                          ),
+                                          trailing:
+                                              Icon(Icons.arrow_forward_ios),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                        ],
+                      );
+                    } else {
+                      return // Unit telah di cek
+                          Column(
+                        children: [
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          SelectPitButton(
+                              pit: pit,
+                              selectedPit: selectedPit,
+                              onSelectedPitChanged: (index) {
+                                setState(() {
+                                  selectedPit = index;
+                                });
+                              }),
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          StreamBuilder(
+                              stream: firestore
+                                  .collection('daily_pressure')
+                                  .where('idSite', isEqualTo: idSite)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return CircularProgressIndicator();
+                                }
+
+                                List<DocumentSnapshot> documents =
+                                    snapshot.data!.docs;
+
+                                // final filteredDocument = documents.where((doc) {
+                                //   final Map<String, dynamic> data =
+                                //       doc.data() as Map<String, dynamic>;
+
+                                //   final dateString = data['tanggal'] as String;
+                                //   final dateTime = DateTime.parse(dateString);
+                                //   final now = DateTime.now();
+
+                                //   return dateTime.year == now.year &&
+                                //       dateTime.month == now.month &&
+                                //       dateTime.day == now.day;
+                                // });
+
+                                final filteredDocument = documents.where((doc) {
+                                  final Map<String, dynamic> data =
+                                      doc.data() as Map<String, dynamic>;
+
+                                  final dateString = data['tanggal'] as String;
+                                  final dateTime = DateTime.parse(dateString);
+                                  final now = DateTime.now();
+
+                                  // pilih all pit
+                                  if (pit.isNotEmpty) {
+                                    if (pit[selectedPit] == 'All') {
+                                      return dateTime.year == now.year &&
+                                          dateTime.month == now.month &&
+                                          dateTime.day == now.day &&
+                                          data['idSite'] == idSite;
+                                    }
+
+                                    // ada pit
+                                    if (data['pit'] != 'Default') {
+                                      return dateTime.year == now.year &&
+                                          dateTime.month == now.month &&
+                                          dateTime.day == now.day &&
+                                          data['idSite'] == idSite &&
+                                          data['pit'] == pit[selectedPit];
+                                    }
+                                  }
+
+                                  // tidak ada pit
+                                  return dateTime.year == now.year &&
+                                      dateTime.month == now.month &&
+                                      dateTime.day == now.day &&
+                                      data['idSite'] == idSite;
+                                }).toList();
+
+                                filteredDocument.sort((a, b) {
+                                  Map<String, dynamic> first =
+                                      a.data() as Map<String, dynamic>;
+                                  Map<String, dynamic> second =
+                                      b.data() as Map<String, dynamic>;
+                                  ;
+                                  // Ambil nilai last_update dari masing-masing DocumentSnapshot
+                                  DateTime timeA =
+                                      DateTime.parse(first['tanggal']);
+                                  DateTime timeB =
+                                      DateTime.parse(second['tanggal']);
+
+                                  // Bandingkan waktu last_update dari kedua DocumentSnapshot
+                                  return timeB.compareTo(
+                                      timeA); // Dari yang terbaru ke yang terlama
+                                });
+
+                                // untuk data export excel
+                                filteredItemTask.clear();
+                                filteredDocument.forEach((item) {
+                                  Map<String, dynamic> cast =
+                                      item.data() as Map<String, dynamic>;
+
+                                  units.removeWhere((element) =>
+                                      element.unitNumber == cast['unit']);
+                                  filteredItemTask.add(cast);
+                                });
+
+                                unitChecked = filteredDocument.length;
+
+                                log('jumlah unit yang di cek hari ini : ${filteredDocument.length}');
+
+                                return Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12.0),
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            'Total Unit : ${filteredDocument.length}',
+                                            style:
+                                                getBlackTextStyle(fontSize: 20),
+                                          ),
+                                          const SizedBox(
+                                            height: 6,
+                                          ),
+                                          Builder(builder: (context) {
+                                            Map<String, dynamic> mapData =
+                                                filteredDocument[0].data()
+                                                    as Map<String, dynamic>;
+                                            String originalDate =
+                                                mapData['tanggal'];
+                                            DateTime parsedDate =
+                                                DateTime.parse(originalDate);
+                                            String formattedDate = DateFormat(
+                                                    'HH:mm || dd-MM-yyyy')
+                                                .format(parsedDate);
+
+                                            return Text(
+                                              'Last Update : ${formattedDate}',
+                                              style: getBlackTextStyle(
+                                                  fontSize: 14),
+                                            );
+                                          }),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 12,
+                                    ),
+                                    ListView.builder(
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemCount: filteredDocument.length,
+                                      itemBuilder: (context, index) {
+                                        final Map<String, dynamic> dailyMap =
+                                            filteredDocument[index].data()
+                                                as Map<String, dynamic>;
+                                        final positionList =
+                                            dailyMap['posisi'] as List<dynamic>;
+
+                                        log('subsub : $positionList');
+
+                                        return Card(
+                                            elevation: 2,
+                                            shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             ),
-                                            child: ExpansionTile(
-                                              tilePadding: EdgeInsets.zero,
-                                              childrenPadding:
-                                                  EdgeInsets.all(0),
-                                              title: Row(
+                                            color: green00968A,
+                                            child: Container(
+                                              width: double.infinity,
+                                              padding: EdgeInsets.symmetric(
+                                                  horizontal: 12, vertical: 24),
+                                              decoration: BoxDecoration(
+                                                color: green00968A,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: ExpansionTile(
+                                                tilePadding: EdgeInsets.zero,
+                                                childrenPadding:
+                                                    EdgeInsets.all(0),
+                                                title: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.task,
+                                                      color: white,
+                                                      size: 36,
+                                                    ),
+                                                    const SizedBox(
+                                                      width: 12,
+                                                    ),
+                                                    Text(
+                                                      dailyMap['unit'] +
+                                                          '${((dailyMap['pit'] != 'Default') ? ' - ' + dailyMap['pit'] : '')}',
+                                                      style: getWhiteTextStyle(
+                                                          fontWeight: w700,
+                                                          fontSize: 18),
+                                                    )
+                                                  ],
+                                                ),
+                                                trailing: SizedBox(
+                                                  width: 90,
+                                                  child: Icon(
+                                                      Icons.arrow_drop_down),
+                                                ),
                                                 children: [
-                                                  Icon(
-                                                    Icons.task,
-                                                    color: white,
-                                                    size: 36,
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        'Name',
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontSize: 18),
+                                                      ),
+                                                      Container(
+                                                        width: 250,
+                                                        child: Text(
+                                                          dailyMap['user'] ??
+                                                              'No Name',
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontWeight:
+                                                                      w700,
+                                                                  fontSize: 18),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                   const SizedBox(
-                                                    width: 12,
+                                                    height: 12,
                                                   ),
-                                                  Text(
-                                                    dailyMap['unit'] +
-                                                        '${((dailyMap['pit'] != 'Default') ? ' - ' + dailyMap['pit'] : '')}',
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18),
-                                                  )
-                                                ],
-                                              ),
-                                              trailing: SizedBox(
-                                                width: 90,
-                                                child:
-                                                    Icon(Icons.arrow_drop_down),
-                                              ),
-                                              children: [
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'Name',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Container(
-                                                      width: 250,
-                                                      child: Text(
-                                                        dailyMap['user'] ??
-                                                            'No Name',
-                                                        textAlign:
-                                                            TextAlign.end,
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        'Tanggal',
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontSize: 18),
+                                                      ),
+                                                      Text(
+                                                        dailyMap['tanggal']
+                                                            .split('T')[0],
                                                         style:
                                                             getWhiteTextStyle(
                                                                 fontWeight:
                                                                     w700,
                                                                 fontSize: 18),
                                                       ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'Tanggal',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Text(
-                                                      dailyMap['tanggal']
-                                                          .split('T')[0],
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'Waktu',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Text(
-                                                      dailyMap['tanggal']
-                                                          .split('T')[1]
-                                                          .substring(0, 5),
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'HM Unit',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Text(
-                                                      dailyMap['hm'],
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'Pit',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Text(
-                                                      dailyMap['pit'],
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Column(
-                                                  children:
-                                                      positionList.map((pl) {
-                                                    final plIndex = positionList
-                                                        .indexOf(pl);
-                                                    List<dynamic> luka = [];
+                                                    ],
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        'Waktu',
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontSize: 18),
+                                                      ),
+                                                      Text(
+                                                        dailyMap['tanggal']
+                                                            .split('T')[1]
+                                                            .substring(0, 5),
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        'HM Unit',
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontSize: 18),
+                                                      ),
+                                                      Text(
+                                                        dailyMap['hm'],
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        'Pit',
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontSize: 18),
+                                                      ),
+                                                      Text(
+                                                        dailyMap['pit'],
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  Column(
+                                                    children:
+                                                        positionList.map((pl) {
+                                                      final plIndex =
+                                                          positionList
+                                                              .indexOf(pl);
+                                                      List<dynamic> luka = [];
 
-                                                    if (pl['luka'] != null &&
-                                                        pl['luka'] is! String) {
-                                                      luka = pl['luka']
-                                                          as List<dynamic>;
-                                                    }
+                                                      if (pl['luka'] != null &&
+                                                          pl['luka']
+                                                              is! String) {
+                                                        luka = pl['luka']
+                                                            as List<dynamic>;
+                                                      }
 
-                                                    return Column(
-                                                      children: [
-                                                        Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Text(
-                                                              'Pos. ${pl['pos']}',
-                                                              style:
-                                                                  getWhiteTextStyle(
-                                                                      fontSize:
-                                                                          18),
-                                                            ),
-                                                            Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .end,
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .end,
-                                                                  children: [
-                                                                    Text(
-                                                                      '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
-                                                                      style: getWhiteTextStyle(
-                                                                          fontWeight:
-                                                                              w700,
-                                                                          fontSize:
-                                                                              18),
-                                                                    ),
-                                                                    (pl['adjusmentPressure'] != null &&
-                                                                            pl['adjusmentPressure'] !=
-                                                                                '0' &&
-                                                                            pl['adjusmentPressure'] !=
-                                                                                '')
-                                                                        ? Text(
-                                                                            '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
-                                                                            style:
-                                                                                getWhiteTextStyle(fontWeight: w700, fontSize: 18),
-                                                                          )
-                                                                        : Container(),
-                                                                  ],
-                                                                ),
-                                                                (luka.isEmpty ||
-                                                                        luka ==
-                                                                            null)
-                                                                    ? Container()
-                                                                    : Text(
-                                                                        pl['luka']
-                                                                            .join('\n'),
-                                                                        textAlign:
-                                                                            TextAlign.end,
+                                                      return Column(
+                                                        children: [
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              Text(
+                                                                'Pos. ${pl['pos']}',
+                                                                style:
+                                                                    getWhiteTextStyle(
+                                                                        fontSize:
+                                                                            18),
+                                                              ),
+                                                              Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .end,
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .end,
+                                                                    children: [
+                                                                      Text(
+                                                                        '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
                                                                         style: getWhiteTextStyle(
                                                                             fontWeight:
                                                                                 w700,
                                                                             fontSize:
                                                                                 18),
                                                                       ),
-                                                                const SizedBox(
-                                                                  height: 12,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: white,
-                                                          thickness: 1.5,
-                                                        ),
-                                                      ],
-                                                    );
-                                                  }).toList(),
-                                                ),
-                                              ],
-                                            ),
-                                          ));
-                                    } else {
-                                      final item = units[index];
-                                      if (searchQuery.isNotEmpty &&
-                                          !item.unitNumber!
-                                              .toLowerCase()
-                                              .contains(searchQuery) &&
-                                          !item.model!
-                                              .toLowerCase()
-                                              .contains(searchQuery)) {
-                                        return Container();
-                                      }
-                                      return InkWell(
-                                        onTap: (actualIdSite == '1' ||
-                                                actualIdSite == '2' ||
-                                                actualIdSite == '3')
-                                            ? () {}
-                                            : () {
-                                                Navigator.pushNamed(
-                                                    context,
-                                                    DailyCheckFormPage
-                                                        .routeName,
-                                                    arguments: {
-                                                      'unitNumber':
-                                                          item.unitNumber,
-                                                    });
-                                              },
-                                        child: Container(
-                                          margin: EdgeInsets.symmetric(
-                                            vertical: 8.0,
-                                          ),
-                                          padding:
-                                              EdgeInsets.symmetric(vertical: 6),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black
-                                                    .withOpacity(0.1),
-                                                spreadRadius: 2,
-                                                blurRadius: 5,
-                                                offset: Offset(0, 2),
+                                                                      (pl['adjusmentPressure'] != null &&
+                                                                              pl['adjusmentPressure'] != '0' &&
+                                                                              pl['adjusmentPressure'] != '')
+                                                                          ? Text(
+                                                                              '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
+                                                                              style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+                                                                            )
+                                                                          : Container(),
+                                                                    ],
+                                                                  ),
+                                                                  (luka.isEmpty ||
+                                                                          luka ==
+                                                                              null)
+                                                                      ? Container()
+                                                                      : Text(
+                                                                          pl['luka']
+                                                                              .join('\n'),
+                                                                          textAlign:
+                                                                              TextAlign.end,
+                                                                          style: getWhiteTextStyle(
+                                                                              fontWeight: w700,
+                                                                              fontSize: 18),
+                                                                        ),
+                                                                  const SizedBox(
+                                                                    height: 12,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          Divider(
+                                                            color: white,
+                                                            thickness: 1.5,
+                                                          ),
+                                                        ],
+                                                      );
+                                                    }).toList(),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                          child: ListTile(
-                                            leading: Icon(
-                                              Icons.front_loader,
-                                              color: Colors.orange,
-                                            ),
-                                            title: Padding(
-                                              padding: const EdgeInsets.only(
-                                                  bottom: 4.0),
-                                              child: Text(
-                                                '${item.unitNumber}',
-                                                style: getBlackTextStyle(
-                                                    fontWeight:
-                                                        FontWeight.w700),
-                                              ),
-                                            ),
-                                            trailing:
-                                                Icon(Icons.arrow_forward_ios),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    return Container();
-                                  },
-                                ),
+                                            ));
+                                      },
+                                    ),
+                                  ],
+                                );
+                              }),
                         ],
                       );
-                    })
-              ],
-            ),
+                    }
+                  });
+                }
+
+                return Container();
+              }, listener: (context, state) {
+                if (state is UnitErrorState) {
+                  setState(() {
+                    isOnline = !isOnline;
+                  });
+                  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text(
+                            'Please check your internet connection!',
+                            style: getBlackTextStyle(),
+                          ),
+                          actions: [
+                            TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  Navigator.pop(context);
+                                },
+                                child: Text('Okay'))
+                          ],
+                        );
+                      });
+                }
+              }),
+            ],
           ),
         ),
-      ),
+      )),
       bottomNavigationBar: BottomNavigationBar(
         selectedItemColor: green00968A,
         items: [
@@ -1043,5 +901,601 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         },
       ),
     );
+
+    // return Scaffold(
+    //   appBar: appBarWidget('Daily Pressure List', context),
+    //   body: SafeArea(
+    //     child: SingleChildScrollView(
+    //       child: Padding(
+    //         padding: const EdgeInsets.all(24.0),
+    //         child: Column(
+    //           children: [
+    //             (selectedMenu != 1)
+    //                 ? SelectPitButton(
+    //                     pit: pit,
+    //                     selectedPit: selectedPit,
+    //                     onSelectedPitChanged: (index) {
+    //                       setState(() {
+    //                         selectedPit = index;
+    //                       });
+    //                     })
+    //                 : Container(),
+    //             const SizedBox(
+    //               height: 12,
+    //             ),
+    //             FutureBuilder(
+    //                 future: getActualIdSite(),
+    //                 builder: (context, snapshot) {
+    //                   if (snapshot.connectionState == ConnectionState.waiting) {
+    //                     return Container();
+    //                   }
+
+    //                   final data = snapshot.data;
+    //                   log('id site future builder : $data');
+
+    //                   if (data != '1' && data != '2' && data != '3') {
+    //                     return Row(
+    //                       mainAxisAlignment: MainAxisAlignment.center,
+    //                       children: [
+    //                         Text(
+    //                           isOnline ? 'Status: Online' : 'Status: Offline',
+    //                           style: getBlackTextStyle(fontSize: 24),
+    //                         ),
+    //                         SizedBox(width: 20), // Spasi antar teks dan tombol
+    //                         ElevatedButton(
+    //                           onPressed: () {
+    //                             setState(() {
+    //                               isOnline = !isOnline; // Toggle the status
+    //                               getUnits();
+    //                             });
+    //                           },
+    //                           style: ElevatedButton.styleFrom(
+    //                             primary: isOnline ? Colors.green : Colors.red,
+    //                           ),
+    //                           child: Text(
+    //                             isOnline ? 'Go Offline' : 'Go Online',
+    //                             style: getWhiteTextStyle(),
+    //                           ),
+    //                         ),
+    //                       ],
+    //                     );
+    //                   }
+    //                   return Container();
+    //                 }),
+    //             const SizedBox(
+    //               height: 12,
+    //             ),
+    //             TextField(
+    //               onChanged: (value) {
+    //                 setState(() {
+    //                   searchQuery = value;
+    //                 });
+    //               },
+    //               decoration: InputDecoration(
+    //                   hintText: 'Search... (Unit Number or Model)',
+    //                   hintStyle: getGreyTextStyle(grey8391A1),
+    //                   prefixIcon: Icon(Icons.search)),
+    //             ),
+    //             const SizedBox(
+    //               height: 12,
+    //             ),
+    //             ExportExcelButton(
+    //               user: user,
+    //               pit: pit,
+    //               selectedPit: selectedPit,
+    //               filteredItemTask: filteredItemTask,
+    //               date:
+    //                   "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
+    //             ),
+    //             const SizedBox(
+    //               height: 12,
+    //             ),
+    //             SizedBox(
+    //                 width: double.infinity,
+    //                 child: ElevatedButton(
+    //                     onPressed: () {
+    //                       Navigator.pushNamed(
+    //                           context, DailyPressureHistoryPage.routeName);
+    //                     },
+    //                     style: ElevatedButton.styleFrom(
+    //                         backgroundColor: Colors.orange),
+    //                     child: Container(
+    //                       padding: EdgeInsets.symmetric(vertical: 12),
+    //                       child: Row(
+    //                         mainAxisAlignment: MainAxisAlignment.center,
+    //                         children: [
+    //                           Icon(
+    //                             Icons.history,
+    //                             color: Colors.white,
+    //                           ),
+    //                           const SizedBox(
+    //                             width: 12,
+    //                           ),
+    //                           Text(
+    //                             'History',
+    //                             style: getWhiteTextStyle(),
+    //                           ),
+    //                         ],
+    //                       ),
+    //                     ))),
+    //             StreamBuilder(
+    //                 stream: firestore.collection('daily_pressure').snapshots(),
+    //                 builder: (context, snapshot) {
+    //                   if (snapshot.connectionState == ConnectionState.waiting) {
+    //                     return CircularProgressIndicator();
+    //                   }
+
+    //                   List<DocumentSnapshot> documents = snapshot.data!.docs;
+
+    //                   if (searchQuery.length > 0) {
+    //                     documents = documents.where((element) {
+    //                       return element
+    //                           .get('unit')
+    //                           .toString()
+    //                           .toLowerCase()
+    //                           .contains(searchQuery.toLowerCase());
+    //                     }).toList();
+    //                   }
+
+    //                   final filteredDocument = documents.where((doc) {
+    //                     final Map<String, dynamic> data =
+    //                         doc.data() as Map<String, dynamic>;
+
+    //                     final dateString = data['tanggal'] as String;
+    //                     final dateTime = DateTime.parse(dateString);
+    //                     final now = DateTime.now();
+
+    //                     // pilih all pit
+    //                     if (pit.isNotEmpty) {
+    //                       if (pit[selectedPit] == 'All') {
+    //                         return dateTime.year == now.year &&
+    //                             dateTime.month == now.month &&
+    //                             dateTime.day == now.day &&
+    //                             data['idSite'] == idSite;
+    //                       }
+
+    //                       // ada pit
+    //                       if (data['pit'] != 'Default') {
+    //                         return dateTime.year == now.year &&
+    //                             dateTime.month == now.month &&
+    //                             dateTime.day == now.day &&
+    //                             data['idSite'] == idSite &&
+    //                             data['pit'] == pit[selectedPit];
+    //                       }
+    //                     }
+
+    //                     // tidak ada pit
+    //                     return dateTime.year == now.year &&
+    //                         dateTime.month == now.month &&
+    //                         dateTime.day == now.day &&
+    //                         data['idSite'] == idSite;
+    //                   }).toList();
+
+    //                   filteredDocument.sort((a, b) {
+    //                     Map<String, dynamic> first =
+    //                         a.data() as Map<String, dynamic>;
+    //                     Map<String, dynamic> second =
+    //                         b.data() as Map<String, dynamic>;
+    //                     ;
+    //                     // Ambil nilai last_update dari masing-masing DocumentSnapshot
+    //                     DateTime timeA = DateTime.parse(first['tanggal']);
+    //                     DateTime timeB = DateTime.parse(second['tanggal']);
+
+    //                     // Bandingkan waktu last_update dari kedua DocumentSnapshot
+    //                     return timeB.compareTo(
+    //                         timeA); // Dari yang terbaru ke yang terlama
+    //                   });
+
+    //                   // untuk data export excel
+    //                   filteredItemTask.clear();
+    //                   filteredDocument.forEach((item) {
+    //                     Map<String, dynamic> cast =
+    //                         item.data() as Map<String, dynamic>;
+
+    //                     units.removeWhere(
+    //                         (element) => element.unitNumber == cast['unit']);
+    //                     filteredItemTask.add(cast);
+    //                   });
+    //                   log('dailyexcel: $filteredItemTask');
+    //                   log('jumlah kendaraan : ${units.length}');
+
+    //                   return Column(
+    //                     children: [
+    //                       const SizedBox(
+    //                         height: 12,
+    //                       ),
+    //                       Padding(
+    //                         padding:
+    //                             const EdgeInsets.symmetric(horizontal: 12.0),
+    //                         child: Text(
+    //                           (selectedMenu == 0)
+    //                               ? 'Total Unit : ${filteredDocument.length}'
+    //                               : 'Total Unit : ${units.length}',
+    //                           style: getBlackTextStyle(fontSize: 20),
+    //                         ),
+    //                       ),
+    //                       const SizedBox(
+    //                         height: 12,
+    //                       ),
+    //                       (units.isEmpty || units == null && selectedMenu == 1)
+    //                           ? Column(
+    //                               children: [
+    //                                 Text(
+    //                                   'Data is Empty. Please Go Online to Get Data!',
+    //                                   style: getBlackTextStyle(),
+    //                                 ),
+    //                               ],
+    //                             )
+    //                           : ListView.builder(
+    //                               shrinkWrap: true,
+    //                               physics: NeverScrollableScrollPhysics(),
+    //                               itemCount: (selectedMenu == 0)
+    //                                   ? filteredDocument.length
+    //                                   : units.length,
+    //                               itemBuilder: (context, index) {
+    //                                 if (selectedMenu == 0) {
+    //                                   final Map<String, dynamic> dailyMap =
+    //                                       filteredDocument[index].data()
+    //                                           as Map<String, dynamic>;
+    //                                   final positionList =
+    //                                       dailyMap['posisi'] as List<dynamic>;
+
+    //                                   log('subsub : $positionList');
+
+    //                                   return Card(
+    //                                       elevation: 2,
+    //                                       shape: RoundedRectangleBorder(
+    //                                         borderRadius:
+    //                                             BorderRadius.circular(12),
+    //                                       ),
+    //                                       color: green00968A,
+    //                                       child: Container(
+    //                                         width: double.infinity,
+    //                                         padding: EdgeInsets.symmetric(
+    //                                             horizontal: 12, vertical: 24),
+    //                                         decoration: BoxDecoration(
+    //                                           color: green00968A,
+    //                                           borderRadius:
+    //                                               BorderRadius.circular(12),
+    //                                         ),
+    //                                         child: ExpansionTile(
+    //                                           tilePadding: EdgeInsets.zero,
+    //                                           childrenPadding:
+    //                                               EdgeInsets.all(0),
+    //                                           title: Row(
+    //                                             children: [
+    //                                               Icon(
+    //                                                 Icons.task,
+    //                                                 color: white,
+    //                                                 size: 36,
+    //                                               ),
+    //                                               const SizedBox(
+    //                                                 width: 12,
+    //                                               ),
+    //                                               Text(
+    //                                                 dailyMap['unit'] +
+    //                                                     '${((dailyMap['pit'] != 'Default') ? ' - ' + dailyMap['pit'] : '')}',
+    //                                                 style: getWhiteTextStyle(
+    //                                                     fontWeight: w700,
+    //                                                     fontSize: 18),
+    //                                               )
+    //                                             ],
+    //                                           ),
+    //                                           trailing: SizedBox(
+    //                                             width: 90,
+    //                                             child:
+    //                                                 Icon(Icons.arrow_drop_down),
+    //                                           ),
+    //                                           children: [
+    //                                             const SizedBox(
+    //                                               height: 12,
+    //                                             ),
+    //                                             Row(
+    //                                               mainAxisAlignment:
+    //                                                   MainAxisAlignment
+    //                                                       .spaceBetween,
+    //                                               children: [
+    //                                                 Text(
+    //                                                   'Name',
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                                 Container(
+    //                                                   width: 250,
+    //                                                   child: Text(
+    //                                                     dailyMap['user'] ??
+    //                                                         'No Name',
+    //                                                     textAlign:
+    //                                                         TextAlign.end,
+    //                                                     style:
+    //                                                         getWhiteTextStyle(
+    //                                                             fontWeight:
+    //                                                                 w700,
+    //                                                             fontSize: 18),
+    //                                                   ),
+    //                                                 ),
+    //                                               ],
+    //                                             ),
+    //                                             const SizedBox(
+    //                                               height: 12,
+    //                                             ),
+    //                                             Row(
+    //                                               mainAxisAlignment:
+    //                                                   MainAxisAlignment
+    //                                                       .spaceBetween,
+    //                                               children: [
+    //                                                 Text(
+    //                                                   'Tanggal',
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                                 Text(
+    //                                                   dailyMap['tanggal']
+    //                                                       .split('T')[0],
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontWeight: w700,
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                               ],
+    //                                             ),
+    //                                             const SizedBox(
+    //                                               height: 12,
+    //                                             ),
+    //                                             Row(
+    //                                               mainAxisAlignment:
+    //                                                   MainAxisAlignment
+    //                                                       .spaceBetween,
+    //                                               children: [
+    //                                                 Text(
+    //                                                   'Waktu',
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                                 Text(
+    //                                                   dailyMap['tanggal']
+    //                                                       .split('T')[1]
+    //                                                       .substring(0, 5),
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontWeight: w700,
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                               ],
+    //                                             ),
+    //                                             const SizedBox(
+    //                                               height: 12,
+    //                                             ),
+    //                                             Row(
+    //                                               mainAxisAlignment:
+    //                                                   MainAxisAlignment
+    //                                                       .spaceBetween,
+    //                                               children: [
+    //                                                 Text(
+    //                                                   'HM Unit',
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                                 Text(
+    //                                                   dailyMap['hm'],
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontWeight: w700,
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                               ],
+    //                                             ),
+    //                                             const SizedBox(
+    //                                               height: 12,
+    //                                             ),
+    //                                             Row(
+    //                                               mainAxisAlignment:
+    //                                                   MainAxisAlignment
+    //                                                       .spaceBetween,
+    //                                               children: [
+    //                                                 Text(
+    //                                                   'Pit',
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                                 Text(
+    //                                                   dailyMap['pit'],
+    //                                                   style: getWhiteTextStyle(
+    //                                                       fontWeight: w700,
+    //                                                       fontSize: 18),
+    //                                                 ),
+    //                                               ],
+    //                                             ),
+    //                                             const SizedBox(
+    //                                               height: 12,
+    //                                             ),
+    //                                             Column(
+    //                                               children:
+    //                                                   positionList.map((pl) {
+    //                                                 final plIndex = positionList
+    //                                                     .indexOf(pl);
+    //                                                 List<dynamic> luka = [];
+
+    //                                                 if (pl['luka'] != null &&
+    //                                                     pl['luka'] is! String) {
+    //                                                   luka = pl['luka']
+    //                                                       as List<dynamic>;
+    //                                                 }
+
+    //                                                 return Column(
+    //                                                   children: [
+    //                                                     Row(
+    //                                                       mainAxisAlignment:
+    //                                                           MainAxisAlignment
+    //                                                               .spaceBetween,
+    //                                                       crossAxisAlignment:
+    //                                                           CrossAxisAlignment
+    //                                                               .center,
+    //                                                       children: [
+    //                                                         Text(
+    //                                                           'Pos. ${pl['pos']}',
+    //                                                           style:
+    //                                                               getWhiteTextStyle(
+    //                                                                   fontSize:
+    //                                                                       18),
+    //                                                         ),
+    //                                                         Column(
+    //                                                           crossAxisAlignment:
+    //                                                               CrossAxisAlignment
+    //                                                                   .end,
+    //                                                           mainAxisAlignment:
+    //                                                               MainAxisAlignment
+    //                                                                   .center,
+    //                                                           children: [
+    //                                                             Column(
+    //                                                               crossAxisAlignment:
+    //                                                                   CrossAxisAlignment
+    //                                                                       .end,
+    //                                                               children: [
+    //                                                                 Text(
+    //                                                                   '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
+    //                                                                   style: getWhiteTextStyle(
+    //                                                                       fontWeight:
+    //                                                                           w700,
+    //                                                                       fontSize:
+    //                                                                           18),
+    //                                                                 ),
+    //                                                                 (pl['adjusmentPressure'] != null &&
+    //                                                                         pl['adjusmentPressure'] !=
+    //                                                                             '0' &&
+    //                                                                         pl['adjusmentPressure'] !=
+    //                                                                             '')
+    //                                                                     ? Text(
+    //                                                                         '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
+    //                                                                         style:
+    //                                                                             getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+    //                                                                       )
+    //                                                                     : Container(),
+    //                                                               ],
+    //                                                             ),
+    //                                                             (luka.isEmpty ||
+    //                                                                     luka ==
+    //                                                                         null)
+    //                                                                 ? Container()
+    //                                                                 : Text(
+    //                                                                     pl['luka']
+    //                                                                         .join('\n'),
+    //                                                                     textAlign:
+    //                                                                         TextAlign.end,
+    //                                                                     style: getWhiteTextStyle(
+    //                                                                         fontWeight:
+    //                                                                             w700,
+    //                                                                         fontSize:
+    //                                                                             18),
+    //                                                                   ),
+    //                                                             const SizedBox(
+    //                                                               height: 12,
+    //                                                             ),
+    //                                                           ],
+    //                                                         ),
+    //                                                       ],
+    //                                                     ),
+    //                                                     Divider(
+    //                                                       color: white,
+    //                                                       thickness: 1.5,
+    //                                                     ),
+    //                                                   ],
+    //                                                 );
+    //                                               }).toList(),
+    //                                             ),
+    //                                           ],
+    //                                         ),
+    //                                       ));
+    //                                 } else {
+    //                                   final item = units[index];
+    //                                   if (searchQuery.isNotEmpty &&
+    //                                       !item.unitNumber!
+    //                                           .toLowerCase()
+    //                                           .contains(searchQuery) &&
+    //                                       !item.model!
+    //                                           .toLowerCase()
+    //                                           .contains(searchQuery)) {
+    //                                     return Container();
+    //                                   }
+    //                                   return InkWell(
+    //                                     onTap: (actualIdSite == '1' ||
+    //                                             actualIdSite == '2' ||
+    //                                             actualIdSite == '3')
+    //                                         ? () {}
+    //                                         : () {
+    //                                             Navigator.pushNamed(
+    //                                                 context,
+    //                                                 DailyCheckFormPage
+    //                                                     .routeName,
+    //                                                 arguments: {
+    //                                                   'unitNumber':
+    //                                                       item.unitNumber,
+    //                                                 });
+    //                                           },
+    //                                     child: Container(
+    //                                       margin: EdgeInsets.symmetric(
+    //                                         vertical: 8.0,
+    //                                       ),
+    //                                       padding:
+    //                                           EdgeInsets.symmetric(vertical: 6),
+    //                                       decoration: BoxDecoration(
+    //                                         color: Colors.white,
+    //                                         borderRadius:
+    //                                             BorderRadius.circular(12),
+    //                                         boxShadow: [
+    //                                           BoxShadow(
+    //                                             color: Colors.black
+    //                                                 .withOpacity(0.1),
+    //                                             spreadRadius: 2,
+    //                                             blurRadius: 5,
+    //                                             offset: Offset(0, 2),
+    //                                           ),
+    //                                         ],
+    //                                       ),
+    //                                       child: ListTile(
+    //                                         leading: Icon(
+    //                                           Icons.front_loader,
+    //                                           color: Colors.orange,
+    //                                         ),
+    //                                         title: Padding(
+    //                                           padding: const EdgeInsets.only(
+    //                                               bottom: 4.0),
+    //                                           child: Text(
+    //                                             '${item.unitNumber}',
+    //                                             style: getBlackTextStyle(
+    //                                                 fontWeight:
+    //                                                     FontWeight.w700),
+    //                                           ),
+    //                                         ),
+    //                                         trailing:
+    //                                             Icon(Icons.arrow_forward_ios),
+    //                                       ),
+    //                                     ),
+    //                                   );
+    //                                 }
+    //                                 return Container();
+    //                               },
+    //                             ),
+    //                     ],
+    //                   );
+    //                 })
+    //           ],
+    //         ),
+    //       ),
+    //     ),
+    //   ),
+    //   bottomNavigationBar: BottomNavigationBar(
+    //     selectedItemColor: green00968A,
+    //     items: [
+    //       BottomNavigationBarItem(
+    //           icon: Icon(Icons.done_outline_rounded), label: 'Checked'),
+    //       BottomNavigationBarItem(
+    //           icon: Icon(Icons.close), label: 'Not Checked'),
+    //     ],
+    //     currentIndex: selectedMenu,
+    //     onTap: (index) {
+    //       setState(() {
+    //         selectedMenu = index;
+    //       });
+    //     },
+    //   ),
+    // );
   }
 }

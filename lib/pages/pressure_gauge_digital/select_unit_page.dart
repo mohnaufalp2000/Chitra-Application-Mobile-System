@@ -152,35 +152,55 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
                           log('id site future builder : $data');
 
                           if (data != '1' && data != '2' && data != '3') {
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  isOnline
-                                      ? 'Status: Online'
-                                      : 'Status: Offline',
-                                  style: getBlackTextStyle(fontSize: 24),
-                                ),
-                                SizedBox(
-                                    width: 20), // Spasi antar teks dan tombol
-                                ElevatedButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      isOnline = !isOnline; // Toggle the status
-                                      callUnits();
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    primary:
-                                        isOnline ? Colors.green : Colors.red,
-                                  ),
-                                  child: Text(
-                                    isOnline ? 'Go Offline' : 'Go Online',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                ),
-                              ],
-                            );
+                            return FutureBuilder(
+                                future: getActualIdSite(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Container();
+                                  }
+
+                                  final data = snapshot.data;
+                                  log('id site future builder : $data');
+
+                                  if (data != '1' &&
+                                      data != '2' &&
+                                      data != '3') {
+                                    return SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            isOnline =
+                                                !isOnline; // Toggle the status
+                                            callUnits();
+                                          });
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          primary: Colors.green,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.fire_truck,
+                                              color: white,
+                                            ),
+                                            const SizedBox(
+                                              width: 12,
+                                            ),
+                                            Text(
+                                              'Get Unit',
+                                              style: getWhiteTextStyle(),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  return Container();
+                                });
                           }
                           return Container();
                         }),
@@ -189,7 +209,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
                     ),
                     (state.units == null || state.units.isEmpty)
                         ? Text(
-                            'No Data, please go online to get data!',
+                            'No Data, please press Get Unit to get data!',
                             textAlign: TextAlign.center,
                             style: getBlackTextStyle(fontSize: 18),
                           )

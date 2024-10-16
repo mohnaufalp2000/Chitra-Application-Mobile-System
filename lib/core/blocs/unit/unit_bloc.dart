@@ -19,6 +19,8 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
       emit(UnitLoadingState());
       final connectivityResult = await Connectivity().checkConnectivity();
 
+      log('isOnline unit bloc : ${event.isOnline}');
+
       if (event.isOnline) {
         if (connectivityResult == ConnectivityResult.none) {
           emit(UnitErrorState(
@@ -27,6 +29,7 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
         } else {
           final units = await ApiService.getUnits(event.idSite);
           emit(UnitLoadedState(units: units));
+          log('list unit bloc : ${units.length}');
         }
 
         // return;
@@ -35,6 +38,7 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
             await ApiService.getCachedUnits(idSite: event.idSite);
 
         emit(UnitLoadedState(units: cachedData));
+        log('list unit bloc : ${cachedData.length}');
 
         if (Platform.isAndroid) {
           await Permission.phone.request();
