@@ -453,20 +453,25 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                       const SizedBox(
                                         height: 6,
                                       ),
-                                      Container(
-                                          height: 50,
-                                          width: double.infinity,
-                                          child: InputFormWidget(
-                                            controller: TextEditingController(
-                                                text:
-                                                    '${tires[index]['pressure']}'),
-                                            isDigitOnly: true,
-                                            onChng: (string) {
-                                              tires[index]['pressure'] = string;
-                                            },
-                                            type: TextInputType.number,
-                                            hint: '',
-                                          )),
+                                      // Container(
+                                      //     height: 50,
+                                      //     width: double.infinity,
+                                      //     child: InputFormWidget(
+                                      //       controller: TextEditingController(
+                                      //           text:
+                                      //               '${tires[index]['pressure']}'),
+                                      //       isDigitOnly: true,
+                                      //       onChng: (string) {
+                                      //         tires[index]['pressure'] = string;
+                                      //       },
+                                      //       type: TextInputType.number,
+                                      //       hint: '',
+                                      //     )),
+                                      Text(
+                                        '${(tires[index]['pressure'] == '') ? 'Empty' : '${tires[index]['pressure']} Psi'}',
+                                        style: getGreenTextStyle(
+                                            fontSize: 24, fontWeight: w700),
+                                      ),
                                     ],
                                   ),
                                 ),

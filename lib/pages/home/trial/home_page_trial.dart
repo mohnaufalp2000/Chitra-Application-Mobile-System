@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
 import 'package:camos/core/navigator/navigation_route.dart';
+import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -36,8 +39,13 @@ class _HomePageTrialState extends State<HomePageTrial> {
   @override
   void initState() {
     super.initState();
-
+    getIdSite();
     _initPackageInfo();
+  }
+
+  void getIdSite() async {
+    // saveIdSitePreferences('3');
+    log('id site home pama : ${await getIdSitePreferences()}');
   }
 
   Future<void> _initPackageInfo() async {
@@ -213,7 +221,12 @@ class _HomePageTrialState extends State<HomePageTrial> {
                           bottom: 0,
                           left: 0,
                           right: 0,
-                          child: Image.asset('$imagePath/bg_tire.png'))
+                          child: SizedBox(
+                              height: 300,
+                              child: Image.asset(
+                                '$imagePath/bg_tire.png',
+                                fit: BoxFit.cover,
+                              )))
                     ],
                   ),
                 );
