@@ -1751,6 +1751,26 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                   ),
                                                 ],
                                               ),
+                                              const SizedBox(
+                                                height: 12,
+                                              ),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    'RTD / OTD',
+                                                    style: getBlackTextStyle(
+                                                        fontWeight: w700),
+                                                  ),
+                                                  Text(
+                                                    '${unit.rtd} / ${unit.otd}' ??
+                                                        '',
+                                                    style: getBlackTextStyle(),
+                                                  ),
+                                                ],
+                                              ),
                                             ],
                                           ),
                                           Padding(

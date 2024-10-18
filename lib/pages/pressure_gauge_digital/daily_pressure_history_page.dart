@@ -151,10 +151,10 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                 horizontal: 12,
               ),
               child: DatePicker(
-                DateTime.now().subtract(Duration(days: 10)),
+                DateTime.now().subtract(Duration(days: 31)),
                 height: 100,
                 width: 80,
-                daysCount: 10,
+                daysCount: 31,
                 locale: 'id_ID',
                 initialSelectedDate: DateTime.now().subtract(Duration(days: 1)),
                 selectionColor: green00968A,
@@ -253,14 +253,21 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
               height: 24,
             ),
             Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: ExportExcelButton(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              child: Builder(builder: (context) {
+                if (selectedMenu == 0) {
+                  return ExportExcelButton(
                     user: user,
                     pit: pit,
                     selectedPit: selectedPit,
                     filteredItemTask: filteredItemTask,
                     date:
-                        "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}")),
+                        "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
+                  );
+                }
+                return Container();
+              }),
+            ),
             const SizedBox(
               height: 12,
             ),
