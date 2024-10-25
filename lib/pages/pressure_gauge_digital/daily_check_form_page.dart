@@ -44,6 +44,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     '130',
     '135',
   ];
+  List<String> rating = [
+    'A',
+    'B',
+    'C',
+    'X',
+  ];
   List<String> damageType = [
     'Accident',
     'Bead Crack',
@@ -297,6 +303,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     position.add({
                       'pressure': '',
                       'adjusmentPressure': '',
+                      'rating': '',
                       'damage': null
                     });
                   }
@@ -1099,6 +1106,139 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                         const SizedBox(
                                           height: 12,
                                         ),
+                                        // rating tire
+                                        SizedBox(
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .width *
+                                              0.39,
+                                          height: 45,
+                                          child: ElevatedButton(
+                                            onPressed: () async {
+                                              FocusScope.of(context).unfocus();
+                                              setState(() {
+                                                selectedPosIndex = posIndex;
+                                              });
+
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) {
+                                                  return Dialog(
+                                                    child: Container(
+                                                      padding:
+                                                          EdgeInsets.all(20.0),
+                                                      child:
+                                                          SingleChildScrollView(
+                                                        child: Column(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: <Widget>[
+                                                            Text(
+                                                              'Choose Rating',
+                                                              style: TextStyle(
+                                                                fontSize: 24.0,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .bold,
+                                                              ),
+                                                            ),
+                                                            SizedBox(
+                                                                height: 16.0),
+                                                            Column(),
+                                                            Wrap(
+                                                              children: rating
+                                                                  .map((rat) {
+                                                                final ratingIndex =
+                                                                    rating
+                                                                        .indexOf(
+                                                                            rat);
+                                                                return Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                          right:
+                                                                              16,
+                                                                          bottom:
+                                                                              18),
+                                                                  child:
+                                                                      ElevatedButton(
+                                                                    style: ElevatedButton.styleFrom(
+                                                                        backgroundColor:
+                                                                            Colors.green),
+                                                                    onPressed:
+                                                                        () {
+                                                                      setState(
+                                                                          () {
+                                                                        position[posIndex]['rating'] =
+                                                                            rat;
+                                                                        Navigator.of(context)
+                                                                            .pop();
+                                                                      });
+                                                                    },
+                                                                    child: Text(
+                                                                      rat,
+                                                                      style:
+                                                                          getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }).toList(),
+                                                            ),
+                                                            SizedBox(
+                                                                height: 12.0),
+                                                            SizedBox(
+                                                              width: double
+                                                                  .infinity,
+                                                              child:
+                                                                  ElevatedButton(
+                                                                onPressed: () {
+                                                                  pressureCtrl
+                                                                      .clear();
+                                                                  Navigator.of(
+                                                                          context)
+                                                                      .pop();
+                                                                },
+                                                                child: Text(
+                                                                    'Close'),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.blue,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                )),
+                                            child: (position[posIndex]
+                                                        ['rating'] ==
+                                                    '')
+                                                ? Text(
+                                                    'Rating',
+                                                    style: getWhiteTextStyle(),
+                                                  )
+                                                : Text(
+                                                    'Rating ${position[posIndex]['rating']}',
+                                                    style: getWhiteTextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: w700,
+                                                    ),
+                                                  ),
+                                          ),
+                                        ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
                                         // SELECT DAMAGE TIRE
                                         SizedBox(
                                           width: MediaQuery.of(context)
@@ -1406,6 +1546,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       final pIndex = position.indexOf(p);
                       return {
                         'pos': '${pIndex + 1}',
+                        'rating': (p['rating']) ?? '',
                         'pressure': (p['pressure']) ?? '0',
                         'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
                         'luka': (selectedType == 0) ? '' : p['damage']
@@ -1444,6 +1585,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         return {
                           'pos': '${pIndex + 1}',
                           'pressure': (p['pressure']) ?? '0',
+                          'rating': (p['rating']) ?? '',
                           'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
                           'luka': (selectedType == 0) ? '' : p['damage']
                         };
@@ -1465,6 +1607,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       return {
                         'pos': '${pIndex + 1}',
                         'pressure': (p['pressure']) ?? '0',
+                        'rating': (p['rating']) ?? '',
                         'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
                         'luka': (selectedType == 0) ? '' : p['damage']
                       };

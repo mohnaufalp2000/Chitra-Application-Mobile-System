@@ -7,6 +7,7 @@ import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/enum_export_type.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/export_excel_button.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -153,8 +154,10 @@ class _DailyPressureHistoryTrialPageState
                     pit: pit,
                     selectedPit: selectedPit,
                     filteredItemTask: filteredItemTask,
+                    type: ExportType.oneDay,
                     date:
                         "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}")),
+
             const SizedBox(
               height: 12,
             ),

@@ -48,6 +48,13 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   BluetoothConnection? connection;
   bool get isConnected => connection != null && connection!.isConnected;
   // List<BluetoothDevice> devices = [];
+  List<List<int>> inspectRoute = [
+    [0, 1, 2, 3, 4, 5],
+    [0, 2, 3, 4, 5, 1],
+    [1, 5, 4, 3, 2, 0],
+  ];
+  int checkAmount = 0;
+  int selectedRoute = 0;
   List<Map<String, dynamic>> tires = [
     {
       'position': '1',
@@ -306,6 +313,37 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                                 double.parse(notifInString)
                                                     .floor();
                                             pressure = floorPressure.toString();
+
+                                            switch (selectedRoute) {
+                                              case 0:
+                                                setState(() {
+                                                  if (checkAmount < 6)
+                                                    tires[inspectRoute[0]
+                                                            [checkAmount]]
+                                                        ['pressure'] = pressure;
+                                                  checkAmount++;
+                                                });
+                                                break;
+                                              case 1:
+                                                setState(() {
+                                                  if (checkAmount < 6)
+                                                    tires[inspectRoute[1]
+                                                            [checkAmount]]
+                                                        ['pressure'] = pressure;
+                                                  checkAmount++;
+                                                });
+                                                break;
+                                              case 2:
+                                                setState(() {
+                                                  if (checkAmount < 6)
+                                                    tires[inspectRoute[2]
+                                                            [checkAmount]]
+                                                        ['pressure'] = pressure;
+                                                  checkAmount++;
+                                                });
+                                                break;
+                                            }
+
                                             if (selectedTire != -1) {
                                               tires[selectedTire]['pressure'] =
                                                   pressure;
@@ -355,6 +393,35 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                     child: CircularProgressIndicator(),
                   );
                 },
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              Text(
+                'Inspection Tire Route',
+                style: getBlackTextStyle(fontWeight: w700, fontSize: 18),
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              Column(
+                children: inspectRoute.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  List<int> route = entry.value;
+
+                  return RadioListTile<int>(
+                    title: Text(route
+                        .map((index) => (index + 1).toString())
+                        .join(' -> ')),
+                    value: index,
+                    groupValue: selectedRoute,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedRoute = value!;
+                      });
+                    },
+                  );
+                }).toList(),
               ),
               const SizedBox(
                 height: 12,

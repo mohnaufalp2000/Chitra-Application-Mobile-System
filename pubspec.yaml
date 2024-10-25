@@ -73,7 +73,7 @@ dependencies:
   objectbox: ^2.1.0
   objectbox_flutter_libs: ^2.1.0
   app_settings: ^4.2.0
-  flutter_blue_plus: ^1.31.15
+  flutter_blue_plus: ^1.32.7
   flutter_bluetooth_serial: ^0.4.0
   firebase_crashlytics: ^3.3.3
   dropdown_search: ^5.0.6

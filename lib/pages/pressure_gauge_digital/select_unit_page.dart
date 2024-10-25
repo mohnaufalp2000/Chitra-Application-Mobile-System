@@ -31,12 +31,15 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
 
   Future<void> callUnits() async {
     String id = await getIdSitePreferences();
+    String idOffice = await getIdSitePreferences();
     log('message : $id');
     if (id == '1' || id == '2') {
       id = await getSelectedIdSitePreferences();
     }
     log('test call units : $isOnline');
-    context.read<UnitBloc>().add(GetUnitsEvent(idSite: id, isOnline: isOnline));
+    context.read<UnitBloc>().add(GetUnitsEvent(
+        idSite: id,
+        isOnline: (idOffice == '1' || idOffice == '2') ? true : isOnline));
   }
 
   Future<String> getActualIdSite() async {
@@ -191,7 +194,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
                                               width: 12,
                                             ),
                                             Text(
-                                              'Get Unit',
+                                              'Update Unit',
                                               style: getWhiteTextStyle(),
                                             ),
                                           ],

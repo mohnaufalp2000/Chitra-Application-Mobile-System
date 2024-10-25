@@ -885,6 +885,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     'Stud and Nut',
   ];
 
+  List<String> rating = [
+    'A',
+    'B',
+    'C',
+    'X',
+  ];
+
   List<String> pit = [];
   int selectedPit = -1;
 
@@ -1145,6 +1152,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                   'rtd1': '',
                   'rtd2': '',
                   'remarks': '',
+                  'rating': '',
                   'image': [],
                   'condition': [
                     {'name': 'Reseal Oring', 'checked': false},
@@ -1760,7 +1768,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                         .spaceBetween,
                                                 children: [
                                                   Text(
-                                                    'RTD / OTD',
+                                                    'RTD',
                                                     style: getBlackTextStyle(
                                                         fontWeight: w700),
                                                   ),
@@ -2154,6 +2162,145 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                     ),
                                             ),
                                           ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+
+                                          SizedBox(
+                                            width: MediaQuery.of(context)
+                                                .size
+                                                .width,
+                                            height: 45,
+                                            child: ElevatedButton(
+                                              onPressed: () async {
+                                                FocusScope.of(context)
+                                                    .unfocus();
+                                                // setState(() {
+                                                //   selectedPosIndex = posIndex;
+                                                // });
+
+                                                showDialog(
+                                                  context: context,
+                                                  builder:
+                                                      (BuildContext context) {
+                                                    return Dialog(
+                                                      child: Container(
+                                                        padding: EdgeInsets.all(
+                                                            20.0),
+                                                        child:
+                                                            SingleChildScrollView(
+                                                          child: Column(
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: <Widget>[
+                                                              Text(
+                                                                'Choose Rating',
+                                                                style:
+                                                                    TextStyle(
+                                                                  fontSize:
+                                                                      24.0,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                ),
+                                                              ),
+                                                              SizedBox(
+                                                                  height: 16.0),
+                                                              Column(),
+                                                              Wrap(
+                                                                children: rating
+                                                                    .map((rat) {
+                                                                  final ratingIndex =
+                                                                      rating.indexOf(
+                                                                          rat);
+                                                                  return Padding(
+                                                                    padding: const EdgeInsets
+                                                                        .only(
+                                                                        right:
+                                                                            16,
+                                                                        bottom:
+                                                                            18),
+                                                                    child:
+                                                                        ElevatedButton(
+                                                                      style: ElevatedButton.styleFrom(
+                                                                          backgroundColor:
+                                                                              Colors.green),
+                                                                      onPressed:
+                                                                          () {
+                                                                        setState(
+                                                                            () {
+                                                                          position[index]['rating'] =
+                                                                              rat;
+                                                                          Navigator.of(context)
+                                                                              .pop();
+                                                                        });
+                                                                      },
+                                                                      child:
+                                                                          Text(
+                                                                        rat,
+                                                                        style:
+                                                                            getWhiteTextStyle(
+                                                                          fontWeight:
+                                                                              w700,
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                }).toList(),
+                                                              ),
+                                                              SizedBox(
+                                                                  height: 12.0),
+                                                              SizedBox(
+                                                                width: double
+                                                                    .infinity,
+                                                                child:
+                                                                    ElevatedButton(
+                                                                  onPressed:
+                                                                      () {
+                                                                    pressureCtrl
+                                                                        .clear();
+                                                                    Navigator.of(
+                                                                            context)
+                                                                        .pop();
+                                                                  },
+                                                                  child: Text(
+                                                                      'Close'),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.blue,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                  )),
+                                              child: (position[index]
+                                                          ['rating'] ==
+                                                      '')
+                                                  ? Text(
+                                                      'Rating',
+                                                      style:
+                                                          getWhiteTextStyle(),
+                                                    )
+                                                  : Text(
+                                                      'Rating ${position[index]['rating']}',
+                                                      style: getWhiteTextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight: w700,
+                                                      ),
+                                                    ),
+                                            ),
+                                          ),
+
                                           const SizedBox(
                                             height: 12,
                                           ),
@@ -3022,6 +3169,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       element['adjusmentPressure'] == '' &&
                                       element['rtd1'] == '' &&
                                       element['rtd2'] == '' &&
+                                      element['rating'] == '' &&
                                       element['remarks'] == '');
 
                                   for (int i = 0; i < position.length; i++) {
@@ -3037,6 +3185,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             '' ||
                                         position[i]['rtd1'] != '' ||
                                         position[i]['rtd2'] != '' ||
+                                        position[i]['rating'] != '' ||
                                         position[i]['remarks'] != '') {
                                       final today = DateTime.now();
                                       final startOfDay = DateTime(
@@ -3093,6 +3242,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'tire_size': unit.size,
                                           'hm': hmUnit.text,
                                           'position': position[i]['position'],
+                                          'rating': position[i]['rating'],
                                           'brand': unit.brand,
                                           'tire_damage': (position[i]
                                                       ['damageTire']
@@ -3163,6 +3313,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'tire_size': unit.size,
                                           'hm': hmUnit.text,
                                           'position': position[i]['position'],
+                                          'rating': position[i]['rating'],
+
                                           'brand': unit.brand,
                                           'tire_damage': (position[i]
                                                       ['damageTire']
@@ -3268,6 +3420,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           return {
                                             'pos': '${pIndex + 1}',
                                             'pressure': (p['pressure']) ?? '0',
+                                            'rating': (p['rating']) ?? '',
                                             'adjusmentPressure':
                                                 (p['adjusmentPressure']) ?? '0',
                                             'luka': p['damageTire']
@@ -3299,6 +3452,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           return {
                                             'pos': '${pIndex + 1}',
                                             'pressure': (p['pressure']) ?? '0',
+                                            'rating': (p['rating']) ?? '0',
                                             'adjusmentPressure':
                                                 (p['adjusmentPressure']) ?? '0',
                                             'luka': p['damageTire']

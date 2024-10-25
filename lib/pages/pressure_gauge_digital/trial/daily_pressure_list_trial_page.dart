@@ -10,6 +10,7 @@ import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_history_trial_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/enum_export_type.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/export_excel_button.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -144,6 +145,7 @@ class _DailyPressureListTrialPageState
                   filteredItemTask: filteredItemTask,
                   date:
                       "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
+                  type: ExportType.oneDay,
                 ),
                 const SizedBox(
                   height: 12,
