@@ -12,6 +12,7 @@ import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_serv
 import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
 import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_state.dart';
 import 'package:camos/core/navigator/navigation_route.dart';
+import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
@@ -48,13 +49,15 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   BluetoothConnection? connection;
   bool get isConnected => connection != null && connection!.isConnected;
   // List<BluetoothDevice> devices = [];
+  int selectedRoute = 0;
+  int checkAmount = 0;
+  Map<String, dynamic> user = {};
   List<List<int>> inspectRoute = [
     [0, 1, 2, 3, 4, 5],
     [0, 2, 3, 4, 5, 1],
     [1, 5, 4, 3, 2, 0],
   ];
-  int checkAmount = 0;
-  int selectedRoute = 0;
+
   List<Map<String, dynamic>> tires = [
     {
       'position': '1',
@@ -93,6 +96,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   int selectedTire = -1;
   TextEditingController unitCtrl = TextEditingController(text: '');
   TextEditingController hmCtrl = TextEditingController(text: '');
+  TextEditingController userCtrl = TextEditingController(text: '');
 
   String pressure = '';
 
@@ -314,41 +318,43 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                                     .floor();
                                             pressure = floorPressure.toString();
 
-                                            switch (selectedRoute) {
-                                              case 0:
-                                                setState(() {
-                                                  if (checkAmount < 6)
-                                                    tires[inspectRoute[0]
-                                                            [checkAmount]]
-                                                        ['pressure'] = pressure;
-                                                  checkAmount++;
-                                                });
-                                                break;
-                                              case 1:
-                                                setState(() {
-                                                  if (checkAmount < 6)
-                                                    tires[inspectRoute[1]
-                                                            [checkAmount]]
-                                                        ['pressure'] = pressure;
-                                                  checkAmount++;
-                                                });
-                                                break;
-                                              case 2:
-                                                setState(() {
-                                                  if (checkAmount < 6)
-                                                    tires[inspectRoute[2]
-                                                            [checkAmount]]
-                                                        ['pressure'] = pressure;
-                                                  checkAmount++;
-                                                });
-                                                break;
-                                            }
-
                                             if (selectedTire != -1) {
                                               tires[selectedTire]['pressure'] =
                                                   pressure;
                                             } else {
-                                              checkSelectionTire();
+                                              switch (selectedRoute) {
+                                                case 0:
+                                                  setState(() {
+                                                    if (checkAmount < 6)
+                                                      tires[inspectRoute[0]
+                                                                  [checkAmount]]
+                                                              ['pressure'] =
+                                                          pressure;
+                                                    checkAmount++;
+                                                  });
+                                                  break;
+                                                case 1:
+                                                  setState(() {
+                                                    if (checkAmount < 6)
+                                                      tires[inspectRoute[1]
+                                                                  [checkAmount]]
+                                                              ['pressure'] =
+                                                          pressure;
+                                                    checkAmount++;
+                                                  });
+                                                  break;
+                                                case 2:
+                                                  setState(() {
+                                                    if (checkAmount < 6)
+                                                      tires[inspectRoute[2]
+                                                                  [checkAmount]]
+                                                              ['pressure'] =
+                                                          pressure;
+                                                    checkAmount++;
+                                                  });
+                                                  break;
+                                              }
+                                              // checkSelectionTire();
                                             }
                                             log('pressure dibulatkan : $pressure');
                                           });
@@ -458,6 +464,22 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                   },
                   decoration: InputDecoration(
                       labelText: 'HM Unit', icon: Icon(Icons.lock_clock)),
+                ),
+              ),
+              const SizedBox(
+                height: 18,
+              ),
+              Container(
+                child: TextFormField(
+                  controller: userCtrl,
+                  keyboardType: TextInputType.text,
+                  textInputAction: TextInputAction.next,
+                  // validator: _validateUserName,
+                  onFieldSubmitted: (String value) {
+                    // FocusScope.of(context).requestFocus(_passwordEmail);
+                  },
+                  decoration: InputDecoration(
+                      labelText: 'User', icon: Icon(Icons.account_box)),
                 ),
               ),
               const SizedBox(
@@ -702,6 +724,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                               (tire['injury'] == '') ? null : [tire['injury']]
                         };
                       }),
+                      'user': userCtrl.text,
                       'pit': 'Default',
                     });
                   } else {
@@ -721,6 +744,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                               (tire['injury'] == '') ? null : [tire['injury']]
                         };
                       }),
+                      'user': userCtrl.text,
                       'pit': 'Default',
                     });
                   }

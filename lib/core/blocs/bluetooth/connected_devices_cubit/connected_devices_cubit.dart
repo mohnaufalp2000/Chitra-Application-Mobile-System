@@ -12,7 +12,7 @@ class ConnectedDevicesCubit extends Cubit<ConnectedDevicesState> {
     List<BluetoothDevice> connectedAppDevices =
         FlutterBluePlus.connectedDevices;
     List<BluetoothDevice> connectedSystemDevices =
-        (await FlutterBluePlus.systemDevices) as List<BluetoothDevice>;
+        await FlutterBluePlus.connectedSystemDevices;
     List<BluetoothDevice> allDevices =
         connectedAppDevices + connectedSystemDevices;
 
