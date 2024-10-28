@@ -50,6 +50,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   bool get isConnected => connection != null && connection!.isConnected;
   // List<BluetoothDevice> devices = [];
   int selectedRoute = 0;
+  int selectedTireCheck = 0;
   int checkAmount = 0;
   Map<String, dynamic> user = {};
   List<List<int>> inspectRoute = [
@@ -57,6 +58,9 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
     [0, 2, 3, 4, 5, 1],
     [1, 5, 4, 3, 2, 0],
   ];
+
+  // 0 (6 tire), 1 (10 tire), 2 (12 tire)
+  List<int> tireCheck = [6, 10, 12];
 
   List<Map<String, dynamic>> tires = [
     {
@@ -86,6 +90,36 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
     },
     {
       'position': '6',
+      'pressure': '',
+      'injury': '',
+    },
+    {
+      'position': '7',
+      'pressure': '',
+      'injury': '',
+    },
+    {
+      'position': '8',
+      'pressure': '',
+      'injury': '',
+    },
+    {
+      'position': '9',
+      'pressure': '',
+      'injury': '',
+    },
+    {
+      'position': '10',
+      'pressure': '',
+      'injury': '',
+    },
+    {
+      'position': '11',
+      'pressure': '',
+      'injury': '',
+    },
+    {
+      'position': '12',
       'pressure': '',
       'injury': '',
     },
@@ -404,34 +438,69 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                 height: 12,
               ),
               Text(
-                'Inspection Tire Route',
+                'Qty Tire',
                 style: getBlackTextStyle(fontWeight: w700, fontSize: 18),
               ),
               const SizedBox(
                 height: 12,
               ),
-              Column(
-                children: inspectRoute.asMap().entries.map((entry) {
-                  int index = entry.key;
-                  List<int> route = entry.value;
-
-                  return RadioListTile<int>(
-                    title: Text(route
-                        .map((index) => (index + 1).toString())
-                        .join(' -> ')),
-                    value: index,
-                    groupValue: selectedRoute,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedRoute = value!;
-                      });
-                    },
+              Row(
+                children: List.generate(tireCheck.length, (index) {
+                  return Expanded(
+                    child: RadioListTile<int>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        "${tireCheck[index]} Tires",
+                        style: getBlackTextStyle(fontSize: 14),
+                      ),
+                      value: index,
+                      groupValue: selectedTireCheck,
+                      onChanged: (int? value) {
+                        setState(() {
+                          selectedTireCheck = value!;
+                        });
+                      },
+                    ),
                   );
-                }).toList(),
+                }),
               ),
-              const SizedBox(
-                height: 12,
-              ),
+              (selectedTireCheck == 0)
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Inspection Tire Route',
+                          style:
+                              getBlackTextStyle(fontWeight: w700, fontSize: 18),
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        Column(
+                          children: inspectRoute.asMap().entries.map((entry) {
+                            int index = entry.key;
+                            List<int> route = entry.value;
+
+                            return RadioListTile<int>(
+                              title: Text(route
+                                  .map((index) => (index + 1).toString())
+                                  .join(' -> ')),
+                              value: index,
+                              groupValue: selectedRoute,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedRoute = value!;
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                      ],
+                    )
+                  : Container(),
               // Text(
               //   'Pressure : $pressure',
               //   textAlign: TextAlign.start,
@@ -485,186 +554,190 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
               const SizedBox(
                 height: 18,
               ),
-              Column(
-                children: tires.map((tire) {
-                  final index = tires.indexOf(tire);
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 24),
-                    child: Card(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12.0, vertical: 24.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.radio_button_checked),
-                                const SizedBox(
-                                  width: 12,
-                                ),
-                                Text(
-                                  'Position ${tire['position']}',
-                                  style: getBlackTextStyle(
-                                    fontSize: 20,
-                                    fontWeight: w700,
+              ListView.builder(
+                  itemCount: tireCheck[selectedTireCheck],
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    final tire = tires[index];
+
+                    return Container(
+                      margin: EdgeInsets.only(bottom: 24),
+                      child: Card(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12.0, vertical: 24.0),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.radio_button_checked),
+                                  const SizedBox(
+                                    width: 12,
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 24,
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            Icons.tire_repair,
-                                            size: 28,
-                                          ),
-                                          const SizedBox(
-                                            width: 6,
-                                          ),
-                                          Text(
-                                            'Pressure (Psi)',
-                                            style: getBlackTextStyle(
-                                              fontSize: 18,
+                                  Text(
+                                    'Position ${tire['position']}',
+                                    style: getBlackTextStyle(
+                                      fontSize: 20,
+                                      fontWeight: w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 24,
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    flex: 2,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.tire_repair,
+                                              size: 28,
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(
+                                              width: 6,
+                                            ),
+                                            Text(
+                                              'Pressure (Psi)',
+                                              style: getBlackTextStyle(
+                                                fontSize: 18,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 6,
+                                        ),
+                                        // Container(
+                                        //     height: 50,
+                                        //     width: double.infinity,
+                                        //     child: InputFormWidget(
+                                        //       controller: TextEditingController(
+                                        //           text:
+                                        //               '${tires[index]['pressure']}'),
+                                        //       isDigitOnly: true,
+                                        //       onChng: (string) {
+                                        //         tires[index]['pressure'] = string;
+                                        //       },
+                                        //       type: TextInputType.number,
+                                        //       hint: '',
+                                        //     )),
+                                        Text(
+                                          '${(tires[index]['pressure'] == '') ? 'Empty' : '${tires[index]['pressure']} Psi'}',
+                                          style: getGreenTextStyle(
+                                              fontSize: 24, fontWeight: w700),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Container(
+                                      height: 80,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            selectedTire = index;
+                                          });
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(18)),
+                                          backgroundColor:
+                                              (selectedTire == index)
+                                                  ? green00968A
+                                                  : greyF7F8F9,
+                                        ),
+                                        child: Text(
+                                          (selectedTire == index)
+                                              ? 'Selected'
+                                              : 'Select',
+                                          style: (selectedTire == index)
+                                              ? getWhiteTextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: w700,
+                                                )
+                                              : getBlackTextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: w700,
+                                                ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ],
+                              ),
+                              // Container(
+                              //   child: TextFormField(
+                              //     controller: TextEditingController(
+                              //         text: tires[index]['injury']),
+                              //     keyboardType: TextInputType.text,
+                              //     textInputAction: TextInputAction.next,
+                              //     // validator: _validateUserName,
+                              //     onFieldSubmitted: (String value) {
+                              //       // FocusScope.of(context).requestFocus(_passwordEmail);
+                              //     },
+                              //     decoration: InputDecoration(
+                              //         labelText: 'Injury',
+                              //         icon: Icon(Icons.dangerous)),
+                              //   ),
+                              // ),
+                              const SizedBox(
+                                height: 24,
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.dangerous,
+                                        size: 24,
                                       ),
                                       const SizedBox(
-                                        height: 6,
+                                        width: 6,
                                       ),
-                                      // Container(
-                                      //     height: 50,
-                                      //     width: double.infinity,
-                                      //     child: InputFormWidget(
-                                      //       controller: TextEditingController(
-                                      //           text:
-                                      //               '${tires[index]['pressure']}'),
-                                      //       isDigitOnly: true,
-                                      //       onChng: (string) {
-                                      //         tires[index]['pressure'] = string;
-                                      //       },
-                                      //       type: TextInputType.number,
-                                      //       hint: '',
-                                      //     )),
                                       Text(
-                                        '${(tires[index]['pressure'] == '') ? 'Empty' : '${tires[index]['pressure']} Psi'}',
-                                        style: getGreenTextStyle(
-                                            fontSize: 24, fontWeight: w700),
+                                        'Injury',
+                                        style: getBlackTextStyle(
+                                          fontSize: 18,
+                                        ),
                                       ),
                                     ],
                                   ),
-                                ),
-                                const SizedBox(
-                                  width: 12,
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Container(
-                                    height: 80,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          selectedTire = index;
-                                        });
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(18)),
-                                        backgroundColor: (selectedTire == index)
-                                            ? green00968A
-                                            : greyF7F8F9,
-                                      ),
-                                      child: Text(
-                                        (selectedTire == index)
-                                            ? 'Selected'
-                                            : 'Select',
-                                        style: (selectedTire == index)
-                                            ? getWhiteTextStyle(
-                                                fontSize: 12,
-                                                fontWeight: w700,
-                                              )
-                                            : getBlackTextStyle(
-                                                fontSize: 12,
-                                                fontWeight: w700,
-                                              ),
-                                      ),
-                                    ),
+                                  const SizedBox(
+                                    height: 6,
                                   ),
-                                )
-                              ],
-                            ),
-                            // Container(
-                            //   child: TextFormField(
-                            //     controller: TextEditingController(
-                            //         text: tires[index]['injury']),
-                            //     keyboardType: TextInputType.text,
-                            //     textInputAction: TextInputAction.next,
-                            //     // validator: _validateUserName,
-                            //     onFieldSubmitted: (String value) {
-                            //       // FocusScope.of(context).requestFocus(_passwordEmail);
-                            //     },
-                            //     decoration: InputDecoration(
-                            //         labelText: 'Injury',
-                            //         icon: Icon(Icons.dangerous)),
-                            //   ),
-                            // ),
-                            const SizedBox(
-                              height: 24,
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.dangerous,
-                                      size: 24,
-                                    ),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    Text(
-                                      'Injury',
-                                      style: getBlackTextStyle(
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(
-                                  height: 6,
-                                ),
-                                Container(
-                                    height: 50,
-                                    width: double.infinity,
-                                    child: InputFormWidget(
-                                      onChng: (string) {
-                                        tires[index]['injury'] = string;
-                                      },
-                                      controller: TextEditingController(
-                                          text: tires[index]['injury']),
-                                      hint: '',
-                                    )),
-                              ],
-                            ),
-                          ],
+                                  Container(
+                                      height: 50,
+                                      width: double.infinity,
+                                      child: InputFormWidget(
+                                        onChng: (string) {
+                                          tires[index]['injury'] = string;
+                                        },
+                                        controller: TextEditingController(
+                                            text: tires[index]['injury']),
+                                        hint: '',
+                                      )),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
-              )
+                    );
+                  })
             ],
           ),
         ),

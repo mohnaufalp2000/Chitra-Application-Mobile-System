@@ -55,6 +55,57 @@ class _HomePageTrialState extends State<HomePageTrial> {
     });
   }
 
+  logoutConfirmation() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Logout Confirmation',
+                  style: getBlackTextStyle(
+                    fontSize: 16,
+                    fontWeight: w600,
+                  ),
+                ),
+                const SizedBox(
+                  height: 12,
+                ),
+                Text(
+                  'Are you sure you want to logout?',
+                  style: getBlackTextStyle(),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    back(context);
+                  },
+                  child: Text(
+                    'No',
+                    style: getGreyTextStyle(grey8391A1),
+                  )),
+              TextButton(
+                  onPressed: () async {
+                    // removeTireConditionPreferences();
+                    // removeTireSpecPreferences();
+                    // removeIdSitePreferences();
+                    // removeUserPreferences();
+                    context
+                        .read<AuthenticationBloc>()
+                        .add(AuthenticationEventLogout());
+                    pushRemoveUntil(context, LoginPage.routeName);
+                  },
+                  child: Text('Yes')),
+            ],
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,160 +124,109 @@ class _HomePageTrialState extends State<HomePageTrial> {
                 final data = snapshot.data;
 
                 final idSite = data?.docs[0].data()['id_site'];
-
                 return Container(
                   height: MediaQuery.of(context).size.height,
-                  child: Stack(
+                  child: Column(
                     children: [
-                      SingleChildScrollView(
-                          child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                SizedBox(
-                                    width: 92,
-                                    height: 92,
-                                    child: Image.asset(
-                                        '$iconPath/logo_camos_icon.png')),
-                                SizedBox(
-                                  width:
-                                      MediaQuery.of(context).size.width * 0.6,
-                                  child: Text(
-                                    'Chitra Application Mobile System',
-                                    textAlign: TextAlign.end,
-                                    style: getBlackTextStyle(
-                                      fontSize: 18,
-                                      fontWeight: w700,
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    SizedBox(
+                                      width: 92,
+                                      height: 92,
+                                      child: Image.asset(
+                                          '$iconPath/logo_camos_icon.png'),
                                     ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(
-                              height: 24,
-                            ),
-                            GridView.builder(
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                        mainAxisSpacing: 10,
-                                        crossAxisSpacing: 10,
-                                        crossAxisCount: 3,
-                                        childAspectRatio: 0.9),
-                                itemCount: 3,
-                                itemBuilder: (context, index) {
-                                  // bool isEnabled = index == 0;
-                                  return BoxMenuWidget(
-                                    menu: menus[index],
-                                    isEnabled: true,
-                                    argument: {'idSite': idSite},
-                                  );
-                                }),
-                            const SizedBox(
-                              height: 12,
-                            ),
-                            InkWell(
-                              onTap: () async {
-                                // context
-                                //     .read<AuthenticationBloc>()
-                                //     .add(AuthenticationEventLogout());
-                                // pushRemoveUntil(context, LoginPage.routeName);
-                              },
-                              child: Text(
-                                'App Version : ${_packageInfo.version}',
-                                style: getBlackTextStyle(fontWeight: w700),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 12,
-                            ),
-                            ButtonWidget(
-                              name: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.logout,
-                                    color: white,
-                                  ),
-                                  const SizedBox(
-                                    width: 12,
-                                  ),
-                                  Text(
-                                    'Logout',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                ],
-                              ),
-                              function: () {
-                                // logout
-                                showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        content: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              'Logout Confirmation',
-                                              style: getBlackTextStyle(
-                                                fontSize: 16,
-                                                fontWeight: w600,
-                                              ),
-                                            ),
-                                            const SizedBox(
-                                              height: 12,
-                                            ),
-                                            Text(
-                                              'Are you sure you want to logout?',
-                                              style: getBlackTextStyle(),
-                                            ),
-                                          ],
+                                    SizedBox(
+                                      width: MediaQuery.of(context).size.width *
+                                          0.6,
+                                      child: Text(
+                                        'Chitra Application Mobile System',
+                                        textAlign: TextAlign.end,
+                                        style: getBlackTextStyle(
+                                          fontSize: 18,
+                                          fontWeight: w700,
                                         ),
-                                        actions: [
-                                          TextButton(
-                                              onPressed: () {
-                                                back(context);
-                                              },
-                                              child: Text(
-                                                'No',
-                                                style: getGreyTextStyle(
-                                                    grey8391A1),
-                                              )),
-                                          TextButton(
-                                              onPressed: () async {
-                                                context
-                                                    .read<AuthenticationBloc>()
-                                                    .add(
-                                                        AuthenticationEventLogout());
-                                                pushRemoveUntil(context,
-                                                    LoginPage.routeName);
-                                              },
-                                              child: Text('Yes')),
-                                        ],
-                                      );
-                                    });
-                              },
-                              color: Colors.red,
-                            )
-                          ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0),
+                                child: GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
+                                    mainAxisSpacing: 10,
+                                    crossAxisSpacing: 10,
+                                    crossAxisCount: 3,
+                                    childAspectRatio: 0.9,
+                                  ),
+                                  itemCount: 3,
+                                  itemBuilder: (context, index) {
+                                    return BoxMenuWidget(
+                                      menu: menus[index],
+                                      isEnabled: true,
+                                      argument: {'idSite': idSite},
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              InkWell(
+                                onTap: () async {
+                                  // Aksi logout
+                                },
+                                child: Text(
+                                  'App Version : ${_packageInfo.version}',
+                                  style: getBlackTextStyle(fontWeight: w700),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24.0),
+                                child: ButtonWidget(
+                                  name: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.logout, color: white),
+                                      const SizedBox(width: 12),
+                                      Text('Logout',
+                                          style: getWhiteTextStyle()),
+                                    ],
+                                  ),
+                                  function: () {
+                                    // Dialog konfirmasi logout
+                                    logoutConfirmation();
+                                  },
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      )),
-                      Positioned(
-                          bottom: 0,
-                          left: 0,
-                          right: 0,
-                          child: SizedBox(
-                              height: 300,
-                              child: Image.asset(
-                                '$imagePath/bg_tire.png',
-                                fit: BoxFit.cover,
-                              )))
+                      ),
+                      SizedBox(
+                        height: 300,
+                        width: double.infinity,
+                        child: Image.asset(
+                          '$imagePath/bg_tire.png',
+                          fit: BoxFit.fill,
+                        ),
+                      ),
                     ],
                   ),
                 );

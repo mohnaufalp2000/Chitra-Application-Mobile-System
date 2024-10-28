@@ -46,7 +46,8 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
       case 1:
         // push(context, SelectUnitPage.routeName);
         log('argumentasi dimensi : ${widget.argument?['idSite']}');
-        if (widget.argument?['idSite'] == '3') {
+        if (widget.argument?['idSite'] == '3' ||
+            widget.argument?['idSite'] == '4') {
           Navigator.pushNamed(context, DashboardDailyPage.routeName,
               arguments: widget.argument?['idSite']);
         } else {

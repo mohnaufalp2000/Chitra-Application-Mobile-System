@@ -68,6 +68,7 @@ class _DailyPressureHistoryTrialPageState
 
   getIdSite() async {
     idSite = await getIdSitePreferences();
+    log('id site history pama : $idSite');
     if (idSite == '1') {
       idSite = await getSelectedIdSitePreferences();
     }
@@ -98,6 +99,22 @@ class _DailyPressureHistoryTrialPageState
     }
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          setState(() {
+            selectedDate = DateTime.now().subtract(Duration(days: 1));
+          });
+        },
+        icon: Icon(
+          Icons.refresh,
+          color: Colors.white,
+        ),
+        backgroundColor: Colors.red,
+        label: Text(
+          'Refresh',
+          style: getWhiteTextStyle(),
+        ),
+      ),
       appBar: appBarWidget('History', context),
       body: SafeArea(
           child: SingleChildScrollView(
@@ -237,7 +254,7 @@ class _DailyPressureHistoryTrialPageState
                                   59,
                                   59)
                               .toIso8601String())
-                      .where('idSite', isEqualTo: '3')
+                      .where('idSite', isEqualTo: idSite)
                       .orderBy('tanggal', descending: true),
                   itemBuilderType: PaginateBuilderType.listView,
                   shrinkWrap: true,
@@ -486,6 +503,9 @@ class _DailyPressureHistoryTrialPageState
                           ),
                         ));
                   }),
+            ),
+            const SizedBox(
+              height: 24,
             ),
 
             // StreamBuilder(
