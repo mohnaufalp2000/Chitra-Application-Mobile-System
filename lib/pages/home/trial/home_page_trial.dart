@@ -220,7 +220,7 @@ class _HomePageTrialState extends State<HomePageTrial> {
                         ),
                       ),
                       SizedBox(
-                        height: 300,
+                        height: 200,
                         width: double.infinity,
                         child: Image.asset(
                           '$imagePath/bg_tire.png',
