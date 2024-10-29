@@ -44,7 +44,7 @@ void main() async {
   initializeHERESDK();
   await AttendanceSheetsAPI.initAttendanceSheets();
   SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);  
   if (Platform.isIOS) {
     // await Firebase.initializeApp(
     //   options: DefaultFirebaseOptions.currentPlatform,

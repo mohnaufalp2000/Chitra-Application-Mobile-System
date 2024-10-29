@@ -260,7 +260,8 @@ class _LoginPageState extends State<LoginPage> {
 
                             // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
                             if (user.docs[0]['id_site'] == '3' ||
-                                user.docs[0]['id_site'] == '4') {
+                                user.docs[0]['id_site'] == '4' ||
+                                user.docs[0]['id_site'] == '999') {
                               pushReplace(context, HomePageTrial.routeName);
                             } else {
                               pushReplace(context, HomePage.routeName);

@@ -505,7 +505,31 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
               //   'Pressure : $pressure',
               //   textAlign: TextAlign.start,
               // ),
-
+              const SizedBox(
+                height: 12,
+              ),
+              ButtonWidget(
+                  color: Colors.red,
+                  name: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.delete,
+                          color: white,
+                        ),
+                        const SizedBox(
+                          width: 12,
+                        ),
+                        Text(
+                          'Clear Text',
+                          style: getWhiteTextStyle(),
+                        )
+                      ]),
+                  function: () {
+                    Navigator.pushReplacementNamed(
+                        context, DailyPressureTrialPage.routeName,
+                        arguments: idSite);
+                  }),
               Container(
                 child: TextFormField(
                   controller: unitCtrl,
@@ -787,16 +811,24 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                       'tanggal': DateTime.now().toIso8601String(),
                       'unit': unitCtrl.text,
                       'hm': hmCtrl.text,
-                      'posisi': tires.map((tire) {
-                        final pIndex = tires.indexOf(tire);
+                      'posisi': tires
+                          .asMap()
+                          .entries
+                          .where((entry) =>
+                              entry.key + 1 <=
+                              tireCheck[
+                                  selectedTireCheck]) // Saring hanya item yang memenuhi kondisi
+                          .map((entry) {
+                        final tire = entry.value;
+                        final pIndex = entry.key + 1;
                         return {
-                          'pos': '${pIndex + 1}',
+                          'pos': '$pIndex',
                           'pressure':
                               (tire['pressure'] != '') ? tire['pressure'] : '0',
                           'luka':
                               (tire['injury'] == '') ? null : [tire['injury']]
                         };
-                      }),
+                      }).toList(),
                       'user': userCtrl.text,
                       'pit': 'Default',
                     });
@@ -807,16 +839,24 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                       'tanggal': DateTime.now().toIso8601String(),
                       'unit': unitCtrl.text,
                       'hm': hmCtrl.text,
-                      'posisi': tires.map((tire) {
-                        final pIndex = tires.indexOf(tire);
+                      'posisi': tires
+                          .asMap()
+                          .entries
+                          .where((entry) =>
+                              entry.key + 1 <=
+                              tireCheck[
+                                  selectedTireCheck]) // Saring hanya item yang memenuhi kondisi
+                          .map((entry) {
+                        final tire = entry.value;
+                        final pIndex = entry.key + 1;
                         return {
-                          'pos': '${pIndex + 1}',
+                          'pos': '$pIndex',
                           'pressure':
                               (tire['pressure'] != '') ? tire['pressure'] : '0',
                           'luka':
                               (tire['injury'] == '') ? null : [tire['injury']]
                         };
-                      }),
+                      }).toList(),
                       'user': userCtrl.text,
                       'pit': 'Default',
                     });
