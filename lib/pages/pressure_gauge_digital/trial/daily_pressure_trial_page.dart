@@ -526,9 +526,73 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                         )
                       ]),
                   function: () {
-                    Navigator.pushReplacementNamed(
-                        context, DailyPressureTrialPage.routeName,
-                        arguments: idSite);
+                    setState(() {
+                      unitCtrl.text = '';
+                      hmCtrl.text = '';
+                      userCtrl.text = '';
+                      tires = [
+                        {
+                          'position': '1',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '2',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '3',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '4',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '5',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '6',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '7',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '8',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '9',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '10',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '11',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                        {
+                          'position': '12',
+                          'pressure': '',
+                          'injury': '',
+                        },
+                      ];
+                    });
                   }),
               Container(
                 child: TextFormField(
