@@ -526,73 +526,101 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                         )
                       ]),
                   function: () {
-                    setState(() {
-                      unitCtrl.text = '';
-                      hmCtrl.text = '';
-                      userCtrl.text = '';
-                      tires = [
-                        {
-                          'position': '1',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '2',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '3',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '4',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '5',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '6',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '7',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '8',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '9',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '10',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '11',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                        {
-                          'position': '12',
-                          'pressure': '',
-                          'injury': '',
-                        },
-                      ];
-                    });
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return AlertDialog(
+                          title: Text("Confirmation"),
+                          content:
+                              Text("Are you sure you want to clear the data?"),
+                          actions: <Widget>[
+                            TextButton(
+                              child: Text("No"),
+                              onPressed: () {
+                                Navigator.of(context)
+                                    .pop(); // Close the dialog without action
+                              },
+                            ),
+                            TextButton(
+                              child: Text("Yes"),
+                              onPressed: () {
+                                // Action to clear the data
+
+                                setState(() {
+                                  unitCtrl.text = '';
+                                  hmCtrl.text = '';
+                                  userCtrl.text = '';
+                                  tires = [
+                                    {
+                                      'position': '1',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '2',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '3',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '4',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '5',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '6',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '7',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '8',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '9',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '10',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '11',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                    {
+                                      'position': '12',
+                                      'pressure': '',
+                                      'injury': '',
+                                    },
+                                  ];
+                                });
+
+                                Navigator.of(context).pop(); // Close the dialog
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
                   }),
               Container(
                 child: TextFormField(
@@ -866,6 +894,8 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                   if (querySnapshot.docs.isNotEmpty) {
                     final docId = querySnapshot.docs.first.id;
 
+                    final existingData = querySnapshot.docs.first.data();
+
                     // revisi data
                     await firestore
                         .collection('daily_pressure')
@@ -873,27 +903,35 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                         .update({
                       'idSite': idSite,
                       'tanggal': DateTime.now().toIso8601String(),
-                      'unit': unitCtrl.text,
-                      'hm': hmCtrl.text,
+                      'unit': unitCtrl.text.isNotEmpty
+                          ? unitCtrl.text
+                          : existingData['unit'],
+                      'hm': hmCtrl.text.isNotEmpty
+                          ? hmCtrl.text
+                          : existingData['hm'],
                       'posisi': tires
                           .asMap()
                           .entries
                           .where((entry) =>
-                              entry.key + 1 <=
-                              tireCheck[
-                                  selectedTireCheck]) // Saring hanya item yang memenuhi kondisi
+                              entry.key + 1 <= tireCheck[selectedTireCheck])
                           .map((entry) {
                         final tire = entry.value;
                         final pIndex = entry.key + 1;
                         return {
                           'pos': '$pIndex',
-                          'pressure':
-                              (tire['pressure'] != '') ? tire['pressure'] : '0',
-                          'luka':
-                              (tire['injury'] == '') ? null : [tire['injury']]
+                          'pressure': tire['pressure'] != ''
+                              ? tire['pressure']
+                              : existingData['posisi']?[entry.key]
+                                      ['pressure'] ??
+                                  '0',
+                          'luka': tire['injury'] != ''
+                              ? [tire['injury']]
+                              : existingData['posisi']?[entry.key]['luka']
                         };
                       }).toList(),
-                      'user': userCtrl.text,
+                      'user': userCtrl.text.isNotEmpty
+                          ? userCtrl.text
+                          : existingData['user'],
                       'pit': 'Default',
                     });
                   } else {
@@ -915,8 +953,9 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                         final pIndex = entry.key + 1;
                         return {
                           'pos': '$pIndex',
-                          'pressure':
-                              (tire['pressure'] != '') ? tire['pressure'] : '0',
+                          'pressure': (tire['pressure'] != '')
+                              ? tire['pressure']
+                              : 'N/A',
                           'luka':
                               (tire['injury'] == '') ? null : [tire['injury']]
                         };
