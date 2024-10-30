@@ -367,7 +367,7 @@ class _DailyPressureListTrialPageState
                                                 getWhiteTextStyle(fontSize: 18),
                                           ),
                                           Container(
-                                            width: 250,
+                                            width: 300,
                                             child: Text(
                                               dailyMap['user'] ?? 'No Name',
                                               textAlign: TextAlign.end,
@@ -432,6 +432,25 @@ class _DailyPressureListTrialPageState
                                           ),
                                           Text(
                                             dailyMap['hm'],
+                                            style: getWhiteTextStyle(
+                                                fontWeight: w700, fontSize: 18),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            'Condition',
+                                            style:
+                                                getWhiteTextStyle(fontSize: 18),
+                                          ),
+                                          Text(
+                                            dailyMap['unit_condition'] ?? '',
                                             style: getWhiteTextStyle(
                                                 fontWeight: w700, fontSize: 18),
                                           ),

@@ -893,6 +893,7 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('F1').columnWidth = 25;
       sheet.getRangeByName('G1').setText('Location');
       sheet.getRangeByName('H1').setText('Rating');
+      sheet.getRangeByName('I1').setText('Condition');
 
       for (int i = 0; i < daily!.length; i++) {
         final unit = daily[i]['unit'];
@@ -936,6 +937,9 @@ Future<List<int>> createExcel(String type,
           sheet
               .getRangeByName('H${i * posisi.length + j + 2}')
               .setText(daily[i]['rating']);
+          sheet
+              .getRangeByName('H${i * posisi.length + j + 2}')
+              .setText(daily[i]['unit_condition'] ?? '');
         }
       }
 

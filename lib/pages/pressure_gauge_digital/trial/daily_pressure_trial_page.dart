@@ -30,6 +30,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
 
@@ -52,12 +53,15 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   int selectedRoute = 0;
   int selectedTireCheck = 0;
   int checkAmount = 0;
+  int selectedPit = 0;
+  bool isColdSelected = true;
   Map<String, dynamic> user = {};
   List<List<int>> inspectRoute = [
     [0, 1, 2, 3, 4, 5],
     [0, 2, 3, 4, 5, 1],
     [1, 5, 4, 3, 2, 0],
   ];
+  List<String> pit = [];
 
   // 0 (6 tire), 1 (10 tire), 2 (12 tire)
   List<int> tireCheck = [6, 10, 12];
@@ -141,6 +145,12 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
       BlocProvider.of<ConnectedDevicesCubit>(context).fetchConnectedDevices();
     }
     super.initState();
+
+    getUser();
+  }
+
+  getUser() async {
+    userCtrl.text = await getUserDaily();
   }
 
   // startScanBluetooth() async {
@@ -257,6 +267,15 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   @override
   Widget build(BuildContext context) {
     idSite = ModalRoute.of(context)?.settings.arguments as String;
+    pit.clear();
+
+    if (idSite == '4') {
+      pit.add('Sektor 1 (Pit Firdaus)');
+      pit.add('Sektor 2 (Pit Nirwana)');
+      pit.add('Sektor 4 (Pit Harapan)');
+      pit.add('Sektor 7 (Pit Paradise)');
+      pit.add('Workshop');
+    }
 
     return Scaffold(
       appBar: appBarWidget('Form Tire Inspection', context),
@@ -434,73 +453,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                   );
                 },
               ),
-              const SizedBox(
-                height: 12,
-              ),
-              Text(
-                'Qty Tire',
-                style: getBlackTextStyle(fontWeight: w700, fontSize: 18),
-              ),
-              const SizedBox(
-                height: 12,
-              ),
-              Row(
-                children: List.generate(tireCheck.length, (index) {
-                  return Expanded(
-                    child: RadioListTile<int>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        "${tireCheck[index]} Tires",
-                        style: getBlackTextStyle(fontSize: 14),
-                      ),
-                      value: index,
-                      groupValue: selectedTireCheck,
-                      onChanged: (int? value) {
-                        setState(() {
-                          selectedTireCheck = value!;
-                        });
-                      },
-                    ),
-                  );
-                }),
-              ),
-              (selectedTireCheck == 0)
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Inspection Tire Route',
-                          style:
-                              getBlackTextStyle(fontWeight: w700, fontSize: 18),
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        Column(
-                          children: inspectRoute.asMap().entries.map((entry) {
-                            int index = entry.key;
-                            List<int> route = entry.value;
 
-                            return RadioListTile<int>(
-                              title: Text(route
-                                  .map((index) => (index + 1).toString())
-                                  .join(' -> ')),
-                              value: index,
-                              groupValue: selectedRoute,
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedRoute = value!;
-                                });
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                      ],
-                    )
-                  : Container(),
               // Text(
               //   'Pressure : $pressure',
               //   textAlign: TextAlign.start,
@@ -550,6 +503,9 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                   unitCtrl.text = '';
                                   hmCtrl.text = '';
                                   userCtrl.text = '';
+                                  selectedRoute = 0;
+                                  selectedTireCheck = 0;
+                                  checkAmount = 0;
                                   tires = [
                                     {
                                       'position': '1',
@@ -624,7 +580,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                   }),
               Container(
                 child: TextFormField(
-                  controller: unitCtrl,
+                  controller: userCtrl,
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.next,
                   // validator: _validateUserName,
@@ -632,8 +588,65 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                     // FocusScope.of(context).requestFocus(_passwordEmail);
                   },
                   decoration: InputDecoration(
-                      labelText: 'Unit Id', icon: Icon(Icons.front_loader)),
+                      labelText: 'User', icon: Icon(Icons.account_box)),
                 ),
+              ),
+              const SizedBox(
+                height: 18,
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: unitCtrl,
+                      keyboardType: TextInputType.text,
+                      textInputAction: TextInputAction.next,
+                      decoration: InputDecoration(
+                        labelText: 'Unit Id',
+                        icon: Icon(Icons.front_loader),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        isColdSelected = true;
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: isColdSelected
+                          ? Colors.lightBlueAccent
+                          : Colors.grey[300],
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      textStyle: TextStyle(fontSize: 12),
+                    ),
+                    child: Text(
+                      'Cold',
+                      style: getWhiteTextStyle(fontWeight: w700),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        isColdSelected = false;
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          !isColdSelected ? Colors.redAccent : Colors.grey[300],
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      textStyle: TextStyle(fontSize: 12),
+                    ),
+                    child: Text(
+                      'Hot',
+                      style: getWhiteTextStyle(fontWeight: w700),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(
                 height: 18,
@@ -654,22 +667,109 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
               const SizedBox(
                 height: 18,
               ),
-              Container(
-                child: TextFormField(
-                  controller: userCtrl,
-                  keyboardType: TextInputType.text,
-                  textInputAction: TextInputAction.next,
-                  // validator: _validateUserName,
-                  onFieldSubmitted: (String value) {
-                    // FocusScope.of(context).requestFocus(_passwordEmail);
-                  },
-                  decoration: InputDecoration(
-                      labelText: 'User', icon: Icon(Icons.account_box)),
-                ),
+              (pit.isNotEmpty)
+                  ? Column(
+                      children: [
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: pit.map((e) {
+                              final pitIndex = pit.indexOf(e);
+                              return Container(
+                                margin: EdgeInsets.only(right: 12),
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: (selectedPit == pitIndex)
+                                        ? Colors.orange
+                                        : greyF7F8F9,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      selectedPit = pitIndex;
+                                    });
+                                  },
+                                  child: Text(
+                                    e,
+                                    style: (selectedPit == pitIndex)
+                                        ? getWhiteTextStyle()
+                                        : getBlackTextStyle(),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                      ],
+                    )
+                  : Container(),
+
+              Text(
+                'Qty Tire',
+                style: getBlackTextStyle(fontWeight: w700, fontSize: 18),
               ),
               const SizedBox(
-                height: 18,
+                height: 12,
               ),
+              Row(
+                children: List.generate(tireCheck.length, (index) {
+                  return Expanded(
+                    child: RadioListTile<int>(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        "${tireCheck[index]} Tires",
+                        style: getBlackTextStyle(fontSize: 14),
+                      ),
+                      value: index,
+                      groupValue: selectedTireCheck,
+                      onChanged: (int? value) {
+                        setState(() {
+                          selectedTireCheck = value!;
+                        });
+                      },
+                    ),
+                  );
+                }),
+              ),
+              (selectedTireCheck == 0)
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Inspection Tire Route',
+                          style:
+                              getBlackTextStyle(fontWeight: w700, fontSize: 18),
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        Column(
+                          children: inspectRoute.asMap().entries.map((entry) {
+                            int index = entry.key;
+                            List<int> route = entry.value;
+
+                            return RadioListTile<int>(
+                              title: Text(route
+                                  .map((index) => (index + 1).toString())
+                                  .join(' -> ')),
+                              value: index,
+                              groupValue: selectedRoute,
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedRoute = value!;
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                      ],
+                    )
+                  : Container(),
               ListView.builder(
                   itemCount: tireCheck[selectedTireCheck],
                   shrinkWrap: true,
@@ -863,6 +963,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
           Expanded(
             child: InkWell(
               onTap: () async {
+                saveUserDaily(userCtrl.text);
                 if (unitCtrl.text.isEmpty ||
                     tires[0]['pressure'] == 0 ||
                     tires[1]['pressure'] == 0 ||
@@ -932,7 +1033,8 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                       'user': userCtrl.text.isNotEmpty
                           ? userCtrl.text
                           : existingData['user'],
-                      'pit': 'Default',
+                      'pit': (pit.isNotEmpty) ? pit[selectedPit] : 'Default',
+                      'unit_condition': isColdSelected ? 'Cold' : 'Hot'
                     });
                   } else {
                     // tambah data
@@ -961,7 +1063,8 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                         };
                       }).toList(),
                       'user': userCtrl.text,
-                      'pit': 'Default',
+                      'pit': (pit.isNotEmpty) ? pit[selectedPit] : 'Default',
+                      'unit_condition': isColdSelected ? 'Cold' : 'Hot'
                     });
                   }
                 } catch (e) {}

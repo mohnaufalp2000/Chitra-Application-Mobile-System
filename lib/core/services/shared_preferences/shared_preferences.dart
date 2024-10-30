@@ -10,6 +10,8 @@ Future<SharedPreferences> getSharedPreferences() async {
 }
 
 String savedSiteCode = 'saved_sites';
+String savedUserDailyCode = 'saved_user_daily';
+String savedPitDailyCode = 'saved_pit_daily';
 
 /**
  * 
@@ -161,4 +163,15 @@ Future<List<Site>> getSiteFromLocalPreferences() async {
       lastUpdate: siteMap['lastUpdate'],
     );
   }).toList();
+}
+
+// Fungsi untuk menyimpan user  yang dipilih
+Future<void> saveUserDaily(String username) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setString(savedUserDailyCode, username);
+}
+
+Future<String> getUserDaily() async {
+  SharedPreferences prefs = await getSharedPreferences();
+  return prefs.getString(savedUserDailyCode) ?? '';
 }

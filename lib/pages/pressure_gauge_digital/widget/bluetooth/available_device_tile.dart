@@ -8,14 +8,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
-class AvailableDeviceTileWidget extends StatelessWidget {
+class AvailableDeviceTileWidget extends StatefulWidget {
   final ScanResult device;
   const AvailableDeviceTileWidget({super.key, required this.device});
 
   @override
+  State<AvailableDeviceTileWidget> createState() =>
+      _AvailableDeviceTileWidgetState();
+}
+
+class _AvailableDeviceTileWidgetState extends State<AvailableDeviceTileWidget> {
+  @override
   Widget build(BuildContext context) {
-    bool canConnect = device.advertisementData.connectable;
-    if (device.getName() == 'Unknown Device') {
+    bool canConnect = widget.device.advertisementData.connectable;
+    if (widget.device.getName() == 'Unknown Device') {
       return Container();
     }
 
@@ -28,7 +34,7 @@ class AvailableDeviceTileWidget extends StatelessWidget {
       //         lastColor: const Color(0xFF3BDE86))),
       // leading: Text("Id: ${device.}"),
       title: Text(
-        "${device.getName()} RSSI: ${device.rssi}",
+        "${widget.device.getName()} RSSI: ${widget.device.rssi}",
         style: getBlackTextStyle(),
       ),
       subtitle: ElevatedButton(
@@ -37,19 +43,20 @@ class AvailableDeviceTileWidget extends StatelessWidget {
             // Navigator.of(context)
             //     .pushNamed(AppRoutes.connectedDeviceScreen, arguments: device);
           }
-          if (!device.device.isConnected) {
+          if (!widget.device.device.isConnected) {
             debugPrint("debugCanConnect: Can be connected");
-            BlocProvider.of<PairDeviceCubit>(context).tryConnect(device);
+            BlocProvider.of<PairDeviceCubit>(context).tryConnect(widget.device);
           }
-          if (device.device.isConnected) {
+          if (widget.device.device.isConnected) {
+            setState(() {});
             debugPrint("debugCanDisonnect: Can be disconnected");
-            await device.device.disconnect();
+            await widget.device.device.disconnect();
           }
         },
         child: BlocBuilder<PairDeviceCubit, PairDeviceState>(
           builder: (context, state) {
             if (state is PairingDeviceState &&
-                device.device.remoteId.str ==
+                widget.device.device.remoteId.str ==
                     state.device.device.remoteId.str) {
               return const Text("Pairing...");
             }
@@ -58,7 +65,7 @@ class AvailableDeviceTileWidget extends StatelessWidget {
             //         state.device.device.remoteId.str) {
             //   return const Text("Disconnect");
             // }
-            return Text(device.device.isConnected
+            return Text(widget.device.device.isConnected
                 ? "Disconnect"
                 : canConnect
                     ? "Connect"
@@ -67,7 +74,7 @@ class AvailableDeviceTileWidget extends StatelessWidget {
           buildWhen: (previousState, state) {
             if (state is PairingDeviceState &&
                 state.device.device.remoteId.str !=
-                    device.device.remoteId.str) {
+                    widget.device.device.remoteId.str) {
               return false;
             }
             return true;
