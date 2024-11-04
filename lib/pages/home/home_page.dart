@@ -674,7 +674,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     final listSite = state.listSite;
 
                                     // menghilangkan office, ck dan pama
-                                    listSite.removeRange(0, 3);
+                                    listSite.removeRange(0, 4);
 
                                     // Mengupdate opsi dropdown hanya jika ada perubahan dalam listSite
                                     _siteOptions = listSite
@@ -763,37 +763,36 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   saveUserPreferences(map);
                                   return Column(
                                     children: [
-                                      // Container(
-                                      //   width: double.infinity,
-                                      //   padding: const EdgeInsets.all(12),
-                                      //   color: Colors.grey.withOpacity(0.1),
-                                      //   child: Row(
-                                      //     mainAxisAlignment:
-                                      //         MainAxisAlignment.spaceBetween,
-                                      //     children: [
-                                      //       Column(
-                                      //         crossAxisAlignment:
-                                      //             CrossAxisAlignment.start,
-                                      //         children: [
-                                      //           Text(
-                                      //             'Site',
-                                      //             style: getBlackTextStyle(
-                                      //               fontSize: 20,
-                                      //               fontWeight: w700,
-                                      //             ),
-                                      //           ),
-                                      //           Text(
-                                      //             state.nameSite,
-                                      //             style: getGreenTextStyle(
-                                      //                 fontSize: 16,
-                                      //                 fontWeight: w700),
-                                      //           ),
-                                      //         ],
-                                      //       ),
-                                      //     ],
-                                      //   ),
-                                      // ),
-
+                                      Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.all(12),
+                                        color: Colors.grey.withOpacity(0.1),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Site',
+                                                  style: getBlackTextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: w700,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  state.nameSite,
+                                                  style: getGreenTextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: w700),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                       const SizedBox(
                                         height: 12,
                                       ),

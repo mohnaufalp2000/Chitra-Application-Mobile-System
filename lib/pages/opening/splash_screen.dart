@@ -47,7 +47,9 @@ class _SplashScreenState extends State<SplashScreen> {
             //     : LoginPage.routeName,
             (auth.currentUser != null)
                 ? (auth.currentUser!.emailVerified)
-                    ? (user.docs[0]['id_site'] == '3')
+                    ? (user.docs[0]['id_site'] == '3' ||
+                            user.docs[0]['id_site'] == '4' ||
+                            user.docs[0]['id_site'] == '999')
                         ? HomePageTrial.routeName
                         : HomePage.routeName
                     : LoginPage.routeName
