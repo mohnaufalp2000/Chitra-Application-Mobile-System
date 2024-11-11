@@ -126,10 +126,10 @@ class _DailyPressureHistoryTrialPageState
                 horizontal: 12,
               ),
               child: DatePicker(
-                DateTime.now().subtract(Duration(days: 5)),
+                DateTime.now().subtract(Duration(days: 31)),
                 height: 100,
                 width: 80,
-                daysCount: 5,
+                daysCount: 31,
                 locale: 'id_ID',
                 initialSelectedDate: DateTime.now().subtract(Duration(days: 1)),
                 selectionColor: green00968A,
@@ -309,7 +309,7 @@ class _DailyPressureHistoryTrialPageState
                                 ),
                                 Text(
                                   dailyMap['unit'] +
-                                      '${((dailyMap['pit'] != 'Default') ? ' - ' + dailyMap['pit'] : '')}',
+                                      '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
                                   style: getWhiteTextStyle(
                                       fontWeight: w700, fontSize: 18),
                                 )

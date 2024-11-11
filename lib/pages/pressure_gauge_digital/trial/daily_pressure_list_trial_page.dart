@@ -343,7 +343,7 @@ class _DailyPressureListTrialPageState
                                         ),
                                         Text(
                                           dailyMap['unit'] +
-                                              '${((dailyMap['pit'] != 'Default') ? ' - ' + dailyMap['pit'] : '')}',
+                                              '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
                                           style: getWhiteTextStyle(
                                               fontWeight: w700, fontSize: 18),
                                         )
