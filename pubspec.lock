@@ -838,7 +838,7 @@ packages:
     source: hosted
     version: "4.0.4"
   googleapis:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: googleapis
       sha256: b98b2e909736ada32fdee433a14f5d37bad0311be0ce6506a1246ce1a50f3bcf
