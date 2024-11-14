@@ -803,6 +803,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   TextEditingController rtd1 = TextEditingController(text: '');
   TextEditingController rtd2 = TextEditingController(text: '');
   List<TextEditingController> remarksControllers = [];
+  List<TextEditingController> snControllers = [];
   List<TextEditingController> rtd1Controllers = [];
   List<TextEditingController> rtd2Controllers = [];
 
@@ -1141,6 +1142,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
               for (int i = 0; i < state.units.length; i++) {
                 remarksControllers.add(TextEditingController(text: ''));
+                snControllers.add(TextEditingController(text: ''));
                 rtd1Controllers.add(TextEditingController(text: ''));
                 rtd2Controllers.add(TextEditingController(text: ''));
                 position.add({
@@ -1152,6 +1154,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                   'rtd1': '',
                   'rtd2': '',
                   'remarks': '',
+                  'sn': '',
                   'rating': '',
                   'image': [],
                   'condition': [
@@ -2933,6 +2936,34 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 CrossAxisAlignment.stretch,
                                             children: [
                                               Text(
+                                                'Serial Number',
+                                                style: getBlackTextStyle(
+                                                    fontWeight: w700),
+                                              ),
+                                              const SizedBox(
+                                                height: 12,
+                                              ),
+                                              SizedBox(
+                                                width: double.infinity,
+                                                child: InputFormWidget(
+                                                    onChng: (value) {
+                                                      position[index]['sn'] =
+                                                          value;
+                                                    },
+                                                    controller:
+                                                        snControllers[index],
+                                                    hint: ''),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.stretch,
+                                            children: [
+                                              Text(
                                                 'Remarks',
                                                 style: getBlackTextStyle(
                                                     fontWeight: w700),
@@ -3170,6 +3201,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       element['rtd1'] == '' &&
                                       element['rtd2'] == '' &&
                                       element['rating'] == '' &&
+                                      element['sn'] == '' &&
                                       element['remarks'] == '');
 
                                   for (int i = 0; i < position.length; i++) {
@@ -3186,6 +3218,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         position[i]['rtd1'] != '' ||
                                         position[i]['rtd2'] != '' ||
                                         position[i]['rating'] != '' ||
+                                        position[i]['sn'] != '' ||
                                         position[i]['remarks'] != '') {
                                       final today = DateTime.now();
                                       final startOfDay = DateTime(
@@ -3286,7 +3319,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                       .split('|')[0]
                                                 ]
                                               : [],
-                                          'sn': unit.sn,
+                                          'sn': (position[i]['sn'] != null ||
+                                                  position[i]['sn'] != '')
+                                              ? position[i]['sn']
+                                              : unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
                                           'pit': (idSite == bmbsitarum.idSite ||
@@ -3358,7 +3394,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           //         })
                                           //         .toList()
                                           //     : [],
-                                          'sn': unit.sn,
+                                          'sn': (position[i]['sn'] != '')
+                                              ? position[i]['sn']
+                                              : unit.sn,
                                           'kunci_unit': unit.kunciUnit,
                                           'kunci_tire': unit.kunciTire,
                                           'pit': (idSite == bmbsitarum.idSite ||

@@ -268,6 +268,28 @@ class _TireRepairInspectionFormPageState
           rtd2Ctrl.text = data['rtd2'];
           remarksCtrl.text = data['remarks'];
           _selectedButton = data['repair_duration'];
+
+          serialNumberPict = (data['sn_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          sidewallPic = (data['sidewall_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          shoulderPic = (data['shoulder_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          threatPic = (data['threat_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          beadPic = (data['bead_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          innerLinerPic = (data['inner_linner_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          chafferPic = (data['chaffer_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
         });
       }
     } catch (e) {
@@ -1021,35 +1043,33 @@ class _TireRepairInspectionFormPageState
                     ),
                   ),
                   const SizedBox(height: 20.0),
-                  (id == "" || id == null)
-                      ? Column(
-                          children: [
-                            Text(
-                              '*Please Take a Picture with Landscape Mode!',
-                              style: getRedTextStyle(
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 12.0),
-                            // Serial Number Picture
-                            takePictureButton('Serial Number'),
-                            const SizedBox(height: 20.0),
-                            takePictureButton('Area Sidewall'),
-                            const SizedBox(height: 20.0),
-                            takePictureButton('Area Shoulder'),
-                            const SizedBox(height: 20.0),
-                            takePictureButton('Area Tread'),
-                            const SizedBox(height: 20.0),
-                            takePictureButton('Area Bead'),
-                            const SizedBox(height: 20.0),
-                            takePictureButton('Area Inner Linner'),
-                            const SizedBox(height: 20.0),
-                            takePictureButton('Area Chaffer'),
-                            const SizedBox(height: 20.0),
-                            const SizedBox(height: 99.0),
-                          ],
-                        )
-                      : const SizedBox(height: 99.0),
+                  Column(
+                    children: [
+                      Text(
+                        '*Please Take a Picture with Landscape Mode!',
+                        style: getRedTextStyle(
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 12.0),
+                      // Serial Number Picture
+                      takePictureButton('Serial Number'),
+                      const SizedBox(height: 20.0),
+                      takePictureButton('Area Sidewall'),
+                      const SizedBox(height: 20.0),
+                      takePictureButton('Area Shoulder'),
+                      const SizedBox(height: 20.0),
+                      takePictureButton('Area Tread'),
+                      const SizedBox(height: 20.0),
+                      takePictureButton('Area Bead'),
+                      const SizedBox(height: 20.0),
+                      takePictureButton('Area Inner Linner'),
+                      const SizedBox(height: 20.0),
+                      takePictureButton('Area Chaffer'),
+                      const SizedBox(height: 20.0),
+                      const SizedBox(height: 99.0),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -1446,6 +1466,7 @@ class _TireRepairInspectionFormPageState
             switch (type) {
               case 'Serial Number':
                 if (serialNumberPict.isNotEmpty) {
+                  log('sn pic : ${serialNumberPict}');
                   return itemPicture(context, serialNumberPict);
                 }
                 return Container();
@@ -1496,11 +1517,20 @@ class _TireRepairInspectionFormPageState
             Stack(
               children: [
                 Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Image.file(File((i as String)))),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: i.startsWith('http')
+                      ? Image.network(
+                          i,
+                          fit: BoxFit.cover,
+                        )
+                      : Image.file(
+                          File(i),
+                          fit: BoxFit.cover,
+                        ),
+                ),
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: SizedBox(

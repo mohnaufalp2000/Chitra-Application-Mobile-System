@@ -351,7 +351,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                                   return Container();
                                                 }
                                                 return Text(
-                                                  'Site : ${data?.site ?? ''} (${unit.idSite})',
+                                                  'Site : ${data?.site ?? ''}',
                                                   style: getBlackTextStyle(
                                                     fontSize: 14,
                                                     fontWeight: w700,
