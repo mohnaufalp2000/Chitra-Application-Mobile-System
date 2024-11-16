@@ -936,9 +936,10 @@ Future<List<int>> createExcel(String type,
               .setText(daily[i]['pit']);
           sheet
               .getRangeByName('H${i * posisi.length + j + 2}')
-              .setText(daily[i]['rating']);
+              .setText(posisi[j]['rating']);
+
           sheet
-              .getRangeByName('H${i * posisi.length + j + 2}')
+              .getRangeByName('I${i * posisi.length + j + 2}')
               .setText(daily[i]['unit_condition'] ?? '');
         }
       }
