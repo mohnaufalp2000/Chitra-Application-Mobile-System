@@ -733,6 +733,13 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                                           fontSize:
                                                                               18),
                                                                     ),
+                                                              Text(
+                                                                  '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
+                                                                  style: getWhiteTextStyle(
+                                                                      fontWeight:
+                                                                          w700,
+                                                                      fontSize:
+                                                                          18)),
                                                               const SizedBox(
                                                                 height: 12,
                                                               ),

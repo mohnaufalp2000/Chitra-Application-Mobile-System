@@ -35,6 +35,7 @@ class ExportExcelButton extends StatefulWidget {
 class _ExportExcelButtonState extends State<ExportExcelButton> {
   List<bool> selectedMonths = List.generate(12, (index) => false);
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  bool _isLoading = false; // Tambahkan variabel untuk indikator loading
 
   final List<String> months = [
     'January',
@@ -53,16 +54,14 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
 
   void _showDateRangePicker(
       BuildContext context, Function(List<DateTime>) onDatesSelected) async {
-    // Menampilkan dialog pemilihan rentang tanggal
     DateTimeRange? pickedRange = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(2023, 1, 1), // Tanggal awal
-      lastDate: DateTime(2024, 12, 31), // Tanggal akhir
-      helpText: 'Select Date Range', // Judul dialog
+      firstDate: DateTime(2023, 1, 1),
+      lastDate: DateTime(2024, 12, 31),
+      helpText: 'Select Date Range',
     );
 
     if (pickedRange != null) {
-      // Mengonversi rentang tanggal ke daftar tanggal
       List<DateTime> selectedDates = [];
       for (var date = pickedRange.start;
           date.isBefore(pickedRange.end.add(Duration(days: 1)));
@@ -78,46 +77,17 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-          onPressed: () async {
-            log('id site export : ${widget.filteredItemTask[0]['idSite']}');
-            switch (widget.type) {
-              case ExportType.oneDay:
-                final id = Uuid();
-                final file = await createFolderPath(id.v4(), 'daily-check',
-                    email: widget.user['email'] ?? '',
-                    site: widget.user['siteName'] ?? '',
-                    pit: (widget.pit.isNotEmpty)
-                        ? widget.pit[widget.selectedPit]
-                        : '',
-                    date: widget.date);
-
-                final bytes = await createExcel('daily-check',
-                    daily: widget.filteredItemTask);
-                final saved = await file.writeAsBytes(bytes, flush: true);
-                // print('laper : $saved');
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    backgroundColor: green00968A,
-                    content: Text(
-                      'Successfull Save Data!',
-                      style: getWhiteTextStyle(),
-                    )));
-                final result = await OpenFile.open(file.path);
-
-                if (result.type == ResultType.done) {
-                  print('File berhasil dibuka');
-                } else {
-                  print(result.message);
-                  if (result.type == ResultType.noAppToOpen) {
-                    openPlayStore('attendance');
-                  }
-                }
-                break;
-              case ExportType.multipleDay:
-                List<Map<String, dynamic>> excelItemTask = [];
-                _showDateRangePicker(context, (selectedMonths) async {
+        onPressed: () async {
+          switch (widget.type) {
+            case ExportType.multipleDay:
+              List<Map<String, dynamic>> excelItemTask = [];
+              _showDateRangePicker(context, (selectedMonths) async {
+                setState(() {
+                  _isLoading = true; // Tampilkan loading
+                });
+                try {
                   final firstPicked = selectedMonths[0];
                   final lastPicked = selectedMonths[selectedMonths.length - 1];
-                  // Tampilkan atau gunakan bulan-bulan yang dipilih
                   final snapshot = await firestore
                       .collection('daily_pressure')
                       .where('idSite',
@@ -138,64 +108,71 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
                   });
 
                   final id = Uuid();
-                  final file = await createFolderPath(id.v4(), 'daily-check',
-                      email: widget.user['email'] ?? '',
-                      site: widget.user['siteName'] ?? '',
-                      pit: (widget.pit.isNotEmpty)
-                          ? widget.pit[widget.selectedPit]
-                          : '',
-                      date:
-                          '${DateFormat('dd-MM-yyyy').format(DateTime(firstPicked.year, firstPicked.month, firstPicked.day))} - ${DateFormat('dd-MM-yyyy').format(DateTime(lastPicked.year, lastPicked.month, lastPicked.day))}');
+                  final file = await createFolderPath(
+                    id.v4(),
+                    'daily-check',
+                    email: widget.user['email'] ?? '',
+                    site: widget.user['siteName'] ?? '',
+                    pit: (widget.pit.isNotEmpty)
+                        ? widget.pit[widget.selectedPit]
+                        : '',
+                    date:
+                        '${DateFormat('dd-MM-yyyy').format(DateTime(firstPicked.year, firstPicked.month, firstPicked.day))} - ${DateFormat('dd-MM-yyyy').format(DateTime(lastPicked.year, lastPicked.month, lastPicked.day))}',
+                  );
 
                   final bytes =
                       await createExcel('daily-check', daily: excelItemTask);
-                  final saved = await file.writeAsBytes(bytes, flush: true);
-                  // print('laper : $saved');
+                  await file.writeAsBytes(bytes, flush: true);
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      backgroundColor: green00968A,
-                      content: Text(
-                        'Successfull Save Data!',
-                        style: getWhiteTextStyle(),
-                      )));
-                  final result = await OpenFile.open(file.path);
-
-                  if (result.type == ResultType.done) {
-                    print('File berhasil dibuka');
-                  } else {
-                    print(result.message);
-                    if (result.type == ResultType.noAppToOpen) {
-                      openPlayStore('attendance');
-                    }
-                  }
-                });
-                break;
-            }
-          },
-          style: ElevatedButton.styleFrom(
-              backgroundColor: (widget.type == ExportType.oneDay)
-                  ? Colors.blueGrey
-                  : Colors.blue),
-          child: Container(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  (widget.type == ExportType.oneDay)
-                      ? Icons.table_chart
-                      : Icons.copy_all_rounded,
-                  color: Colors.white,
+                    backgroundColor: green00968A,
+                    content: Text(
+                      'Successful Save Data!',
+                      style: getWhiteTextStyle(),
+                    ),
+                  ));
+                  await OpenFile.open(file.path);
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text('Error: $e'),
+                  ));
+                } finally {
+                  setState(() {
+                    _isLoading = false; // Sembunyikan loading
+                  });
+                }
+              });
+              break;
+          }
+        },
+        style: ElevatedButton.styleFrom(
+            backgroundColor: (widget.type == ExportType.oneDay)
+                ? Colors.blueGrey
+                : Colors.blue),
+        child: _isLoading
+            ? CircularProgressIndicator(
+                color: Colors.white,
+              )
+            : Container(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      (widget.type == ExportType.oneDay)
+                          ? Icons.table_chart
+                          : Icons.copy_all_rounded,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Export to Excel ${(widget.type == ExportType.oneDay) ? '(One Day)' : '(Selected Date)'}',
+                      style: getWhiteTextStyle(),
+                    ),
+                  ],
                 ),
-                const SizedBox(
-                  width: 12,
-                ),
-                Text(
-                  'Export to Excel ${(widget.type == ExportType.oneDay) ? '(One Day)' : '(Selected Date)'}',
-                  style: getWhiteTextStyle(),
-                ),
-              ],
-            ),
-          )),
+              ),
+      ),
     );
   }
 }
