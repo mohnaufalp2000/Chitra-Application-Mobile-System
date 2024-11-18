@@ -129,80 +129,89 @@ class _TireRepairInspectionFormPageState
   Future<void> uploadImage() async {
     if (serialNumberPict.isNotEmpty) {
       for (int i = 0; i < serialNumberPict.length; i++) {
-        final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-sn');
-        final uploadTask = ref.putFile(File(serialNumberPict[i]));
-        final snapshot = await uploadTask.whenComplete(() {});
-        final urlDownload = await snapshot.ref.getDownloadURL();
+        if (!serialNumberPict[i].startsWith('http')) {
+          final ref = storage.ref().child(
+              'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-sn');
+          final uploadTask = ref.putFile(File(serialNumberPict[i]));
+          final snapshot = await uploadTask.whenComplete(() {});
+          final urlDownload = await snapshot.ref.getDownloadURL();
+          serialNumberPictFirebase.add(urlDownload);
+        }
 
-        serialNumberPictFirebase.add(urlDownload);
+        // serialNumberPictFirebase.add(urlDownload);
       }
     }
     if (sidewallPic.isNotEmpty) {
       for (int i = 0; i < sidewallPic.length; i++) {
-        final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-sidewall');
-        final uploadTask = ref.putFile(File(sidewallPic[i]));
-        final snapshot = await uploadTask.whenComplete(() {});
-        final urlDownload = await snapshot.ref.getDownloadURL();
-
-        sidewallPicFirebase.add(urlDownload);
+        if (!sidewallPic[i].startsWith('http')) {
+          final ref = storage.ref().child(
+              'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-sidewall');
+          final uploadTask = ref.putFile(File(sidewallPic[i]));
+          final snapshot = await uploadTask.whenComplete(() {});
+          final urlDownload = await snapshot.ref.getDownloadURL();
+          sidewallPicFirebase.add(urlDownload);
+        }
       }
     }
     if (shoulderPic.isNotEmpty) {
       for (int i = 0; i < shoulderPic.length; i++) {
-        final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-shoulder');
-        final uploadTask = ref.putFile(File(shoulderPic[i]));
-        final snapshot = await uploadTask.whenComplete(() {});
-        final urlDownload = await snapshot.ref.getDownloadURL();
-
-        shoulderPicFirebase.add(urlDownload);
+        if (!shoulderPic[i].startsWith('http')) {
+          final ref = storage.ref().child(
+              'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-shoulder');
+          final uploadTask = ref.putFile(File(shoulderPic[i]));
+          final snapshot = await uploadTask.whenComplete(() {});
+          final urlDownload = await snapshot.ref.getDownloadURL();
+          shoulderPicFirebase.add(urlDownload);
+        }
       }
     }
     if (threatPic.isNotEmpty) {
       for (int i = 0; i < threatPic.length; i++) {
-        final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-tread');
-        final uploadTask = ref.putFile(File(threatPic[i]));
-        final snapshot = await uploadTask.whenComplete(() {});
-        final urlDownload = await snapshot.ref.getDownloadURL();
-
-        threatPicFirebase.add(urlDownload);
+        if (!threatPic[i].startsWith('http')) {
+          final ref = storage.ref().child(
+              'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-tread');
+          final uploadTask = ref.putFile(File(threatPic[i]));
+          final snapshot = await uploadTask.whenComplete(() {});
+          final urlDownload = await snapshot.ref.getDownloadURL();
+          threatPicFirebase.add(urlDownload);
+        }
       }
     }
     if (beadPic.isNotEmpty) {
       for (int i = 0; i < beadPic.length; i++) {
-        final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-bead');
-        final uploadTask = ref.putFile(File(beadPic[i]));
-        final snapshot = await uploadTask.whenComplete(() {});
-        final urlDownload = await snapshot.ref.getDownloadURL();
-
-        beadPicFirebase.add(urlDownload);
+        if (!beadPic[i].startsWith('http')) {
+          final ref = storage.ref().child(
+              'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-bead');
+          final uploadTask = ref.putFile(File(beadPic[i]));
+          final snapshot = await uploadTask.whenComplete(() {});
+          final urlDownload = await snapshot.ref.getDownloadURL();
+          beadPicFirebase.add(urlDownload);
+        }
       }
     }
     if (innerLinerPic.isNotEmpty) {
       for (int i = 0; i < innerLinerPic.length; i++) {
-        final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-inner');
-        final uploadTask = ref.putFile(File(innerLinerPic[i]));
-        final snapshot = await uploadTask.whenComplete(() {});
-        final urlDownload = await snapshot.ref.getDownloadURL();
-
-        innerLinerPicFirebase.add(urlDownload);
+        if (!innerLinerPic[i].startsWith('http')) {
+          final ref = storage.ref().child(
+              'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-inner');
+          final uploadTask = ref.putFile(File(innerLinerPic[i]));
+          final snapshot = await uploadTask.whenComplete(() {});
+          final urlDownload = await snapshot.ref.getDownloadURL();
+          innerLinerPicFirebase.add(urlDownload);
+        }
       }
     }
 
     if (chafferPic.isNotEmpty) {
       for (int i = 0; i < innerLinerPic.length; i++) {
-        final ref = storage.ref().child(
-            'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-chaffer');
-        final uploadTask = ref.putFile(File(chafferPic[i]));
-        final snapshot = await uploadTask.whenComplete(() {});
-        final urlDownload = await snapshot.ref.getDownloadURL();
-
-        chafferPicFirebase.add(urlDownload);
+        if (!chafferPic[i].startsWith('http')) {
+          final ref = storage.ref().child(
+              'tire_repair/${DateFormat('yyyy-MM-dd').format(selectedDate ?? DateTime.now())}-${customerCtrl.text}-${serialNumberCtrl.text}-${i + 1}-chaffer');
+          final uploadTask = ref.putFile(File(chafferPic[i]));
+          final snapshot = await uploadTask.whenComplete(() {});
+          final urlDownload = await snapshot.ref.getDownloadURL();
+          chafferPicFirebase.add(urlDownload);
+        }
       }
     }
   }
@@ -1177,7 +1186,10 @@ class _TireRepairInspectionFormPageState
                               },
                             );
 
+                            // Edit Tire Inspection
                             if (id != '' || id != null) {
+                              await uploadImage();
+
                               log('cek kesamaan ${id != ''} & ${id != null}');
                               final querySnapshot = await firestore
                                   .collection('tire_repair_ins_report')
@@ -1190,11 +1202,7 @@ class _TireRepairInspectionFormPageState
                                 final doc = querySnapshot.docs.first;
                                 final docId = doc.id; // Ambil ID dokumen
 
-                                await firestore
-                                    .collection('tire_repair_ins_report')
-                                    .doc(
-                                        docId) // Gunakan ID dokumen yang ingin diperbarui
-                                    .update({
+                                Map<String, dynamic> updateData = {
                                   'date_inspect':
                                       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
                                   'customer': customerCtrl.text,
@@ -1216,8 +1224,84 @@ class _TireRepairInspectionFormPageState
                                   'remarks': remarksCtrl.text,
                                   'repair_location': (idSite == '1')
                                       ? 'Workshop Office'
-                                      : user['siteName']
-                                });
+                                      : user['siteName'],
+                                };
+
+                                // Tambahkan atribut dinamis hanya jika daftar tidak kosong
+                                if (serialNumberPictFirebase.isNotEmpty) {
+                                  updateData['sn_pic'] = FieldValue.arrayUnion(
+                                      serialNumberPictFirebase);
+                                }
+                                if (sidewallPicFirebase.isNotEmpty) {
+                                  updateData['sidewall_pic'] =
+                                      FieldValue.arrayUnion(
+                                          sidewallPicFirebase);
+                                }
+                                if (shoulderPicFirebase.isNotEmpty) {
+                                  updateData['shoulder_pic'] =
+                                      FieldValue.arrayUnion(
+                                          shoulderPicFirebase);
+                                }
+                                if (threatPicFirebase.isNotEmpty) {
+                                  updateData['threat_pic'] =
+                                      FieldValue.arrayUnion(threatPicFirebase);
+                                }
+                                if (beadPicFirebase.isNotEmpty) {
+                                  updateData['bead_pic'] =
+                                      FieldValue.arrayUnion(beadPicFirebase);
+                                }
+                                if (innerLinerPicFirebase.isNotEmpty) {
+                                  updateData['inner_linner_pic'] =
+                                      FieldValue.arrayUnion(
+                                          innerLinerPicFirebase);
+                                }
+                                if (chafferPicFirebase.isNotEmpty) {
+                                  updateData['chaffer_pic'] =
+                                      FieldValue.arrayUnion(chafferPicFirebase);
+                                }
+
+                                // Perbarui dokumen dengan data yang sudah difilter
+                                await firestore
+                                    .collection('tire_repair_ins_report')
+                                    .doc(
+                                        docId) // Gunakan ID dokumen yang ingin diperbarui
+                                    .update(updateData);
+
+                                // await firestore
+                                //     .collection('tire_repair_ins_report')
+                                //     .doc(
+                                //         docId) // Gunakan ID dokumen yang ingin diperbarui
+                                //     .update({
+                                //   'date_inspect':
+                                //       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+                                //   'customer': customerCtrl.text,
+                                //   'email': auth.currentUser?.email ?? '',
+                                //   'site': siteCtrl.text,
+                                //   'report_by': reportNameCtrl.text,
+                                //   'tire_size': tireSizeCtrl.text,
+                                //   'sn': serialNumberCtrl.text,
+                                //   'brand': brandCtrl.text,
+                                //   'type_construction': typeConstCtrl.text,
+                                //   'pattern': patternCtrl.text,
+                                //   'date_received':
+                                //       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+                                //   'status': statusCtrl.text,
+                                //   'no_cargo_manifest': cargoManifestCtrl.text,
+                                //   'rtd1': rtd1Ctrl.text,
+                                //   'rtd2': rtd2Ctrl.text,
+                                //   'repair_duration': _selectedButton,
+                                //   'remarks': remarksCtrl.text,
+                                //   'sn_pic': serialNumberPictFirebase,
+                                //     'sidewall_pic': sidewallPicFirebase,
+                                //     'shoulder_pic': shoulderPicFirebase,
+                                //     'threat_pic': threatPicFirebase,
+                                //     'bead_pic': beadPicFirebase,
+                                //     'inner_linner_pic': innerLinerPicFirebase,
+                                //     'chaffer_pic': chafferPicFirebase,
+                                //   'repair_location': (idSite == '1')
+                                //       ? 'Workshop Office'
+                                //       : user['siteName']
+                                // });
                               } else {
                                 try {
                                   await uploadImage();
@@ -1264,6 +1348,7 @@ class _TireRepairInspectionFormPageState
                                   });
                                 } catch (e) {}
                               }
+                              // Input Tire Inspection
                             } else {
                               try {
                                 await uploadImage();
@@ -1531,72 +1616,76 @@ class _TireRepairInspectionFormPageState
                           fit: BoxFit.cover,
                         ),
                 ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 45,
-                    child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepOrange.withOpacity(0.3),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            )),
-                        onPressed: () async {
-                          showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  content: Text(
-                                    'Are you sure you want to delete this image?',
-                                    style: getBlackTextStyle(),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                        onPressed: () {
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          'Cancel',
-                                          style: getGreyTextStyle(grey8391A1),
-                                        )),
-                                    TextButton(
-                                        onPressed: () {
-                                          img.removeWhere((element) {
-                                            log('poto : $element | poto 2 : $i');
-                                            return element == i;
-                                          });
-                                          Navigator.pop(context);
-                                          setState(() {});
-                                        },
-                                        child: Text(
-                                          'Yes',
-                                          style: getRedTextStyle(),
-                                        )),
-                                  ],
-                                );
-                              });
+                (id == null)
+                    ? Align(
+                        alignment: Alignment.bottomCenter,
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 45,
+                          child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.deepOrange.withOpacity(0.3),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  )),
+                              onPressed: () async {
+                                showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        content: Text(
+                                          'Are you sure you want to delete this image?',
+                                          style: getBlackTextStyle(),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: Text(
+                                                'Cancel',
+                                                style: getGreyTextStyle(
+                                                    grey8391A1),
+                                              )),
+                                          TextButton(
+                                              onPressed: () {
+                                                img.removeWhere((element) {
+                                                  log('poto : $element | poto 2 : $i');
+                                                  return element == i;
+                                                });
+                                                Navigator.pop(context);
+                                                setState(() {});
+                                              },
+                                              child: Text(
+                                                'Yes',
+                                                style: getRedTextStyle(),
+                                              )),
+                                        ],
+                                      );
+                                    });
 
-                          setState(() {});
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.delete,
-                              color: white,
-                            ),
-                            const SizedBox(
-                              width: 12,
-                            ),
-                            Text(
-                              'Delete Picture',
-                              style: getWhiteTextStyle(),
-                            ),
-                          ],
-                        )),
-                  ),
-                ),
+                                setState(() {});
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.delete,
+                                    color: white,
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Text(
+                                    'Delete Picture',
+                                    style: getWhiteTextStyle(),
+                                  ),
+                                ],
+                              )),
+                        ),
+                      )
+                    : Container(),
               ],
             ),
             const SizedBox(
