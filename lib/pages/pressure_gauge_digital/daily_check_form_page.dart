@@ -121,6 +121,26 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   //   });
   // }
 
+  Future<List<String>> receiveRatingTire(String unit) async {
+    List<String> fixRating = [];
+    final yesterday = DateTime.now().subtract(Duration(days: 1));
+    final startOfDay = DateTime(yesterday.year, yesterday.month, yesterday.day);
+    final endOfDay =
+        DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+    final ratingQuery = await firestore
+        .collection('daily_pressure')
+        .where('unit', isEqualTo: unit)
+        .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+        .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+        .get();
+    final ratingMap = ratingQuery.docs.first;
+    List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
+    for (int i = 0; i < ratingList.length; i++) {
+      fixRating.add(ratingList[i]['rating'] ?? '');
+    }
+    return fixRating;
+  }
+
   startScanBluetooth() async {
     StreamSubscription<BluetoothDiscoveryResult>? scanSubscription;
 
@@ -271,7 +291,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: BlocConsumer<TireBloc, TireState>(
-            listener: (context, state) {
+            listener: (context, state) async {
               if (state is TiresLoadedState) {
                 //? BLOC TER EKSEKUSI dua kali dan mengambil jumlah tire sebelumnya
                 pit.clear();
@@ -308,6 +328,15 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     });
                   }
                 }
+                // Input data rating sebelumnya
+                List<dynamic> ratings =
+                    await receiveRatingTire(dataUnit['unitNumber']);
+                log('list rating : $ratings');
+                setState(() {
+                  for (int i = 0; i < ratings.length; i++) {
+                    position[i]['rating'] = ratings[i];
+                  }
+                });
               }
             },
             builder: (context, state) {
