@@ -50,6 +50,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   List<UnitTire> units = [];
   bool isOnline = false;
   DateTime now = DateTime.now();
+  bool isLoading = false;
   // List<UnitTire> filteredUnits = [];
 
   @override

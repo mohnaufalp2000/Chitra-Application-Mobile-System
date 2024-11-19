@@ -79,6 +79,37 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
       child: ElevatedButton(
         onPressed: () async {
           switch (widget.type) {
+            case ExportType.oneDay:
+              final id = Uuid();
+              final file = await createFolderPath(id.v4(), 'daily-check',
+                  email: widget.user['email'] ?? '',
+                  site: widget.user['siteName'] ?? '',
+                  pit: (widget.pit.isNotEmpty)
+                      ? widget.pit[widget.selectedPit]
+                      : '',
+                  date: widget.date);
+
+              final bytes = await createExcel('daily-check',
+                  daily: widget.filteredItemTask);
+              final saved = await file.writeAsBytes(bytes, flush: true);
+              // print('laper : $saved');
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  backgroundColor: green00968A,
+                  content: Text(
+                    'Successfull Save Data!',
+                    style: getWhiteTextStyle(),
+                  )));
+              final result = await OpenFile.open(file.path);
+
+              if (result.type == ResultType.done) {
+                print('File berhasil dibuka');
+              } else {
+                print(result.message);
+                if (result.type == ResultType.noAppToOpen) {
+                  openPlayStore('attendance');
+                }
+              }
+              break;
             case ExportType.multipleDay:
               List<Map<String, dynamic>> excelItemTask = [];
               _showDateRangePicker(context, (selectedMonths) async {
