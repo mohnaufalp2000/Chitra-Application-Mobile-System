@@ -77,6 +77,7 @@ class _TireRepairInspectionFormPageState
     '24.00R35',
     '27.00R49',
     '33.00R51',
+    '33.25R29',
     '37.00R57',
     '40.00R57',
     '53/80R63',
@@ -1469,89 +1470,33 @@ class _TireRepairInspectionFormPageState
                   fontSize: 14,
                 ),
               ),
-              InkWell(
-                  onTap: () async {
-                    requestCameraPermission();
-                    requestStoragePermission();
-                    final ImagePicker picker = ImagePicker();
-                    final XFile? image = await picker.pickImage(
-                        imageQuality: 50, source: ImageSource.camera);
-                    try {
-                      if (image != null) {
-                        Directory? directory;
-
-                        // Read image as a file
-                        File imageFile = File(image.path);
-                        // data size fotonya
-                        log('gambar : ${imageFile.path}');
-                        // // Compress the image if needed (optional)
-                        final compressedImageFile =
-                            await FlutterImageCompress.compressAndGetFile(
-                          imageFile.path,
-                          imageFile.path + '_compressed.jpg',
-                          quality: 50,
-                        );
-
-                        final imageBytes =
-                            await compressedImageFile?.readAsBytes();
-
-                        // Save ke gallery
-                        final result = await ImageGallerySaver.saveImage(
-                            imageBytes!,
-                            name:
-                                'tire-repair-$type-${DateTime.now().millisecondsSinceEpoch}');
-
-                        // Compress the image if needed (optional)
-                        switch (type) {
-                          case 'Serial Number':
-                            serialNumberPict
-                                .add('${compressedImageFile?.path}' ?? '');
-                            break;
-                          case 'Area Sidewall':
-                            sidewallPic
-                                .add('${compressedImageFile?.path}' ?? '');
-                            break;
-                          case 'Area Shoulder':
-                            shoulderPic
-                                .add('${compressedImageFile?.path}' ?? '');
-                            break;
-                          case 'Area Tread':
-                            threatPic.add('${compressedImageFile?.path}' ?? '');
-                            break;
-                          case 'Area Bead':
-                            beadPic.add('${compressedImageFile?.path}' ?? '');
-                            break;
-                          case 'Area Inner Linner':
-                            innerLinerPic
-                                .add('${compressedImageFile?.path}' ?? '');
-                            break;
-                          case 'Area Chaffer':
-                            chafferPic
-                                .add('${compressedImageFile?.path}' ?? '');
-                            break;
-                        }
-                        // listImg.add(
-                        //     '${compressedImageFile?.path}|${position[index]['position']}' ??
-                        //         '');
-                        // // Convert image to base64
-                      }
-                    } catch (e) {
-                      log('error gambar string : $e');
-                    }
-
-                    setState(() {});
-                  },
-                  child: BoxCamera())
+              Row(
+                children: [
+                  InkWell(
+                    onTap: () async {
+                      requestCameraPermission();
+                      requestStoragePermission();
+                      await _pickImage(type, ImageSource.camera);
+                    },
+                    child: BoxCamera(),
+                  ),
+                  const SizedBox(width: 10),
+                  InkWell(
+                    onTap: () async {
+                      requestStoragePermission();
+                      await _pickImage(type, ImageSource.gallery);
+                    },
+                    child: Icon(Icons.photo_library, color: Colors.blue),
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(
-            height: 12,
-          ),
+          const SizedBox(height: 12),
           Builder(builder: (context) {
             switch (type) {
               case 'Serial Number':
                 if (serialNumberPict.isNotEmpty) {
-                  log('sn pic : ${serialNumberPict}');
                   return itemPicture(context, serialNumberPict);
                 }
                 return Container();
@@ -1591,6 +1536,59 @@ class _TireRepairInspectionFormPageState
         ],
       ),
     );
+  }
+
+  Future<void> _pickImage(String type, ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image =
+        await picker.pickImage(imageQuality: 50, source: source);
+    try {
+      if (image != null) {
+        File imageFile = File(image.path);
+
+        final compressedImageFile =
+            await FlutterImageCompress.compressAndGetFile(
+          imageFile.path,
+          imageFile.path + '_compressed.jpg',
+          quality: 50,
+        );
+
+        final imageBytes = await compressedImageFile?.readAsBytes();
+
+        await ImageGallerySaver.saveImage(
+          imageBytes!,
+          name: 'tire-repair-$type-${DateTime.now().millisecondsSinceEpoch}',
+        );
+
+        switch (type) {
+          case 'Serial Number':
+            serialNumberPict.add('${compressedImageFile?.path}' ?? '');
+            break;
+          case 'Area Sidewall':
+            sidewallPic.add('${compressedImageFile?.path}' ?? '');
+            break;
+          case 'Area Shoulder':
+            shoulderPic.add('${compressedImageFile?.path}' ?? '');
+            break;
+          case 'Area Tread':
+            threatPic.add('${compressedImageFile?.path}' ?? '');
+            break;
+          case 'Area Bead':
+            beadPic.add('${compressedImageFile?.path}' ?? '');
+            break;
+          case 'Area Inner Linner':
+            innerLinerPic.add('${compressedImageFile?.path}' ?? '');
+            break;
+          case 'Area Chaffer':
+            chafferPic.add('${compressedImageFile?.path}' ?? '');
+            break;
+        }
+      }
+    } catch (e) {
+      log('Error picking image: $e');
+    }
+
+    setState(() {});
   }
 
   Widget itemPicture(BuildContext context, List<String> img) {

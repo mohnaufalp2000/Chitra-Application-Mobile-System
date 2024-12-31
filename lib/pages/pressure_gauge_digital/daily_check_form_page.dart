@@ -90,7 +90,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   TextEditingController pressureDigitalCtrl = TextEditingController(text: '');
   TextEditingController damageCtrl = TextEditingController(text: '');
   TextEditingController hmCtrl = TextEditingController(text: '');
-  List<String> selectedDamage = [];
   int selectedPit = -1;
   int selectedPosIndex = -1;
   int selectedType = 1;
@@ -121,24 +120,111 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   //   });
   // }
 
+  // Future<List<String>> receiveRatingTire(String unit) async {
+  //   List<String> fixRating = [];
+  //   final yesterday = DateTime.now().subtract(Duration(days: 1));
+  //   final startOfDay = DateTime(yesterday.year, yesterday.month, yesterday.day);
+  //   final endOfDay =
+  //       DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
+  //   final ratingQuery = await firestore
+  //       .collection('daily_pressure')
+  //       .where('unit', isEqualTo: unit)
+  //       .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+  //       .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+  //       .get();
+  //   final ratingMap = ratingQuery.docs.first;
+  //   List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
+  //   for (int i = 0; i < ratingList.length; i++) {
+  //     fixRating.add(ratingList[i]['rating'] ?? '');
+  //   }
+  //   return fixRating;
+  // }
+
   Future<List<String>> receiveRatingTire(String unit) async {
     List<String> fixRating = [];
-    final yesterday = DateTime.now().subtract(Duration(days: 1));
-    final startOfDay = DateTime(yesterday.year, yesterday.month, yesterday.day);
-    final endOfDay =
-        DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
-    final ratingQuery = await firestore
-        .collection('daily_pressure')
-        .where('unit', isEqualTo: unit)
-        .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-        .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
-        .get();
-    final ratingMap = ratingQuery.docs.first;
-    List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
-    for (int i = 0; i < ratingList.length; i++) {
-      fixRating.add(ratingList[i]['rating'] ?? '');
+
+    Future<List<String>> fetchRatingData(DateTime date) async {
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+      final ratingQuery = await firestore
+          .collection('daily_pressure')
+          .where('unit', isEqualTo: unit)
+          .where('tanggal',
+              isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+          .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+          .get();
+
+      if (ratingQuery.docs.isNotEmpty) {
+        final ratingMap = ratingQuery.docs.first;
+        List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
+        return ratingList
+            .map((item) => item['rating'] ?? '')
+            .toList()
+            .cast<String>();
+      }
+
+      return [];
     }
+
+    // Coba ambil data untuk kemarin
+    final yesterday = DateTime.now().subtract(Duration(days: 1));
+    fixRating = await fetchRatingData(yesterday);
+
+    // Jika data kemarin kosong, coba ambil data untuk kemarin lusa
+    if (fixRating.isEmpty) {
+      final dayBeforeYesterday = DateTime.now().subtract(Duration(days: 2));
+      fixRating = await fetchRatingData(dayBeforeYesterday);
+    }
+
     return fixRating;
+  }
+
+  Future<List<dynamic>> receiveDamageTire(String unit) async {
+    List<dynamic> fixDamage = [];
+
+    Future<List<dynamic>> fetchDamageData(DateTime date) async {
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+      final damageQuery = await firestore
+          .collection('daily_pressure')
+          .where('unit', isEqualTo: unit)
+          .where('tanggal',
+              isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+          .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+          .get();
+
+      if (damageQuery.docs.isNotEmpty) {
+        final damageMap = damageQuery.docs.first;
+        List<dynamic> damageList = damageMap.data()['posisi'] as List<dynamic>;
+        return damageList.map((item) => item['luka'] ?? '').toList();
+      }
+
+      return [];
+    }
+
+    // Coba ambil data untuk kemarin
+    final yesterday = DateTime.now().subtract(Duration(days: 1));
+    fixDamage = await fetchDamageData(yesterday);
+
+    // Jika data kemarin kosong, coba ambil data untuk kemarin lusa
+    if (fixDamage.isEmpty) {
+      final dayBeforeYesterday = DateTime.now().subtract(Duration(days: 2));
+      fixDamage = await fetchDamageData(dayBeforeYesterday);
+    }
+
+    log('damage tire: $fixDamage');
+    return fixDamage;
+  }
+
+  List<bool> updateCheckedDamageValues(
+      List<dynamic> damage, List<bool> checkedDamageValues) {
+    for (int i = 0; i < damageType.length; i++) {
+      // Set true jika damageType[i] ada dalam damage
+      checkedDamageValues[i] = damage.contains(damageType[i]);
+    }
+    log('jenis kerusakan : $checkedDamageValues');
+
+    return checkedDamageValues;
   }
 
   startScanBluetooth() async {
@@ -335,6 +421,20 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 setState(() {
                   for (int i = 0; i < ratings.length; i++) {
                     position[i]['rating'] = ratings[i];
+                  }
+                });
+                // Input data damage sebelumnya
+                List<dynamic> damages =
+                    await receiveDamageTire(dataUnit['unitNumber']);
+                setState(() {
+                  for (int i = 0; i < damages.length; i++) {
+                    // Cek jika posisi 'damage' sudah memiliki nilai, tidak akan ditimpa
+                    if (position[i]['damage'] == null) {
+                      position[i]['damage'] = (damages[i][0] == '' &&
+                              (damages[i] as List<dynamic>).length == 1)
+                          ? null
+                          : damages[i];
+                    }
                   }
                 });
               }
@@ -1284,6 +1384,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                         damageType.length,
                                                         false);
 
+                                                // Jika diperlukan, tambahkan logika awal untuk inisialisasi.
+                                                if (position[posIndex]
+                                                        ['damage'] !=
+                                                    null) {
+                                                  setState(() {});
+                                                  checkedDamageValues =
+                                                      updateCheckedDamageValues(
+                                                    position[posIndex]['damage']
+                                                        as List<dynamic>,
+                                                    checkedDamageValues,
+                                                  );
+                                                }
+
                                                 showDialog(
                                                   context: context,
                                                   builder:
@@ -1318,25 +1431,26 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                     final dmgIndex =
                                                                         damageType
                                                                             .indexOf(damage);
-                                                                    return StatefulBuilder(builder:
-                                                                        (context,
-                                                                            setState) {
-                                                                      return CheckboxListTile(
-                                                                        title: Text(
-                                                                            damage),
-                                                                        value: checkedDamageValues[
-                                                                            dmgIndex],
-                                                                        onChanged:
-                                                                            (bool?
-                                                                                value) {
-                                                                          setState(
-                                                                              () {
-                                                                            checkedDamageValues[dmgIndex] =
-                                                                                value ?? false;
-                                                                          });
-                                                                        },
-                                                                      );
-                                                                    });
+                                                                    return StatefulBuilder(
+                                                                      builder:
+                                                                          (context,
+                                                                              sState) {
+                                                                        // Tampilkan CheckboxListTile
+                                                                        return CheckboxListTile(
+                                                                          title:
+                                                                              Text(damage),
+                                                                          value:
+                                                                              checkedDamageValues[dmgIndex],
+                                                                          onChanged:
+                                                                              (bool? value) {
+                                                                            sState(() {
+                                                                              checkedDamageValues[dmgIndex] = !checkedDamageValues[dmgIndex];
+                                                                            });
+                                                                            log('Checkbox ${dmgIndex} diubah ke ${value}');
+                                                                          },
+                                                                        );
+                                                                      },
+                                                                    );
                                                                   }).toList(),
                                                                 ),
                                                               ),
@@ -1394,13 +1508,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                       setState(
                                                                           () {});
 
-                                                                      selectedDamage
-                                                                          .clear();
                                                                       final List<
                                                                               String>
                                                                           tmp =
                                                                           [];
-                                                                      if (damageCtrl.text ==
+                                                                      if (damageCtrl.text !=
                                                                               '' ||
                                                                           damageCtrl
                                                                               .text
@@ -1419,15 +1531,23 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                         }
                                                                       }
                                                                       log('idx luka ban : $posIndex');
-                                                                      // position[posIndex]
-                                                                      //     ['damage'] = tmp;
                                                                       if (tmp
                                                                           .isNotEmpty) {
-                                                                        position[posIndex]['damage'] =
-                                                                            tmp;
-                                                                        selectedDamage
+                                                                        // reset  ulang damage tire agar tidak duplikat
+                                                                        if (position[posIndex]['damage'][0] ==
+                                                                            '') {
+                                                                          position[posIndex]['damage'] =
+                                                                              [];
+                                                                        } else {
+                                                                          position[posIndex]
+                                                                              [
+                                                                              'damage'] = [
+                                                                            position[posIndex]['damage'][0]
+                                                                          ];
+                                                                        }
+
+                                                                        position[posIndex]['damage']
                                                                             .addAll(tmp);
-                                                                        log('hasil luka ban : ${position}');
                                                                       }
                                                                       damageCtrl
                                                                           .clear();

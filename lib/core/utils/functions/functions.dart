@@ -482,185 +482,9 @@ Future<List<int>> createExcel(String type,
       workbook.dispose();
       return bytes;
 
-    // final Workbook workbook = Workbook();
-    // final Worksheet sheet = workbook.worksheets[0];
-
-    // /// title
-    // sheet.getRangeByName('A1:G1').merge();
-    // sheet.getRangeByName('A1:G1').cellStyle.hAlign = HAlignType.center;
-    // sheet.getRangeByName('A1:G1').setText('ATTENDANCE RECORD');
-
-    // sheet.getRangeByName('A2:G2').merge();
-
-    // /// Date
-    // sheet.getRangeByName('A3:G3').merge();
-    // sheet.getRangeByName('A3:G3').setText(
-    //     'Date                    : ${DateFormat.yMMMM().format(DateTime.now())}');
-
-    // /// Name
-    // sheet.getRangeByName('A4:G4').merge();
-    // sheet
-    //     .getRangeByName('A4:G4')
-    //     .setText('Name                  : $username');
-
-    // /// SN
-    // sheet.getRangeByName('A5:G5').merge();
-    // sheet.getRangeByName('A5:G5').setText('SN                  : $sn');
-
-    // /// Position
-    // sheet.getRangeByName('A6:G6').merge();
-    // sheet
-    //     .getRangeByName('A6:G6')
-    //     .setText('Position              : $position');
-
-    // /// Site
-    // sheet.getRangeByName('A7:G7').merge();
-    // sheet.getRangeByName('A7:G7').setText('Site              : $site');
-
-    // /// Presence
-    // sheet.getRangeByName('A8:G8').merge();
-    // sheet.getRangeByName('A8:G8').setText('Working Time');
-    // sheet.getRangeByName('A8:G8').cellStyle.hAlign = HAlignType.center;
-
-    // sheet.getRangeByName('A9').setText('Date');
-
-    // sheet.getRangeByName('B9:C9').merge();
-    // sheet.getRangeByName('B9:C9').setText('Day');
-    // sheet.getRangeByName('B9:C9').cellStyle.hAlign = HAlignType.center;
-
-    // sheet.getRangeByName('D9').setText('From');
-    // sheet.getRangeByName('D9').cellStyle.hAlign = HAlignType.center;
-    // sheet.getRangeByName('D9').columnWidth = 15;
-    // sheet.getRangeByName('E9').setText('To');
-    // sheet.getRangeByName('E9').cellStyle.hAlign = HAlignType.center;
-    // sheet.getRangeByName('E9').columnWidth = 15;
-    // sheet.getRangeByName('F9').setText('Check-In');
-    // sheet.getRangeByName('F9').cellStyle.hAlign = HAlignType.center;
-    // sheet.getRangeByName('F9').columnWidth = 92;
-    // sheet.getRangeByName('G9').setText('Check-Out');
-    // sheet.getRangeByName('G9').cellStyle.hAlign = HAlignType.center;
-    // sheet.getRangeByName('G9').columnWidth = 92;
-    // sheet.getRangeByName('H9').setText('Description-In');
-    // sheet.getRangeByName('H9').cellStyle.hAlign = HAlignType.center;
-    // sheet.getRangeByName('H9').columnWidth = 70;
-    // sheet.getRangeByName('I9').setText('Description-Out');
-    // sheet.getRangeByName('I9').cellStyle.hAlign = HAlignType.center;
-    // sheet.getRangeByName('I9').columnWidth = 70;
-
-    // /// get date
-    // // int days = daysInMonth(DateTime.now());
-    // DateTime now = DateTime.now();
-    // DateTime firstDayOfCurrentMonth = DateTime(now.year, now.month, 1);
-    // DateTime firstDayOfPreviousMonth =
-    //     firstDayOfCurrentMonth.subtract(Duration(days: 1));
-    // DateTime lastDayOfPreviousMonth = DateTime(
-    //     firstDayOfPreviousMonth.year, firstDayOfPreviousMonth.month + 1, 0);
-
-    // int days = lastDayOfPreviousMonth.day;
-
-    // for (int i = 0; i < days; i++) {
-    //   sheet.getRangeByName('A${i + 10}').setText('${i + 1}');
-    //   sheet.getRangeByName('A${i + 10}').cellStyle.hAlign = HAlignType.center;
-    //   sheet.getRangeByName('A${i + 10}').cellStyle.vAlign = VAlignType.center;
-
-    //   for (int j = 0; j < presence!.length; j++) {
-    //     if (DateTime(DateTime.now().year, DateTime.now().month - 1, i + 1)
-    //             .toIso8601String()
-    //             .split('T')[0] ==
-    //         presence[j].masuk.split('T')[0]) {
-    //       sheet.getRangeByName('D${i + 10}:E${i + 10}').unmerge();
-    //       sheet.getRangeByName('D${i + 10}:E${i + 10}').cellStyle.fontColor =
-    //           '#00968A';
-
-    //       /// From
-    //       sheet.getRangeByName('D${i + 10}').setText(
-    //           '${DateFormat.Hms().format(DateTime.parse(presence[j].masuk))}');
-    //       sheet.getRangeByName('D${i + 10}').cellStyle.hAlign =
-    //           HAlignType.center;
-    //       sheet.getRangeByName('D${i + 10}').cellStyle.vAlign =
-    //           VAlignType.center;
-    //       sheet.getRangeByName('D${i + 10}').columnWidth = 15;
-
-    //       /// masukkan gambar check in
-    //       final resizedImage = await resizeImage(
-    //           base64Decode(presence[j].masukImage), 600, 600);
-    //       sheet.pictures.addStream(i + 10, 6, resizedImage);
-
-    //       sheet.getRangeByIndex(i + 10, 6).rowHeight = 550;
-    //       sheet.getRangeByIndex(i + 10, 6).columnWidth = 92;
-    //       sheet.getRangeByIndex(i + 10, 6).cellStyle.hAlign =
-    //           HAlignType.center;
-    //       sheet.getRangeByIndex(i + 10, 6).cellStyle.vAlign =
-    //           VAlignType.center;
-
-    //       // keterangan masuk
-    //       sheet
-    //           .getRangeByName('H${i + 10}')
-    //           .setText('${presence[j].keteranganMasuk}');
-    //       sheet.getRangeByName('H${i + 10}').cellStyle.hAlign =
-    //           HAlignType.center;
-    //       sheet.getRangeByName('H${i + 10}').cellStyle.vAlign =
-    //           VAlignType.center;
-    //       sheet.getRangeByName('H${i + 10}').columnWidth = 70;
-
-    //       /// To
-    //       /// cek apakah ada data absen keluar atau tidak
-    //       if (presence[j].keluar != '' && presence[j].keluar != null) {
-    //         sheet.getRangeByName('E${i + 10}').setText(
-    //             '${DateFormat.Hms().format(DateTime.parse(presence[j].keluar))}');
-    //         sheet.getRangeByName('E${i + 10}').cellStyle.hAlign =
-    //             HAlignType.center;
-    //         sheet.getRangeByName('E${i + 10}').cellStyle.vAlign =
-    //             VAlignType.center;
-    //         sheet.getRangeByName('E${i + 10}').columnWidth = 15;
-
-    //         /// masukkan gambar check out
-    //         final resizedImage = await resizeImage(
-    //             base64Decode(presence[j].keluarImage), 600, 600);
-    //         sheet.pictures.addStream(i + 10, 7, resizedImage);
-
-    //         sheet.getRangeByIndex(i + 10, 7).rowHeight = 550;
-    //         sheet.getRangeByIndex(i + 10, 7).columnWidth = 92;
-    //         sheet.getRangeByIndex(i + 10, 7).cellStyle.hAlign =
-    //             HAlignType.center;
-    //         sheet.getRangeByIndex(i + 10, 7).cellStyle.vAlign =
-    //             VAlignType.center;
-
-    //         // keterangan keluar
-    //         sheet
-    //             .getRangeByName('I${i + 10}')
-    //             .setText('${presence[j].keteranganKeluar}');
-    //         sheet.getRangeByName('I${i + 10}').cellStyle.hAlign =
-    //             HAlignType.center;
-    //         sheet.getRangeByName('I${i + 10}').cellStyle.vAlign =
-    //             VAlignType.center;
-    //         sheet.getRangeByName('I${i + 10}').columnWidth = 70;
-    //       }
-    //     }
-    //   }
-    // }
-
-    // /// get days
-    // for (int i = 0; i < days; i++) {
-    //   DateTime date =
-    //       DateTime(DateTime.now().year, DateTime.now().month - 1, i + 1);
-    //   sheet.getRangeByName('B${i + 10}:C${i + 10}').merge();
-    //   sheet
-    //       .getRangeByName('B${i + 10}:C${i + 10}')
-    //       .setText(DateFormat('EEEE').format(date));
-    //   sheet.getRangeByName('B${i + 10}:C${i + 10}').cellStyle.hAlign =
-    //       HAlignType.center;
-    //   sheet.getRangeByName('B${i + 10}:C${i + 10}').cellStyle.vAlign =
-    //       VAlignType.center;
-    // }
-
-    // final List<int> bytes = workbook.saveAsStream();
-    // workbook.dispose();
-    // return bytes;
     case 'outstanding':
       final Workbook workbook = Workbook();
       final Worksheet sheet = workbook.worksheets[0];
-      log('function export' + task.toString());
 
       sheet.getRangeByName('J1').setText('Inspector');
 
@@ -669,6 +493,8 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('L1').setText('Tire Damage');
 
       sheet.getRangeByName('M1').setText('Broken Component');
+
+      sheet.getRangeByName('N1').setText('SN Tire');
 
       sheet.getRangeByName('A1').setText('Date');
 
@@ -688,9 +514,11 @@ Future<List<int>> createExcel(String type,
 
       sheet.getRangeByName('I1').setText('Adj. Pressure');
 
-      sheet.getRangeByName('H1').setText('Pics');
+      // sheet.getRangeByName('H1').setText('Pics');
 
       for (var i = 0; i < task!.length; i++) {
+        log('task : ${task[i]['tire_damage']}');
+
         // inspector
         sheet.getRangeByName('A${i + 1}').merge();
         sheet.getRangeByName('J${i + 2}').cellStyle.hAlign = HAlignType.center;
@@ -784,9 +612,7 @@ Future<List<int>> createExcel(String type,
         //         : task[i]['tire_damage']);
         sheet.getRangeByName('G${i + 2}').setText(
             (task[i]['tire_damage'] is List<dynamic>)
-                ? ((task[i]['tire_damage'][0] == '')
-                    ? task[i]['tire_damage'][1]
-                    : task[i]['tire_damage'][1])
+                ? (task[i]['tire_damage'] as List<dynamic>).join('\n')
                 : task[i]['tire_damage']);
 
         // TIRE DAMAGE
@@ -809,32 +635,32 @@ Future<List<int>> createExcel(String type,
                 : task[i]['adjusmentPressure'] + 'Psi');
 
         // IMAGE TIRE
-        int columnBroken = 11;
-        final urlImage = task[i]['images'];
-        log('gambar dari string : ${urlImage}');
+        // int columnBroken = 11;
+        // final urlImage = task[i]['images'];
+        // log('gambar dari string : ${urlImage}');
 
-        if (urlImage != null) {
-          for (var j = 0; j < urlImage.length; j++) {
-            try {
-              if (urlImage[j] != null) {
-                final file = File(urlImage[j]);
-                final bytes = await file.readAsBytes();
+        // if (urlImage != null) {
+        //   for (var j = 0; j < urlImage.length; j++) {
+        //     try {
+        //       if (urlImage[j] != null) {
+        //         final file = File(urlImage[j]);
+        //         final bytes = await file.readAsBytes();
 
-                final base64String = base64Encode(bytes);
+        //         final base64String = base64Encode(bytes);
 
-                if (j == 0) {
-                  sheet.getRangeByName('H${i + 2}').cellStyle.hAlign =
-                      HAlignType.center;
-                  sheet.getRangeByName('H${i + 2}').cellStyle.vAlign =
-                      VAlignType.center;
-                  sheet.getRangeByName('H${i + 2}').setText(base64String);
-                }
-              }
-            } catch (e) {
-              log('kenapa gambar error : $e');
-            }
-          }
-        }
+        //         if (j == 0) {
+        //           sheet.getRangeByName('H${i + 2}').cellStyle.hAlign =
+        //               HAlignType.center;
+        //           sheet.getRangeByName('H${i + 2}').cellStyle.vAlign =
+        //               VAlignType.center;
+        //           sheet.getRangeByName('H${i + 2}').setText(base64String);
+        //         }
+        //       }
+        //     } catch (e) {
+        //       log('kenapa gambar error : $e');
+        //     }
+        //   }
+        // }
 
         // Location
         sheet.getRangeByName('K${i + 2}').cellStyle.hAlign = HAlignType.center;
@@ -852,6 +678,12 @@ Future<List<int>> createExcel(String type,
                 : (task[i]['condition'] is List<dynamic>)
                     ? (task[i]['condition'] as List<dynamic>).join(', ')
                     : task[i]['condition']);
+
+        // SN
+        // Location
+        sheet.getRangeByName('N${i + 2}').cellStyle.hAlign = HAlignType.center;
+        sheet.getRangeByName('N${i + 2}').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('N${i + 2}').setText(task[i]['sn']);
       }
 
       final List<int> bytes = workbook.saveAsStream();

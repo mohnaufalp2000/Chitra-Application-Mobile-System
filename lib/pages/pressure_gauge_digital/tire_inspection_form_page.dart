@@ -1604,6 +1604,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                             itemCount: units.length,
                             itemBuilder: (context, index) {
                               final unit = units[index];
+                              snControllers[index].text = unit.sn ?? '';
 
                               return Card(
                                 elevation: 2,
