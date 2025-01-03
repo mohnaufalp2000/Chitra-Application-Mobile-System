@@ -520,38 +520,38 @@ class _TpmsPageState extends State<TpmsPage> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
-                                SizedBox(
-                                  height: 80,
-                                  child: ButtonWidget(
-                                    color: Colors.orange,
-                                    name: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.adjust,
-                                          color: white,
-                                        ),
-                                        const SizedBox(
-                                          width: 6,
-                                        ),
-                                        Text(
-                                          'Adjust Pressure',
-                                          style: getWhiteTextStyle(
-                                              fontWeight: w700),
-                                        ),
-                                      ],
-                                    ),
-                                    function: () {
-                                      Navigator.pushNamed(
-                                          context, DailyCheckFormPage.routeName,
-                                          arguments: {
-                                            'unitNumber': unit.devicename,
-                                          });
-                                    },
-                                  ),
-                                ),
+                                // const SizedBox(
+                                //   height: 12,
+                                // ),
+                                // SizedBox(
+                                //   height: 80,
+                                //   child: ButtonWidget(
+                                //     color: Colors.orange,
+                                //     name: Row(
+                                //       children: [
+                                //         Icon(
+                                //           Icons.adjust,
+                                //           color: white,
+                                //         ),
+                                //         const SizedBox(
+                                //           width: 6,
+                                //         ),
+                                //         Text(
+                                //           'Adjust Pressure',
+                                //           style: getWhiteTextStyle(
+                                //               fontWeight: w700),
+                                //         ),
+                                //       ],
+                                //     ),
+                                //     function: () {
+                                //       Navigator.pushNamed(
+                                //           context, DailyCheckFormPage.routeName,
+                                //           arguments: {
+                                //             'unitNumber': unit.devicename,
+                                //           });
+                                //     },
+                                //   ),
+                                // ),
                                 const SizedBox(
                                   height: 12,
                                 ),

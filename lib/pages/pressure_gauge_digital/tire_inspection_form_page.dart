@@ -3528,6 +3528,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                     ),
                                     backgroundColor: green00968A,
                                   ));
+                                  Navigator.pop(context);
                                 } catch (e) {
                                   log('kenapa gagal : $e');
                                 }

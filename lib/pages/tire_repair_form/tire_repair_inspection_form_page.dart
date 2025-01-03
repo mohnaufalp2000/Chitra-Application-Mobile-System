@@ -592,38 +592,57 @@ class _TireRepairInspectionFormPageState
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      value: selectedSize,
-                      items: listSize.map((size) {
-                        return DropdownMenuItem<String>(
-                          value: size,
-                          child: Text(size),
+                  StreamBuilder(
+                      stream: firestore.collection('tire_size').snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        }
+
+                        List<Map<String, dynamic>> dataList =
+                            snapshot.data!.docs.map((doc) {
+                          return doc.data() as Map<String, dynamic>;
+                        }).toList();
+
+                        // log('size : ${dataList[0]['size']}');
+
+                        List<dynamic> size = dataList[0]['size'];
+                        selectedSize ??= size[4];
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            padding: EdgeInsets.symmetric(horizontal: 24),
+                            value: selectedSize,
+                            items: listSize.map((size) {
+                              return DropdownMenuItem<String>(
+                                value: size,
+                                child: Text(size),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedSize = newValue ?? '';
+                                tireSizeCtrl.text = newValue ?? '';
+                              });
+                            },
+                          ),
                         );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedSize = newValue ?? '';
-                          tireSizeCtrl.text = newValue ?? '';
-                        });
-                      },
-                    ),
-                  ),
+                      }),
                   const SizedBox(height: 20.0),
                   Align(
                     alignment: Alignment.topLeft,
@@ -1478,7 +1497,9 @@ class _TireRepairInspectionFormPageState
                       requestStoragePermission();
                       await _pickImage(type, ImageSource.camera);
                     },
-                    child: BoxCamera(),
+                    child: BoxCamera(
+                      type: 'camera',
+                    ),
                   ),
                   const SizedBox(width: 10),
                   InkWell(
@@ -1486,7 +1507,9 @@ class _TireRepairInspectionFormPageState
                       requestStoragePermission();
                       await _pickImage(type, ImageSource.gallery);
                     },
-                    child: Icon(Icons.photo_library, color: Colors.blue),
+                    child: BoxCamera(
+                      type: 'gallery',
+                    ),
                   ),
                 ],
               ),
@@ -1792,7 +1815,9 @@ class _TireRepairInspectionFormPageState
 }
 
 class BoxCamera extends StatelessWidget {
-  const BoxCamera({super.key});
+  final String type;
+
+  const BoxCamera({super.key, required this.type});
 
   @override
   Widget build(BuildContext context) {
@@ -1805,7 +1830,7 @@ class BoxCamera extends StatelessWidget {
       ),
       child: Center(
         child: Icon(
-          Icons.camera_alt,
+          (type == 'camera') ? Icons.camera_alt : Icons.image,
           color: Colors.white,
         ),
       ),
