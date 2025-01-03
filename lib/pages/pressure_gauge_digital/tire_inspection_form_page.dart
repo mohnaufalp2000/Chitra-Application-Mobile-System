@@ -1066,6 +1066,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         pit.add('EBL');
         pit.add('Workshop');
         break;
+      case '65':
+        pit.add('Room B1 Selatan');
+        pit.add('Utara');
+        pit.add('Serongga');
+        pit.add('WS');
+        break;
     }
     print('dipanggil (pgd)');
     dataUnit =
@@ -3177,7 +3183,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                 // jika belum memeilih pit
                                 if (idSite == bmbsitarum.idSite ||
                                     idSite == bmbhauling.idSite ||
-                                    idSite == bmbtabuhan.idSite) {
+                                    idSite == bmbtabuhan.idSite ||
+                                    idSite == bibkgb.idSite) {
                                   if (selectedPit == -1) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
@@ -3328,7 +3335,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'kunci_tire': unit.kunciTire,
                                           'pit': (idSite == bmbsitarum.idSite ||
                                                   idSite == bmbhauling.idSite ||
-                                                  idSite == bmbtabuhan.idSite)
+                                                  idSite == bmbtabuhan.idSite ||
+                                                  idSite == bibkgb.idSite)
                                               ? pit[selectedPit]
                                               : 'Default'
                                         });
@@ -3402,7 +3410,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           'kunci_tire': unit.kunciTire,
                                           'pit': (idSite == bmbsitarum.idSite ||
                                                   idSite == bmbhauling.idSite ||
-                                                  idSite == bmbtabuhan.idSite)
+                                                  idSite == bmbtabuhan.idSite ||
+                                                  idSite == bibkgb.idSite)
                                               ? pit[selectedPit]
                                               : 'Default'
                                         });
@@ -3467,7 +3476,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         }),
                                         'pit': (idSite == bmbsitarum.idSite ||
                                                 idSite == bmbhauling.idSite ||
-                                                idSite == bmbtabuhan.idSite)
+                                                idSite == bmbtabuhan.idSite ||
+                                                idSite == bibkgb.idSite)
                                             ? pit[selectedPit]
                                             : 'Default'
                                       });
@@ -3499,7 +3509,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         }),
                                         'pit': (idSite == bmbsitarum.idSite ||
                                                 idSite == bmbhauling.idSite ||
-                                                idSite == bmbtabuhan.idSite)
+                                                idSite == bmbtabuhan.idSite ||
+                                                idSite == bibkgb.idSite)
                                             ? pit[selectedPit]
                                             : 'Default'
                                       });

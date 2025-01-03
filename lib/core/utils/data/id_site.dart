@@ -1,6 +1,7 @@
 IdSite bmbsitarum = IdSite(nameSite: 'CK-BMB Sitarum', idSite: '52');
 IdSite bmbtabuhan = IdSite(nameSite: 'CK-BMB Tabuhan', idSite: '35');
 IdSite bmbhauling = IdSite(nameSite: 'CK-BMB Hauling', idSite: '137');
+IdSite bibkgb = IdSite(nameSite: 'CK-BIB KGB', idSite: '65');
 
 IdSite office = IdSite(nameSite: 'Office,', idSite: '1');
 IdSite ck = IdSite(nameSite: 'All-CK,', idSite: '2');

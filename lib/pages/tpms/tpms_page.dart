@@ -9,6 +9,7 @@ import 'package:camos/core/utils/data/spm.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/tire_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -518,6 +519,38 @@ class _TpmsPageState extends State<TpmsPage> {
                                       style: getBlackTextStyle(),
                                     ),
                                   ],
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                SizedBox(
+                                  height: 80,
+                                  child: ButtonWidget(
+                                    color: Colors.orange,
+                                    name: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.adjust,
+                                          color: white,
+                                        ),
+                                        const SizedBox(
+                                          width: 6,
+                                        ),
+                                        Text(
+                                          'Adjust Pressure',
+                                          style: getWhiteTextStyle(
+                                              fontWeight: w700),
+                                        ),
+                                      ],
+                                    ),
+                                    function: () {
+                                      Navigator.pushNamed(
+                                          context, DailyCheckFormPage.routeName,
+                                          arguments: {
+                                            'unitNumber': unit.devicename,
+                                          });
+                                    },
+                                  ),
                                 ),
                                 const SizedBox(
                                   height: 12,

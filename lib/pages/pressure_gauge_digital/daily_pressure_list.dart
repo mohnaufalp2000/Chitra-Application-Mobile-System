@@ -200,6 +200,13 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         pit.add('EBL');
         pit.add('Workshop');
         break;
+      case '65':
+        pit.add('All');
+        pit.add('Room B1 Selatan');
+        pit.add('Utara');
+        pit.add('Serongga');
+        pit.add('WS');
+        break;
     }
     return Scaffold(
       appBar: appBarWidget('Daily Pressure List', context),

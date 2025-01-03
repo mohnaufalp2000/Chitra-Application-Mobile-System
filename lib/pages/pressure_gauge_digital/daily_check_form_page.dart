@@ -403,6 +403,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     pit.add('EBL');
                     pit.add('Workshop');
                     break;
+                  case '65':
+                    pit.add('Room B1 Selatan');
+                    pit.add('Utara');
+                    pit.add('Serongga');
+                    pit.add('WS');
+                    break;
                 }
                 for (var i = 0; i < state.units.length; i++) {
                   if (position.length < state.units.length) {
@@ -1384,17 +1390,23 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                         damageType.length,
                                                         false);
 
-                                                // Jika diperlukan, tambahkan logika awal untuk inisialisasi.
                                                 if (position[posIndex]
                                                         ['damage'] !=
                                                     null) {
-                                                  setState(() {});
-                                                  checkedDamageValues =
-                                                      updateCheckedDamageValues(
-                                                    position[posIndex]['damage']
-                                                        as List<dynamic>,
-                                                    checkedDamageValues,
-                                                  );
+                                                  for (int i = 0;
+                                                      i < damageType.length;
+                                                      i++) {
+                                                    if (position[posIndex]
+                                                            ['damage']
+                                                        .contains(
+                                                            damageType[i])) {
+                                                      checkedDamageValues[i] =
+                                                          true;
+                                                    }
+                                                  }
+                                                  damageCtrl.text =
+                                                      position[posIndex]
+                                                          ['damage'][0];
                                                 }
 
                                                 showDialog(
@@ -1431,26 +1443,25 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                     final dmgIndex =
                                                                         damageType
                                                                             .indexOf(damage);
-                                                                    return StatefulBuilder(
-                                                                      builder:
-                                                                          (context,
-                                                                              sState) {
-                                                                        // Tampilkan CheckboxListTile
-                                                                        return CheckboxListTile(
-                                                                          title:
-                                                                              Text(damage),
-                                                                          value:
-                                                                              checkedDamageValues[dmgIndex],
-                                                                          onChanged:
-                                                                              (bool? value) {
-                                                                            sState(() {
-                                                                              checkedDamageValues[dmgIndex] = !checkedDamageValues[dmgIndex];
-                                                                            });
-                                                                            log('Checkbox ${dmgIndex} diubah ke ${value}');
-                                                                          },
-                                                                        );
-                                                                      },
-                                                                    );
+                                                                    return StatefulBuilder(builder:
+                                                                        (context,
+                                                                            setState) {
+                                                                      return CheckboxListTile(
+                                                                        title: Text(
+                                                                            damage),
+                                                                        value: checkedDamageValues[
+                                                                            dmgIndex],
+                                                                        onChanged:
+                                                                            (bool?
+                                                                                value) {
+                                                                          setState(
+                                                                              () {
+                                                                            checkedDamageValues[dmgIndex] =
+                                                                                value ?? false;
+                                                                          });
+                                                                        },
+                                                                      );
+                                                                    });
                                                                   }).toList(),
                                                                 ),
                                                               ),
@@ -1512,7 +1523,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                               String>
                                                                           tmp =
                                                                           [];
-                                                                      if (damageCtrl.text !=
+
+                                                                      // isi damage dengan ketikan
+                                                                      if (damageCtrl.text ==
                                                                               '' ||
                                                                           damageCtrl
                                                                               .text
@@ -1520,6 +1533,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                         tmp.add(
                                                                             damageCtrl.text);
                                                                       }
+
                                                                       for (int i =
                                                                               0;
                                                                           i < checkedDamageValues.length;
@@ -1528,26 +1542,24 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                             i]) {
                                                                           tmp.add(
                                                                               damageType[i]);
+                                                                        } else {
+                                                                          tmp.removeWhere((element) =>
+                                                                              element ==
+                                                                              damageType[i]);
                                                                         }
                                                                       }
                                                                       log('idx luka ban : $posIndex');
+
                                                                       if (tmp
                                                                           .isNotEmpty) {
-                                                                        // reset  ulang damage tire agar tidak duplikat
-                                                                        if (position[posIndex]['damage'][0] ==
-                                                                            '') {
-                                                                          position[posIndex]['damage'] =
-                                                                              [];
-                                                                        } else {
-                                                                          position[posIndex]
-                                                                              [
-                                                                              'damage'] = [
-                                                                            position[posIndex]['damage'][0]
-                                                                          ];
-                                                                        }
+                                                                        position[posIndex]
+                                                                            [
+                                                                            'damage'] = [];
 
                                                                         position[posIndex]['damage']
                                                                             .addAll(tmp);
+
+                                                                        log('hasil luka ban : ${position}');
                                                                       }
                                                                       damageCtrl
                                                                           .clear();
@@ -1623,7 +1635,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
               // jika belum memeilih pit
               if (idSite == bmbsitarum.idSite ||
                   idSite == bmbhauling.idSite ||
-                  idSite == bmbtabuhan.idSite) {
+                  idSite == bmbtabuhan.idSite ||
+                  idSite == bibkgb.idSite) {
                 if (selectedPit == -1) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
