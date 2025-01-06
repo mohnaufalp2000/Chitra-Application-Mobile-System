@@ -70,22 +70,6 @@ class _TireRepairInspectionFormPageState
   List<String> innerLinerPicFirebase = [];
   List<String> chafferPicFirebase = [];
 
-  List<String> listSize = [
-    '18.00R33',
-    '21.00R33',
-    '21.00R35',
-    '24.00R35',
-    '27.00R49',
-    '33.00R51',
-    '33.25R29',
-    '37.00R57',
-    '40.00R57',
-    '53/80R63',
-    '55/80R70',
-    '59/80R63',
-    '59/80R70',
-  ];
-
   List<String> listStatus = ['REPAIR', 'RETREAD', 'REJECT'];
 
   final Map<String, String> buttonLabels = {
@@ -608,6 +592,7 @@ class _TireRepairInspectionFormPageState
                         // log('size : ${dataList[0]['size']}');
 
                         List<dynamic> size = dataList[0]['size'];
+                        log('tire size : $size');
                         selectedSize ??= size[4];
 
                         return Container(
@@ -628,7 +613,7 @@ class _TireRepairInspectionFormPageState
                             isExpanded: true,
                             padding: EdgeInsets.symmetric(horizontal: 24),
                             value: selectedSize,
-                            items: listSize.map((size) {
+                            items: size.map((size) {
                               return DropdownMenuItem<String>(
                                 value: size,
                                 child: Text(size),

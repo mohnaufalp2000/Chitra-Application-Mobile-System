@@ -410,16 +410,21 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     pit.add('WS');
                     break;
                 }
-                for (var i = 0; i < state.units.length; i++) {
-                  if (position.length < state.units.length) {
-                    position.add({
-                      'pressure': '',
-                      'adjusmentPressure': '',
-                      'rating': '',
-                      'damage': null
-                    });
+                if (dataUnit['position'] != null) {
+                  position.addAll(dataUnit['position']);
+                } else {
+                  for (var i = 0; i < state.units.length; i++) {
+                    if (position.length < state.units.length) {
+                      position.add({
+                        'pressure': '',
+                        'adjusmentPressure': '',
+                        'rating': '',
+                        'damage': null
+                      });
+                    }
                   }
                 }
+
                 // Input data rating sebelumnya
                 List<dynamic> ratings =
                     await receiveRatingTire(dataUnit['unitNumber']);

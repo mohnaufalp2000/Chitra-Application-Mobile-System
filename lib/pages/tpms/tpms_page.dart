@@ -321,6 +321,7 @@ class _TpmsPageState extends State<TpmsPage> {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 24.0),
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Pos 1, 2
                                 Stack(
@@ -520,9 +521,9 @@ class _TpmsPageState extends State<TpmsPage> {
                                     ),
                                   ],
                                 ),
-                                // const SizedBox(
-                                //   height: 12,
-                                // ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
                                 // SizedBox(
                                 //   height: 80,
                                 //   child: ButtonWidget(
@@ -544,17 +545,188 @@ class _TpmsPageState extends State<TpmsPage> {
                                 //       ],
                                 //     ),
                                 //     function: () {
+                                //       log('adjust pressure : ${allUnits[indexUnit][0]}');
                                 //       Navigator.pushNamed(
                                 //           context, DailyCheckFormPage.routeName,
                                 //           arguments: {
                                 //             'unitNumber': unit.devicename,
+                                //             'position': [
+                                //               {
+                                //                 'pressure':
+                                //                     '${allUnits[indexUnit][0][0]['pressure1']}',
+                                //                 'adjusmentPressure': '',
+                                //                 'rating': '',
+                                //                 'damage': null
+                                //               },
+                                //               {
+                                //                 'pressure':
+                                //                     '${allUnits[indexUnit][0][1]['pressure2']}',
+                                //                 'adjusmentPressure': '',
+                                //                 'rating': '',
+                                //                 'damage': null
+                                //               },
+                                //               {
+                                //                 'pressure':
+                                //                     '${allUnits[indexUnit][0][2]['pressure3']}',
+                                //                 'adjusmentPressure': '',
+                                //                 'rating': '',
+                                //                 'damage': null
+                                //               },
+                                //               {
+                                //                 'pressure':
+                                //                     '${allUnits[indexUnit][0][3]['pressure4']}',
+                                //                 'adjusmentPressure': '',
+                                //                 'rating': '',
+                                //                 'damage': null
+                                //               },
+                                //               {
+                                //                 'pressure':
+                                //                     '${allUnits[indexUnit][0][4]['pressure5']}',
+                                //                 'adjusmentPressure': '',
+                                //                 'rating': '',
+                                //                 'damage': null
+                                //               },
+                                //               {
+                                //                 'pressure':
+                                //                     '${allUnits[indexUnit][0][5]['pressure6']}',
+                                //                 'adjusmentPressure': '',
+                                //                 'rating': '',
+                                //                 'damage': null
+                                //               },
+                                //             ],
                                 //           });
                                 //     },
                                 //   ),
                                 // ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
+                                // const SizedBox(
+                                //   height: 12,
+                                // ),
+                                // Row(
+                                //   children: [
+                                //     Icon(Icons.adjust),
+                                //     const SizedBox(
+                                //       width: 6,
+                                //     ),
+                                //     Text(
+                                //       'Last Adjustment',
+                                //       style:
+                                //           getBlackTextStyle(fontWeight: w700),
+                                //     ),
+                                //   ],
+                                // ),
+                                // const SizedBox(
+                                //   height: 12,
+                                // ),
+                                // Row(
+                                //   mainAxisAlignment:
+                                //       MainAxisAlignment.spaceBetween,
+                                //   children: [
+                                //     Text(
+                                //       'Pos. 1 : 110 Psi',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //     const SizedBox(
+                                //       width: 6,
+                                //     ),
+                                //     Text(
+                                //       '2025-01-06 10:20:00',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //   ],
+                                // ),
+                                // Divider(),
+                                // Row(
+                                //   mainAxisAlignment:
+                                //       MainAxisAlignment.spaceBetween,
+                                //   children: [
+                                //     Text(
+                                //       'Pos. 2 : 110 Psi',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //     const SizedBox(
+                                //       width: 6,
+                                //     ),
+                                //     Text(
+                                //       '2025-01-06 10:20:00',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //   ],
+                                // ),
+                                // Divider(),
+                                // Row(
+                                //   mainAxisAlignment:
+                                //       MainAxisAlignment.spaceBetween,
+                                //   children: [
+                                //     Text(
+                                //       'Pos. 3 : 110 Psi',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //     const SizedBox(
+                                //       width: 6,
+                                //     ),
+                                //     Text(
+                                //       '2025-01-06 10:20:00',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //   ],
+                                // ),
+                                // Divider(),
+                                // Row(
+                                //   mainAxisAlignment:
+                                //       MainAxisAlignment.spaceBetween,
+                                //   children: [
+                                //     Text(
+                                //       'Pos. 4 : 110 Psi',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //     const SizedBox(
+                                //       width: 6,
+                                //     ),
+                                //     Text(
+                                //       '2025-01-06 10:20:00',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //   ],
+                                // ),
+                                // Divider(),
+                                // Row(
+                                //   mainAxisAlignment:
+                                //       MainAxisAlignment.spaceBetween,
+                                //   children: [
+                                //     Text(
+                                //       'Pos. 5 : 110 Psi',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //     const SizedBox(
+                                //       width: 6,
+                                //     ),
+                                //     Text(
+                                //       '2025-01-06 10:20:00',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //   ],
+                                // ),
+                                // Divider(),
+                                // Row(
+                                //   mainAxisAlignment:
+                                //       MainAxisAlignment.spaceBetween,
+                                //   children: [
+                                //     Text(
+                                //       'Pos. 6 : 110 Psi',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //     const SizedBox(
+                                //       width: 6,
+                                //     ),
+                                //     Text(
+                                //       '2025-01-06 10:20:00',
+                                //       style: getBlackTextStyle(),
+                                //     ),
+                                //   ],
+                                // ),
+                                // const SizedBox(
+                                //   height: 12,
+                                // ),
                                 Row(
                                   children: [
                                     Expanded(
@@ -626,6 +798,12 @@ class _TpmsPageState extends State<TpmsPage> {
                                           }),
                                     )),
                                   ],
+                                ),
+                                const SizedBox(
+                                  height: 24,
+                                ),
+                                Divider(
+                                  thickness: 2,
                                 ),
                               ],
                             ),

@@ -36,6 +36,7 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
   List<bool> selectedMonths = List.generate(12, (index) => false);
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   bool _isLoading = false; // Tambahkan variabel untuk indikator loading
+  DateTime now = DateTime.now();
 
   final List<String> months = [
     'January',
@@ -56,8 +57,8 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
       BuildContext context, Function(List<DateTime>) onDatesSelected) async {
     DateTimeRange? pickedRange = await showDateRangePicker(
       context: context,
-      firstDate: DateTime(2023, 1, 1),
-      lastDate: DateTime(2024, 12, 31),
+      firstDate: DateTime(now.year - 1, 1, 1),
+      lastDate: DateTime(now.year, 12, 31),
       helpText: 'Select Date Range',
     );
 
