@@ -514,16 +514,17 @@ Future<List<int>> createExcel(String type,
 
       sheet.getRangeByName('I1').setText('Adj. Pressure');
 
-      // sheet.getRangeByName('H1').setText('Pics');
+      sheet.getRangeByName('H1').setText('Pics');
 
       for (var i = 0; i < task!.length; i++) {
-        log('task : ${task[i]['tire_damage']}');
-
         // inspector
         sheet.getRangeByName('A${i + 1}').merge();
         sheet.getRangeByName('J${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('J${i + 2}').cellStyle.vAlign = VAlignType.center;
-        sheet.getRangeByName('J${i + 2}').setText(task[i]['user']);
+        sheet.getRangeByName('J${i + 2}').setText('0');
+        sheet
+            .getRangeByName('J${i + 2}')
+            .setText((task[i]['user'] == '') ? '0' : task[i]['user']);
 
         // tanggal
         DateTime originalDateTime = DateTime.parse(task[i]['last_update']);
@@ -532,19 +533,27 @@ Future<List<int>> createExcel(String type,
         // sheet.getRangeByName('E${i + 4}:F${i + 4}').merge();
         sheet.getRangeByName('A${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('A${i + 2}').cellStyle.vAlign = VAlignType.center;
-        sheet.getRangeByName('A${i + 2}').setText(formattedDate);
+        sheet.getRangeByName('A${i + 2}').setText('0');
+        sheet
+            .getRangeByName('A${i + 2}')
+            .setText((formattedDate == '') ? '0' : formattedDate);
 
         // unit number
         sheet.getRangeByName('B${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('B${i + 2}').cellStyle.vAlign = VAlignType.center;
-        sheet.getRangeByName('B${i + 2}').setText(task[i]['unit']);
+        sheet.getRangeByName('B${i + 2}').setText('0');
+        sheet
+            .getRangeByName('B${i + 2}')
+            .setText((task[i]['unit'] == '') ? '0' : task[i]['unit']);
 
         // tire position
         sheet.getRangeByName('C${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('C${i + 2}').cellStyle.vAlign = VAlignType.center;
-        sheet
-            .getRangeByName('C${i + 2}')
-            .setText(task[i]['position'].toString());
+        sheet.getRangeByName('C${i + 2}').setText('0');
+        sheet.getRangeByName('C${i + 2}').setText(
+            (task[i]['position'].toString() == '')
+                ? '0'
+                : task[i]['position'].toString());
 
         // pressure
         try {
@@ -552,22 +561,26 @@ Future<List<int>> createExcel(String type,
               HAlignType.center;
           sheet.getRangeByName('D${i + 2}').cellStyle.vAlign =
               VAlignType.center;
+          sheet.getRangeByName('D${i + 2}').setText('0');
           sheet.getRangeByName('D${i + 2}').setText(
               (task[i]['pressure'] == '' || task[i]['pressure'] == null)
                   ? '0 Psi'
-                  : task[i]['pressure'] + ' Psi');
+                  : task[i]['pressure'] + ' Psi' ?? '0');
         } catch (e) {}
 
         try {
           //RTD 1
           // sheet.getRangeByName('G${i + 1}').merge();
+          sheet.getRangeByName('E${i + 2}').setText('0');
           if (task[i]['rtd'] != '/') {
             final splitRtd = (task[i]['rtd'] as String).split('/');
             sheet.getRangeByName('E${i + 2}').cellStyle.hAlign =
                 HAlignType.center;
             sheet.getRangeByName('E${i + 2}').cellStyle.vAlign =
                 VAlignType.center;
-            sheet.getRangeByName('E${i + 2}').setText(splitRtd[0]);
+            sheet
+                .getRangeByName('E${i + 2}')
+                .setText((splitRtd[0] == '') ? '0' : splitRtd[0]);
 
             // //RTD 2
             // // sheet.getRangeByName('I${i + 4}').merge();
@@ -598,10 +611,11 @@ Future<List<int>> createExcel(String type,
         // HM unit
         sheet.getRangeByName('F${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('F${i + 2}').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('F${i + 2}').setText('0');
         sheet.getRangeByName('F${i + 2}').setText(
             (task[i]['hm'] == null || task[i]['hm'] == '')
                 ? '0'
-                : (task[i]['hm']).toString());
+                : (task[i]['hm']).toString() ?? '0');
 
         //REMARK
         sheet.getRangeByName('G${i + 2}').cellStyle.hAlign = HAlignType.center;
@@ -610,80 +624,116 @@ Future<List<int>> createExcel(String type,
         //     (task[i]['tire_damage'] is List<dynamic>)
         //         ? (task[i]['tire_damage'] as List<dynamic>).join('\n')
         //         : task[i]['tire_damage']);
+        sheet.getRangeByName('G${i + 2}').setText('0');
         sheet.getRangeByName('G${i + 2}').setText(
             (task[i]['tire_damage'] is List<dynamic>)
-                ? (task[i]['tire_damage'] as List<dynamic>).join('\n')
-                : task[i]['tire_damage']);
+                ? ((task[i]['tire_damage'] as List<dynamic>).isEmpty &&
+                        task[i]['tire_damage'] == null)
+                    ? '0'
+                    : (task[i]['tire_damage'].length > 1)
+                        ? task[i]['tire_damage'][1]
+                        : '0'
+                : task[i]['tire_damage'] ?? '0');
 
         // TIRE DAMAGE
         sheet.getRangeByName('L${i + 2}').merge();
         sheet.getRangeByName('L${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('L${i + 2}').cellStyle.vAlign = VAlignType.center;
-        sheet.getRangeByName('L${i + 2}').setText(
-            (task[i]['tire_damage'] is List<dynamic>)
+        sheet.getRangeByName('L${i + 2}').setText('0');
+        sheet
+            .getRangeByName('L${i + 2}')
+            .setText((task[i]['tire_damage'] is List<dynamic>)
                 ? (task[i]['tire_damage'] as List<dynamic>).join('\n')
-                : task[i]['tire_damage']);
+                : (task[i]['tire_damage'] == '')
+                    ? '0'
+                    : task[i]['tire_damage']);
 
         //ADJUSMNET PRESSURE
         sheet.getRangeByName('T${i + 4}:U${i + 4}').merge();
         sheet.getRangeByName('I${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('I${i + 2}').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('I${i + 2}').setText('0');
         sheet.getRangeByName('I${i + 2}').setText(
             (task[i]['adjusmentPressure'] == '' ||
                     task[i]['adjusmentPressure'] == null)
                 ? '0 Psi'
-                : task[i]['adjusmentPressure'] + 'Psi');
+                : task[i]['adjusmentPressure'] + 'Psi' ?? '0');
 
         // IMAGE TIRE
-        // int columnBroken = 11;
-        // final urlImage = task[i]['images'];
-        // log('gambar dari string : ${urlImage}');
+        int columnBroken = 11;
+        final urlImage = task[i]['images'];
 
-        // if (urlImage != null) {
-        //   for (var j = 0; j < urlImage.length; j++) {
-        //     try {
-        //       if (urlImage[j] != null) {
-        //         final file = File(urlImage[j]);
-        //         final bytes = await file.readAsBytes();
+        if (urlImage != null && urlImage.isNotEmpty) {
+          sheet.getRangeByName('H${i + 2}').setText("0");
+          for (var j = 0; j < urlImage.length; j++) {
+            try {
+              if (urlImage[j].isNotEmpty) {
+                final file = File(urlImage[j]);
+                // Periksa apakah file ada di path yang diberikan
 
-        //         final base64String = base64Encode(bytes);
+                if (await file.exists()) {
+                  final bytes = await file.readAsBytes();
+                  final base64String = base64Encode(bytes);
 
-        //         if (j == 0) {
-        //           sheet.getRangeByName('H${i + 2}').cellStyle.hAlign =
-        //               HAlignType.center;
-        //           sheet.getRangeByName('H${i + 2}').cellStyle.vAlign =
-        //               VAlignType.center;
-        //           sheet.getRangeByName('H${i + 2}').setText(base64String);
-        //         }
-        //       }
-        //     } catch (e) {
-        //       log('kenapa gambar error : $e');
-        //     }
-        //   }
-        // }
+                  if (j == 0) {
+                    sheet.getRangeByName('H${i + 2}').cellStyle.hAlign =
+                        HAlignType.center;
+                    sheet.getRangeByName('H${i + 2}').cellStyle.vAlign =
+                        VAlignType.center;
+                    sheet.getRangeByName('H${i + 2}').setText(base64String);
+                  } else {
+                    sheet.getRangeByName('H${i + 2}').setText('0');
+                  }
+                } else {
+                  // Jika file tidak ada, tulis angka "0"
+                  sheet.getRangeByName('H${i + 2}').setText("0");
+                }
+              } else {
+                // Jika URL null, tulis angka "0"
+                sheet.getRangeByName('H${i + 2}').setText("0");
+              }
+            } catch (e) {
+              // Log error dan tulis angka "0" jika terjadi masalah
+              log('kenapa gambar error : $e');
+              sheet.getRangeByName('H${i + 2}').setText("0");
+            }
+          }
+        } else {
+          sheet.getRangeByName('H${i + 2}').setText('0');
+        }
 
         // Location
         sheet.getRangeByName('K${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('K${i + 2}').cellStyle.vAlign = VAlignType.center;
-        sheet.getRangeByName('K${i + 2}').setText(task[i]['pit']);
+        sheet.getRangeByName('K${i + 2}').setText('Default');
+        sheet
+            .getRangeByName('K${i + 2}')
+            .setText((task[i]['pit'] == '') ? 'Default' : task[i]['pit']);
 
         // BROKEN COMPONENT
         sheet.getRangeByName('M1').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('M1').cellStyle.vAlign = VAlignType.center;
+        sheet.getRangeByName('M${i + 2}').setText('0');
         sheet.getRangeByName('M${i + 2}').setText(
             (task[i]['condition'] == null ||
                     (task[i]['condition'] is List<dynamic> &&
                         (task[i]['condition'] as List<dynamic>).isEmpty))
-                ? ' '
+                ? '0'
                 : (task[i]['condition'] is List<dynamic>)
                     ? (task[i]['condition'] as List<dynamic>).join(', ')
-                    : task[i]['condition']);
+                    : (task[i]['condition'] == '')
+                        ? '0'
+                        : task[i]['condition']);
 
         // SN
         // Location
         sheet.getRangeByName('N${i + 2}').cellStyle.hAlign = HAlignType.center;
         sheet.getRangeByName('N${i + 2}').cellStyle.vAlign = VAlignType.center;
-        sheet.getRangeByName('N${i + 2}').setText(task[i]['sn']);
+        sheet.getRangeByName('N${i + 2}').setText('0');
+        sheet.getRangeByName('N${i + 2}').setText(
+            (task[i]['sn'] == '' || task[i]['sn'] == null)
+                ? '0'
+                : task[i]['sn']);
       }
 
       final List<int> bytes = workbook.saveAsStream();

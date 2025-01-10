@@ -521,9 +521,9 @@ class _TpmsPageState extends State<TpmsPage> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
+                                // const SizedBox(
+                                //   height: 12,
+                                // ),
                                 // SizedBox(
                                 //   height: 80,
                                 //   child: ButtonWidget(
@@ -598,135 +598,135 @@ class _TpmsPageState extends State<TpmsPage> {
                                 //     },
                                 //   ),
                                 // ),
-                                // const SizedBox(
-                                //   height: 12,
-                                // ),
-                                // Row(
-                                //   children: [
-                                //     Icon(Icons.adjust),
-                                //     const SizedBox(
-                                //       width: 6,
-                                //     ),
-                                //     Text(
-                                //       'Last Adjustment',
-                                //       style:
-                                //           getBlackTextStyle(fontWeight: w700),
-                                //     ),
-                                //   ],
-                                // ),
-                                // const SizedBox(
-                                //   height: 12,
-                                // ),
-                                // Row(
-                                //   mainAxisAlignment:
-                                //       MainAxisAlignment.spaceBetween,
-                                //   children: [
-                                //     Text(
-                                //       'Pos. 1 : 110 Psi',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //     const SizedBox(
-                                //       width: 6,
-                                //     ),
-                                //     Text(
-                                //       '2025-01-06 10:20:00',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //   ],
-                                // ),
-                                // Divider(),
-                                // Row(
-                                //   mainAxisAlignment:
-                                //       MainAxisAlignment.spaceBetween,
-                                //   children: [
-                                //     Text(
-                                //       'Pos. 2 : 110 Psi',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //     const SizedBox(
-                                //       width: 6,
-                                //     ),
-                                //     Text(
-                                //       '2025-01-06 10:20:00',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //   ],
-                                // ),
-                                // Divider(),
-                                // Row(
-                                //   mainAxisAlignment:
-                                //       MainAxisAlignment.spaceBetween,
-                                //   children: [
-                                //     Text(
-                                //       'Pos. 3 : 110 Psi',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //     const SizedBox(
-                                //       width: 6,
-                                //     ),
-                                //     Text(
-                                //       '2025-01-06 10:20:00',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //   ],
-                                // ),
-                                // Divider(),
-                                // Row(
-                                //   mainAxisAlignment:
-                                //       MainAxisAlignment.spaceBetween,
-                                //   children: [
-                                //     Text(
-                                //       'Pos. 4 : 110 Psi',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //     const SizedBox(
-                                //       width: 6,
-                                //     ),
-                                //     Text(
-                                //       '2025-01-06 10:20:00',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //   ],
-                                // ),
-                                // Divider(),
-                                // Row(
-                                //   mainAxisAlignment:
-                                //       MainAxisAlignment.spaceBetween,
-                                //   children: [
-                                //     Text(
-                                //       'Pos. 5 : 110 Psi',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //     const SizedBox(
-                                //       width: 6,
-                                //     ),
-                                //     Text(
-                                //       '2025-01-06 10:20:00',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //   ],
-                                // ),
-                                // Divider(),
-                                // Row(
-                                //   mainAxisAlignment:
-                                //       MainAxisAlignment.spaceBetween,
-                                //   children: [
-                                //     Text(
-                                //       'Pos. 6 : 110 Psi',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //     const SizedBox(
-                                //       width: 6,
-                                //     ),
-                                //     Text(
-                                //       '2025-01-06 10:20:00',
-                                //       style: getBlackTextStyle(),
-                                //     ),
-                                //   ],
-                                // ),
-                                // const SizedBox(
-                                //   height: 12,
-                                // ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(Icons.adjust),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      'Last Adjustment',
+                                      style:
+                                          getBlackTextStyle(fontWeight: w700),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Pos. 1 : 110 Psi',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      '2025-01-06 10:20:00',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                                Divider(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Pos. 2 : 110 Psi',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      '2025-01-06 10:20:00',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                                Divider(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Pos. 3 : 110 Psi',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      '2025-01-06 10:20:00',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                                Divider(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Pos. 4 : 110 Psi',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      '2025-01-06 10:20:00',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                                Divider(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Pos. 5 : 110 Psi',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      '2025-01-06 10:20:00',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                                Divider(),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Pos. 6 : 110 Psi',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      '2025-01-06 10:20:00',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
                                 Row(
                                   children: [
                                     Expanded(
