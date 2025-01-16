@@ -10,12 +10,15 @@ import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/tire_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutterflow_paginate_firestore/paginate_firestore.dart';
 
 class TpmsPage extends StatefulWidget {
   static const routeName = '/tpmsPage';
@@ -26,6 +29,7 @@ class TpmsPage extends StatefulWidget {
 }
 
 class _TpmsPageState extends State<TpmsPage> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
   WebViewController? webViewController;
   List<String> pressureData = [
     '1',
@@ -45,28 +49,20 @@ class _TpmsPageState extends State<TpmsPage> {
   void initState() {
     super.initState();
     context.read<SpmBloc>().add(GetListSpmEvent());
+  }
 
-    // webViewController = WebViewController()
-    //   ..setJavaScriptMode(JavaScriptMode.unrestricted)
-    //   ..setBackgroundColor(white)
-    //   ..setNavigationDelegate(
-    //     NavigationDelegate(
-    //       onProgress: (int progress) {
-    //         // Update loading bar.
-    //       },
-    //       onPageStarted: (String url) {},
-    //       onPageFinished: (String url) {},
-    //       onWebResourceError: (WebResourceError error) {},
-    //       onNavigationRequest: (NavigationRequest request) {
-    //         if (request.url.startsWith('https://www.chitraparatama.co.id/')) {
-    //           return NavigationDecision.prevent;
-    //         }
-    //         return NavigationDecision.navigate;
-    //       },
-    //     ),
-    //   )
-    //   ..loadRequest(Uri.parse(
-    //       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/halamantpms.php'));
+  Future<Map<String, dynamic>> fetchLatestData(String unitName) async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('daily_pressure')
+        .where('unit', isEqualTo: unitName)
+        .orderBy('tanggal', descending: true)
+        .limit(1)
+        .get();
+
+    if (querySnapshot.docs.isNotEmpty) {
+      return querySnapshot.docs.first.data() as Map<String, dynamic>;
+    }
+    return {};
   }
 
   @override
@@ -501,7 +497,10 @@ class _TpmsPageState extends State<TpmsPage> {
                                       width: 12,
                                     ),
                                     Text(
-                                      unit.timestamp,
+                                      DateFormat(
+                                              'dd MMMM yyyy  HH:mm:ss', 'id_ID')
+                                          .format(
+                                              DateTime.parse(unit.timestamp)),
                                       style: getBlackTextStyle(),
                                     ),
                                   ],
@@ -521,9 +520,9 @@ class _TpmsPageState extends State<TpmsPage> {
                                     ),
                                   ],
                                 ),
-                                // const SizedBox(
-                                //   height: 12,
-                                // ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
                                 // SizedBox(
                                 //   height: 80,
                                 //   child: ButtonWidget(
@@ -550,183 +549,217 @@ class _TpmsPageState extends State<TpmsPage> {
                                 //           context, DailyCheckFormPage.routeName,
                                 //           arguments: {
                                 //             'unitNumber': unit.devicename,
+                                //             'type': 'spm',
                                 //             'position': [
                                 //               {
                                 //                 'pressure':
                                 //                     '${allUnits[indexUnit][0][0]['pressure1']}',
                                 //                 'adjusmentPressure': '',
                                 //                 'rating': '',
-                                //                 'damage': null
+                                //                 'damage': null,
+                                //                 'image': ''
                                 //               },
                                 //               {
                                 //                 'pressure':
                                 //                     '${allUnits[indexUnit][0][1]['pressure2']}',
                                 //                 'adjusmentPressure': '',
                                 //                 'rating': '',
-                                //                 'damage': null
+                                //                 'damage': null,
+                                //                 'image': ''
                                 //               },
                                 //               {
                                 //                 'pressure':
                                 //                     '${allUnits[indexUnit][0][2]['pressure3']}',
                                 //                 'adjusmentPressure': '',
                                 //                 'rating': '',
-                                //                 'damage': null
+                                //                 'damage': null,
+                                //                 'image': ''
                                 //               },
                                 //               {
                                 //                 'pressure':
                                 //                     '${allUnits[indexUnit][0][3]['pressure4']}',
                                 //                 'adjusmentPressure': '',
                                 //                 'rating': '',
-                                //                 'damage': null
+                                //                 'damage': null,
+                                //                 'image': ''
                                 //               },
                                 //               {
                                 //                 'pressure':
                                 //                     '${allUnits[indexUnit][0][4]['pressure5']}',
                                 //                 'adjusmentPressure': '',
                                 //                 'rating': '',
-                                //                 'damage': null
+                                //                 'damage': null,
+                                //                 'image': ''
                                 //               },
                                 //               {
                                 //                 'pressure':
                                 //                     '${allUnits[indexUnit][0][5]['pressure6']}',
                                 //                 'adjusmentPressure': '',
                                 //                 'rating': '',
-                                //                 'damage': null
+                                //                 'damage': null,
+                                //                 'image': ''
                                 //               },
                                 //             ],
                                 //           });
                                 //     },
                                 //   ),
                                 // ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
-                                Row(
-                                  children: [
-                                    Icon(Icons.adjust),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    Text(
-                                      'Last Adjustment',
-                                      style:
-                                          getBlackTextStyle(fontWeight: w700),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Pos. 1 : 110 Psi',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    Text(
-                                      '2025-01-06 10:20:00',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                  ],
-                                ),
-                                Divider(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Pos. 2 : 110 Psi',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    Text(
-                                      '2025-01-06 10:20:00',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                  ],
-                                ),
-                                Divider(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Pos. 3 : 110 Psi',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    Text(
-                                      '2025-01-06 10:20:00',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                  ],
-                                ),
-                                Divider(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Pos. 4 : 110 Psi',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    Text(
-                                      '2025-01-06 10:20:00',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                  ],
-                                ),
-                                Divider(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Pos. 5 : 110 Psi',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    Text(
-                                      '2025-01-06 10:20:00',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                  ],
-                                ),
-                                Divider(),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Pos. 6 : 110 Psi',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    Text(
-                                      '2025-01-06 10:20:00',
-                                      style: getBlackTextStyle(),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(
-                                  height: 12,
-                                ),
+                                // const SizedBox(
+                                //   height: 12,
+                                // ),
+                                // Row(
+                                //   children: [
+                                //     Icon(Icons.adjust),
+                                //     const SizedBox(
+                                //       width: 6,
+                                //     ),
+                                //     Text(
+                                //       'Last Adjustment',
+                                //       style:
+                                //           getBlackTextStyle(fontWeight: w700),
+                                //     ),
+                                //   ],
+                                // ),
+                                // const SizedBox(
+                                //   height: 12,
+                                // ),
+
+                                // PaginateFirestore(
+                                //   itemBuilder: (context, snapshot, index) {
+                                //     Map<String, dynamic> tmpMap = {};
+                                //     List<dynamic> tmpMapPosisi = [];
+
+                                //     final Map<String, dynamic> latestAdjustMap =
+                                //         snapshot[index].data()
+                                //             as Map<String, dynamic>;
+
+                                //     final positionList =
+                                //         latestAdjustMap['posisi']
+                                //             as List<dynamic>;
+
+                                //     if (index == 0) {
+                                //       tmpMap = latestAdjustMap;
+                                //       tmpMapPosisi = positionList;
+                                //     }
+
+                                //     return Column(
+                                //       children: tmpMapPosisi.map((pl) {
+                                //         return Column(
+                                //           children: [
+                                //             Row(
+                                //               mainAxisAlignment:
+                                //                   MainAxisAlignment
+                                //                       .spaceBetween,
+                                //               children: [
+                                //                 Text(
+                                //                   'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
+                                //                   style: getBlackTextStyle(
+                                //                       fontSize: 16),
+                                //                 ),
+                                //                 const SizedBox(width: 6),
+                                //                 Text(
+                                //                   DateFormat(
+                                //                           'dd MMMM yyyy  HH:mm:ss',
+                                //                           'id_ID')
+                                //                       .format(DateTime.parse(
+                                //                           tmpMap['tanggal'])),
+                                //                   style: getBlackTextStyle(
+                                //                       fontSize: 16),
+                                //                 ),
+                                //               ],
+                                //             ),
+                                //             Padding(
+                                //               padding:
+                                //                   const EdgeInsets.symmetric(
+                                //                       vertical: 8.0),
+                                //               child: Divider(),
+                                //             )
+                                //           ],
+                                //         );
+                                //       }).toList(),
+                                //     );
+                                //   },
+                                //   key: ValueKey(unit.devicename),
+                                //   query: firestore
+                                //       .collection('daily_pressure')
+                                //       .where('unit', isEqualTo: unit.devicename)
+                                //       .orderBy('tanggal', descending: true)
+                                //       .limit(1),
+                                //   itemBuilderType: PaginateBuilderType.listView,
+                                //   shrinkWrap: true,
+                                //   physics: NeverScrollableScrollPhysics(),
+                                //   itemsPerPage: 1,
+                                //   isLive: true,
+                                //   initialLoader: const Center(
+                                //       child:
+                                //           CircularProgressIndicator.adaptive()),
+                                //   bottomLoader: const Center(
+                                //       child:
+                                //           CircularProgressIndicator.adaptive()),
+                                // ),
+
+                                // // FutureBuilder<Map<String, dynamic>>(
+                                // //   future: fetchLatestData(unit.devicename),
+                                // //   builder: (context, snapshot) {
+                                // //     if (snapshot.connectionState ==
+                                // //         ConnectionState.waiting) {
+                                // //       return const CircularProgressIndicator
+                                // //           .adaptive();
+                                // //     }
+                                // //     if (snapshot.hasError) {
+                                // //       return Text('Error: ${snapshot.error}');
+                                // //     }
+                                // //     if (!snapshot.hasData) {
+                                // //       return const Text('No data found');
+                                // //     }
+
+                                // //     final latestAdjustMap = snapshot.data!;
+                                // //     final List<dynamic> positionList =
+                                // //         latestAdjustMap['posisi'] ?? [];
+
+                                // //     return Column(
+                                // //       children: positionList.map((pl) {
+                                // //         return Column(
+                                // //           children: [
+                                // //             Row(
+                                // //               mainAxisAlignment:
+                                // //                   MainAxisAlignment
+                                // //                       .spaceBetween,
+                                // //               children: [
+                                // //                 Text(
+                                // //                   'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
+                                // //                   style: getBlackTextStyle(
+                                // //                       fontSize: 16),
+                                // //                 ),
+                                // //                 const SizedBox(width: 6),
+                                // //                 Text(
+                                // //                   DateFormat(
+                                // //                           'dd MMMM yyyy  HH:mm:ss',
+                                // //                           'id_ID')
+                                // //                       .format(DateTime.parse(
+                                // //                           latestAdjustMap[
+                                // //                               'tanggal'])),
+                                // //                   style: getBlackTextStyle(
+                                // //                       fontSize: 16),
+                                // //                 ),
+                                // //               ],
+                                // //             ),
+                                // //             Padding(
+                                // //               padding:
+                                // //                   const EdgeInsets.symmetric(
+                                // //                       vertical: 8.0),
+                                // //               child: Divider(),
+                                // //             )
+                                // //           ],
+                                // //         );
+                                // //       }).toList(),
+                                // //     );
+                                // //   },
+                                // // ),
+
+                                // const SizedBox(
+                                //   height: 12,
+                                // ),
                                 Row(
                                   children: [
                                     Expanded(
@@ -804,6 +837,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                 ),
                                 Divider(
                                   thickness: 2,
+                                  color: black,
                                 ),
                               ],
                             ),

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:io';
 
+import 'package:camera/camera.dart';
 import 'package:camos/core/blocs/tire/tire_bloc.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
@@ -16,6 +18,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class DailyCheckFormPage extends StatefulWidget {
@@ -106,6 +109,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   Map<String, dynamic> user = {};
 
   bool isProcessing = false;
+  final ImagePicker _picker = ImagePicker();
 
   // startScanBluetooth() async {
   //   bluetoothSerial.startDiscovery().listen((device) {
@@ -339,6 +343,141 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   getUser() async {
     user = await getUserPreferences();
     log('username : ${user}');
+  }
+
+  Future<String> pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: source);
+      if (image != null) {
+        return image.path;
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+    }
+    return '';
+  }
+
+  Future<String> showImageSourceDialog(
+      BuildContext context, String image, int index) async {
+    return await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Choose One',
+            style: getBlackTextStyle(),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text(
+                  'Gallery',
+                  style: getBlackTextStyle(),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios),
+                onTap: () async {
+                  String image = await pickImage(ImageSource.gallery);
+                  log('Image from gallery: $image');
+                  Navigator.pop(context, image); // Kembalikan nilai ke pop
+                },
+              ),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text(
+                  'Camera',
+                  style: getBlackTextStyle(),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios),
+                onTap: () async {
+                  String image = await pickImage(ImageSource.camera);
+                  log('Image from camera: $image');
+                  Navigator.pop(context, image); // Kembalikan nilai ke pop
+                },
+              ),
+              (image != '')
+                  ? Column(
+                      children: [
+                        SizedBox(
+                            width: 300,
+                            height: 300,
+                            child: Image.file(
+                              File(image),
+                              fit: BoxFit.cover,
+                            )),
+                        const SizedBox(
+                          height: 6,
+                        ),
+                        ElevatedButton(
+                            onPressed: () {
+                              showDialog<bool>(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: Text(
+                                      'Confirmation',
+                                      style:
+                                          getBlackTextStyle(fontWeight: w700),
+                                    ),
+                                    content: Text(
+                                      'Are you sure?',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text(
+                                          'No',
+                                          style: getGreyTextStyle(grey6A707C),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          position[index]['image'] = '';
+
+                                          Navigator.pop(context);
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          'Yes',
+                                          style: getBlackTextStyle(),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            style: ButtonStyle(
+                              backgroundColor:
+                                  MaterialStateProperty.resolveWith<Color>(
+                                      (Set<MaterialState> states) {
+                                return Colors.red;
+                              }),
+                            ),
+                            child: Text(
+                              'Delete Image',
+                              style: getWhiteTextStyle(),
+                            ))
+                      ],
+                    )
+                  : SizedBox(),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                    context, ''); // Kembalikan nilai kosong jika batal
+              },
+              child: Text('Batal'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -1616,6 +1755,57 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                 ),
                                               )),
                                         ),
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                        // IMAGE DAILY CHECK
+                                        // (dataUnit['type'] != null)
+                                        //     ? SizedBox(
+                                        //         width: MediaQuery.of(context)
+                                        //                 .size
+                                        //                 .width *
+                                        //             0.39,
+                                        //         child: ElevatedButton(
+                                        //             onPressed: () async {
+                                        //               final image =
+                                        //                   await showImageSourceDialog(
+                                        //                       context,
+                                        //                       position[posIndex]
+                                        //                           ['image'],
+                                        //                       posIndex);
+                                        //               if (image != '') {
+                                        //                 position[posIndex]
+                                        //                     ['image'] = image;
+                                        //               }
+
+                                        //               log('posisi terbaru : ${position}');
+                                        //             },
+                                        //             style: ElevatedButton
+                                        //                 .styleFrom(
+                                        //                     backgroundColor:
+                                        //                         Colors.orange,
+                                        //                     shape:
+                                        //                         RoundedRectangleBorder(
+                                        //                       borderRadius:
+                                        //                           BorderRadius
+                                        //                               .circular(
+                                        //                                   12),
+                                        //                     )),
+                                        //             child: Padding(
+                                        //               padding: const EdgeInsets
+                                        //                   .symmetric(
+                                        //                   vertical: 8.0),
+                                        //               child: Text(
+                                        //                 'Take Picture',
+                                        //                 textAlign:
+                                        //                     TextAlign.center,
+                                        //                 style:
+                                        //                     getWhiteTextStyle(
+                                        //                         fontSize: 14),
+                                        //               ),
+                                        //             )),
+                                        //       )
+                                        //     : SizedBox(),
                                       ],
                                     );
                                   }).toList(),
