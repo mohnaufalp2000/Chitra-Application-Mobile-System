@@ -523,239 +523,261 @@ class _TpmsPageState extends State<TpmsPage> {
                                 const SizedBox(
                                   height: 12,
                                 ),
-                                // SizedBox(
-                                //   height: 80,
-                                //   child: ButtonWidget(
-                                //     color: Colors.orange,
-                                //     name: Row(
-                                //       children: [
-                                //         Icon(
-                                //           Icons.adjust,
-                                //           color: white,
-                                //         ),
-                                //         const SizedBox(
-                                //           width: 6,
-                                //         ),
-                                //         Text(
-                                //           'Adjust Pressure',
-                                //           style: getWhiteTextStyle(
-                                //               fontWeight: w700),
-                                //         ),
-                                //       ],
-                                //     ),
-                                //     function: () {
-                                //       log('adjust pressure : ${allUnits[indexUnit][0]}');
-                                //       Navigator.pushNamed(
-                                //           context, DailyCheckFormPage.routeName,
-                                //           arguments: {
-                                //             'unitNumber': unit.devicename,
-                                //             'type': 'spm',
-                                //             'position': [
-                                //               {
-                                //                 'pressure':
-                                //                     '${allUnits[indexUnit][0][0]['pressure1']}',
-                                //                 'adjusmentPressure': '',
-                                //                 'rating': '',
-                                //                 'damage': null,
-                                //                 'image': ''
-                                //               },
-                                //               {
-                                //                 'pressure':
-                                //                     '${allUnits[indexUnit][0][1]['pressure2']}',
-                                //                 'adjusmentPressure': '',
-                                //                 'rating': '',
-                                //                 'damage': null,
-                                //                 'image': ''
-                                //               },
-                                //               {
-                                //                 'pressure':
-                                //                     '${allUnits[indexUnit][0][2]['pressure3']}',
-                                //                 'adjusmentPressure': '',
-                                //                 'rating': '',
-                                //                 'damage': null,
-                                //                 'image': ''
-                                //               },
-                                //               {
-                                //                 'pressure':
-                                //                     '${allUnits[indexUnit][0][3]['pressure4']}',
-                                //                 'adjusmentPressure': '',
-                                //                 'rating': '',
-                                //                 'damage': null,
-                                //                 'image': ''
-                                //               },
-                                //               {
-                                //                 'pressure':
-                                //                     '${allUnits[indexUnit][0][4]['pressure5']}',
-                                //                 'adjusmentPressure': '',
-                                //                 'rating': '',
-                                //                 'damage': null,
-                                //                 'image': ''
-                                //               },
-                                //               {
-                                //                 'pressure':
-                                //                     '${allUnits[indexUnit][0][5]['pressure6']}',
-                                //                 'adjusmentPressure': '',
-                                //                 'rating': '',
-                                //                 'damage': null,
-                                //                 'image': ''
-                                //               },
-                                //             ],
-                                //           });
-                                //     },
-                                //   ),
-                                // ),
-                                // const SizedBox(
-                                //   height: 12,
-                                // ),
-                                // Row(
-                                //   children: [
-                                //     Icon(Icons.adjust),
-                                //     const SizedBox(
-                                //       width: 6,
-                                //     ),
-                                //     Text(
-                                //       'Last Adjustment',
-                                //       style:
-                                //           getBlackTextStyle(fontWeight: w700),
-                                //     ),
-                                //   ],
-                                // ),
-                                // const SizedBox(
-                                //   height: 12,
-                                // ),
+                                SizedBox(
+                                  height: 80,
+                                  child: ButtonWidget(
+                                    color: Colors.orange,
+                                    name: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.adjust,
+                                          color: white,
+                                        ),
+                                        const SizedBox(
+                                          width: 6,
+                                        ),
+                                        Text(
+                                          'Adjust Pressure',
+                                          style: getWhiteTextStyle(
+                                              fontWeight: w700),
+                                        ),
+                                      ],
+                                    ),
+                                    function: () {
+                                      log('adjust pressure : ${allUnits[indexUnit][0]}');
+                                      Navigator.pushNamed(
+                                          context, DailyCheckFormPage.routeName,
+                                          arguments: {
+                                            'unitNumber': unit.devicename,
+                                            'type': 'spm',
+                                            'position': [
+                                              {
+                                                'pressure':
+                                                    '${allUnits[indexUnit][0][0]['pressure1']}',
+                                                'adjusmentPressure': '',
+                                                'rating': '',
+                                                'damage': null,
+                                                'image': ''
+                                              },
+                                              {
+                                                'pressure':
+                                                    '${allUnits[indexUnit][0][1]['pressure2']}',
+                                                'adjusmentPressure': '',
+                                                'rating': '',
+                                                'damage': null,
+                                                'image': ''
+                                              },
+                                              {
+                                                'pressure':
+                                                    '${allUnits[indexUnit][0][2]['pressure3']}',
+                                                'adjusmentPressure': '',
+                                                'rating': '',
+                                                'damage': null,
+                                                'image': ''
+                                              },
+                                              {
+                                                'pressure':
+                                                    '${allUnits[indexUnit][0][3]['pressure4']}',
+                                                'adjusmentPressure': '',
+                                                'rating': '',
+                                                'damage': null,
+                                                'image': ''
+                                              },
+                                              {
+                                                'pressure':
+                                                    '${allUnits[indexUnit][0][4]['pressure5']}',
+                                                'adjusmentPressure': '',
+                                                'rating': '',
+                                                'damage': null,
+                                                'image': ''
+                                              },
+                                              {
+                                                'pressure':
+                                                    '${allUnits[indexUnit][0][5]['pressure6']}',
+                                                'adjusmentPressure': '',
+                                                'rating': '',
+                                                'damage': null,
+                                                'image': ''
+                                              },
+                                            ],
+                                          });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
+                                Row(
+                                  children: [
+                                    Icon(Icons.adjust),
+                                    const SizedBox(
+                                      width: 6,
+                                    ),
+                                    Text(
+                                      'Last Adjustment',
+                                      style:
+                                          getBlackTextStyle(fontWeight: w700),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(
+                                  height: 12,
+                                ),
 
-                                // PaginateFirestore(
-                                //   itemBuilder: (context, snapshot, index) {
-                                //     Map<String, dynamic> tmpMap = {};
-                                //     List<dynamic> tmpMapPosisi = [];
+                                PaginateFirestore(
+                                  itemBuilder: (context, snapshot, index) {
+                                    Map<String, dynamic> tmpMap = {};
+                                    List<dynamic> tmpMapPosisi = [];
 
-                                //     final Map<String, dynamic> latestAdjustMap =
-                                //         snapshot[index].data()
-                                //             as Map<String, dynamic>;
+                                    final Map<String, dynamic> latestAdjustMap =
+                                        snapshot[index].data()
+                                            as Map<String, dynamic>;
 
-                                //     final positionList =
-                                //         latestAdjustMap['posisi']
-                                //             as List<dynamic>;
+                                    final positionList =
+                                        latestAdjustMap['posisi']
+                                            as List<dynamic>;
 
-                                //     if (index == 0) {
-                                //       tmpMap = latestAdjustMap;
-                                //       tmpMapPosisi = positionList;
-                                //     }
+                                    if (index == 0) {
+                                      tmpMap = latestAdjustMap;
+                                      tmpMapPosisi = positionList;
+                                    }
 
-                                //     return Column(
-                                //       children: tmpMapPosisi.map((pl) {
-                                //         return Column(
-                                //           children: [
-                                //             Row(
-                                //               mainAxisAlignment:
-                                //                   MainAxisAlignment
-                                //                       .spaceBetween,
-                                //               children: [
-                                //                 Text(
-                                //                   'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
-                                //                   style: getBlackTextStyle(
-                                //                       fontSize: 16),
-                                //                 ),
-                                //                 const SizedBox(width: 6),
-                                //                 Text(
-                                //                   DateFormat(
-                                //                           'dd MMMM yyyy  HH:mm:ss',
-                                //                           'id_ID')
-                                //                       .format(DateTime.parse(
-                                //                           tmpMap['tanggal'])),
-                                //                   style: getBlackTextStyle(
-                                //                       fontSize: 16),
-                                //                 ),
-                                //               ],
-                                //             ),
-                                //             Padding(
-                                //               padding:
-                                //                   const EdgeInsets.symmetric(
-                                //                       vertical: 8.0),
-                                //               child: Divider(),
-                                //             )
-                                //           ],
-                                //         );
-                                //       }).toList(),
-                                //     );
-                                //   },
-                                //   key: ValueKey(unit.devicename),
-                                //   query: firestore
-                                //       .collection('daily_pressure')
-                                //       .where('unit', isEqualTo: unit.devicename)
-                                //       .orderBy('tanggal', descending: true)
-                                //       .limit(1),
-                                //   itemBuilderType: PaginateBuilderType.listView,
-                                //   shrinkWrap: true,
-                                //   physics: NeverScrollableScrollPhysics(),
-                                //   itemsPerPage: 1,
-                                //   isLive: true,
-                                //   initialLoader: const Center(
-                                //       child:
-                                //           CircularProgressIndicator.adaptive()),
-                                //   bottomLoader: const Center(
-                                //       child:
-                                //           CircularProgressIndicator.adaptive()),
-                                // ),
-
-                                // // FutureBuilder<Map<String, dynamic>>(
-                                // //   future: fetchLatestData(unit.devicename),
-                                // //   builder: (context, snapshot) {
-                                // //     if (snapshot.connectionState ==
-                                // //         ConnectionState.waiting) {
-                                // //       return const CircularProgressIndicator
-                                // //           .adaptive();
-                                // //     }
-                                // //     if (snapshot.hasError) {
-                                // //       return Text('Error: ${snapshot.error}');
-                                // //     }
-                                // //     if (!snapshot.hasData) {
-                                // //       return const Text('No data found');
-                                // //     }
-
-                                // //     final latestAdjustMap = snapshot.data!;
-                                // //     final List<dynamic> positionList =
-                                // //         latestAdjustMap['posisi'] ?? [];
-
-                                // //     return Column(
-                                // //       children: positionList.map((pl) {
-                                // //         return Column(
-                                // //           children: [
-                                // //             Row(
-                                // //               mainAxisAlignment:
-                                // //                   MainAxisAlignment
-                                // //                       .spaceBetween,
-                                // //               children: [
-                                // //                 Text(
-                                // //                   'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
-                                // //                   style: getBlackTextStyle(
-                                // //                       fontSize: 16),
-                                // //                 ),
-                                // //                 const SizedBox(width: 6),
-                                // //                 Text(
-                                // //                   DateFormat(
-                                // //                           'dd MMMM yyyy  HH:mm:ss',
-                                // //                           'id_ID')
-                                // //                       .format(DateTime.parse(
-                                // //                           latestAdjustMap[
-                                // //                               'tanggal'])),
-                                // //                   style: getBlackTextStyle(
-                                // //                       fontSize: 16),
-                                // //                 ),
-                                // //               ],
-                                // //             ),
-                                // //             Padding(
-                                // //               padding:
-                                // //                   const EdgeInsets.symmetric(
-                                // //                       vertical: 8.0),
-                                // //               child: Divider(),
-                                // //             )
-                                // //           ],
-                                // //         );
-                                // //       }).toList(),
-                                // //     );
-                                // //   },
-                                // // ),
+                                    return Column(
+                                      children: tmpMapPosisi.map((pl) {
+                                        return Column(
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
+                                                  style: getBlackTextStyle(
+                                                      fontSize: 16),
+                                                ),
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  DateFormat(
+                                                          'dd MMMM yyyy  HH:mm:ss',
+                                                          'id_ID')
+                                                      .format(DateTime.parse(
+                                                          tmpMap['tanggal'])),
+                                                  style: getBlackTextStyle(
+                                                      fontSize: 16),
+                                                ),
+                                              ],
+                                            ),
+                                            (pl['image'] != '' &&
+                                                    pl['image'] != null)
+                                                ? Container(
+                                                    padding:
+                                                        EdgeInsets.only(top: 8),
+                                                    width: double.infinity,
+                                                    child: ElevatedButton(
+                                                      onPressed: () {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (context) =>
+                                                              Dialog(
+                                                            child: Stack(
+                                                              children: [
+                                                                InteractiveViewer(
+                                                                  child: Image
+                                                                      .network(
+                                                                    pl['image'],
+                                                                    fit: BoxFit
+                                                                        .contain,
+                                                                  ),
+                                                                ),
+                                                                Positioned(
+                                                                  top: 8.0,
+                                                                  right: 8.0,
+                                                                  child:
+                                                                      IconButton(
+                                                                    icon: Icon(
+                                                                        Icons
+                                                                            .close,
+                                                                        color: Colors
+                                                                            .black),
+                                                                    onPressed:
+                                                                        () {
+                                                                      Navigator.of(
+                                                                              context)
+                                                                          .pop(); // Menutup dialog
+                                                                    },
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                      style: ElevatedButton
+                                                          .styleFrom(
+                                                        backgroundColor:
+                                                            Colors.orange,
+                                                      ),
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Icon(
+                                                              Icons.photo,
+                                                              color: white,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 8,
+                                                            ),
+                                                            Text(
+                                                              'Show Image',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                      fontWeight:
+                                                                          w700,
+                                                                      fontSize:
+                                                                          18),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Container(),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 8.0),
+                                              child: Divider(),
+                                            )
+                                          ],
+                                        );
+                                      }).toList(),
+                                    );
+                                  },
+                                  key: ValueKey(unit.devicename),
+                                  query: firestore
+                                      .collection('daily_pressure')
+                                      .where('unit', isEqualTo: unit.devicename)
+                                      .orderBy('tanggal', descending: true)
+                                      .limit(1),
+                                  itemBuilderType: PaginateBuilderType.listView,
+                                  shrinkWrap: true,
+                                  physics: NeverScrollableScrollPhysics(),
+                                  itemsPerPage: 1,
+                                  isLive: true,
+                                  initialLoader: const Center(
+                                      child:
+                                          CircularProgressIndicator.adaptive()),
+                                  bottomLoader: const Center(
+                                      child:
+                                          CircularProgressIndicator.adaptive()),
+                                ),
 
                                 // const SizedBox(
                                 //   height: 12,

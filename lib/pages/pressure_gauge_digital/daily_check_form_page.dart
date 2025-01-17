@@ -15,6 +15,7 @@ import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
@@ -32,6 +33,7 @@ class DailyCheckFormPage extends StatefulWidget {
 
 class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
   List<Map<String, dynamic>> position = [];
@@ -338,6 +340,26 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     //     pit.add('WS');
     //   }
     // });
+  }
+
+  Future<List<String>> uploadImageFirebase(String idSite) async {
+    final List<String> list = [];
+
+    for (int i = 0; i < position.length; i++) {
+      final image = position[i]['image'];
+
+      if (image != '' && image != null) {
+        final ref = storage.ref().child(
+            'daily_check/${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now())}-pos${i + 1}-$idSite');
+        final uploadTask = ref.putFile(File(image));
+        final snapshot = await uploadTask.whenComplete(() {});
+        final downloadUrl = await snapshot.ref.getDownloadURL();
+        list.add(downloadUrl);
+      } else {
+        list.add('');
+      }
+    }
+    return list;
   }
 
   getUser() async {
@@ -1759,53 +1781,53 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                           height: 12,
                                         ),
                                         // IMAGE DAILY CHECK
-                                        // (dataUnit['type'] != null)
-                                        //     ? SizedBox(
-                                        //         width: MediaQuery.of(context)
-                                        //                 .size
-                                        //                 .width *
-                                        //             0.39,
-                                        //         child: ElevatedButton(
-                                        //             onPressed: () async {
-                                        //               final image =
-                                        //                   await showImageSourceDialog(
-                                        //                       context,
-                                        //                       position[posIndex]
-                                        //                           ['image'],
-                                        //                       posIndex);
-                                        //               if (image != '') {
-                                        //                 position[posIndex]
-                                        //                     ['image'] = image;
-                                        //               }
+                                        (dataUnit['type'] != null)
+                                            ? SizedBox(
+                                                width: MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.39,
+                                                child: ElevatedButton(
+                                                    onPressed: () async {
+                                                      final image =
+                                                          await showImageSourceDialog(
+                                                              context,
+                                                              position[posIndex]
+                                                                  ['image'],
+                                                              posIndex);
+                                                      if (image != '') {
+                                                        position[posIndex]
+                                                            ['image'] = image;
+                                                      }
 
-                                        //               log('posisi terbaru : ${position}');
-                                        //             },
-                                        //             style: ElevatedButton
-                                        //                 .styleFrom(
-                                        //                     backgroundColor:
-                                        //                         Colors.orange,
-                                        //                     shape:
-                                        //                         RoundedRectangleBorder(
-                                        //                       borderRadius:
-                                        //                           BorderRadius
-                                        //                               .circular(
-                                        //                                   12),
-                                        //                     )),
-                                        //             child: Padding(
-                                        //               padding: const EdgeInsets
-                                        //                   .symmetric(
-                                        //                   vertical: 8.0),
-                                        //               child: Text(
-                                        //                 'Take Picture',
-                                        //                 textAlign:
-                                        //                     TextAlign.center,
-                                        //                 style:
-                                        //                     getWhiteTextStyle(
-                                        //                         fontSize: 14),
-                                        //               ),
-                                        //             )),
-                                        //       )
-                                        //     : SizedBox(),
+                                                      log('posisi terbaru : ${position}');
+                                                    },
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.orange,
+                                                            shape:
+                                                                RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12),
+                                                            )),
+                                                    child: Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 8.0),
+                                                      child: Text(
+                                                        'Take Picture',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontSize: 14),
+                                                      ),
+                                                    )),
+                                              )
+                                            : SizedBox(),
                                       ],
                                     );
                                   }).toList(),
@@ -1877,6 +1899,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 final endOfDay =
                     DateTime(today.year, today.month, today.day, 23, 59, 59);
 
+                final listImage = await uploadImageFirebase(idSite);
+
                 final querySnapshot = await FirebaseFirestore.instance
                     .collection('daily_pressure')
                     .where('unit', isEqualTo: dataUnit['unitNumber'])
@@ -1901,12 +1925,15 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     'hm': hmCtrl.text,
                     'posisi': position.map((p) {
                       final pIndex = position.indexOf(p);
+
                       return {
                         'pos': '${pIndex + 1}',
                         'rating': (p['rating']) ?? '',
                         'pressure': (p['pressure']) ?? '0',
                         'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                        'luka': (selectedType == 0) ? '' : p['damage']
+                        'luka': (selectedType == 0) ? '' : p['damage'],
+                        'image':
+                            (listImage[pIndex] != '') ? listImage[pIndex] : '',
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -1944,7 +1971,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           'pressure': (p['pressure']) ?? '0',
                           'rating': (p['rating']) ?? '',
                           'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                          'luka': (selectedType == 0) ? '' : p['damage']
+                          'luka': (selectedType == 0) ? '' : p['damage'],
+                          'image': (listImage[pIndex] != '')
+                              ? listImage[pIndex]
+                              : '',
                         };
                       }),
                       'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -1966,7 +1996,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'pressure': (p['pressure']) ?? '0',
                         'rating': (p['rating']) ?? '',
                         'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                        'luka': (selectedType == 0) ? '' : p['damage']
+                        'luka': (selectedType == 0) ? '' : p['damage'],
+                        'image':
+                            (listImage[pIndex] != '') ? listImage[pIndex] : '',
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
