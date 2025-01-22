@@ -198,8 +198,16 @@ class _ImageProfilePageState extends State<ImageProfilePage> {
                           .where('email', isEqualTo: auth.currentUser?.email)
                           .get();
 
+                      final listCustPgDigital = await firestore
+                          .collection('list_site_pgdigital')
+                          .get();
+                      final listCustPgDigitalData = listCustPgDigital.docs
+                          .map((e) => e.data() as Map<String, dynamic>)
+                          .toList();
+
                       // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
-                      if (user.docs[0]['id_site'] == '3') {
+                      if ((listCustPgDigitalData).any(
+                          (e) => e['id_site'] == user.docs[0]['id_site'])) {
                         pushReplace(context, HomePageTrial.routeName);
                       } else {
                         pushReplace(context, HomePage.routeName);
@@ -262,10 +270,15 @@ class _ImageProfilePageState extends State<ImageProfilePage> {
                           .collection('users')
                           .where('email', isEqualTo: auth.currentUser?.email)
                           .get();
+                      final listCustPgDigital = await firestore
+                          .collection('list_site_pgdigital')
+                          .get();
+                      final listCustPgDigitalData = listCustPgDigital.docs
+                          .map((e) => e.data() as Map<String, dynamic>)
+                          .toList();
                       // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
-                      if (user.docs[0]['id_site'] == '3' ||
-                          user.docs[0]['id_site'] == '4' ||
-                          user.docs[0]['id_site'] == '999') {
+                      if ((listCustPgDigitalData).any(
+                          (e) => e['id_site'] == user.docs[0]['id_site'])) {
                         pushReplace(context, HomePageTrial.routeName);
                       } else {
                         pushReplace(context, HomePage.routeName);

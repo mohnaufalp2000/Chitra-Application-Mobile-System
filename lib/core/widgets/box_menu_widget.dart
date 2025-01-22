@@ -18,6 +18,8 @@ import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
 import 'package:camos/pages/tpms/tpms_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:camos/core/styles/asset_path.dart';
@@ -41,14 +43,22 @@ class BoxMenuWidget extends StatefulWidget {
 }
 
 class _BoxMenuWidgetState extends State<BoxMenuWidget> {
-  selectMenu(int id) {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseAuth auth = FirebaseAuth.instance;
+
+  selectMenu(int id) async {
     switch (id) {
       case 1:
         // push(context, SelectUnitPage.routeName);
         log('argumentasi dimensi : ${widget.argument?['idSite']}');
-        if (widget.argument?['idSite'] == '3' ||
-            widget.argument?['idSite'] == '4' ||
-            widget.argument?['idSite'] == '999') {
+
+        final listCustPgDigital =
+            await firestore.collection('list_site_pgdigital').get();
+        final listCustPgDigitalData = listCustPgDigital.docs
+            .map((e) => e.data() as Map<String, dynamic>)
+            .toList();
+        if ((listCustPgDigitalData)
+            .any((e) => e['id_site'] == widget.argument?['idSite'])) {
           Navigator.pushNamed(context, DashboardDailyPage.routeName,
               arguments: widget.argument?['idSite']);
         } else {
