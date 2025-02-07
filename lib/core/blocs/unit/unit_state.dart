@@ -14,8 +14,10 @@ class UnitLoadingState extends UnitState {}
 
 class UnitLoadedState extends UnitState {
   final List<UnitTire> units;
+  // final List<ReccPress> reccPress;
   UnitLoadedState({
     required this.units,
+    // required this.reccPress,
   });
 }
 

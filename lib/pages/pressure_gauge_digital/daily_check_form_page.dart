@@ -12,7 +12,6 @@ import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
-import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -1026,6 +1025,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                               const SizedBox(
                                 height: 12,
                               ),
+
                               Container(
                                 child: Wrap(
                                   spacing: 34,
@@ -1542,12 +1542,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                         ),
                                         // SELECT DAMAGE TIRE
                                         SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.39,
-                                          // height: 65,
-                                          child: ElevatedButton(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width *
+                                                0.39,
+                                            // height: 65,
+                                            child: ElevatedButton(
                                               onPressed: () {
                                                 FocusScope.of(context)
                                                     .unfocus();
@@ -1759,24 +1759,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                         BorderRadius.circular(
                                                             12),
                                                   )),
-                                              child: Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 8.0),
-                                                child: Text(
-                                                  (position[posIndex]
-                                                              ['damage'] ==
-                                                          null)
-                                                      ? 'Damage Tire (None)'
-                                                      : position[posIndex]
-                                                              ['damage']
-                                                          .join('\n---\n'),
-                                                  textAlign: TextAlign.center,
-                                                  style: getWhiteTextStyle(
-                                                      fontSize: 14),
-                                                ),
-                                              )),
-                                        ),
+                                              child: Text(
+                                                (position[posIndex]['damage'] ==
+                                                        null)
+                                                    ? 'Damage Tire (None)'
+                                                    : position[posIndex]
+                                                            ['damage']
+                                                        .join('\n---\n'),
+                                                textAlign: TextAlign.center,
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 14),
+                                              ),
+                                            )),
+
                                         const SizedBox(
                                           height: 12,
                                         ),

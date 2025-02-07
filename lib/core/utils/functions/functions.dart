@@ -629,11 +629,11 @@ Future<List<int>> createExcel(String type,
             (task[i]['tire_damage'] is List<dynamic>)
                 ? ((task[i]['tire_damage'] as List<dynamic>).isEmpty &&
                         task[i]['tire_damage'] == null)
-                    ? '0'
+                    ? 'Good Condition'
                     : (task[i]['tire_damage'].length > 1)
                         ? task[i]['tire_damage'][1]
-                        : '0'
-                : task[i]['tire_damage'] ?? '0');
+                        : 'Good Condition'
+                : task[i]['tire_damage'] ?? 'Good Condition');
 
         // TIRE DAMAGE
         sheet.getRangeByName('L${i + 2}').merge();

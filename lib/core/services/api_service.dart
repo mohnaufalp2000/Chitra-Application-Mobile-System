@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/core/services/model/recc_press.dart';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/model/tire_spec.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
@@ -24,6 +25,11 @@ class ApiService {
       final body = response.body;
       final result = jsonDecode(body);
 
+      // List<ReccPress> recommendPressure =
+      //     List<ReccPress>.from(result['recc_press'].map(
+      //   (press) => ReccPress.fromJson(press),
+      // ));
+
       List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
         (unit) => UnitTire.fromJson(unit),
       ));
@@ -37,8 +43,10 @@ class ApiService {
         fixData.add(unit);
       });
 
-      // await cacheUnits(listUnitTire);
+      // save unit
       await cacheUnits(listUnitTire, site);
+      // save recommendation pressure
+      // await cacheReccPress(recommendPressure);
 
       // for check data unit monthly
       await saveMonthYear(DateTime.now());
@@ -60,6 +68,16 @@ class ApiService {
   //   }
   // }
 
+  static Future<void> cacheReccPress(List<ReccPress> reccPress) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final cacheKey = 'cache_recc_press';
+
+    final reccPressJson = reccPress.map((e) => e.toJson()).toList();
+    final reccPressJsonString = jsonEncode(reccPressJson);
+    await prefs.setString(cacheKey, reccPressJsonString);
+  }
+
   static Future<void> cacheUnits(List<UnitTire> units, String idSite) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -74,6 +92,23 @@ class ApiService {
       // Handle error jika gagal menyimpan data.
       throw Exception('Gagal menyimpan data ke penyimpanan lokal: $e');
     }
+  }
+
+  static Future<List<ReccPress>> getCachedReccPress() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final cacheKey = 'cache_recc_press';
+
+    final cachedData = prefs.getString(cacheKey);
+
+    if (cachedData != null) {
+      final cachedReccJson = jsonDecode(cachedData) as List<dynamic>;
+      List<ReccPress> cachedRecc =
+          cachedReccJson.map((json) => ReccPress.fromJson(json)).toList();
+
+      return cachedRecc;
+    }
+    return [];
   }
 
   static Future<List<UnitTire>> getCachedUnits(

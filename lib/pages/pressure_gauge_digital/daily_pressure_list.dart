@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/recc_press.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
@@ -8,8 +9,8 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/daily_check_firebase.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/enum_export_type.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/export_excel_button.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart';
@@ -51,6 +52,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   bool isOnline = false;
   DateTime now = DateTime.now();
   bool isLoading = false;
+  List<ReccPress> reccPress = [];
+
   // List<UnitTire> filteredUnits = [];
 
   @override
@@ -338,787 +341,746 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                         ),
                       ))),
               // tester 1
-              BlocConsumer<UnitBloc, UnitState>(
-                  listener: (context, state) {},
-                  builder: (context, state) {
-                    if (state is UnitLoadingState) {
-                      return Center(child: CircularProgressIndicator());
-                    }
+              BlocConsumer<UnitBloc, UnitState>(listener: (context, state) {
+                // if(state is UnitLoadedState){
+                //   reccPress = {
+                //     state.reccPress[]
+                //   };
+                // }
+              }, builder: (context, state) {
+                if (state is UnitLoadingState) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-                    if (state is UnitLoadedState) {
-                      switch (selectedMenu) {
-                        // Checked Unit
-                        case 0:
-                          return Column(
-                            children: [
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              SelectPitButton(
-                                  pit: pit,
-                                  selectedPit: selectedPit,
-                                  onSelectedPitChanged: (index) {
-                                    setState(() {
-                                      selectedPit = index;
-                                    });
-                                  }),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              StreamBuilder(
-                                  stream: firestore
+                if (state is UnitLoadedState) {
+                  switch (selectedMenu) {
+                    // Checked Unit
+                    case 0:
+                      return Column(
+                        children: [
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          SelectPitButton(
+                              pit: pit,
+                              selectedPit: selectedPit,
+                              onSelectedPitChanged: (index) {
+                                setState(() {
+                                  selectedPit = index;
+                                });
+                              }),
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          StreamBuilder(
+                              stream: firestore
+                                  .collection('daily_pressure')
+                                  .where('tanggal',
+                                      isGreaterThanOrEqualTo:
+                                          DateTime(now.year, now.month, now.day)
+                                              .toIso8601String())
+                                  .where('tanggal',
+                                      isLessThanOrEqualTo: DateTime(now.year,
+                                              now.month, now.day, 23, 59, 59)
+                                          .toIso8601String())
+                                  .where('idSite', isEqualTo: idSite)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return CircularProgressIndicator.adaptive();
+                                }
+                                if (snapshot.connectionState ==
+                                    ConnectionState.active) {
+                                  final tmpDailyData =
+                                      snapshot.data?.docs ?? [];
+
+                                  final dailyData = tmpDailyData.where((doc) {
+                                    final Map<String, dynamic> data =
+                                        doc.data() as Map<String, dynamic>;
+
+                                    // pilih all pit
+                                    if (pit.isNotEmpty) {
+                                      if (pit[selectedPit] == 'All') {
+                                        return data['idSite'] == idSite;
+                                      }
+
+                                      // ada pit
+                                      if (data['pit'] != 'Default') {
+                                        return data['idSite'] == idSite &&
+                                            data['pit'] == pit[selectedPit];
+                                      }
+                                    }
+
+                                    // tidak ada pit
+                                    return data['idSite'] == idSite;
+                                  }).toList();
+
+                                  // untuk data export excel
+                                  filteredItemTask.clear();
+                                  filteredItemTask.clear();
+                                  dailyData.forEach((item) {
+                                    Map<String, dynamic> cast =
+                                        item.data() as Map<String, dynamic>;
+
+                                    filteredItemTask.add(cast);
+                                  });
+
+                                  log('list selected 1 = ${tmpDailyData.length}');
+                                  log('list selected 2 = ${dailyData.length}');
+
+                                  return Column(
+                                    children: [
+                                      Text(
+                                        'Total Unit : ${dailyData.length ?? 0}',
+                                        style: getBlackTextStyle(
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+                                      (snapshot.data?.size != 0)
+                                          ? Column(
+                                              children: [
+                                                Builder(builder: (context) {
+                                                  // Parsing string to DateTime object
+                                                  DateTime parsedDate =
+                                                      DateTime.parse(snapshot
+                                                          .data
+                                                          ?.docs[snapshot
+                                                                  .data!.size -
+                                                              1]
+                                                          .data()['tanggal']);
+
+                                                  // Formatting DateTime to the desired format
+                                                  String formattedDate = DateFormat(
+                                                          'HH:mm:ss dd-MM-yyyy')
+                                                      .format(parsedDate);
+                                                  return Text(
+                                                    'Last Update : ${formattedDate}',
+                                                    textAlign: TextAlign.center,
+                                                    style: getBlackTextStyle(
+                                                      fontSize: 14,
+                                                    ),
+                                                  );
+                                                }),
+                                                const SizedBox(
+                                                  height: 12,
+                                                ),
+                                              ],
+                                            )
+                                          : Container(),
+                                    ],
+                                  );
+                                }
+
+                                return Container();
+                              }),
+                          PaginateFirestore(
+                              query: selectedPit == 0
+                                  ? firestore
                                       .collection('daily_pressure')
                                       .where('tanggal',
-                                          isGreaterThanOrEqualTo: DateTime(
-                                                  now.year, now.month, now.day)
-                                              .toIso8601String())
+                                          isGreaterThanOrEqualTo:
+                                              DateTime(now.year, now.month, now.day)
+                                                  .toIso8601String())
                                       .where('tanggal',
-                                          isLessThanOrEqualTo: DateTime(
-                                                  now.year,
-                                                  now.month,
-                                                  now.day,
-                                                  23,
-                                                  59,
-                                                  59)
-                                              .toIso8601String())
+                                          isLessThanOrEqualTo:
+                                              DateTime(now.year, now.month, now.day, 23, 59, 59)
+                                                  .toIso8601String())
                                       .where('idSite', isEqualTo: idSite)
-                                      .snapshots(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return CircularProgressIndicator
-                                          .adaptive();
-                                    }
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.active) {
-                                      final tmpDailyData =
-                                          snapshot.data?.docs ?? [];
+                                      .orderBy('tanggal', descending: true)
+                                  : firestore
+                                      .collection('daily_pressure')
+                                      .where('tanggal',
+                                          isGreaterThanOrEqualTo:
+                                              DateTime(now.year, now.month, now.day)
+                                                  .toIso8601String())
+                                      .where('tanggal',
+                                          isLessThanOrEqualTo:
+                                              DateTime(now.year, now.month, now.day, 23, 59, 59)
+                                                  .toIso8601String())
+                                      .where('idSite', isEqualTo: idSite)
+                                      .where('pit', isEqualTo: pit[selectedPit])
+                                      .orderBy('tanggal', descending: true),
+                              itemBuilderType: PaginateBuilderType.listView,
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemsPerPage: 10,
+                              isLive: true,
+                              initialLoader: const Center(child: CircularProgressIndicator.adaptive()),
+                              bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
+                              itemBuilder: (context, snapshot, index) {
+                                final Map<String, dynamic> dailyMap =
+                                    snapshot[index].data()
+                                        as Map<String, dynamic>;
+                                final positionList =
+                                    dailyMap['posisi'] as List<dynamic>;
 
-                                      final dailyData =
-                                          tmpDailyData.where((doc) {
-                                        final Map<String, dynamic> data =
-                                            doc.data() as Map<String, dynamic>;
+                                if (selectedPit != 0) {
+                                  if (dailyMap['pit'] != pit[selectedPit]) {
+                                    return Container();
+                                  }
+                                }
 
-                                        // pilih all pit
-                                        if (pit.isNotEmpty) {
-                                          if (pit[selectedPit] == 'All') {
-                                            return data['idSite'] == idSite;
-                                          }
+                                if (searchQuery.isNotEmpty &&
+                                    !dailyMap['unit']!
+                                        .toLowerCase()
+                                        .contains(searchQuery)) {
+                                  return Container();
+                                }
 
-                                          // ada pit
-                                          if (data['pit'] != 'Default') {
-                                            return data['idSite'] == idSite &&
-                                                data['pit'] == pit[selectedPit];
-                                          }
-                                        }
-
-                                        // tidak ada pit
-                                        return data['idSite'] == idSite;
-                                      }).toList();
-
-                                      // untuk data export excel
-                                      filteredItemTask.clear();
-                                      filteredItemTask.clear();
-                                      dailyData.forEach((item) {
-                                        Map<String, dynamic> cast =
-                                            item.data() as Map<String, dynamic>;
-
-                                        filteredItemTask.add(cast);
-                                      });
-
-                                      log('list selected 1 = ${tmpDailyData.length}');
-                                      log('list selected 2 = ${dailyData.length}');
-
-                                      return Column(
-                                        children: [
-                                          Text(
-                                            'Total Unit : ${dailyData.length ?? 0}',
-                                            style: getBlackTextStyle(
-                                              fontSize: 20,
+                                return Card(
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Container(
+                                      width: double.infinity,
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 24),
+                                      decoration: BoxDecoration(
+                                        // color: (positionList.any((position) =>
+                                        //         int.parse(
+                                        //             position['pressure']) <
+                                        //         115)
+                                        //     ? Colors.red
+                                        //     : green00968A),
+                                        color: green00968A,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: ExpansionTile(
+                                        tilePadding: EdgeInsets.zero,
+                                        childrenPadding: EdgeInsets.all(0),
+                                        title: Row(
+                                          children: [
+                                            Icon(
+                                              Icons.task,
+                                              color: white,
+                                              size: 36,
                                             ),
+                                            const SizedBox(
+                                              width: 12,
+                                            ),
+                                            Text(
+                                              dailyMap['unit'] +
+                                                  '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
+                                              style: getWhiteTextStyle(
+                                                  fontWeight: w700,
+                                                  fontSize: 18),
+                                            )
+                                          ],
+                                        ),
+                                        trailing: SizedBox(
+                                          width: 90,
+                                          child: Icon(Icons.arrow_drop_down),
+                                        ),
+                                        children: [
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Name',
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 18),
+                                              ),
+                                              Container(
+                                                width: 250,
+                                                child: Text(
+                                                  dailyMap['user'] ?? 'No Name',
+                                                  textAlign: TextAlign.end,
+                                                  style: getWhiteTextStyle(
+                                                      fontWeight: w700,
+                                                      fontSize: 18),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                           const SizedBox(
                                             height: 12,
                                           ),
-                                          (snapshot.data?.size != 0)
-                                              ? Column(
-                                                  children: [
-                                                    Builder(builder: (context) {
-                                                      // Parsing string to DateTime object
-                                                      DateTime parsedDate =
-                                                          DateTime.parse(snapshot
-                                                              .data
-                                                              ?.docs[snapshot
-                                                                      .data!
-                                                                      .size -
-                                                                  1]
-                                                              .data()['tanggal']);
-
-                                                      // Formatting DateTime to the desired format
-                                                      String formattedDate =
-                                                          DateFormat(
-                                                                  'HH:mm:ss dd-MM-yyyy')
-                                                              .format(
-                                                                  parsedDate);
-                                                      return Text(
-                                                        'Last Update : ${formattedDate}',
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style:
-                                                            getBlackTextStyle(
-                                                          fontSize: 14,
-                                                        ),
-                                                      );
-                                                    }),
-                                                    const SizedBox(
-                                                      height: 12,
-                                                    ),
-                                                  ],
-                                                )
-                                              : Container(),
-                                        ],
-                                      );
-                                    }
-
-                                    return Container();
-                                  }),
-                              PaginateFirestore(
-                                  query: selectedPit == 0
-                                      ? firestore
-                                          .collection('daily_pressure')
-                                          .where('tanggal',
-                                              isGreaterThanOrEqualTo:
-                                                  DateTime(now.year, now.month, now.day)
-                                                      .toIso8601String())
-                                          .where('tanggal',
-                                              isLessThanOrEqualTo:
-                                                  DateTime(now.year, now.month, now.day, 23, 59, 59)
-                                                      .toIso8601String())
-                                          .where('idSite', isEqualTo: idSite)
-                                          .orderBy('tanggal', descending: true)
-                                      : firestore
-                                          .collection('daily_pressure')
-                                          .where('tanggal',
-                                              isGreaterThanOrEqualTo:
-                                                  DateTime(now.year, now.month, now.day)
-                                                      .toIso8601String())
-                                          .where('tanggal',
-                                              isLessThanOrEqualTo:
-                                                  DateTime(now.year, now.month, now.day, 23, 59, 59)
-                                                      .toIso8601String())
-                                          .where('idSite', isEqualTo: idSite)
-                                          .where('pit', isEqualTo: pit[selectedPit])
-                                          .orderBy('tanggal', descending: true),
-                                  itemBuilderType: PaginateBuilderType.listView,
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  itemsPerPage: 10,
-                                  isLive: true,
-                                  initialLoader: const Center(child: CircularProgressIndicator.adaptive()),
-                                  bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
-                                  itemBuilder: (context, snapshot, index) {
-                                    final Map<String, dynamic> dailyMap =
-                                        snapshot[index].data()
-                                            as Map<String, dynamic>;
-                                    final positionList =
-                                        dailyMap['posisi'] as List<dynamic>;
-
-                                    if (selectedPit != 0) {
-                                      if (dailyMap['pit'] != pit[selectedPit]) {
-                                        return Container();
-                                      }
-                                    }
-
-                                    if (searchQuery.isNotEmpty &&
-                                        !dailyMap['unit']!
-                                            .toLowerCase()
-                                            .contains(searchQuery)) {
-                                      return Container();
-                                    }
-
-                                    return Card(
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        color: green00968A,
-                                        child: Container(
-                                          width: double.infinity,
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 24),
-                                          decoration: BoxDecoration(
-                                            color: green00968A,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: ExpansionTile(
-                                            tilePadding: EdgeInsets.zero,
-                                            childrenPadding: EdgeInsets.all(0),
-                                            title: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.task,
-                                                  color: white,
-                                                  size: 36,
-                                                ),
-                                                const SizedBox(
-                                                  width: 12,
-                                                ),
-                                                Text(
-                                                  dailyMap['unit'] +
-                                                      '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
-                                                  style: getWhiteTextStyle(
-                                                      fontWeight: w700,
-                                                      fontSize: 18),
-                                                )
-                                              ],
-                                            ),
-                                            trailing: SizedBox(
-                                              width: 90,
-                                              child:
-                                                  Icon(Icons.arrow_drop_down),
-                                            ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
-                                              const SizedBox(
-                                                height: 12,
+                                              Text(
+                                                'Tanggal',
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 18),
                                               ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Name',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Container(
-                                                    width: 250,
-                                                    child: Text(
-                                                      dailyMap['user'] ??
-                                                          'No Name',
-                                                      textAlign: TextAlign.end,
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ),
-                                                ],
+                                              Text(
+                                                dailyMap['tanggal']
+                                                    .split('T')[0],
+                                                style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18),
                                               ),
-                                              const SizedBox(
-                                                height: 12,
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Waktu',
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 18),
                                               ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Tanggal',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Text(
-                                                    dailyMap['tanggal']
-                                                        .split('T')[0],
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18),
-                                                  ),
-                                                ],
+                                              Text(
+                                                dailyMap['tanggal']
+                                                    .split('T')[1]
+                                                    .substring(0, 5),
+                                                style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18),
                                               ),
-                                              const SizedBox(
-                                                height: 12,
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'HM Unit',
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 18),
                                               ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Waktu',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Text(
-                                                    dailyMap['tanggal']
-                                                        .split('T')[1]
-                                                        .substring(0, 5),
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18),
-                                                  ),
-                                                ],
+                                              Text(
+                                                dailyMap['hm'],
+                                                style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18),
                                               ),
-                                              const SizedBox(
-                                                height: 12,
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                'Pit',
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 18),
                                               ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'HM Unit',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Text(
-                                                    dailyMap['hm'],
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18),
-                                                  ),
-                                                ],
+                                              Text(
+                                                dailyMap['pit'],
+                                                style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18),
                                               ),
-                                              const SizedBox(
-                                                height: 12,
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Pit',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Text(
-                                                    dailyMap['pit'],
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(
-                                                height: 12,
-                                              ),
-                                              Column(
-                                                children:
-                                                    positionList.map((pl) {
-                                                  final plIndex =
-                                                      positionList.indexOf(pl);
-                                                  List<dynamic> luka = [];
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Column(
+                                            children: positionList.map((pl) {
+                                              final plIndex =
+                                                  positionList.indexOf(pl);
+                                              List<dynamic> luka = [];
 
-                                                  if (pl['luka'] != null &&
-                                                      pl['luka'] is! String) {
-                                                    luka = pl['luka']
-                                                        as List<dynamic>;
-                                                  }
+                                              if (pl['luka'] != null &&
+                                                  pl['luka'] is! String) {
+                                                luka =
+                                                    pl['luka'] as List<dynamic>;
+                                              }
 
-                                                  return Column(
+                                              return Column(
+                                                children: [
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
                                                     children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
+                                                      Text(
+                                                        'Pos. ${pl['pos']}',
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                                fontSize: 18),
+                                                      ),
+                                                      Column(
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
+                                                                .end,
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
                                                                 .center,
                                                         children: [
-                                                          Text(
-                                                            'Pos. ${pl['pos']}',
-                                                            style:
-                                                                getWhiteTextStyle(
-                                                                    fontSize:
-                                                                        18),
-                                                          ),
                                                           Column(
                                                             crossAxisAlignment:
                                                                 CrossAxisAlignment
                                                                     .end,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
                                                             children: [
-                                                              Column(
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .end,
-                                                                children: [
-                                                                  Text(
-                                                                    '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
-                                                                    style: getWhiteTextStyle(
-                                                                        fontWeight:
-                                                                            w700,
-                                                                        fontSize:
-                                                                            18),
-                                                                  ),
-                                                                  (pl['adjusmentPressure'] != null &&
-                                                                          pl['adjusmentPressure'] !=
-                                                                              '0' &&
-                                                                          pl['adjusmentPressure'] !=
-                                                                              '')
-                                                                      ? Text(
-                                                                          '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
-                                                                          style: getWhiteTextStyle(
-                                                                              fontWeight: w700,
-                                                                              fontSize: 18),
-                                                                        )
-                                                                      : Container(),
-                                                                ],
+                                                              Text(
+                                                                '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
+                                                                style: getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
+                                                                    fontSize:
+                                                                        18),
                                                               ),
-                                                              (luka.isEmpty ||
-                                                                      luka ==
-                                                                          null)
-                                                                  ? Container()
-                                                                  : Text(
-                                                                      pl['luka']
-                                                                          .join(
-                                                                              '\n'),
-                                                                      textAlign:
-                                                                          TextAlign
-                                                                              .end,
+                                                              (pl['adjusmentPressure'] != null &&
+                                                                      pl['adjusmentPressure'] !=
+                                                                          '0' &&
+                                                                      pl['adjusmentPressure'] !=
+                                                                          '')
+                                                                  ? Text(
+                                                                      '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
                                                                       style: getWhiteTextStyle(
                                                                           fontWeight:
                                                                               w700,
                                                                           fontSize:
                                                                               18),
-                                                                    ),
-                                                              Text(
-                                                                  '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
+                                                                    )
+                                                                  : Container(),
+                                                            ],
+                                                          ),
+                                                          (luka.isEmpty ||
+                                                                  luka == null)
+                                                              ? Container()
+                                                              : Text(
+                                                                  pl['luka']
+                                                                      .join(
+                                                                          '\n'),
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .end,
                                                                   style: getWhiteTextStyle(
                                                                       fontWeight:
                                                                           w700,
                                                                       fontSize:
+                                                                          18),
+                                                                ),
+                                                          Text(
+                                                              '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                      fontWeight:
+                                                                          w700,
+                                                                      fontSize:
                                                                           18)),
-                                                              const SizedBox(
-                                                                height: 12,
-                                                              ),
-                                                            ],
+                                                          const SizedBox(
+                                                            height: 12,
                                                           ),
                                                         ],
                                                       ),
-                                                      Divider(
-                                                        color: white,
-                                                        thickness: 1.5,
-                                                      ),
                                                     ],
-                                                  );
-                                                }).toList(),
-                                              ),
-                                            ],
+                                                  ),
+                                                  Divider(
+                                                    color: white,
+                                                    thickness: 1.5,
+                                                  ),
+                                                ],
+                                              );
+                                            }).toList(),
                                           ),
-                                        ));
+                                        ],
+                                      ),
+                                    ));
 
-                                    ;
-                                  }),
-                            ],
-                          );
+                                ;
+                              }),
+                        ],
+                      );
 
-                        // Al Unit
-                        case 1:
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              Text(
-                                'Total Unit : ${state.units.length.toString()}',
-                                style: getBlackTextStyle(fontSize: 20),
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              (state.units == null || state.units.isEmpty)
-                                  ? Text(
-                                      'Empty!',
-                                      textAlign: TextAlign.center,
-                                      style: getBlackTextStyle(fontSize: 18),
-                                    )
-                                  : Column(
-                                      children: state.units.map((unit) {
-                                        if (searchQuery.isNotEmpty &&
-                                            !unit.unitNumber!
-                                                .toLowerCase()
-                                                .contains(searchQuery) &&
-                                            !unit.model!
-                                                .toLowerCase()
-                                                .contains(searchQuery)) {
-                                          return Container();
-                                        }
-                                        return InkWell(
-                                          onTap: (actualIdSite == '1' ||
-                                                  actualIdSite == '2' ||
-                                                  actualIdSite == '3')
-                                              ? () {}
-                                              : () {
-                                                  Navigator.pushNamed(
-                                                      context,
-                                                      DailyCheckFormPage
-                                                          .routeName,
-                                                      arguments: {
-                                                        'unitNumber':
-                                                            unit.unitNumber,
-                                                      });
-                                                },
-                                          child: Container(
-                                            margin: EdgeInsets.symmetric(
-                                                vertical: 8.0),
-                                            padding: EdgeInsets.symmetric(
-                                                vertical: 6),
-                                            decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black
-                                                      .withOpacity(0.1),
-                                                  spreadRadius: 2,
-                                                  blurRadius: 5,
-                                                  offset: Offset(0, 2),
+                    // Al Unit
+                    case 1:
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          Text(
+                            'Total Unit : ${state.units.length.toString()}',
+                            style: getBlackTextStyle(fontSize: 20),
+                          ),
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          (state.units == null || state.units.isEmpty)
+                              ? Text(
+                                  'Empty!',
+                                  textAlign: TextAlign.center,
+                                  style: getBlackTextStyle(fontSize: 18),
+                                )
+                              : Column(
+                                  children: state.units.map((unit) {
+                                    if (searchQuery.isNotEmpty &&
+                                        !unit.unitNumber!
+                                            .toLowerCase()
+                                            .contains(searchQuery) &&
+                                        !unit.model!
+                                            .toLowerCase()
+                                            .contains(searchQuery)) {
+                                      return Container();
+                                    }
+                                    return InkWell(
+                                      onTap: (actualIdSite == '1' ||
+                                              actualIdSite == '2' ||
+                                              actualIdSite == '3')
+                                          ? () {}
+                                          : () {
+                                              Navigator.pushNamed(context,
+                                                  DailyCheckFormPage.routeName,
+                                                  arguments: {
+                                                    'unitNumber':
+                                                        unit.unitNumber,
+                                                  });
+                                            },
+                                      child: Container(
+                                        margin:
+                                            EdgeInsets.symmetric(vertical: 8.0),
+                                        padding:
+                                            EdgeInsets.symmetric(vertical: 6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.black.withOpacity(0.1),
+                                              spreadRadius: 2,
+                                              blurRadius: 5,
+                                              offset: Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ListTile(
+                                          leading: Icon(
+                                            Icons.front_loader,
+                                            color: Colors.orange,
+                                          ),
+                                          title: Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 4.0),
+                                            child: Text(
+                                              '${unit.unitNumber}',
+                                              style: getBlackTextStyle(
+                                                  fontWeight: FontWeight.w700),
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            '${unit.model}',
+                                            style: getGreyTextStyle(grey6A707C),
+                                          ),
+                                          trailing:
+                                              Icon(Icons.arrow_forward_ios),
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                        ],
+                      );
+
+                    // Not Checked Unit
+                    case 2:
+                      final notChecked = [];
+                      notChecked.clear();
+                      notChecked.addAll(state.units);
+                      return Column(
+                        children: [
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          StreamBuilder(
+                              stream: firestore
+                                  .collection('daily_pressure')
+                                  .where('tanggal',
+                                      isGreaterThanOrEqualTo:
+                                          DateTime(now.year, now.month, now.day)
+                                              .toIso8601String())
+                                  .where('tanggal',
+                                      isLessThanOrEqualTo: DateTime(now.year,
+                                              now.month, now.day, 23, 59, 59)
+                                          .toIso8601String())
+                                  .where('idSite', isEqualTo: idSite)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return CircularProgressIndicator.adaptive();
+                                }
+                                if (snapshot.connectionState ==
+                                    ConnectionState.active) {
+                                  final dailyData = snapshot.data?.docs ?? [];
+
+                                  // Mendapatkan field 'unit' dari setiap dokumen
+                                  final unitList = dailyData
+                                      .map((doc) => doc['unit'])
+                                      .toList();
+
+                                  // Mengecek apakah 'unitList' kosong, jika tidak kosong lanjutkan removeWhere
+                                  unitList.isNotEmpty
+                                      ? notChecked.removeWhere((element) =>
+                                          unitList.contains(element.unitNumber))
+                                      : [];
+
+                                  return Column(
+                                    children: [
+                                      Text(
+                                        'Total Unit : ${notChecked.length ?? 0}',
+                                        style: getBlackTextStyle(
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+                                      (snapshot.data?.size != 0)
+                                          ? Column(
+                                              children: [
+                                                Builder(builder: (context) {
+                                                  // Parsing string to DateTime object
+                                                  DateTime parsedDate =
+                                                      DateTime.parse(snapshot
+                                                          .data
+                                                          ?.docs[snapshot
+                                                                  .data!.size -
+                                                              1]
+                                                          .data()['tanggal']);
+
+                                                  // Formatting DateTime to the desired format
+                                                  String formattedDate = DateFormat(
+                                                          'HH:mm:ss dd-MM-yyyy')
+                                                      .format(parsedDate);
+                                                  return Text(
+                                                    'Last Update : ${formattedDate}',
+                                                    textAlign: TextAlign.center,
+                                                    style: getBlackTextStyle(
+                                                      fontSize: 14,
+                                                    ),
+                                                  );
+                                                }),
+                                                const SizedBox(
+                                                  height: 12,
                                                 ),
                                               ],
-                                            ),
-                                            child: ListTile(
-                                              leading: Icon(
-                                                Icons.front_loader,
-                                                color: Colors.orange,
-                                              ),
-                                              title: Padding(
-                                                padding: const EdgeInsets.only(
-                                                    bottom: 4.0),
-                                                child: Text(
-                                                  '${unit.unitNumber}',
-                                                  style: getBlackTextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w700),
-                                                ),
-                                              ),
-                                              subtitle: Text(
-                                                '${unit.model}',
-                                                style: getGreyTextStyle(
-                                                    grey6A707C),
-                                              ),
-                                              trailing:
-                                                  Icon(Icons.arrow_forward_ios),
-                                            ),
-                                          ),
-                                        );
-                                      }).toList(),
-                                    ),
-                            ],
-                          );
-
-                        // Not Checked Unit
-                        case 2:
-                          final notChecked = [];
-                          notChecked.clear();
-                          notChecked.addAll(state.units);
-                          return Column(
-                            children: [
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              StreamBuilder(
-                                  stream: firestore
-                                      .collection('daily_pressure')
-                                      .where('tanggal',
-                                          isGreaterThanOrEqualTo: DateTime(
-                                                  now.year, now.month, now.day)
-                                              .toIso8601String())
-                                      .where('tanggal',
-                                          isLessThanOrEqualTo: DateTime(
-                                                  now.year,
-                                                  now.month,
-                                                  now.day,
-                                                  23,
-                                                  59,
-                                                  59)
-                                              .toIso8601String())
-                                      .where('idSite', isEqualTo: idSite)
-                                      .snapshots(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return CircularProgressIndicator
-                                          .adaptive();
-                                    }
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.active) {
-                                      final dailyData =
-                                          snapshot.data?.docs ?? [];
-
-                                      // Mendapatkan field 'unit' dari setiap dokumen
-                                      final unitList = dailyData
-                                          .map((doc) => doc['unit'])
-                                          .toList();
-
-                                      // Mengecek apakah 'unitList' kosong, jika tidak kosong lanjutkan removeWhere
-                                      unitList.isNotEmpty
-                                          ? notChecked.removeWhere((element) =>
-                                              unitList
-                                                  .contains(element.unitNumber))
-                                          : [];
-
-                                      return Column(
-                                        children: [
-                                          Text(
-                                            'Total Unit : ${notChecked.length ?? 0}',
-                                            style: getBlackTextStyle(
-                                              fontSize: 20,
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          (snapshot.data?.size != 0)
-                                              ? Column(
-                                                  children: [
-                                                    Builder(builder: (context) {
-                                                      // Parsing string to DateTime object
-                                                      DateTime parsedDate =
-                                                          DateTime.parse(snapshot
-                                                              .data
-                                                              ?.docs[snapshot
-                                                                      .data!
-                                                                      .size -
-                                                                  1]
-                                                              .data()['tanggal']);
-
-                                                      // Formatting DateTime to the desired format
-                                                      String formattedDate =
-                                                          DateFormat(
-                                                                  'HH:mm:ss dd-MM-yyyy')
-                                                              .format(
-                                                                  parsedDate);
-                                                      return Text(
-                                                        'Last Update : ${formattedDate}',
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style:
-                                                            getBlackTextStyle(
-                                                          fontSize: 14,
+                                            )
+                                          : Container(),
+                                      (notChecked == null || notChecked.isEmpty)
+                                          ? Text(
+                                              'Empty!',
+                                              textAlign: TextAlign.center,
+                                              style: getBlackTextStyle(
+                                                  fontSize: 18),
+                                            )
+                                          : Column(
+                                              children:
+                                                  (notChecked).map((unit) {
+                                                if (searchQuery.isNotEmpty &&
+                                                    !unit.unitNumber!
+                                                        .toLowerCase()
+                                                        .contains(
+                                                            searchQuery) &&
+                                                    !unit.model!
+                                                        .toLowerCase()
+                                                        .contains(
+                                                            searchQuery)) {
+                                                  return Container();
+                                                }
+                                                return InkWell(
+                                                  onTap: (actualIdSite == '1' ||
+                                                          actualIdSite == '2' ||
+                                                          actualIdSite == '3')
+                                                      ? () {}
+                                                      : () {
+                                                          Navigator.pushNamed(
+                                                              context,
+                                                              DailyCheckFormPage
+                                                                  .routeName,
+                                                              arguments: {
+                                                                'unitNumber': unit
+                                                                    .unitNumber,
+                                                              });
+                                                        },
+                                                  child: Container(
+                                                    margin:
+                                                        EdgeInsets.symmetric(
+                                                            vertical: 8.0),
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            vertical: 6),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(0.1),
+                                                          spreadRadius: 2,
+                                                          blurRadius: 5,
+                                                          offset: Offset(0, 2),
                                                         ),
-                                                      );
-                                                    }),
-                                                    const SizedBox(
-                                                      height: 12,
+                                                      ],
                                                     ),
-                                                  ],
-                                                )
-                                              : Container(),
-                                          (notChecked == null ||
-                                                  notChecked.isEmpty)
-                                              ? Text(
-                                                  'Empty!',
-                                                  textAlign: TextAlign.center,
-                                                  style: getBlackTextStyle(
-                                                      fontSize: 18),
-                                                )
-                                              : Column(
-                                                  children:
-                                                      (notChecked).map((unit) {
-                                                    if (searchQuery
-                                                            .isNotEmpty &&
-                                                        !unit.unitNumber!
-                                                            .toLowerCase()
-                                                            .contains(
-                                                                searchQuery) &&
-                                                        !unit.model!
-                                                            .toLowerCase()
-                                                            .contains(
-                                                                searchQuery)) {
-                                                      return Container();
-                                                    }
-                                                    return InkWell(
-                                                      onTap:
-                                                          (actualIdSite ==
-                                                                      '1' ||
-                                                                  actualIdSite ==
-                                                                      '2' ||
-                                                                  actualIdSite ==
-                                                                      '3')
-                                                              ? () {}
-                                                              : () {
-                                                                  Navigator.pushNamed(
-                                                                      context,
-                                                                      DailyCheckFormPage
-                                                                          .routeName,
-                                                                      arguments: {
-                                                                        'unitNumber':
-                                                                            unit.unitNumber,
-                                                                      });
-                                                                },
-                                                      child: Container(
-                                                        margin: EdgeInsets
-                                                            .symmetric(
-                                                                vertical: 8.0),
-                                                        padding: EdgeInsets
-                                                            .symmetric(
-                                                                vertical: 6),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: Colors.white,
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(12),
-                                                          boxShadow: [
-                                                            BoxShadow(
-                                                              color: Colors
-                                                                  .black
-                                                                  .withOpacity(
-                                                                      0.1),
-                                                              spreadRadius: 2,
-                                                              blurRadius: 5,
-                                                              offset:
-                                                                  Offset(0, 2),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        child: ListTile(
-                                                          leading: Icon(
-                                                            Icons.front_loader,
-                                                            color:
-                                                                Colors.orange,
-                                                          ),
-                                                          title: Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    bottom:
-                                                                        4.0),
-                                                            child: Text(
-                                                              '${unit.unitNumber}',
-                                                              style: getBlackTextStyle(
+                                                    child: ListTile(
+                                                      leading: Icon(
+                                                        Icons.front_loader,
+                                                        color: Colors.orange,
+                                                      ),
+                                                      title: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(
+                                                                bottom: 4.0),
+                                                        child: Text(
+                                                          '${unit.unitNumber}',
+                                                          style:
+                                                              getBlackTextStyle(
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w700),
-                                                            ),
-                                                          ),
-                                                          subtitle: Text(
-                                                            '${unit.model}',
-                                                            style:
-                                                                getGreyTextStyle(
-                                                                    grey6A707C),
-                                                          ),
-                                                          trailing: Icon(Icons
-                                                              .arrow_forward_ios),
                                                         ),
                                                       ),
-                                                    );
-                                                  }).toList(),
-                                                ),
-                                        ],
-                                      );
-                                    }
+                                                      subtitle: Text(
+                                                        '${unit.model}',
+                                                        style: getGreyTextStyle(
+                                                            grey6A707C),
+                                                      ),
+                                                      trailing: Icon(Icons
+                                                          .arrow_forward_ios),
+                                                    ),
+                                                  ),
+                                                );
+                                              }).toList(),
+                                            ),
+                                    ],
+                                  );
+                                }
 
-                                    return Container();
-                                  }),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                            ],
-                          );
-                      }
-                    }
-                    return Container();
-                  }),
+                                return Container();
+                              }),
+                          const SizedBox(
+                            height: 12,
+                          ),
+                        ],
+                      );
+                  }
+                }
+                return Container();
+              }),
 
               // tester 2
               // BlocConsumer<UnitBloc, UnitState>(builder: (context, state) {

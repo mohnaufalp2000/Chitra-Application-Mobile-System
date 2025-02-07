@@ -8,7 +8,6 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_history_trial_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/enum_export_type.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/export_excel_button.dart';

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/recc_press.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:connection_network_type/connection_network_type.dart';
@@ -28,6 +29,9 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
           ));
         } else {
           final units = await ApiService.getUnits(event.idSite);
+          final reccPress = await ApiService.getCachedReccPress();
+
+          // emit(UnitLoadedState(units: units, reccPress: reccPress));
           emit(UnitLoadedState(units: units));
           log('list unit bloc : ${units.length}');
         }
@@ -36,8 +40,11 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
       } else {
         final cachedData =
             await ApiService.getCachedUnits(idSite: event.idSite);
+        final cachedDataReccPress = await ApiService.getCachedReccPress();
 
-        emit(UnitLoadedState(units: cachedData));
+        emit(
+            // UnitLoadedState(units: cachedData, reccPress: cachedDataReccPress));
+            UnitLoadedState(units: cachedData));
         log('list unit bloc : ${cachedData.length}');
 
         if (Platform.isAndroid) {

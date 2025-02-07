@@ -8,6 +8,7 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/spm.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
+import 'package:camos/core/widgets/text_button_widget.dart';
 import 'package:camos/core/widgets/tire_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -44,6 +45,13 @@ class _TpmsPageState extends State<TpmsPage> {
   List<Map<String, dynamic>> pressureStatus = [];
   List<Map<String, dynamic>> temperatures = [];
   List<List<List<Map<String, dynamic>>>> allUnits = [];
+  List<bool> isShowMMore = [
+    false,
+    false,
+    false,
+    false,
+    false,
+  ];
 
   @override
   void initState() {
@@ -608,176 +616,208 @@ class _TpmsPageState extends State<TpmsPage> {
                                   height: 12,
                                 ),
                                 Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Icon(Icons.adjust),
-                                    const SizedBox(
-                                      width: 6,
+                                    Row(
+                                      children: [
+                                        Icon(Icons.adjust),
+                                        const SizedBox(
+                                          width: 6,
+                                        ),
+                                        Text(
+                                          'Last Adjustment',
+                                          style: getBlackTextStyle(
+                                              fontWeight: w700),
+                                        ),
+                                      ],
                                     ),
-                                    Text(
-                                      'Last Adjustment',
-                                      style:
-                                          getBlackTextStyle(fontWeight: w700),
+                                    Row(
+                                      children: [
+                                        TextButtonWidget(
+                                          name: (!isShowMMore[indexUnit])
+                                              ? 'Show More'
+                                              : 'Show Less',
+                                          style: getGreenTextStyle(
+                                              fontWeight: w700),
+                                          function: () {
+                                            setState(() {
+                                              isShowMMore[indexUnit] =
+                                                  !isShowMMore[indexUnit];
+                                            });
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
+
                                 const SizedBox(
                                   height: 12,
                                 ),
 
-                                PaginateFirestore(
-                                  itemBuilder: (context, snapshot, index) {
-                                    Map<String, dynamic> tmpMap = {};
-                                    List<dynamic> tmpMapPosisi = [];
+                                Builder(builder: (context) {
+                                  if (isShowMMore[indexUnit]) {
+                                    return PaginateFirestore(
+                                      itemBuilder: (context, snapshot, index) {
+                                        Map<String, dynamic> tmpMap = {};
+                                        List<dynamic> tmpMapPosisi = [];
 
-                                    final Map<String, dynamic> latestAdjustMap =
-                                        snapshot[index].data()
-                                            as Map<String, dynamic>;
+                                        final Map<String, dynamic>
+                                            latestAdjustMap = snapshot[index]
+                                                .data() as Map<String, dynamic>;
 
-                                    final positionList =
-                                        latestAdjustMap['posisi']
-                                            as List<dynamic>;
+                                        final positionList =
+                                            latestAdjustMap['posisi']
+                                                as List<dynamic>;
 
-                                    if (index == 0) {
-                                      tmpMap = latestAdjustMap;
-                                      tmpMapPosisi = positionList;
-                                    }
+                                        if (index == 0) {
+                                          tmpMap = latestAdjustMap;
+                                          tmpMapPosisi = positionList;
+                                        }
 
-                                    return Column(
-                                      children: tmpMapPosisi.map((pl) {
                                         return Column(
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
+                                          children: tmpMapPosisi.map((pl) {
+                                            return Column(
                                               children: [
-                                                Text(
-                                                  'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
-                                                  style: getBlackTextStyle(
-                                                      fontSize: 16),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
+                                                      style: getBlackTextStyle(
+                                                          fontSize: 16),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      DateFormat(
+                                                              'dd MMMM yyyy  HH:mm:ss',
+                                                              'id_ID')
+                                                          .format(DateTime
+                                                              .parse(tmpMap[
+                                                                  'tanggal'])),
+                                                      style: getBlackTextStyle(
+                                                          fontSize: 16),
+                                                    ),
+                                                  ],
                                                 ),
-                                                const SizedBox(width: 6),
-                                                Text(
-                                                  DateFormat(
-                                                          'dd MMMM yyyy  HH:mm:ss',
-                                                          'id_ID')
-                                                      .format(DateTime.parse(
-                                                          tmpMap['tanggal'])),
-                                                  style: getBlackTextStyle(
-                                                      fontSize: 16),
-                                                ),
-                                              ],
-                                            ),
-                                            (pl['image'] != '' &&
-                                                    pl['image'] != null)
-                                                ? Container(
-                                                    padding:
-                                                        EdgeInsets.only(top: 8),
-                                                    width: double.infinity,
-                                                    child: ElevatedButton(
-                                                      onPressed: () {
-                                                        showDialog(
-                                                          context: context,
-                                                          builder: (context) =>
-                                                              Dialog(
-                                                            child: Stack(
-                                                              children: [
-                                                                InteractiveViewer(
-                                                                  child: Image
-                                                                      .network(
-                                                                    pl['image'],
-                                                                    fit: BoxFit
-                                                                        .contain,
-                                                                  ),
-                                                                ),
-                                                                Positioned(
-                                                                  top: 8.0,
-                                                                  right: 8.0,
-                                                                  child:
-                                                                      IconButton(
-                                                                    icon: Icon(
-                                                                        Icons
-                                                                            .close,
-                                                                        color: Colors
-                                                                            .black),
-                                                                    onPressed:
-                                                                        () {
-                                                                      Navigator.of(
-                                                                              context)
-                                                                          .pop(); // Menutup dialog
-                                                                    },
-                                                                  ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        );
-                                                      },
-                                                      style: ElevatedButton
-                                                          .styleFrom(
-                                                        backgroundColor:
-                                                            Colors.orange,
-                                                      ),
-                                                      child: Padding(
+                                                (pl['image'] != '' &&
+                                                        pl['image'] != null)
+                                                    ? Container(
                                                         padding:
-                                                            const EdgeInsets
-                                                                .all(8.0),
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Icon(
-                                                              Icons.photo,
-                                                              color: white,
-                                                            ),
-                                                            const SizedBox(
-                                                              width: 8,
-                                                            ),
-                                                            Text(
-                                                              'Show Image',
-                                                              style:
-                                                                  getWhiteTextStyle(
+                                                            EdgeInsets.only(
+                                                                top: 8),
+                                                        width: double.infinity,
+                                                        child: ElevatedButton(
+                                                          onPressed: () {
+                                                            showDialog(
+                                                              context: context,
+                                                              builder:
+                                                                  (context) =>
+                                                                      Dialog(
+                                                                child: Stack(
+                                                                  children: [
+                                                                    InteractiveViewer(
+                                                                      child: Image
+                                                                          .network(
+                                                                        pl['image'],
+                                                                        fit: BoxFit
+                                                                            .contain,
+                                                                      ),
+                                                                    ),
+                                                                    Positioned(
+                                                                      top: 8.0,
+                                                                      right:
+                                                                          8.0,
+                                                                      child:
+                                                                          IconButton(
+                                                                        icon: Icon(
+                                                                            Icons
+                                                                                .close,
+                                                                            color:
+                                                                                Colors.black),
+                                                                        onPressed:
+                                                                            () {
+                                                                          Navigator.of(context)
+                                                                              .pop(); // Menutup dialog
+                                                                        },
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                            );
+                                                          },
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.orange,
+                                                          ),
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(8.0),
+                                                            child: Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Icon(
+                                                                  Icons.photo,
+                                                                  color: white,
+                                                                ),
+                                                                const SizedBox(
+                                                                  width: 8,
+                                                                ),
+                                                                Text(
+                                                                  'Show Image',
+                                                                  style: getWhiteTextStyle(
                                                                       fontWeight:
                                                                           w700,
                                                                       fontSize:
                                                                           18),
+                                                                ),
+                                                              ],
                                                             ),
-                                                          ],
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ),
-                                                  )
-                                                : Container(),
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 8.0),
-                                              child: Divider(),
-                                            )
-                                          ],
+                                                      )
+                                                    : Container(),
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(vertical: 8.0),
+                                                  child: Divider(),
+                                                )
+                                              ],
+                                            );
+                                          }).toList(),
                                         );
-                                      }).toList(),
+                                      },
+                                      key: ValueKey(unit.devicename),
+                                      query: firestore
+                                          .collection('daily_pressure')
+                                          .where('unit',
+                                              isEqualTo: unit.devicename)
+                                          .orderBy('tanggal', descending: true)
+                                          .limit(1),
+                                      itemBuilderType:
+                                          PaginateBuilderType.listView,
+                                      shrinkWrap: true,
+                                      physics: NeverScrollableScrollPhysics(),
+                                      itemsPerPage: 1,
+                                      isLive: true,
+                                      initialLoader: const Center(
+                                          child: CircularProgressIndicator
+                                              .adaptive()),
+                                      bottomLoader: const Center(
+                                          child: CircularProgressIndicator
+                                              .adaptive()),
                                     );
-                                  },
-                                  key: ValueKey(unit.devicename),
-                                  query: firestore
-                                      .collection('daily_pressure')
-                                      .where('unit', isEqualTo: unit.devicename)
-                                      .orderBy('tanggal', descending: true)
-                                      .limit(1),
-                                  itemBuilderType: PaginateBuilderType.listView,
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  itemsPerPage: 1,
-                                  isLive: true,
-                                  initialLoader: const Center(
-                                      child:
-                                          CircularProgressIndicator.adaptive()),
-                                  bottomLoader: const Center(
-                                      child:
-                                          CircularProgressIndicator.adaptive()),
-                                ),
+                                  }
+                                  return Container();
+                                }),
 
                                 // const SizedBox(
                                 //   height: 12,
