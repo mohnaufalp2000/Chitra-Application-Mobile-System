@@ -798,9 +798,8 @@ Future<List<int>> createExcel(String type,
           sheet
               .getRangeByName('C${i * posisi.length + j + 2}')
               .setText(posisi[j]['pos']);
-          sheet
-              .getRangeByName('D${i * posisi.length + j + 2}')
-              .setText(posisi[j]['pressure']);
+          sheet.getRangeByName('D${i * posisi.length + j + 2}').setText(
+              (posisi[j]['pressure'] == '') ? '0' : posisi[j]['pressure']);
           sheet.getRangeByName('E${i * posisi.length + j + 2}').setText(
               (posisi[j]['adjusmentPressure'] == '')
                   ? '0'

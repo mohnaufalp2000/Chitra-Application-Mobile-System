@@ -8,6 +8,7 @@ import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/id_site.dart';
+import 'package:camos/core/services/model/daily_press.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
@@ -35,7 +36,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
-  List<Map<String, dynamic>> position = [];
+  // List<Map<String, dynamic>> position = [];
+  List<Position> position = [];
   String idSite = '';
   List<String> pressure = [
     '95',
@@ -282,24 +284,33 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
               case 0:
                 setState(() {
                   if (checkAmount < 6)
-                    position[inspectRoute[0][checkAmount]]['pressure'] =
-                        firstNumber;
+                    // position[inspectRoute[0][checkAmount]]=
+                    //     firstNumber;
+                    position[inspectRoute[0][checkAmount]] =
+                        position[inspectRoute[0][checkAmount]]
+                            .copyWith(pressure: firstNumber);
                   checkAmount++;
                 });
                 break;
               case 1:
                 setState(() {
                   if (checkAmount < 6)
-                    position[inspectRoute[1][checkAmount]]['pressure'] =
-                        firstNumber;
+                    // position[inspectRoute[1][checkAmount]]['pressure'] =
+                    //     firstNumber;
+                    position[inspectRoute[1][checkAmount]] =
+                        position[inspectRoute[1][checkAmount]]
+                            .copyWith(pressure: firstNumber);
                   checkAmount++;
                 });
                 break;
               case 2:
                 setState(() {
                   if (checkAmount < 6)
-                    position[inspectRoute[2][checkAmount]]['pressure'] =
-                        firstNumber;
+                    // position[inspectRoute[2][checkAmount]]['pressure'] =
+                    //     firstNumber;
+                    position[inspectRoute[2][checkAmount]] =
+                        position[inspectRoute[2][checkAmount]]
+                            .copyWith(pressure: firstNumber);
                   checkAmount++;
                 });
                 break;
@@ -309,7 +320,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           case 1:
             // Manual Type
             if (selectedPosIndex != -1) {
-              position[selectedPosIndex]['pressure'] = firstNumber;
+              // position[selectedPosIndex]['pressure'] = firstNumber;
+              position[selectedPosIndex] =
+                  position[selectedPosIndex].copyWith(pressure: firstNumber);
               pressureDigitalCtrl.clear();
               selectedPosIndex = -1;
               Navigator.pop(context);
@@ -345,7 +358,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     final List<String> list = [];
 
     for (int i = 0; i < position.length; i++) {
-      final image = position[i]['image'];
+      // final image = position[i]['image'];
+      final image = position[i].image;
 
       if (image != '' && image != null) {
         final ref = storage.ref().child(
@@ -456,7 +470,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          position[index]['image'] = '';
+                                          // position[index]['image'] = '';
+                                          position[index] = position[index]
+                                              .copyWith(image: '');
 
                                           Navigator.pop(context);
                                           Navigator.pop(context);
@@ -575,12 +591,22 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 } else {
                   for (var i = 0; i < state.units.length; i++) {
                     if (position.length < state.units.length) {
-                      position.add({
-                        'pressure': '',
-                        'adjusmentPressure': '',
-                        'rating': '',
-                        'damage': null
-                      });
+                      // position.add({
+                      //   'pressure': '',
+                      //   'adjusmentPressure': '',
+                      //   'rating': '',
+                      //   'damage': null
+                      // });
+                      position.add(
+                        Position(
+                          pos: '${i + 1}',
+                          pressure: '',
+                          adjusmentPressure: '',
+                          rating: '',
+                          luka: [],
+                          image: '',
+                        ),
+                      );
                     }
                   }
                 }
@@ -591,7 +617,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 log('list rating : $ratings');
                 setState(() {
                   for (int i = 0; i < ratings.length; i++) {
-                    position[i]['rating'] = ratings[i];
+                    // position[i]['rating'] = ratings[i];
+                    position[i] = position[i].copyWith(rating: ratings[i]);
                   }
                 });
                 // Input data damage sebelumnya
@@ -600,11 +627,22 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 setState(() {
                   for (int i = 0; i < damages.length; i++) {
                     // Cek jika posisi 'damage' sudah memiliki nilai, tidak akan ditimpa
-                    if (position[i]['damage'] == null) {
-                      position[i]['damage'] = (damages[i][0] == '' &&
+                    // if (position[i]['damage'] == null) {
+                    //   position[i]['damage'] = (damages[i][0] == '' &&
+                    //           (damages[i] as List<dynamic>).length == 1)
+                    //       ? null
+                    //       : damages[i];
+                    // }
+                    if (position[i].luka == '') {
+                      final damageValue = (damages[i][0] == '' &&
                               (damages[i] as List<dynamic>).length == 1)
-                          ? null
-                          : damages[i];
+                          ? ''
+                          : damages[i].join(
+                              ', '); // Asumsikan damages berupa List<String>
+
+                      position[i] = position[i].copyWith(
+                        luka: damageValue,
+                      );
                     }
                   }
                 });
@@ -988,7 +1026,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                   BorderRadius.circular(12),
                                             )),
                                         child: Text(
-                                          '${position[posIndex]['pressure']} Psi',
+                                          // '${position[posIndex]['pressure']} Psi',
+                                          '${position[posIndex].pressure} Psi',
                                           style: getWhiteTextStyle(
                                             fontSize: 24,
                                             fontWeight: w700,
@@ -1106,11 +1145,20 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                             Colors.green),
                                                                     onPressed:
                                                                         () {
+                                                                      // setState(
+                                                                      //     () {
+                                                                      //   position[posIndex]
+                                                                      //       [
+                                                                      //       'pressure'] = ps;
+                                                                      //   Navigator.of(context)
+                                                                      //       .pop();
+                                                                      // });
                                                                       setState(
                                                                           () {
-                                                                        position[posIndex]
-                                                                            [
-                                                                            'pressure'] = ps;
+                                                                        position[
+                                                                            posIndex] = position[
+                                                                                posIndex]
+                                                                            .copyWith(pressure: ps);
                                                                         Navigator.of(context)
                                                                             .pop();
                                                                       });
@@ -1155,8 +1203,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                           () {
                                                                         if (pressureCtrl.text !=
                                                                             '') {
-                                                                          position[posIndex]['pressure'] =
-                                                                              pressureCtrl.text;
+                                                                          // position[posIndex]['pressure'] =
+                                                                          //     pressureCtrl.text;
+                                                                          position[posIndex] =
+                                                                              position[posIndex].copyWith(pressure: pressureCtrl.text);
                                                                         }
                                                                         pressureCtrl
                                                                             .clear();
@@ -1200,8 +1250,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                 )),
+                                            // child: (position[posIndex]
+                                            //             ['pressure'] ==
+                                            //         '')
                                             child: (position[posIndex]
-                                                        ['pressure'] ==
+                                                        .pressure ==
                                                     '')
                                                 ? Row(
                                                     mainAxisSize:
@@ -1221,8 +1274,15 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                       )
                                                     ],
                                                   )
+                                                // : Text(
+                                                //     '${position[posIndex]['pressure']} Psi',
+                                                //     style: getWhiteTextStyle(
+                                                //       fontSize: 24,
+                                                //       fontWeight: w700,
+                                                //     ),
+                                                //   ),
                                                 : Text(
-                                                    '${position[posIndex]['pressure']} Psi',
+                                                    '${position[posIndex].pressure} Psi',
                                                     style: getWhiteTextStyle(
                                                       fontSize: 24,
                                                       fontWeight: w700,
@@ -1296,9 +1356,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                         () {
                                                                       setState(
                                                                           () {
-                                                                        position[posIndex]
-                                                                            [
-                                                                            'adjusmentPressure'] = ps;
+                                                                        // position[posIndex]
+                                                                        //     [
+                                                                        //     'adjusmentPressure'] = ps;
+                                                                        position[
+                                                                            posIndex] = position[
+                                                                                posIndex]
+                                                                            .copyWith(adjusmentPressure: ps);
                                                                         Navigator.of(context)
                                                                             .pop();
                                                                       });
@@ -1343,8 +1407,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                           () {
                                                                         if (pressureCtrl.text !=
                                                                             '') {
-                                                                          position[posIndex]['adjusmentPressure'] =
-                                                                              pressureCtrl.text;
+                                                                          // position[posIndex]['adjusmentPressure'] =
+                                                                          //     pressureCtrl.text;
+                                                                          position[posIndex] =
+                                                                              position[posIndex].copyWith(adjusmentPressure: pressureCtrl.text);
                                                                         }
                                                                         pressureCtrl
                                                                             .clear();
@@ -1388,15 +1454,25 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                 )),
+                                            // child: (position[posIndex]
+                                            //             ['adjusmentPressure'] ==
+                                            //         '')
                                             child: (position[posIndex]
-                                                        ['adjusmentPressure'] ==
+                                                        .adjusmentPressure ==
                                                     '')
                                                 ? Text(
                                                     'Adj Pressure',
                                                     style: getWhiteTextStyle(),
                                                   )
+                                                // : Text(
+                                                //     '${position[posIndex]['adjusmentPressure']} Psi (Adj)',
+                                                //     style: getWhiteTextStyle(
+                                                //       fontSize: 16,
+                                                //       fontWeight: w700,
+                                                //     ),
+                                                //   ),
                                                 : Text(
-                                                    '${position[posIndex]['adjusmentPressure']} Psi (Adj)',
+                                                    '${position[posIndex].adjusmentPressure} Psi (Adj)',
                                                     style: getWhiteTextStyle(
                                                       fontSize: 16,
                                                       fontWeight: w700,
@@ -1471,8 +1547,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                         () {
                                                                       setState(
                                                                           () {
-                                                                        position[posIndex]['rating'] =
-                                                                            rat;
+                                                                        // position[posIndex]['rating'] =
+                                                                        //     rat;
+                                                                        position[
+                                                                            posIndex] = position[
+                                                                                posIndex]
+                                                                            .copyWith(rating: rat);
                                                                         Navigator.of(context)
                                                                             .pop();
                                                                       });
@@ -1521,15 +1601,24 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                 )),
-                                            child: (position[posIndex]
-                                                        ['rating'] ==
+                                            // child: (position[posIndex]
+                                            //             ['rating'] ==
+                                            //         '')
+                                            child: (position[posIndex].rating ==
                                                     '')
                                                 ? Text(
                                                     'Rating',
                                                     style: getWhiteTextStyle(),
                                                   )
+                                                // : Text(
+                                                //     'Rating ${position[posIndex]['rating']}',
+                                                //     style: getWhiteTextStyle(
+                                                //       fontSize: 16,
+                                                //       fontWeight: w700,
+                                                //     ),
+                                                //   ),
                                                 : Text(
-                                                    'Rating ${position[posIndex]['rating']}',
+                                                    'Rating ${position[posIndex].rating}',
                                                     style: getWhiteTextStyle(
                                                       fontSize: 16,
                                                       fontWeight: w700,
@@ -1556,14 +1645,34 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                         damageType.length,
                                                         false);
 
-                                                if (position[posIndex]
-                                                        ['damage'] !=
-                                                    null) {
+                                                // if (position[posIndex]
+                                                //         ['damage'] !=
+                                                //     null) {
+                                                //   for (int i = 0;
+                                                //       i < damageType.length;
+                                                //       i++) {
+                                                //     if (position[posIndex]
+                                                //             ['damage']
+                                                //         .contains(
+                                                //             damageType[i])) {
+                                                //       checkedDamageValues[i] =
+                                                //           true;
+                                                //     }
+                                                //   }
+                                                //   damageCtrl.text =
+                                                //       position[posIndex]
+                                                //           ['damage'][0];
+                                                // }
+                                                if (position[posIndex].luka !=
+                                                        null ||
+                                                    position[posIndex]
+                                                        .luka
+                                                        .isNotEmpty) {
                                                   for (int i = 0;
                                                       i < damageType.length;
                                                       i++) {
                                                     if (position[posIndex]
-                                                            ['damage']
+                                                        .luka
                                                         .contains(
                                                             damageType[i])) {
                                                       checkedDamageValues[i] =
@@ -1572,7 +1681,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                   }
                                                   damageCtrl.text =
                                                       position[posIndex]
-                                                          ['damage'][0];
+                                                              .luka
+                                                              .isNotEmpty
+                                                          ? position[posIndex]
+                                                              .luka[0]
+                                                          : '';
                                                 }
 
                                                 showDialog(
@@ -1718,11 +1831,18 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                                                                       if (tmp
                                                                           .isNotEmpty) {
-                                                                        position[posIndex]
-                                                                            [
-                                                                            'damage'] = [];
+                                                                        // position[posIndex]
+                                                                        //     [
+                                                                        //     'damage'] = [];
+                                                                        position[
+                                                                            posIndex] = position[
+                                                                                posIndex]
+                                                                            .copyWith(luka: []);
 
-                                                                        position[posIndex]['damage']
+                                                                        // position[posIndex]['damage']
+                                                                        //     .addAll(tmp);
+                                                                        position[posIndex]
+                                                                            .luka
                                                                             .addAll(tmp);
 
                                                                         log('hasil luka ban : ${position}');
@@ -1759,12 +1879,26 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                         BorderRadius.circular(
                                                             12),
                                                   )),
+                                              // child: Text(
+                                              //   (position[posIndex]['damage'] ==
+                                              //           null)
+                                              //       ? 'Damage Tire (None)'
+                                              //       : position[posIndex]
+                                              //               ['damage']
+                                              //           .join('\n---\n'),
+                                              //   textAlign: TextAlign.center,
+                                              //   style: getWhiteTextStyle(
+                                              //       fontSize: 14),
+                                              // ),
                                               child: Text(
-                                                (position[posIndex]['damage'] ==
-                                                        null)
+                                                (position[posIndex].luka ==
+                                                            null ||
+                                                        position[posIndex]
+                                                            .luka
+                                                            .isEmpty)
                                                     ? 'Damage Tire (None)'
                                                     : position[posIndex]
-                                                            ['damage']
+                                                        .luka
                                                         .join('\n---\n'),
                                                 textAlign: TextAlign.center,
                                                 style: getWhiteTextStyle(
@@ -1784,15 +1918,28 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                     0.39,
                                                 child: ElevatedButton(
                                                     onPressed: () async {
+                                                      // final image =
+                                                      //     await showImageSourceDialog(
+                                                      //         context,
+                                                      //         position[posIndex]
+                                                      //             ['image'],
+                                                      //         posIndex);
+                                                      // if (image != '') {
+                                                      //   position[posIndex]
+                                                      //       ['image'] = image;
+                                                      // }
                                                       final image =
                                                           await showImageSourceDialog(
                                                               context,
                                                               position[posIndex]
-                                                                  ['image'],
+                                                                  .image,
                                                               posIndex);
                                                       if (image != '') {
-                                                        position[posIndex]
-                                                            ['image'] = image;
+                                                        position[posIndex] =
+                                                            position[posIndex]
+                                                                .copyWith(
+                                                                    image:
+                                                                        image);
                                                       }
 
                                                       log('posisi terbaru : ${position}');
@@ -1916,17 +2063,28 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     'idSite': idSite,
                     'user': user['username'] ?? auth.currentUser!.email,
                     'tanggal': DateTime.now().toIso8601String(),
+                    'hari': DateTime.now().toIso8601String().substring(0, 10),
+                    'jam': DateTime.now().toIso8601String().substring(11, 19),
                     'unit': dataUnit['unitNumber'],
                     'hm': hmCtrl.text,
                     'posisi': position.map((p) {
                       final pIndex = position.indexOf(p);
 
+                      // return {
+                      //   'pos': '${pIndex + 1}',
+                      //   'rating': (p['rating']) ?? '',
+                      //   'pressure': (p['pressure']) ?? '0',
+                      //   'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
+                      //   'luka': (selectedType == 0) ? '' : p['damage'],
+                      //   'image':
+                      //       (listImage[pIndex] != '') ? listImage[pIndex] : '',
+                      // };
                       return {
                         'pos': '${pIndex + 1}',
-                        'rating': (p['rating']) ?? '',
-                        'pressure': (p['pressure']) ?? '0',
-                        'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                        'luka': (selectedType == 0) ? '' : p['damage'],
+                        'rating': (p.rating) ?? '',
+                        'pressure': (p.pressure) ?? '0',
+                        'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                        'luka': (selectedType == 0) ? '' : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
                       };
@@ -1957,16 +2115,34 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       'tanggal': DateTime.now()
                           .subtract(Duration(days: 1))
                           .toIso8601String(),
+                      'hari': DateTime.now()
+                          .subtract(Duration(days: 1))
+                          .toIso8601String()
+                          .substring(0, 10),
+                      'jam': DateTime.now()
+                          .subtract(Duration(days: 1))
+                          .toIso8601String()
+                          .substring(11, 19),
                       'unit': dataUnit['unitNumber'],
                       'hm': hmCtrl.text,
                       'posisi': position.map((p) {
                         final pIndex = position.indexOf(p);
+                        // return {
+                        //   'pos': '${pIndex + 1}',
+                        //   'pressure': (p['pressure']) ?? '0',
+                        //   'rating': (p['rating']) ?? '',
+                        //   'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
+                        //   'luka': (selectedType == 0) ? '' : p['damage'],
+                        //   'image': (listImage[pIndex] != '')
+                        //       ? listImage[pIndex]
+                        //       : '',
+                        // };
                         return {
                           'pos': '${pIndex + 1}',
-                          'pressure': (p['pressure']) ?? '0',
-                          'rating': (p['rating']) ?? '',
-                          'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                          'luka': (selectedType == 0) ? '' : p['damage'],
+                          'pressure': (p.pressure) ?? '0',
+                          'rating': (p.rating) ?? '',
+                          'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                          'luka': (selectedType == 0) ? '' : p.luka,
                           'image': (listImage[pIndex] != '')
                               ? listImage[pIndex]
                               : '',
@@ -1982,16 +2158,27 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     'idSite': idSite,
                     'user': user['username'] ?? auth.currentUser!.email,
                     'tanggal': DateTime.now().toIso8601String(),
+                    'hari': DateTime.now().toIso8601String().substring(0, 10),
+                    'jam': DateTime.now().toIso8601String().substring(11, 19),
                     'unit': dataUnit['unitNumber'],
                     'hm': hmCtrl.text,
                     'posisi': position.map((p) {
                       final pIndex = position.indexOf(p);
+                      // return {
+                      //   'pos': '${pIndex + 1}',
+                      //   'pressure': (p['pressure']) ?? '0',
+                      //   'rating': (p['rating']) ?? '',
+                      //   'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
+                      //   'luka': (selectedType == 0) ? '' : p['damage'],
+                      //   'image':
+                      //       (listImage[pIndex] != '') ? listImage[pIndex] : '',
+                      // };
                       return {
                         'pos': '${pIndex + 1}',
-                        'pressure': (p['pressure']) ?? '0',
-                        'rating': (p['rating']) ?? '',
-                        'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                        'luka': (selectedType == 0) ? '' : p['damage'],
+                        'pressure': (p.pressure) ?? '0',
+                        'rating': (p.rating) ?? '',
+                        'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                        'luka': (selectedType == 0) ? '' : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
                       };
