@@ -40,6 +40,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   List<Position> position = [];
   String idSite = '';
   List<String> pressure = [
+    '0',
     '95',
     '100',
     '105',
@@ -605,6 +606,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           rating: '',
                           luka: [],
                           image: '',
+                          size: state.units[i].size ?? '',
+                          idInventory: state.units[i].idinventory ?? '',
+                          idUnit: state.units[i].idUnit ?? '',
                         ),
                       );
                     }
@@ -1054,10 +1058,15 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                   const SizedBox(
                                     width: 12,
                                   ),
-                                  Text(
-                                    'Tire',
-                                    style: getBlackTextStyle(
-                                        fontSize: 18, fontWeight: w700),
+                                  InkWell(
+                                    onTap: () {
+                                      log('posisi sebelum : $position');
+                                    },
+                                    child: Text(
+                                      'Tire',
+                                      style: getBlackTextStyle(
+                                          fontSize: 18, fontWeight: w700),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -1991,6 +2000,24 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           height: 52,
           child: ElevatedButton(
             onPressed: () async {
+              // jika salah satu data pressure ada yang kosong
+              bool hasEmptyPressure = position.any((p) => p.pressure.isEmpty);
+
+              if (hasEmptyPressure) {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    backgroundColor: Colors.red,
+                    content: Text(
+                      'Please input data pressure (Choose 0 Psi if No Tire or Block Valve)',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
+                return;
+              }
+
               // jika belum memeilih pit
               if (idSite == bmbsitarum.idSite ||
                   idSite == bmbhauling.idSite ||
@@ -2029,6 +2056,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 isProcessing = true;
               });
 
+              log('posisi ban : $position');
+
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                   backgroundColor: green00968A,
                   content: Text(
@@ -2040,6 +2069,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 final startOfDay = DateTime(today.year, today.month, today.day);
                 final endOfDay =
                     DateTime(today.year, today.month, today.day, 23, 59, 59);
+                final formattedToday =
+                    '${today.month.toString().padLeft(2, '0')}' // MM
+                    '${today.day.toString().padLeft(2, '0')}' // DD
+                    '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
 
                 final listImage = await uploadImageFirebase(idSite);
 
@@ -2087,6 +2120,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'luka': (selectedType == 0) ? '' : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
+                        'tireSize': (p.size ?? ''),
+                        'idInventory': (p.idInventory ?? ''),
+                        'idUnit': (p.idUnit ?? ''),
+                        'idDaily':
+                            '${p.idUnit}${pIndex + 1}${formattedToday}${idSite}'
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -2146,6 +2184,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           'image': (listImage[pIndex] != '')
                               ? listImage[pIndex]
                               : '',
+                          'tireSize': (p.size ?? ''),
+                          'idInventory': (p.idInventory ?? ''),
+                          'idUnit': (p.idUnit ?? ''),
+                          'idDaily':
+                              '${p.idUnit}${pIndex + 1}${formattedToday}${idSite}'
                         };
                       }),
                       'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -2181,6 +2224,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'luka': (selectedType == 0) ? '' : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
+                        'tireSize': (p.size ?? ''),
+                        'idInventory': (p.idInventory ?? ''),
+                        'idUnit': (p.idUnit ?? ''),
+                        'idDaily':
+                            '${p.idUnit}${pIndex + 1}${formattedToday}${idSite}'
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],

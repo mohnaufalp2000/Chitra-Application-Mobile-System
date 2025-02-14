@@ -830,6 +830,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   Map<String, dynamic> user = {};
 
   List<String> pressure = [
+    '0',
     '95',
     '100',
     '105',
@@ -1147,6 +1148,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               position.clear();
 
               for (int i = 0; i < state.units.length; i++) {
+                final unit = state.units[i];
                 remarksControllers.add(TextEditingController(text: ''));
                 snControllers.add(TextEditingController(text: ''));
                 rtd1Controllers.add(TextEditingController(text: ''));
@@ -1160,9 +1162,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                   'rtd1': '',
                   'rtd2': '',
                   'remarks': '',
-                  'sn': '',
+                  'sn': unit.sn,
                   'rating': '',
                   'image': [],
+                  'idInventory': unit.idinventory,
+                  'idUnit': unit.idUnit,
+                  'tireSize': unit.size,
                   'condition': [
                     {'name': 'Reseal Oring', 'checked': false},
                     {'name': 'Rim Condition', 'checked': false},
@@ -3180,6 +3185,25 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         )));
                               }
                             : () async {
+                                // jika data pressure kosong
+                                bool hasEmptyPressure =
+                                    position.any((p) => p['pressure'] == '');
+
+                                if (hasEmptyPressure) {
+                                  ScaffoldMessenger.of(context)
+                                      .hideCurrentSnackBar();
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: Colors.red,
+                                      content: Text(
+                                        'Please input data pressure (Choose 0 Psi if No Tire or Block Valve)',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
                                 // jika belum memeilih pit
                                 if (idSite == bmbsitarum.idSite ||
                                     idSite == bmbhauling.idSite ||
@@ -3426,6 +3450,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         today.year, today.month, today.day);
                                     final endOfDay = DateTime(today.year,
                                         today.month, today.day, 23, 59, 59);
+                                    final formattedToday =
+                                        '${today.month.toString().padLeft(2, '0')}' // MM
+                                        '${today.day.toString().padLeft(2, '0')}' // DD
+                                        '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
 
                                     final querySnapshot =
                                         await FirebaseFirestore.instance
@@ -3471,7 +3499,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'rating': (p['rating']) ?? '',
                                             'adjusmentPressure':
                                                 (p['adjusmentPressure']) ?? '0',
-                                            'luka': p['damageTire']
+                                            'luka': p['damageTire'],
+                                            'idUnit': p['idUnit'],
+                                            'idInventory': p['idInventory'],
+                                            'tireSize': p['tireSize'],
+                                            'idDaily':
+                                                '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}'
                                           };
                                         }),
                                         'pit': (idSite == bmbsitarum.idSite ||
@@ -3504,7 +3537,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'rating': (p['rating']) ?? '0',
                                             'adjusmentPressure':
                                                 (p['adjusmentPressure']) ?? '0',
-                                            'luka': p['damageTire']
+                                            'luka': p['damageTire'],
+                                            'idUnit': p['idUnit'],
+                                            'idInventory': p['idInventory'],
+                                            'tireSize': p['tireSize'],
+                                            'idDaily':
+                                                '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}'
                                           };
                                         }),
                                         'pit': (idSite == bmbsitarum.idSite ||

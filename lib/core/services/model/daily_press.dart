@@ -25,6 +25,11 @@ class DailyPress extends Equatable {
 
   String get onlyDate => tanggal.split('T').first;
 
+  @override
+  String toString() {
+    return 'DailyPress(idSite: $idSite, user: $user, tanggal: $tanggal, hari: $hari, jam: $jam, unit: $unit, hm: $hm, posisi: ${posisi.map((p) => p.toString()).join(", ")}, pit: $pit)';
+  }
+
   factory DailyPress.fromFirestore(Map<String, dynamic> json) {
     return DailyPress(
       idSite: json['idSite'] ?? '',
@@ -66,6 +71,9 @@ class Position extends Equatable {
   final String adjusmentPressure;
   final List<String> luka;
   final String image;
+  final String size;
+  final String idInventory;
+  final String idUnit;
 
   Position({
     required this.pos,
@@ -74,7 +82,15 @@ class Position extends Equatable {
     required this.adjusmentPressure,
     required this.luka,
     required this.image,
+    required this.size,
+    required this.idInventory,
+    required this.idUnit,
   });
+
+  @override
+  String toString() {
+    return 'Position(pos: $pos, pressure: $pressure, rating: $rating, adjusmentPressure: $adjusmentPressure, luka: ${luka.join(", ")}, image: $image, size: $size, idInventory: $idInventory, idUnit: $idUnit)';
+  }
 
   factory Position.fromMap(Map<String, dynamic> map) {
     return Position(
@@ -84,6 +100,9 @@ class Position extends Equatable {
       adjusmentPressure: map['adjusmentPressure'] ?? '0',
       luka: (map['luka'] as List<dynamic>?)?.cast<String>() ?? [],
       image: map['image'] ?? '',
+      size: map['tireSize'] ?? '',
+      idInventory: map['idInventory'] ?? '',
+      idUnit: map['idUnit'] ?? '',
     );
   }
 
@@ -96,6 +115,9 @@ class Position extends Equatable {
     String? adjusmentPressure,
     List<String>? luka,
     String? image,
+    String? size,
+    String? idInventory,
+    String? idUnit,
   }) {
     return Position(
       pos: pos ?? this.pos,
@@ -104,6 +126,9 @@ class Position extends Equatable {
       adjusmentPressure: adjusmentPressure ?? this.adjusmentPressure,
       luka: luka ?? this.luka,
       image: image ?? this.image,
+      size: size ?? this.size,
+      idInventory: idInventory ?? this.idInventory,
+      idUnit: idUnit ?? this.idUnit,
     );
   }
 
@@ -115,6 +140,9 @@ class Position extends Equatable {
       'adjusmentPressure': adjusmentPressure,
       'luka': luka,
       'image': image,
+      'tireSize': size,
+      'idInventory': idInventory,
+      'idUnit': idUnit,
     };
   }
 

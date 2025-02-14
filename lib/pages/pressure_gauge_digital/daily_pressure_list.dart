@@ -10,6 +10,7 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/daily_check_firebase.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
+import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/enum_export_type.dart';
@@ -53,7 +54,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   bool isOnline = false;
   DateTime now = DateTime.now();
   bool isLoading = false;
-  List<ReccPress> reccPress = [];
 
   // List<UnitTire> filteredUnits = [];
 
@@ -556,26 +556,88 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                 final distinctDaily =
                                     Set<DailyPress>.from(allData).toList();
 
-                                log('distinct length : ${firebaseIndex}');
+                                distinctDaily.sort((a, b) {
+                                  bool isLowPressureA =
+                                      a.posisi.any((position) {
+                                    final tireSize = position.size;
+                                    final pressure = int.tryParse(
+                                            position.pressure ?? '0') ??
+                                        0;
+
+                                    if (tireSize == null || tireSize.isEmpty)
+                                      return false;
+
+                                    // Cari data reccPress berdasarkan ukuran ban (tireSize)
+                                    final recommended =
+                                        state.reccPress.firstWhere(
+                                      (rec) => rec.containsKey(tireSize),
+                                      orElse: () => {},
+                                    );
+
+                                    if (recommended.isNotEmpty &&
+                                        recommended[tireSize] != null) {
+                                      final recommendedPressure =
+                                          int.parse(recommended[tireSize]);
+                                      final adjustedPressure =
+                                          position.adjusmentPressure;
+
+                                      if (adjustedPressure != '') return false;
+                                      if (pressure == 0) return false;
+
+                                      return pressure < recommendedPressure;
+                                    }
+                                    return false;
+                                  });
+
+                                  bool isLowPressureB =
+                                      b.posisi.any((position) {
+                                    final tireSize = position.size;
+                                    final pressure = int.tryParse(
+                                            position.pressure ?? '0') ??
+                                        0;
+
+                                    // Cari data reccPress berdasarkan ukuran ban (tireSize)
+                                    final recommended =
+                                        state.reccPress.firstWhere(
+                                      (rec) => rec.containsKey(tireSize),
+                                      orElse: () => {},
+                                    );
+
+                                    if (recommended.isNotEmpty &&
+                                        recommended[tireSize] != null) {
+                                      final recommendedPressure =
+                                          int.parse(recommended[tireSize]);
+                                      final adjustedPressure =
+                                          position.adjusmentPressure;
+
+                                      if (adjustedPressure != '') return false;
+                                      if (pressure == 0) return false;
+                                      return pressure < recommendedPressure;
+                                    }
+                                    return false;
+                                  });
+
+                                  // Jika A low pressure dan B tidak, A harus di atas
+                                  if (isLowPressureA && !isLowPressureB)
+                                    return -1;
+
+                                  // Jika B low pressure dan A tidak, B harus di atas
+                                  if (!isLowPressureA && isLowPressureB)
+                                    return 1;
+
+                                  // Jika keduanya sama-sama Low Pressure atau tidak Low Pressure, urutan tetap
+                                  return 0;
+                                });
 
                                 final Map<String, dynamic> dailyMap =
                                     snapshot[firebaseIndex].data()
                                         as Map<String, dynamic>;
-                                final positionList =
-                                    dailyMap['posisi'] as List<dynamic>;
 
                                 if (selectedPit != 0) {
                                   if (dailyMap['pit'] != pit[selectedPit]) {
                                     return Container();
                                   }
                                 }
-
-                                // if (searchQuery.isNotEmpty &&
-                                //     !dailyMap['unit']!
-                                //         .toLowerCase()
-                                //         .contains(searchQuery)) {
-                                //   return Container();
-                                // }
 
                                 return ListView.builder(
                                     itemCount: distinctDaily.length,
@@ -588,6 +650,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                         return Container();
                                       }
                                       final data = distinctDaily[index];
+                                      log('data daily : $data');
 
                                       if (searchQuery.isNotEmpty &&
                                           !data.unit!
@@ -595,6 +658,42 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                               .contains(searchQuery)) {
                                         return Container();
                                       }
+
+                                      bool isLowPressure =
+                                          data.posisi.any((position) {
+                                        final tireSize = position.size;
+
+                                        final pressure = int.tryParse(
+                                                position.pressure ?? '0') ??
+                                            0;
+
+                                        if (tireSize == null ||
+                                            tireSize.isEmpty) return false;
+
+                                        // Cari data reccPress berdasarkan ukuran ban (tireSize)
+                                        final recommended =
+                                            state.reccPress.firstWhere(
+                                          (rec) => rec.containsKey(tireSize),
+                                          orElse: () => {},
+                                        );
+
+                                        if (recommended != {} &&
+                                            recommended[tireSize] != null) {
+                                          final recommendedPressure =
+                                              int.parse(recommended[tireSize]);
+
+                                          final adjustedPressure =
+                                              position.adjusmentPressure;
+
+                                          if (pressure == 0) return false;
+                                          if (adjustedPressure != '') {
+                                            return false;
+                                          }
+
+                                          return pressure < recommendedPressure;
+                                        }
+                                        return false;
+                                      });
 
                                       return Card(
                                           elevation: 2,
@@ -607,13 +706,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                             padding: EdgeInsets.symmetric(
                                                 horizontal: 12, vertical: 24),
                                             decoration: BoxDecoration(
-                                              // color: (positionList.any((position) =>
-                                              //         int.parse(
-                                              //             position['pressure']) <
-                                              //         115)
-                                              //     ? Colors.red
-                                              //     : green00968A),
-                                              color: green00968A,
+                                              color: (isLowPressure
+                                                  ? Colors.red
+                                                  : green00968A),
+                                              // color: green00968A,
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             ),
@@ -621,25 +717,53 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                               tilePadding: EdgeInsets.zero,
                                               childrenPadding:
                                                   EdgeInsets.all(0),
-                                              title: Row(
+                                              title: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
                                                 children: [
-                                                  Icon(
-                                                    Icons.task,
-                                                    color: white,
-                                                    size: 36,
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.task,
+                                                        color: white,
+                                                        size: 36,
+                                                      ),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          Text(
+                                                            // dailyMap['unit'] +
+                                                            //     '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
+                                                            data.unit +
+                                                                '${((data.pit != 'Default') ? '\n' + data.pit : '')}',
+                                                            style:
+                                                                getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
+                                                                    fontSize:
+                                                                        18),
+                                                          ),
+                                                          (isLowPressure)
+                                                              ? Text(
+                                                                  // dailyMap['unit'] +
+                                                                  //     '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
+                                                                  'LOW PRESSURE!',
+                                                                  style: getWhiteTextStyle(
+                                                                      fontWeight:
+                                                                          w700,
+                                                                      fontSize:
+                                                                          18),
+                                                                )
+                                                              : Container()
+                                                        ],
+                                                      ),
+                                                    ],
                                                   ),
-                                                  const SizedBox(
-                                                    width: 12,
-                                                  ),
-                                                  Text(
-                                                    // dailyMap['unit'] +
-                                                    //     '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
-                                                    data.unit +
-                                                        '${((data.pit != 'Default') ? '\n' + data.pit : '')}',
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18),
-                                                  )
                                                 ],
                                               ),
                                               trailing: SizedBox(
@@ -780,8 +904,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                   children:
                                                       // positionList.map((pl) {
                                                       data.posisi.map((pl) {
-                                                    final plIndex = positionList
-                                                        .indexOf(pl);
+                                                    // final plIndex = positionList
+                                                    //     .indexOf(pl);
                                                     List<dynamic> luka = [];
 
                                                     // if (pl['luka'] != null &&
@@ -826,14 +950,96 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                       CrossAxisAlignment
                                                                           .end,
                                                                   children: [
-                                                                    Text(
-                                                                      // '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
-                                                                      '${(pl.pressure == '' || pl.pressure == null) ? 0 : pl.pressure} Psi',
-                                                                      style: getWhiteTextStyle(
-                                                                          fontWeight:
-                                                                              w700,
-                                                                          fontSize:
-                                                                              18),
+                                                                    Column(
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .end,
+                                                                      children: [
+                                                                        Builder(builder:
+                                                                            (context) {
+                                                                          return Text(
+                                                                            // '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
+                                                                            '${(pl.pressure == '' || pl.pressure == null) ? 0 : pl.pressure} Psi',
+                                                                            style:
+                                                                                getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+                                                                          );
+                                                                        }),
+                                                                        Builder(
+                                                                          builder:
+                                                                              (context) {
+                                                                            // Cek jika pl.size null atau kosong
+                                                                            if (pl.size == null ||
+                                                                                pl.size.isEmpty)
+                                                                              return Container();
+
+                                                                            // Ambil data recommended pressure
+                                                                            final recommendedMap =
+                                                                                state.reccPress.firstWhere(
+                                                                              (map) => map.containsKey(pl.size),
+                                                                              orElse: () => {},
+                                                                            );
+
+                                                                            // Cek apakah recommendedMap valid dan pl.size ada di dalamnya
+                                                                            final recommendedPressure = recommendedMap.isNotEmpty && recommendedMap[pl.size] != null
+                                                                                ? int.tryParse(recommendedMap[pl.size]) ?? 0
+                                                                                : 0;
+
+                                                                            // Cek jika pl.pressure null atau bukan angka
+                                                                            final pressure =
+                                                                                int.tryParse(pl.pressure ?? '0') ?? 0;
+
+                                                                            // Jika tekanan = 0, tidak ditampilkan
+                                                                            if (pressure ==
+                                                                                0)
+                                                                              return Container();
+
+                                                                            // Jika low pressure dan belum di-adjust, tidak ditampilkan
+                                                                            if (recommendedPressure < pressure ||
+                                                                                pl.adjusmentPressure.isNotEmpty) {
+                                                                              return Container();
+                                                                            }
+
+                                                                            return Container(
+                                                                              width: 120,
+                                                                              height: 60,
+                                                                              margin: EdgeInsets.only(top: 12, bottom: 12),
+                                                                              child: ButtonWidget(
+                                                                                name: Text(
+                                                                                  'Adjust',
+                                                                                  style: getWhiteTextStyle(),
+                                                                                ),
+                                                                                color: green00968A,
+                                                                                function: () {
+                                                                                  List<Position> position = [];
+                                                                                  for (int i = 0; i < data.posisi.length; i++) {
+                                                                                    final p = data.posisi[i];
+                                                                                    position.add(Position(
+                                                                                      pos: p.pos,
+                                                                                      pressure: p.pressure,
+                                                                                      rating: p.rating,
+                                                                                      adjusmentPressure: p.adjusmentPressure,
+                                                                                      luka: p.luka,
+                                                                                      image: p.image,
+                                                                                      size: p.size,
+                                                                                      idInventory: p.idInventory,
+                                                                                      idUnit: p.idUnit,
+                                                                                    ));
+                                                                                  }
+
+                                                                                  final dataUnit = {
+                                                                                    'unitNumber': data.unit,
+                                                                                    'hm': data.hm,
+                                                                                    'pit': data.pit,
+                                                                                    'position': position,
+                                                                                  };
+
+                                                                                  Navigator.pushNamed(context, DailyCheckFormPage.routeName, arguments: dataUnit);
+                                                                                },
+                                                                              ),
+                                                                            );
+                                                                          },
+                                                                        ),
+                                                                      ],
                                                                     ),
                                                                     // (pl['adjusmentPressure'] != null &&
                                                                     //         pl['adjusmentPressure'] !=

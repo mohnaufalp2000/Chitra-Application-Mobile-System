@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:camos/core/blocs/spm/spm_bloc.dart';
 import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/daily_press.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -552,62 +553,137 @@ class _TpmsPageState extends State<TpmsPage> {
                                       ],
                                     ),
                                     function: () {
-                                      log('adjust pressure : ${allUnits[indexUnit][0]}');
+                                      List<Position> position = [
+                                        Position(
+                                          pos: '1',
+                                          pressure:
+                                              '${allUnits[indexUnit][0][0]['pressure1']}',
+                                          rating: '',
+                                          adjusmentPressure: '',
+                                          luka: [],
+                                          image: '',
+                                          size: '',
+                                          idUnit: '',
+                                          idInventory: '',
+                                        ),
+                                        Position(
+                                          pos: '2',
+                                          pressure:
+                                              '${allUnits[indexUnit][0][1]['pressure2']}',
+                                          rating: '',
+                                          adjusmentPressure: '',
+                                          luka: [],
+                                          image: '',
+                                          size: '',
+                                          idUnit: '',
+                                          idInventory: '',
+                                        ),
+                                        Position(
+                                          pos: '3',
+                                          pressure:
+                                              '${allUnits[indexUnit][0][2]['pressure3']}',
+                                          rating: '',
+                                          adjusmentPressure: '',
+                                          luka: [],
+                                          image: '',
+                                          size: '',
+                                          idUnit: '',
+                                          idInventory: '',
+                                        ),
+                                        Position(
+                                          pos: '4',
+                                          pressure:
+                                              '${allUnits[indexUnit][0][3]['pressure4']}',
+                                          rating: '',
+                                          adjusmentPressure: '',
+                                          luka: [],
+                                          image: '',
+                                          size: '',
+                                          idUnit: '',
+                                          idInventory: '',
+                                        ),
+                                        Position(
+                                          pos: '5',
+                                          pressure:
+                                              '${allUnits[indexUnit][0][4]['pressure5']}',
+                                          rating: '',
+                                          adjusmentPressure: '',
+                                          luka: [],
+                                          image: '',
+                                          size: '',
+                                          idUnit: '',
+                                          idInventory: '',
+                                        ),
+                                        Position(
+                                          pos: '6',
+                                          pressure:
+                                              '${allUnits[indexUnit][0][5]['pressure6']}',
+                                          rating: '',
+                                          adjusmentPressure: '',
+                                          luka: [],
+                                          image: '',
+                                          size: '',
+                                          idUnit: '',
+                                          idInventory: '',
+                                        ),
+                                      ];
+
                                       Navigator.pushNamed(
                                           context, DailyCheckFormPage.routeName,
                                           arguments: {
                                             'unitNumber': unit.devicename,
                                             'type': 'spm',
-                                            'position': [
-                                              {
-                                                'pressure':
-                                                    '${allUnits[indexUnit][0][0]['pressure1']}',
-                                                'adjusmentPressure': '',
-                                                'rating': '',
-                                                'damage': null,
-                                                'image': ''
-                                              },
-                                              {
-                                                'pressure':
-                                                    '${allUnits[indexUnit][0][1]['pressure2']}',
-                                                'adjusmentPressure': '',
-                                                'rating': '',
-                                                'damage': null,
-                                                'image': ''
-                                              },
-                                              {
-                                                'pressure':
-                                                    '${allUnits[indexUnit][0][2]['pressure3']}',
-                                                'adjusmentPressure': '',
-                                                'rating': '',
-                                                'damage': null,
-                                                'image': ''
-                                              },
-                                              {
-                                                'pressure':
-                                                    '${allUnits[indexUnit][0][3]['pressure4']}',
-                                                'adjusmentPressure': '',
-                                                'rating': '',
-                                                'damage': null,
-                                                'image': ''
-                                              },
-                                              {
-                                                'pressure':
-                                                    '${allUnits[indexUnit][0][4]['pressure5']}',
-                                                'adjusmentPressure': '',
-                                                'rating': '',
-                                                'damage': null,
-                                                'image': ''
-                                              },
-                                              {
-                                                'pressure':
-                                                    '${allUnits[indexUnit][0][5]['pressure6']}',
-                                                'adjusmentPressure': '',
-                                                'rating': '',
-                                                'damage': null,
-                                                'image': ''
-                                              },
-                                            ],
+                                            'position': position
+                                            // 'position': [
+                                            //   {
+                                            //     'pressure':
+                                            //         '${allUnits[indexUnit][0][0]['pressure1']}',
+                                            //     'adjusmentPressure': '',
+                                            //     'rating': '',
+                                            //     'damage': null,
+                                            //     'image': ''
+                                            //   },
+                                            //   {
+                                            //     'pressure':
+                                            //         '${allUnits[indexUnit][0][1]['pressure2']}',
+                                            //     'adjusmentPressure': '',
+                                            //     'rating': '',
+                                            //     'damage': null,
+                                            //     'image': ''
+                                            //   },
+                                            //   {
+                                            //     'pressure':
+                                            //         '${allUnits[indexUnit][0][2]['pressure3']}',
+                                            //     'adjusmentPressure': '',
+                                            //     'rating': '',
+                                            //     'damage': null,
+                                            //     'image': ''
+                                            //   },
+                                            //   {
+                                            //     'pressure':
+                                            //         '${allUnits[indexUnit][0][3]['pressure4']}',
+                                            //     'adjusmentPressure': '',
+                                            //     'rating': '',
+                                            //     'damage': null,
+                                            //     'image': ''
+                                            //   },
+                                            //   {
+                                            //     'pressure':
+                                            //         '${allUnits[indexUnit][0][4]['pressure5']}',
+                                            //     'adjusmentPressure': '',
+                                            //     'rating': '',
+                                            //     'damage': null,
+                                            //     'image': ''
+                                            //   },
+                                            //   {
+                                            //     'pressure':
+                                            //         '${allUnits[indexUnit][0][5]['pressure6']}',
+                                            //     'adjusmentPressure': '',
+                                            //     'rating': '',
+                                            //     'damage': null,
+                                            //     'image': ''
+                                            //   },
+                                            // ],
                                           });
                                     },
                                   ),
@@ -685,10 +761,30 @@ class _TpmsPageState extends State<TpmsPage> {
                                                       MainAxisAlignment
                                                           .spaceBetween,
                                                   children: [
-                                                    Text(
-                                                      'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
-                                                      style: getBlackTextStyle(
-                                                          fontSize: 16),
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
+                                                          style:
+                                                              getBlackTextStyle(
+                                                                  fontSize: 16),
+                                                        ),
+                                                        (pl['adjusmentPressure'] !=
+                                                                    '' &&
+                                                                pl['adjusmentPressure'] !=
+                                                                    null)
+                                                            ? Text(
+                                                                'Adj. Pressure ${pl['adjusmentPressure']} Psi',
+                                                                style:
+                                                                    getBlackTextStyle(
+                                                                        fontSize:
+                                                                            16),
+                                                              )
+                                                            : Container()
+                                                      ],
                                                     ),
                                                     const SizedBox(width: 6),
                                                     Text(

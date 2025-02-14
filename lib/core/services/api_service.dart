@@ -21,39 +21,37 @@ class ApiService {
     final response =
         await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
 
-    try {
-      final body = response.body;
-      final result = jsonDecode(body);
+    // try {
+    final body = response.body;
+    final result = jsonDecode(body);
 
-      // List<ReccPress> recommendPressure =
-      //     List<ReccPress>.from(result['recc_press'].map(
-      //   (press) => ReccPress.fromJson(press),
-      // ));
+    List<Map<String, dynamic>> recommendPressure =
+        List<Map<String, dynamic>>.from(result['recc_press']);
 
-      List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
-        (unit) => UnitTire.fromJson(unit),
-      ));
+    List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
+      (unit) => UnitTire.fromJson(unit),
+    ));
 
-      List<UnitTire> fixData = [];
+    List<UnitTire> fixData = [];
 
-      listUnitTire.forEach((unit) {
-        if (fixData.any((item) => item.unitNumber == unit.unitNumber)) {
-          return;
-        }
-        fixData.add(unit);
-      });
+    listUnitTire.forEach((unit) {
+      if (fixData.any((item) => item.unitNumber == unit.unitNumber)) {
+        return;
+      }
+      fixData.add(unit);
+    });
 
-      // save unit
-      await cacheUnits(listUnitTire, site);
-      // save recommendation pressure
-      // await cacheReccPress(recommendPressure);
+    // save unit
+    await cacheUnits(listUnitTire, site);
+    // save recommendation pressure
+    await cacheReccPress(recommendPressure);
 
-      // for check data unit monthly
-      await saveMonthYear(DateTime.now());
-      return fixData;
-    } catch (e) {
-      throw Exception(e.toString());
-    }
+    // for check data unit monthly
+    await saveMonthYear(DateTime.now());
+    return fixData;
+    // } catch (e) {
+    //   throw Exception(e.toString());
+    // }
   }
 
   // static Future<void> cacheUnits(List<UnitTire> units) async {
@@ -68,13 +66,13 @@ class ApiService {
   //   }
   // }
 
-  static Future<void> cacheReccPress(List<ReccPress> reccPress) async {
+  static Future<void> cacheReccPress(
+      List<Map<String, dynamic>> reccPress) async {
     final prefs = await SharedPreferences.getInstance();
 
     final cacheKey = 'cache_recc_press';
 
-    final reccPressJson = reccPress.map((e) => e.toJson()).toList();
-    final reccPressJsonString = jsonEncode(reccPressJson);
+    final reccPressJsonString = jsonEncode(reccPress);
     await prefs.setString(cacheKey, reccPressJsonString);
   }
 
@@ -94,20 +92,19 @@ class ApiService {
     }
   }
 
-  static Future<List<ReccPress>> getCachedReccPress() async {
+  static Future<List<Map<String, dynamic>>> getCachedReccPress() async {
     final prefs = await SharedPreferences.getInstance();
-
     final cacheKey = 'cache_recc_press';
 
-    final cachedData = prefs.getString(cacheKey);
+    final reccPressJsonString = prefs.getString(cacheKey);
 
-    if (cachedData != null) {
-      final cachedReccJson = jsonDecode(cachedData) as List<dynamic>;
-      List<ReccPress> cachedRecc =
-          cachedReccJson.map((json) => ReccPress.fromJson(json)).toList();
-
-      return cachedRecc;
+    if (reccPressJsonString != null) {
+      // Decode the JSON string back into a List<Map<String, dynamic>>
+      final List<dynamic> decodedJson = jsonDecode(reccPressJsonString);
+      return List<Map<String, dynamic>>.from(decodedJson);
     }
+
+    // Return an empty list if no data is cached
     return [];
   }
 

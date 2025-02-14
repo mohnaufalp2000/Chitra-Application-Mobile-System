@@ -20,6 +20,8 @@ class UnitTire extends Equatable {
   String? sn;
   String? kunciUnit;
   String? kunciTire;
+  String? idinventory;
+  String? idUnit;
 
   UnitTire({
     this.unitNumber,
@@ -41,6 +43,8 @@ class UnitTire extends Equatable {
     this.sn,
     this.kunciUnit,
     this.kunciTire,
+    this.idinventory,
+    this.idUnit,
   });
 
   @override
@@ -64,6 +68,8 @@ class UnitTire extends Equatable {
         sn,
         kunciUnit,
         kunciTire,
+        idinventory,
+        idUnit,
       ];
 
   // Metode fromJson, toJson, dan toString tetap seperti yang Anda miliki
@@ -90,6 +96,8 @@ class UnitTire extends Equatable {
       sn: json['sn'],
       kunciUnit: json['kunci_unit'],
       kunciTire: json['kunci_tire'],
+      idinventory: json['id_inventory'],
+      idUnit: json['idunit'],
     );
   }
 
@@ -114,11 +122,13 @@ class UnitTire extends Equatable {
     data['sn'] = this.sn;
     data['kunci_unit'] = this.kunciUnit;
     data['kunci_tire'] = this.kunciTire;
+    data['id_inventory'] = this.idinventory;
+    data['idunit'] = this.idUnit;
     return data;
   }
 
   @override
   String toString() {
-    return 'UnitTire(unitNumber: $unitNumber, posisi: $posisi, model: $model, status: $status, hm: $hm, brand: $brand, size: $size, pattern: $pattern, otd: $otd, rtd: $rtd, lifetime: $lifetime, hmOnJob: $hmOnJob, lifeOnJob: $lifeOnJob, date: $date, rating: $rating, site: $site, sn: $sn, kunciUnit: $kunciUnit, kunciTire: $kunciTire)';
+    return 'UnitTire(unitNumber: $unitNumber, posisi: $posisi, model: $model, status: $status, hm: $hm, brand: $brand, size: $size, pattern: $pattern, otd: $otd, rtd: $rtd, lifetime: $lifetime, hmOnJob: $hmOnJob, lifeOnJob: $lifeOnJob, date: $date, rating: $rating, site: $site, sn: $sn, kunciUnit: $kunciUnit, kunciTire: $kunciTire, idInventory: $idinventory, idUnit: $idUnit)';
   }
 }

@@ -32,8 +32,9 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
           final reccPress = await ApiService.getCachedReccPress();
 
           // emit(UnitLoadedState(units: units, reccPress: reccPress));
-          emit(UnitLoadedState(units: units));
-          log('list unit bloc : ${units.length}');
+          emit(UnitLoadedState(units: units, reccPress: reccPress));
+          log('list unit bloc : ${units}');
+          log('wkwkwkwk : ${units[0]}');
         }
 
         // return;
@@ -43,8 +44,8 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
         final cachedDataReccPress = await ApiService.getCachedReccPress();
 
         emit(
-            // UnitLoadedState(units: cachedData, reccPress: cachedDataReccPress));
-            UnitLoadedState(units: cachedData));
+            UnitLoadedState(units: cachedData, reccPress: cachedDataReccPress));
+        UnitLoadedState(units: cachedData, reccPress: cachedDataReccPress);
         log('list unit bloc : ${cachedData.length}');
 
         if (Platform.isAndroid) {
