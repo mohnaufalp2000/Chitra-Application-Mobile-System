@@ -565,6 +565,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                           size: '',
                                           idUnit: '',
                                           idInventory: '',
+                                          idDaily: '',
+                                          kondisi: '',
                                         ),
                                         Position(
                                           pos: '2',
@@ -577,6 +579,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                           size: '',
                                           idUnit: '',
                                           idInventory: '',
+                                          idDaily: '',
+                                          kondisi: '',
                                         ),
                                         Position(
                                           pos: '3',
@@ -589,6 +593,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                           size: '',
                                           idUnit: '',
                                           idInventory: '',
+                                          idDaily: '',
+                                          kondisi: '',
                                         ),
                                         Position(
                                           pos: '4',
@@ -601,6 +607,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                           size: '',
                                           idUnit: '',
                                           idInventory: '',
+                                          idDaily: '',
+                                          kondisi: '',
                                         ),
                                         Position(
                                           pos: '5',
@@ -613,6 +621,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                           size: '',
                                           idUnit: '',
                                           idInventory: '',
+                                          idDaily: '',
+                                          kondisi: '',
                                         ),
                                         Position(
                                           pos: '6',
@@ -625,6 +635,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                           size: '',
                                           idUnit: '',
                                           idInventory: '',
+                                          idDaily: '',
+                                          kondisi: '',
                                         ),
                                       ];
 

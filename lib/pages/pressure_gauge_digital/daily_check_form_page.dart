@@ -37,6 +37,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   FirebaseAuth auth = FirebaseAuth.instance;
 
   // List<Map<String, dynamic>> position = [];
+  List<String> tireCondition = ['Normal', 'Low Pressure'];
   List<Position> position = [];
   String idSite = '';
   List<String> pressure = [
@@ -538,7 +539,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     dataUnit =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
-    log('data ban : $position');
+    log('data ban : ${dataUnit}');
 
     return Scaffold(
       appBar: AppBar(
@@ -590,6 +591,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 if (dataUnit['position'] != null) {
                   position.addAll(dataUnit['position']);
                 } else {
+                  final today = DateTime.now();
+                  final formattedToday =
+                      '${today.month.toString().padLeft(2, '0')}' // MM
+                      '${today.day.toString().padLeft(2, '0')}' // DD
+                      '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
                   for (var i = 0; i < state.units.length; i++) {
                     if (position.length < state.units.length) {
                       // position.add({
@@ -609,6 +615,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           size: state.units[i].size ?? '',
                           idInventory: state.units[i].idinventory ?? '',
                           idUnit: state.units[i].idUnit ?? '',
+                          idDaily:
+                              '${state.units[i].idUnit}${i + 1}${formattedToday}${idSite}',
+                          kondisi: '',
                         ),
                       );
                     }
@@ -1168,6 +1177,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                             posIndex] = position[
                                                                                 posIndex]
                                                                             .copyWith(pressure: ps);
+                                                                        // input kondisi pressure
+                                                                        position[
+                                                                            posIndex] = position[
+                                                                                posIndex]
+                                                                            .copyWith(
+                                                                          kondisi: int.parse(((dataUnit['reccPress'] as List<Map<String, dynamic>>).firstWhere(
+                                                                                    (element) => element.containsKey(position[posIndex].size),
+                                                                                    orElse: () => <String, dynamic>{},
+                                                                                  )[position[posIndex].size])) <
+                                                                                  int.parse(ps)
+                                                                              ? 'Normal'
+                                                                              : 'Low Pressure',
+                                                                        );
                                                                         Navigator.of(context)
                                                                             .pop();
                                                                       });
@@ -1216,6 +1238,16 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                           //     pressureCtrl.text;
                                                                           position[posIndex] =
                                                                               position[posIndex].copyWith(pressure: pressureCtrl.text);
+                                                                          position[posIndex] =
+                                                                              position[posIndex].copyWith(
+                                                                            kondisi: int.parse(((dataUnit['reccPress'] as List<Map<String, dynamic>>).firstWhere(
+                                                                                      (element) => element.containsKey(position[posIndex].size),
+                                                                                      orElse: () => <String, dynamic>{},
+                                                                                    )[position[posIndex].size])) <
+                                                                                    int.parse(pressureCtrl.text)
+                                                                                ? 'Normal'
+                                                                                : 'Low Pressure',
+                                                                          );
                                                                         }
                                                                         pressureCtrl
                                                                             .clear();
@@ -2069,10 +2101,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 final startOfDay = DateTime(today.year, today.month, today.day);
                 final endOfDay =
                     DateTime(today.year, today.month, today.day, 23, 59, 59);
-                final formattedToday =
-                    '${today.month.toString().padLeft(2, '0')}' // MM
-                    '${today.day.toString().padLeft(2, '0')}' // DD
-                    '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
 
                 final listImage = await uploadImageFirebase(idSite);
 
@@ -2123,8 +2151,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'tireSize': (p.size ?? ''),
                         'idInventory': (p.idInventory ?? ''),
                         'idUnit': (p.idUnit ?? ''),
-                        'idDaily':
-                            '${p.idUnit}${pIndex + 1}${formattedToday}${idSite}'
+                        'idDaily': '${p.idDaily}',
+                        'kondisi': '${p.kondisi}',
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -2187,8 +2215,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           'tireSize': (p.size ?? ''),
                           'idInventory': (p.idInventory ?? ''),
                           'idUnit': (p.idUnit ?? ''),
-                          'idDaily':
-                              '${p.idUnit}${pIndex + 1}${formattedToday}${idSite}'
+                          'idDaily': '${p.idDaily}',
+                          'kondisi': '${p.kondisi}',
                         };
                       }),
                       'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -2227,8 +2255,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'tireSize': (p.size ?? ''),
                         'idInventory': (p.idInventory ?? ''),
                         'idUnit': (p.idUnit ?? ''),
-                        'idDaily':
-                            '${p.idUnit}${pIndex + 1}${formattedToday}${idSite}'
+                        'idDaily': '${p.idDaily}',
+                        'kondisi': '${p.kondisi}',
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],

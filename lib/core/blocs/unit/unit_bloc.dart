@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/daily_press.dart';
 import 'package:camos/core/services/model/recc_press.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
@@ -53,41 +54,6 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
         }
         // return;
       }
-
-      // if (connectivityResult == ConnectivityResult.none) {
-      //   final cachedData =
-      //       await ApiService.getCachedUnits(idSite: event.idSite);
-      //   emit(UnitLoadedState(units: cachedData));
-      // } else {
-      //   if (Platform.isAndroid) {
-      //     await Permission.phone.request();
-      //   }
-      //   final checkNetworkType =
-      //       await ConnectionNetworkType().currentNetworkStatus();
-      //   if (checkNetworkType == NetworkStatus.otherMobile) {
-      //     log('unit edge');
-
-      //     final cachedData =
-      //         await ApiService.getCachedUnits(idSite: event.idSite);
-      //     emit(UnitLoadedState(units: cachedData));
-      //     return;
-      //   } else {
-      //     log('unit aman == ${await getSavedMonthYear()}, ${"${DateTime.now().year}-${DateTime.now().month}"}');
-      //     emit(UnitLoadingState());
-
-      //     // belum ganti bulan
-      //     if (await getSavedMonthYear() ==
-      //         "${DateTime.now().year}-${DateTime.now().month}") {
-      //       final cachedData =
-      //           await ApiService.getCachedUnits(idSite: event.idSite);
-      //       emit(UnitLoadedState(units: cachedData));
-      //     } else {
-      //       // sudah ganti bulan
-      //       final units = await ApiService.getUnits(event.idSite);
-      //       emit(UnitLoadedState(units: units));
-      //     }
-      //   }
-      // }
     });
   }
 }

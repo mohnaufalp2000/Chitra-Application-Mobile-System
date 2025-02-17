@@ -14,6 +14,12 @@ class GetUnitsEvent extends UnitEvent {
   GetUnitsEvent({required this.idSite, required this.isOnline});
 }
 
+class PostDailyCheckEvent extends UnitEvent {
+  final List<DailyPress> dailyCheck;
+
+  PostDailyCheckEvent({required this.dailyCheck});
+}
+
 // class GetUnitTiresEvent extends UnitEvent {
 //   final String idSite;
 //   final String unitNumber;

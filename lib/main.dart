@@ -8,6 +8,7 @@ import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_dev
 import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_cubit.dart';
 import 'package:camos/core/blocs/bluetooth/pair_device_cubit/pair_device_cubit.dart';
 import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
+import 'package:camos/core/blocs/daily_check_post/daily_check_post_bloc.dart';
 import 'package:camos/core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
 import 'package:camos/core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart';
 import 'package:camos/core/blocs/network/network_bloc.dart';
@@ -44,7 +45,7 @@ void main() async {
   initializeHERESDK();
   await AttendanceSheetsAPI.initAttendanceSheets();
   SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);  
+      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   if (Platform.isIOS) {
     // await Firebase.initializeApp(
     //   options: DefaultFirebaseOptions.currentPlatform,
@@ -106,6 +107,9 @@ class MyApp extends StatelessWidget {
             create: (context) => DetailTireConditionBloc()),
         // mendapatkan nilai spm
         BlocProvider<SpmBloc>(create: (context) => SpmBloc()),
+        // post daily check pressure
+        BlocProvider<DailyCheckPostBloc>(
+            create: (context) => DailyCheckPostBloc()),
 
         // bluetooth
         BlocProvider(create: ((context) => BluetoothOnOffCubit())),

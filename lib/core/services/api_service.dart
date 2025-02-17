@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/core/services/model/daily_press.dart';
 import 'package:camos/core/services/model/recc_press.dart';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/model/tire_spec.dart';
@@ -14,6 +15,71 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   static const String url =
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=';
+  static const String postUrl =
+      'https://cts-chitraparatama.co.id/ChitraTireMngr/product/';
+
+  // POST data daily check pressure
+  static Future<void> postDailyCheckPressure(
+      List<DailyPress> dailyCheck) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${url}getdatacamos.php'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "target_daily": 986,
+          "data": dailyCheck
+              .map((daily) => {
+                    daily.posisi.map((pos) => {
+                          "id_daily": pos.idDaily,
+                          "id_unit_site": pos.idUnit,
+                          "pos": pos.pos,
+                          "inv": pos.idInventory,
+                          "tanggal_daily": daily.hari,
+                          "press": pos.pressure,
+                          "kondisi": pos.kondisi,
+                          "id_site": "2",
+                          "adj": "0"
+                        })
+                  })
+              .toList()
+          // "data": [
+          //   {
+          //     "id_daily": "100101012352",
+          //     "id_unit_site": "100",
+          //     "pos": "1",
+          //     "inv": "799",
+          //     "tanggal_daily": "2025-01-17",
+          //     "press": "120",
+          //     "kondisi": "Normal",
+          //     "id_site": "2",
+          //     "adj": "0"
+          //   },
+          //   {
+          //     "id_daily": "100201012352",
+          //     "id_unit_site": "100",
+          //     "pos": "2",
+          //     "inv": "800",
+          //     "tanggal_daily": "2025-01-17",
+          //     "press": "80",
+          //     "kondisi": "Low Pressure",
+          //     "id_site": "2",
+          //     "adj": "120"
+          //   },
+          // ],
+        }),
+      );
+      if (response.statusCode == 200) {
+        // Berhasil
+        print('Data berhasil dikirim: ${response.body}');
+      } else {
+        // Gagal
+        print('Gagal mengirim data. Status: ${response.statusCode}');
+        print('Response: ${response.body}');
+      }
+    } catch (e) {
+      print('Error saat mengirim data: $e');
+    }
+  }
 
   // mendapatkan daftar unit di salah satu site
   static Future<List<UnitTire>> getUnits(String site) async {

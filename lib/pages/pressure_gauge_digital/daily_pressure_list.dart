@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:camos/core/blocs/daily_check_post/daily_check_post_bloc.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/daily_press.dart';
 import 'package:camos/core/services/model/recc_press.dart';
@@ -297,21 +298,57 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
               ),
               Builder(builder: (context) {
                 if (selectedMenu == 0) {
-                  return ExportExcelButton(
-                    user: user,
-                    pit: pit,
-                    selectedPit: selectedPit,
-                    filteredItemTask: filteredItemTask,
-                    date:
-                        "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
-                    type: ExportType.oneDay,
+                  return Column(
+                    children: [
+                      ExportExcelButton(
+                        user: user,
+                        pit: pit,
+                        selectedPit: selectedPit,
+                        filteredItemTask: filteredItemTask,
+                        date:
+                            "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
+                        type: ExportType.oneDay,
+                      ),
+                      const SizedBox(
+                        height: 16,
+                      ),
+                      SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                              onPressed: () async {
+                                context.read<DailyCheckPostBloc>().add(
+                                    DailyCheckPostEvent(
+                                        dailyCheck: filteredItemTask));
+                              },
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: green00968A),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.send,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(
+                                      width: 12,
+                                    ),
+                                    Text(
+                                      'Send Data to CTS',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                              ))),
+                    ],
                   );
                 }
                 return Container();
               }),
 
               const SizedBox(
-                height: 12,
+                height: 16,
               ),
               SizedBox(
                   width: double.infinity,
@@ -401,8 +438,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                   final distinctDaily =
                                       Set<DailyPress>.from(allData ?? [])
                                           .toList();
-
-                                  log('distinctDaily : ${distinctDaily.length}');
 
                                   final tmpDailyData =
                                       snapshot.data?.docs ?? [];
@@ -1013,17 +1048,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                                   List<Position> position = [];
                                                                                   for (int i = 0; i < data.posisi.length; i++) {
                                                                                     final p = data.posisi[i];
-                                                                                    position.add(Position(
-                                                                                      pos: p.pos,
-                                                                                      pressure: p.pressure,
-                                                                                      rating: p.rating,
-                                                                                      adjusmentPressure: p.adjusmentPressure,
-                                                                                      luka: p.luka,
-                                                                                      image: p.image,
-                                                                                      size: p.size,
-                                                                                      idInventory: p.idInventory,
-                                                                                      idUnit: p.idUnit,
-                                                                                    ));
+                                                                                    position.add(Position(pos: p.pos, pressure: p.pressure, rating: p.rating, adjusmentPressure: p.adjusmentPressure, luka: p.luka, image: p.image, size: p.size, idInventory: p.idInventory, idUnit: p.idUnit, idDaily: p.idDaily, kondisi: p.kondisi));
                                                                                   }
 
                                                                                   final dataUnit = {
@@ -1031,6 +1056,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                                     'hm': data.hm,
                                                                                     'pit': data.pit,
                                                                                     'position': position,
+                                                                                    'reccPress': state.reccPress,
                                                                                   };
 
                                                                                   Navigator.pushNamed(context, DailyCheckFormPage.routeName, arguments: dataUnit);
@@ -1154,6 +1180,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                   arguments: {
                                                     'unitNumber':
                                                         unit.unitNumber,
+                                                    'reccPress':
+                                                        state.reccPress,
                                                   });
                                             },
                                       child: Container(
@@ -1322,6 +1350,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                               arguments: {
                                                                 'unitNumber': unit
                                                                     .unitNumber,
+                                                                'reccPress': state
+                                                                    .reccPress,
                                                               });
                                                         },
                                                   child: Container(

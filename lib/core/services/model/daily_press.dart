@@ -27,7 +27,7 @@ class DailyPress extends Equatable {
 
   @override
   String toString() {
-    return 'DailyPress(idSite: $idSite, user: $user, tanggal: $tanggal, hari: $hari, jam: $jam, unit: $unit, hm: $hm, posisi: ${posisi.map((p) => p.toString()).join(", ")}, pit: $pit)';
+    return 'DailyPress(idSite: $idSite, user: $user, tanggal: $tanggal, hari: $hari, jam: $jam, unit: $unit, hm: $hm, posisi: ${posisi.map((p) => p.toString()).join(", ")}, pit: $pit, )';
   }
 
   factory DailyPress.fromFirestore(Map<String, dynamic> json) {
@@ -61,7 +61,11 @@ class DailyPress extends Equatable {
   }
 
   @override
-  List<Object?> get props => [unit, hari, onlyDate];
+  List<Object?> get props => [
+        unit,
+        hari,
+        onlyDate,
+      ]; // Include idUnit in props
 }
 
 class Position extends Equatable {
@@ -74,6 +78,8 @@ class Position extends Equatable {
   final String size;
   final String idInventory;
   final String idUnit;
+  final String idDaily;
+  final String kondisi; // Added kondisi
 
   Position({
     required this.pos,
@@ -85,11 +91,13 @@ class Position extends Equatable {
     required this.size,
     required this.idInventory,
     required this.idUnit,
+    required this.idDaily,
+    required this.kondisi, // Initialize kondisi
   });
 
   @override
   String toString() {
-    return 'Position(pos: $pos, pressure: $pressure, rating: $rating, adjusmentPressure: $adjusmentPressure, luka: ${luka.join(", ")}, image: $image, size: $size, idInventory: $idInventory, idUnit: $idUnit)';
+    return 'Position(pos: $pos, pressure: $pressure, rating: $rating, adjusmentPressure: $adjusmentPressure, luka: ${luka.join(", ")}, image: $image, size: $size, idInventory: $idInventory, idUnit: $idUnit, idDaily: $idDaily, kondisi: $kondisi)';
   }
 
   factory Position.fromMap(Map<String, dynamic> map) {
@@ -103,11 +111,11 @@ class Position extends Equatable {
       size: map['tireSize'] ?? '',
       idInventory: map['idInventory'] ?? '',
       idUnit: map['idUnit'] ?? '',
+      idDaily: map['idDaily'] ?? '',
+      kondisi: map['kondisi'] ?? '', // Get kondisi from map
     );
   }
 
-  // Copy method for immutability
-  // Copy method for immutability
   Position copyWith({
     String? pos,
     String? pressure,
@@ -118,6 +126,8 @@ class Position extends Equatable {
     String? size,
     String? idInventory,
     String? idUnit,
+    String? idDaily,
+    String? kondisi, // Add kondisi to copyWith
   }) {
     return Position(
       pos: pos ?? this.pos,
@@ -129,6 +139,8 @@ class Position extends Equatable {
       size: size ?? this.size,
       idInventory: idInventory ?? this.idInventory,
       idUnit: idUnit ?? this.idUnit,
+      idDaily: idDaily ?? this.idDaily,
+      kondisi: kondisi ?? this.kondisi, // Copy kondisi
     );
   }
 
@@ -143,9 +155,11 @@ class Position extends Equatable {
       'tireSize': size,
       'idInventory': idInventory,
       'idUnit': idUnit,
+      'idDaily': idDaily,
+      'kondisi': kondisi, // Add kondisi to map
     };
   }
 
   @override
-  List<Object?> get props => [pos];
+  List<Object?> get props => [pos]; // Include kondisi in props
 }
