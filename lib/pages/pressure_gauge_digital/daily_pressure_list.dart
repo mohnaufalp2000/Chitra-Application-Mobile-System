@@ -55,6 +55,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   bool isOnline = false;
   DateTime now = DateTime.now();
   bool isLoading = false;
+  int countAllTire = 0;
 
   // List<UnitTire> filteredUnits = [];
 
@@ -318,7 +319,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                               onPressed: () async {
                                 context.read<DailyCheckPostBloc>().add(
                                     DailyCheckPostEvent(
-                                        dailyCheck: filteredItemTask));
+                                        dailyCheck: filteredItemTask,
+                                        countAllTire: countAllTire));
                               },
                               style: ElevatedButton.styleFrom(
                                   backgroundColor: green00968A),
@@ -380,11 +382,13 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                       ))),
               // tester 1
               BlocConsumer<UnitBloc, UnitState>(listener: (context, state) {
-                // if(state is UnitLoadedState){
-                //   reccPress = {
-                //     state.reccPress[]
-                //   };
-                // }
+                if (state is UnitLoadedState) {
+                  setState(() {
+                    // Tambahkan setState agar UI diperbarui
+                    countAllTire = state.countAllTire;
+                  });
+                  log('ban daily : $countAllTire');
+                }
               }, builder: (context, state) {
                 if (state is UnitLoadingState) {
                   return Center(child: CircularProgressIndicator());

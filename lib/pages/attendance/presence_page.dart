@@ -315,6 +315,12 @@ class _PresencePageState extends State<PresencePage> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  TextButton(
+                      onPressed: () async {
+                        final id = await AttendanceSheetsAPI.getRowCount() + 1;
+                        log('attendance_row_count : ${await AttendanceSheetsAPI.getRowCount()}');
+                      },
+                      child: Text('Test')),
                   profileCard(),
                   const SizedBox(
                     height: 12,

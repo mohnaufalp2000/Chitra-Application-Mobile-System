@@ -16,61 +16,89 @@ class ApiService {
   static const String url =
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=';
   static const String postUrl =
-      'https://cts-chitraparatama.co.id/ChitraTireMngr/product/';
+      'https://cts-chitraparatama.co.id/ChitraTireMngr/product/getdatacamos.php?function=';
 
   // POST data daily check pressure
   static Future<void> postDailyCheckPressure(
-      List<DailyPress> dailyCheck) async {
+      List<DailyPress> dailyCheck, Map<String, dynamic> summaryData) async {
+    log('daily check api service : ${summaryData}');
+
     try {
       final response = await http.post(
-        Uri.parse('${url}getdatacamos.php'),
+        Uri.parse('${postUrl}post_daily'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "target_daily": 986,
-          "data": dailyCheck
-              .map((daily) => {
-                    daily.posisi.map((pos) => {
-                          "id_daily": pos.idDaily,
-                          "id_unit_site": pos.idUnit,
-                          "pos": pos.pos,
-                          "inv": pos.idInventory,
-                          "tanggal_daily": daily.hari,
-                          "press": pos.pressure,
-                          "kondisi": pos.kondisi,
-                          "id_site": "2",
-                          "adj": "0"
-                        })
-                  })
-              .toList()
-          // "data": [
-          //   {
-          //     "id_daily": "100101012352",
-          //     "id_unit_site": "100",
-          //     "pos": "1",
-          //     "inv": "799",
-          //     "tanggal_daily": "2025-01-17",
-          //     "press": "120",
-          //     "kondisi": "Normal",
-          //     "id_site": "2",
-          //     "adj": "0"
-          //   },
-          //   {
-          //     "id_daily": "100201012352",
-          //     "id_unit_site": "100",
-          //     "pos": "2",
-          //     "inv": "800",
-          //     "tanggal_daily": "2025-01-17",
-          //     "press": "80",
-          //     "kondisi": "Low Pressure",
-          //     "id_site": "2",
-          //     "adj": "120"
-          //   },
-          // ],
+          "data1": [
+            {
+              "target_daily": summaryData["target_daily"],
+              "checked": summaryData["checked"],
+              "low": summaryData["low"],
+              "id_site": '2',
+              "tgl_daily": dailyCheck[0].hari
+            }
+          ],
+          "data2": dailyCheck
+              .expand((daily) => daily.posisi
+                  .map((pos) => {
+                        "id_daily": pos.idDaily,
+                        "id_unit_site": pos.idUnit,
+                        "pos": pos.pos,
+                        "inv": pos.idInventory,
+                        "tanggal_daily": daily.hari,
+                        "press": pos.pressure,
+                        "kondisi": pos.kondisi,
+                        "id_site": "2",
+                        "adj": "0"
+                      })
+                  .toList())
+              .toList(),
+          "data3": [
+            {
+              "id_daily_unit": "CO230122025-02",
+              "unit": "CO2301",
+              "date": "2025-02",
+              "qty": "14",
+              "site": "2"
+            },
+            {
+              "id_daily_unit": "CO230122025-02",
+              "unit": "CO2301",
+              "date": "2025-02",
+              "qty": "14",
+              "site": "2"
+            },
+          ]
         }),
+        // body: jsonEncode({
+        //   "target_daily": summaryData["target_daily"],
+        //   "checked": summaryData["checked"],
+        //   "low": summaryData["low"],
+        //   "id_site": dailyCheck[0].idSite,
+        //   "tgl_daily": dailyCheck[0].hari,
+        //   "data": dailyCheck
+        //       .expand((daily) => daily.posisi
+        //           .map((pos) => {
+        //                 "id_daily": pos.idDaily,
+        //                 "id_unit_site": pos.idUnit,
+        //                 "pos": pos.pos,
+        //                 "inv": pos.idInventory,
+        //                 "tanggal_daily": daily.hari,
+        //                 "press": pos.pressure,
+        //                 "kondisi": pos.kondisi,
+        //                 "id_site": "2",
+        //                 "adj": "0"
+        //               })
+        //           .toList())
+        //       .toList()
+        // }),
       );
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
         // Berhasil
-        print('Data berhasil dikirim: ${response.body}');
+        // final body = jsonDecode(response.body);
+        print('Raw response: ${response.body}');
+
+        // print(
+        //     'Raw response: ${body['status']}'); // Tambahkan ini untuk cek response asliS
       } else {
         // Gagal
         print('Gagal mengirim data. Status: ${response.statusCode}');
@@ -97,6 +125,8 @@ class ApiService {
     List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
       (unit) => UnitTire.fromJson(unit),
     ));
+    int countAllTire = result['total row'][0];
+    // log('ban all : ${result['total row']}');
 
     List<UnitTire> fixData = [];
 
@@ -109,6 +139,8 @@ class ApiService {
 
     // save unit
     await cacheUnits(listUnitTire, site);
+    // save all tire count
+    await cacheCountAllTire(countAllTire, site);
     // save recommendation pressure
     await cacheReccPress(recommendPressure);
 
@@ -158,6 +190,20 @@ class ApiService {
     }
   }
 
+  static Future<void> cacheCountAllTire(int countAllTire, String idSite) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Key unik berdasarkan idSite
+      final cacheKey = 'cached_count_all_tire_$idSite';
+
+      await prefs.setString(cacheKey, countAllTire.toString());
+    } catch (e) {
+      // Handle error jika gagal menyimpan data.
+      throw Exception('Gagal menyimpan data ke penyimpanan lokal: $e');
+    }
+  }
+
   static Future<List<Map<String, dynamic>>> getCachedReccPress() async {
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'cache_recc_press';
@@ -172,6 +218,21 @@ class ApiService {
 
     // Return an empty list if no data is cached
     return [];
+  }
+
+  static Future<int> getCachedCountAllTire({String idSite = ''}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'cached_count_all_tire_$idSite';
+
+    final countAllTire = int.tryParse(prefs.getString(cacheKey) ?? '');
+    log('count all tire $countAllTire');
+
+    if (countAllTire != null) {
+      return countAllTire;
+    }
+
+    // Return an empty list if no data is cached
+    return 0;
   }
 
   static Future<List<UnitTire>> getCachedUnits(

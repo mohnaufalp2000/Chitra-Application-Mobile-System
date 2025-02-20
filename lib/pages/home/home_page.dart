@@ -732,6 +732,60 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 },
                               );
                             }
+                            // TESTING GANTI AREA CK BIB CLUSTER
+                            if (idSite == bibkgb.idSite ||
+                                idSite == bibgh.idSite ||
+                                idSite == bibghhauling.idSite ||
+                                idSite == bibghhauling.idSite) {
+                              final listBIBSite = [
+                                bibkgb,
+                                bibgh,
+                                bibkgbhauling,
+                                bibghhauling
+                              ];
+                              return DropdownButton<String>(
+                                isExpanded: true,
+                                padding: EdgeInsets.symmetric(horizontal: 24),
+                                value: _selectedSite ?? idSite,
+                                items: listBIBSite.map((site) {
+                                  return DropdownMenuItem<String>(
+                                    value: site.idSite,
+                                    child: Text(site.nameSite),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    _selectedSite = newValue;
+                                    saveIdSitePreferences(_selectedSite ?? '');
+                                  });
+                                },
+                              );
+                            }
+                            // TESTING GANTI AREA CK MHU CLUSTER
+                            if (idSite == mhumining.idSite ||
+                                idSite == mhuhauling.idSite) {
+                              final listMHUSite = [
+                                mhumining,
+                                mhuhauling,
+                              ];
+                              return DropdownButton<String>(
+                                isExpanded: true,
+                                padding: EdgeInsets.symmetric(horizontal: 24),
+                                value: _selectedSite ?? idSite,
+                                items: listMHUSite.map((site) {
+                                  return DropdownMenuItem<String>(
+                                    value: site.idSite,
+                                    child: Text(site.nameSite),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    _selectedSite = newValue;
+                                    saveIdSitePreferences(_selectedSite ?? '');
+                                  });
+                                },
+                              );
+                            }
                             return Container();
                           }),
                           BlocConsumer<TireInventBloc, TireInventState>(

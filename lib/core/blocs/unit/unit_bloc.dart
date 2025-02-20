@@ -31,9 +31,11 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
         } else {
           final units = await ApiService.getUnits(event.idSite);
           final reccPress = await ApiService.getCachedReccPress();
+          final countAllTire = await ApiService.getCachedCountAllTire();
 
           // emit(UnitLoadedState(units: units, reccPress: reccPress));
-          emit(UnitLoadedState(units: units, reccPress: reccPress));
+          emit(UnitLoadedState(
+              units: units, reccPress: reccPress, countAllTire: countAllTire));
           log('list unit bloc : ${units}');
           log('wkwkwkwk : ${units[0]}');
         }
@@ -43,10 +45,17 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
         final cachedData =
             await ApiService.getCachedUnits(idSite: event.idSite);
         final cachedDataReccPress = await ApiService.getCachedReccPress();
+        final cachedCountAllTire =
+            await ApiService.getCachedCountAllTire(idSite: event.idSite);
 
-        emit(
-            UnitLoadedState(units: cachedData, reccPress: cachedDataReccPress));
-        UnitLoadedState(units: cachedData, reccPress: cachedDataReccPress);
+        emit(UnitLoadedState(
+            units: cachedData,
+            reccPress: cachedDataReccPress,
+            countAllTire: cachedCountAllTire));
+        UnitLoadedState(
+            units: cachedData,
+            reccPress: cachedDataReccPress,
+            countAllTire: cachedCountAllTire);
         log('list unit bloc : ${cachedData.length}');
 
         if (Platform.isAndroid) {

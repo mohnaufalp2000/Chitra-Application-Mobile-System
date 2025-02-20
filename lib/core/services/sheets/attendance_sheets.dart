@@ -60,9 +60,11 @@ class AttendanceSheetsAPI {
   }
 
   static Future<int> getRowCount() async {
+    log('attendance_user_sheet : ${userSheet}');
     if (userSheet == null) return 0;
 
     final lastRow = await userSheet!.values.lastRow();
+    log('attendance_user_last_row : ${lastRow}');
     return lastRow == null ? 0 : int.tryParse(lastRow.first) ?? 0;
   }
 

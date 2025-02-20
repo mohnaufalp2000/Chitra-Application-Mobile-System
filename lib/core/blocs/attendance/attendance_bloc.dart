@@ -84,6 +84,9 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
 
               try {
                 final id = await AttendanceSheetsAPI.getRowCount() + 1;
+                log('attendance_row_count : ${await AttendanceSheetsAPI.getRowCount()}');
+                log('attendance_tanggal : ${DateFormat('MM/dd/yyyy').format(now)}');
+                log('attendance_masuk: ${DateFormat.Hms().format(DateTime.parse(now.toIso8601String()))}');
                 final user = AttendanceSheetsModel(
                     namaKaryawan: '${event.user['username'] ?? ''}',
                     sn: '${event.user['sn'] ?? ''}',
