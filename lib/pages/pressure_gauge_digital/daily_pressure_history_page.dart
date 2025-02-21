@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:camos/core/blocs/daily_check_post/daily_check_post_bloc.dart';
 import 'package:camos/core/blocs/unit/unit_bloc.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/daily_press.dart';
@@ -42,6 +43,8 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   List<UnitTire> units = [];
   int selectedMenu = 1;
   bool isOnline = false;
+  DateTime now = DateTime.now();
+  bool _isLoadingSendData = false;
 
   @override
   void initState() {
@@ -65,6 +68,26 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   //     units = await ApiService.getUnits(idSite);
   //   }
   // }
+
+  void _showDateRangePicker(
+      BuildContext context, Function(List<DateTime>) onDatesSelected) async {
+    DateTimeRange? pickedRange = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(now.year - 1, 1, 1),
+      lastDate: DateTime(now.year, 12, 31),
+      helpText: 'Select Date Range',
+    );
+
+    if (pickedRange != null) {
+      List<DateTime> selectedDates = [];
+      for (var date = pickedRange.start;
+          date.isBefore(pickedRange.end.add(Duration(days: 1)));
+          date = date.add(Duration(days: 1))) {
+        selectedDates.add(date);
+      }
+      onDatesSelected(selectedDates);
+    }
+  }
 
   Future<String> getActualIdSite() async {
     final actIdSite = await getIdSitePreferences();
@@ -186,7 +209,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
               ),
             ),
             Builder(builder: (context) {
-              if (selectedMenu == 0)
+              if (selectedMenu == 0) {
                 return Column(
                   children: [
                     Padding(
@@ -204,8 +227,120 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                     const SizedBox(
                       height: 12,
                     ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                              onPressed: () async {
+                                List<Map<String, dynamic>> itemTask = [];
+                                _showDateRangePicker(context,
+                                    (selectedMonths) async {
+                                  setState(() {
+                                    _isLoadingSendData =
+                                        true; // Tampilkan loading
+                                  });
+                                  try {
+                                    final firstPicked = selectedMonths[0];
+                                    final lastPicked = selectedMonths[
+                                        selectedMonths.length - 1];
+
+                                    final snapshot = await firestore
+                                        .collection('daily_pressure')
+                                        .where('idSite',
+                                            isEqualTo: filteredItemTask[0]
+                                                ['idSite'])
+                                        .where('tanggal',
+                                            isGreaterThanOrEqualTo: DateTime(
+                                                    firstPicked.year,
+                                                    firstPicked.month,
+                                                    firstPicked.day)
+                                                .toIso8601String())
+                                        .where('tanggal',
+                                            isLessThanOrEqualTo: DateTime(
+                                                    lastPicked.year,
+                                                    lastPicked.month,
+                                                    lastPicked.day,
+                                                    23,
+                                                    59,
+                                                    59)
+                                                .toIso8601String())
+                                        .get();
+
+                                    snapshot.docs.forEach((data) {
+                                      final dataDaily =
+                                          data.data() as Map<String, dynamic>;
+                                      itemTask.add(dataDaily);
+                                    });
+
+                                    final countAllTire =
+                                        await ApiService.getCachedCountAllTire(
+                                            idSite: idSite);
+                                    final allUnit =
+                                        await ApiService.getCachedUnits(
+                                            idSite: idSite);
+
+                                    context.read<DailyCheckPostBloc>().add(
+                                        DailyCheckPostEvent(
+                                            dailyCheck: itemTask,
+                                            countAllTire: countAllTire,
+                                            allUnit: allUnit,
+                                            typeSend: 'multiple'));
+
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                      backgroundColor: green00968A,
+                                      content: Text(
+                                        'Successful Save Data!',
+                                        style: getWhiteTextStyle(),
+                                      ),
+                                    ));
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                      backgroundColor: Colors.red,
+                                      content: Text('Error: $e'),
+                                    ));
+                                  } finally {
+                                    setState(() {
+                                      _isLoadingSendData =
+                                          false; // Sembunyikan loading
+                                    });
+                                  }
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: green00968A),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.send,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(
+                                      width: 12,
+                                    ),
+                                    _isLoadingSendData
+                                        ? CircularProgressIndicator(
+                                            color: Colors.white,
+                                          )
+                                        : Text(
+                                            'Send Data to CTS (Selected Date)',
+                                            style: getWhiteTextStyle(),
+                                          ),
+                                  ],
+                                ),
+                              ))),
+                    ),
+                    const SizedBox(
+                      height: 12,
+                    ),
                   ],
                 );
+              }
               return Container();
             }),
             FutureBuilder(

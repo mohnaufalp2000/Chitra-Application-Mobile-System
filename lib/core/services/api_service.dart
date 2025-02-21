@@ -20,8 +20,10 @@ class ApiService {
 
   // POST data daily check pressure
   static Future<void> postDailyCheckPressure(
-      List<DailyPress> dailyCheck, Map<String, dynamic> summaryData) async {
-    log('daily check api service : ${summaryData}');
+      List<DailyPress> dailyCheck,
+      Map<String, dynamic> summaryData,
+      List<Map<String, dynamic>> unitData) async {
+    log('daily check api service : ${unitData}');
 
     try {
       final response = await http.post(
@@ -52,45 +54,8 @@ class ApiService {
                       })
                   .toList())
               .toList(),
-          "data3": [
-            {
-              "id_daily_unit": "CO230122025-02",
-              "unit": "CO2301",
-              "date": "2025-02",
-              "qty": "14",
-              "site": "2"
-            },
-            {
-              "id_daily_unit": "CO230122025-02",
-              "unit": "CO2301",
-              "date": "2025-02",
-              "qty": "14",
-              "site": "2"
-            },
-          ]
+          "data3": unitData,
         }),
-        // body: jsonEncode({
-        //   "target_daily": summaryData["target_daily"],
-        //   "checked": summaryData["checked"],
-        //   "low": summaryData["low"],
-        //   "id_site": dailyCheck[0].idSite,
-        //   "tgl_daily": dailyCheck[0].hari,
-        //   "data": dailyCheck
-        //       .expand((daily) => daily.posisi
-        //           .map((pos) => {
-        //                 "id_daily": pos.idDaily,
-        //                 "id_unit_site": pos.idUnit,
-        //                 "pos": pos.pos,
-        //                 "inv": pos.idInventory,
-        //                 "tanggal_daily": daily.hari,
-        //                 "press": pos.pressure,
-        //                 "kondisi": pos.kondisi,
-        //                 "id_site": "2",
-        //                 "adj": "0"
-        //               })
-        //           .toList())
-        //       .toList()
-        // }),
       );
       if (response.statusCode == 201 || response.statusCode == 200) {
         // Berhasil
