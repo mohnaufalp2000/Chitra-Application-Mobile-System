@@ -13,9 +13,14 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
     on<GetListSpmEvent>((event, emit) async {
       emit(SpmLoadingState());
       try {
-        final listSpm = await ApiService.getApiSpm();
-        emit(SpmLoadedState(listSpm: listSpm));
-        log('daftar spm $listSpm');
+        final apiListSpm = await ApiService.getApiSpm();
+        List<Spm> actualList = apiListSpm;
+
+        List<Spm> list =
+            actualList.where((spm) => spm.idSite == event.idSite).toList();
+
+        List<bool> isShowMore = List.generate(list.length, (index) => false);
+        emit(SpmLoadedState(listSpm: list, isShowMore: isShowMore));
       } catch (e) {}
     });
   }

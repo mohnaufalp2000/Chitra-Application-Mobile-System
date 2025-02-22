@@ -46,32 +46,26 @@ class _TpmsPageState extends State<TpmsPage> {
   List<Map<String, dynamic>> pressureStatus = [];
   List<Map<String, dynamic>> temperatures = [];
   List<List<List<Map<String, dynamic>>>> allUnits = [];
-  List<bool> isShowMMore = [
-    false,
-    false,
-    false,
-    false,
-    false,
-  ];
+  // List<bool> isShowMore = [];
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   context.read<SpmBloc>().add(GetListSpmEvent());
+  // }
 
   @override
-  void initState() {
-    super.initState();
-    context.read<SpmBloc>().add(GetListSpmEvent());
-  }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-  Future<Map<String, dynamic>> fetchLatestData(String unitName) async {
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('daily_pressure')
-        .where('unit', isEqualTo: unitName)
-        .orderBy('tanggal', descending: true)
-        .limit(1)
-        .get();
-
-    if (querySnapshot.docs.isNotEmpty) {
-      return querySnapshot.docs.first.data() as Map<String, dynamic>;
+    final data =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (data != null) {
+      // Pastikan data tidak null
+      final idSite = data['idSite'];
+      log('id site spm : $idSite');
+      context.read<SpmBloc>().add(GetListSpmEvent(idSite: idSite));
     }
-    return {};
   }
 
   @override
@@ -156,95 +150,25 @@ class _TpmsPageState extends State<TpmsPage> {
                       pressures.clear();
                       temperatures.clear();
                       pressureStatus.clear();
-                      context.read<SpmBloc>().add(GetListSpmEvent());
+                      context
+                          .read<SpmBloc>()
+                          .add(GetListSpmEvent(idSite: idSite));
                     }),
                 SizedBox(
                   height: 12,
                 ),
                 // Unit
                 BlocConsumer<SpmBloc, SpmState>(
-                  listener: (context, state) {
-                    log('state listener : $state');
-                    if (state is SpmLoadedState) {
-                      // index 1 PRESSURE
-                      // index 2 PRESSURE STATUS / PRESS1
-                      // index 3 TEMPERATURE
-                      // allUnits.clear();
-                      // state.listSpm.forEach((element) {
-                      //   allUnits.add(
-                      //     [
-                      //       [
-                      //         {
-                      //           'pressure1': element.pressure1,
-                      //         },
-                      //         {
-                      //           'pressure2': element.pressure2,
-                      //         },
-                      //         {
-                      //           'pressure3': element.pressure3,
-                      //         },
-                      //         {
-                      //           'pressure4': element.pressure4,
-                      //         },
-                      //         {
-                      //           'pressure5': element.pressure5,
-                      //         },
-                      //         {
-                      //           'pressure6': element.pressure6,
-                      //         },
-                      //       ],
-                      //       [
-                      //         {
-                      //           'press1': element.press1,
-                      //         },
-                      //         {
-                      //           'press2': element.press2,
-                      //         },
-                      //         {
-                      //           'press3': element.press3,
-                      //         },
-                      //         {
-                      //           'press4': element.press4,
-                      //         },
-                      //         {
-                      //           'press5': element.press5,
-                      //         },
-                      //         {
-                      //           'press6': element.press6,
-                      //         },
-                      //       ],
-                      //       [
-                      //         {'temperature1': element.temperature1},
-                      //         {'temperature2': element.temperature2},
-                      //         {'temperature3': element.temperature3},
-                      //         {'temperature4': element.temperature4},
-                      //         {'temperature5': element.temperature5},
-                      //         {'temperature6': element.temperature6},
-                      //       ],
-                      //     ],
-                      //   );
-                      // });
-                      // log('semua  : ${allUnits[0]}');
-                      // log('semua unit : ${allUnits[0][1]}');
-
-                      // log('semua 1: ${allUnits[1]}');
-                      // log('semua unit 1: ${allUnits[1][1]}');
-
-                      // log('jumlah semua unit: ${allUnits.length}');
-                    }
-                  },
+                  listener: (context, state) {},
                   builder: (context, state) {
-                    log('listener listener: $state');
                     if (state is SpmLoadingState) {
                       return CircularProgressIndicator();
                     }
 
                     if (state is SpmLoadedState) {
-                      List<Spm> actualList = state.listSpm;
-
-                      List<Spm> list = actualList
-                          .where((spm) => spm.idSite == idSite)
-                          .toList();
+                      List<Spm> list = state.listSpm;
+                      List<bool> isShowMore = state.isShowMore;
+                      log('jumlah spm: ${list.length}');
 
                       if (list.isEmpty) {
                         return Text(
@@ -723,15 +647,15 @@ class _TpmsPageState extends State<TpmsPage> {
                                     Row(
                                       children: [
                                         TextButtonWidget(
-                                          name: (!isShowMMore[indexUnit])
+                                          name: (!isShowMore[indexUnit])
                                               ? 'Show More'
                                               : 'Show Less',
                                           style: getGreenTextStyle(
                                               fontWeight: w700),
                                           function: () {
                                             setState(() {
-                                              isShowMMore[indexUnit] =
-                                                  !isShowMMore[indexUnit];
+                                              isShowMore[indexUnit] =
+                                                  !isShowMore[indexUnit];
                                             });
                                           },
                                         ),
@@ -745,27 +669,47 @@ class _TpmsPageState extends State<TpmsPage> {
                                 ),
 
                                 Builder(builder: (context) {
-                                  if (isShowMMore[indexUnit]) {
-                                    return PaginateFirestore(
-                                      itemBuilder: (context, snapshot, index) {
-                                        Map<String, dynamic> tmpMap = {};
-                                        List<dynamic> tmpMapPosisi = [];
+                                  if (isShowMore[indexUnit]) {
+                                    return StreamBuilder<QuerySnapshot>(
+                                      stream: firestore
+                                          .collection('daily_pressure')
+                                          .where('idSite', isEqualTo: idSite)
+                                          .where('unit',
+                                              isEqualTo: unit.devicename)
+                                          .orderBy('tanggal',
+                                              descending:
+                                                  true) // Mengurutkan berdasarkan tanggal terbaru
+                                          .limit(
+                                              1) // Hanya mengambil 1 data terbaru
+                                          .snapshots(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return Center(
+                                              child:
+                                                  CircularProgressIndicator());
+                                        }
+                                        if (!snapshot.hasData ||
+                                            snapshot.data!.docs.isEmpty) {
+                                          return Container(
+                                            margin: EdgeInsets.only(bottom: 12),
+                                            child: Center(
+                                                child:
+                                                    Text('No data available')),
+                                          );
+                                        }
 
+                                        final latestDoc =
+                                            snapshot.data!.docs.first;
                                         final Map<String, dynamic>
-                                            latestAdjustMap = snapshot[index]
-                                                .data() as Map<String, dynamic>;
-
+                                            latestAdjustMap = latestDoc.data()
+                                                as Map<String, dynamic>;
                                         final positionList =
                                             latestAdjustMap['posisi']
                                                 as List<dynamic>;
 
-                                        if (index == 0) {
-                                          tmpMap = latestAdjustMap;
-                                          tmpMapPosisi = positionList;
-                                        }
-
                                         return Column(
-                                          children: tmpMapPosisi.map((pl) {
+                                          children: positionList.map((pl) {
                                             return Column(
                                               children: [
                                                 Row(
@@ -803,8 +747,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                                       DateFormat(
                                                               'dd MMMM yyyy  HH:mm:ss',
                                                               'id_ID')
-                                                          .format(DateTime
-                                                              .parse(tmpMap[
+                                                          .format(DateTime.parse(
+                                                              latestAdjustMap[
                                                                   'tanggal'])),
                                                       style: getBlackTextStyle(
                                                           fontSize: 16),
@@ -849,7 +793,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                         onPressed:
                                                                             () {
                                                                           Navigator.of(context)
-                                                                              .pop(); // Menutup dialog
+                                                                              .pop();
                                                                         },
                                                                       ),
                                                                     ),
@@ -873,12 +817,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                       .center,
                                                               children: [
                                                                 Icon(
-                                                                  Icons.photo,
-                                                                  color: white,
-                                                                ),
+                                                                    Icons.photo,
+                                                                    color:
+                                                                        white),
                                                                 const SizedBox(
-                                                                  width: 8,
-                                                                ),
+                                                                    width: 8),
                                                                 Text(
                                                                   'Show Image',
                                                                   style: getWhiteTextStyle(
@@ -903,25 +846,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                           }).toList(),
                                         );
                                       },
-                                      key: ValueKey(unit.devicename),
-                                      query: firestore
-                                          .collection('daily_pressure')
-                                          .where('unit',
-                                              isEqualTo: unit.devicename)
-                                          .orderBy('tanggal', descending: true)
-                                          .limit(1),
-                                      itemBuilderType:
-                                          PaginateBuilderType.listView,
-                                      shrinkWrap: true,
-                                      physics: NeverScrollableScrollPhysics(),
-                                      itemsPerPage: 1,
-                                      isLive: true,
-                                      initialLoader: const Center(
-                                          child: CircularProgressIndicator
-                                              .adaptive()),
-                                      bottomLoader: const Center(
-                                          child: CircularProgressIndicator
-                                              .adaptive()),
                                     );
                                   }
                                   return Container();

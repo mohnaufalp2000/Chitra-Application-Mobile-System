@@ -1,43 +1,40 @@
-// To parse this JSON data, do
-//
-//     final spm = spmFromJson(jsonString);
-
 import 'dart:convert';
+import 'package:equatable/equatable.dart';
 
 Spm spmFromJson(String str) => Spm.fromJson(json.decode(str));
 
 String spmToJson(Spm data) => json.encode(data.toJson());
 
-class Spm {
-  String idtpms;
-  String timestamp;
-  String devicename;
-  String lat;
-  String alt;
-  String lon;
-  String pressure1;
-  String pressure2;
-  String pressure3;
-  String pressure4;
-  String pressure5;
-  String pressure6;
-  String temperature1;
-  String temperature2;
-  String temperature3;
-  String temperature4;
-  String temperature5;
-  String temperature6;
-  String press1;
-  String press2;
-  String press3;
-  String press4;
-  String press5;
-  String press6;
-  String totalpress;
-  String sumPress;
-  String idSite;
+class Spm extends Equatable {
+  final String idtpms;
+  final String timestamp;
+  final String devicename;
+  final String lat;
+  final String alt;
+  final String lon;
+  final String pressure1;
+  final String pressure2;
+  final String pressure3;
+  final String pressure4;
+  final String pressure5;
+  final String pressure6;
+  final String temperature1;
+  final String temperature2;
+  final String temperature3;
+  final String temperature4;
+  final String temperature5;
+  final String temperature6;
+  final String press1;
+  final String press2;
+  final String press3;
+  final String press4;
+  final String press5;
+  final String press6;
+  final String totalpress;
+  final String sumPress;
+  final String idSite;
 
-  Spm({
+  const Spm({
     required this.idtpms,
     required this.timestamp,
     required this.devicename,
@@ -126,6 +123,37 @@ class Spm {
         "sum_press": sumPress,
         "id_site": idSite,
       };
+
+  @override
+  List<Object?> get props => [
+        idtpms,
+        timestamp,
+        devicename,
+        lat,
+        alt,
+        lon,
+        pressure1,
+        pressure2,
+        pressure3,
+        pressure4,
+        pressure5,
+        pressure6,
+        temperature1,
+        temperature2,
+        temperature3,
+        temperature4,
+        temperature5,
+        temperature6,
+        press1,
+        press2,
+        press3,
+        press4,
+        press5,
+        press6,
+        totalpress,
+        sumPress,
+        idSite,
+      ];
 
   @override
   String toString() {

@@ -687,6 +687,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       value: _selectedSite,
                                       hint: Text('Choose Site'),
                                       items: listSite.map((site) {
+                                        print('daftar site : $site');
                                         return DropdownMenuItem<String>(
                                           value: site.idSite,
                                           child: Text(site.site ?? ''),
