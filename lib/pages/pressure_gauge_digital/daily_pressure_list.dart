@@ -324,6 +324,14 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                         countAllTire: countAllTire,
                                         allUnit: allUnit,
                                         typeSend: 'single'));
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  backgroundColor: green00968A,
+                                  content: Text(
+                                    'Successful Save Data!',
+                                    style: getWhiteTextStyle(),
+                                  ),
+                                ));
                               },
                               style: ElevatedButton.styleFrom(
                                   backgroundColor: green00968A),

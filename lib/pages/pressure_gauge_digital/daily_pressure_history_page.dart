@@ -414,14 +414,67 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Builder(builder: (context) {
                 if (selectedMenu == 0) {
-                  return ExportExcelButton(
-                    user: user,
-                    pit: pit,
-                    selectedPit: selectedPit,
-                    filteredItemTask: filteredItemTask,
-                    date:
-                        "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}",
-                    type: ExportType.oneDay,
+                  return Column(
+                    children: [
+                      ExportExcelButton(
+                        user: user,
+                        pit: pit,
+                        selectedPit: selectedPit,
+                        filteredItemTask: filteredItemTask,
+                        date:
+                            "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}",
+                        type: ExportType.oneDay,
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                              onPressed: () async {
+                                final countAllTire =
+                                    await ApiService.getCachedCountAllTire(
+                                        idSite: idSite);
+                                final allUnit = await ApiService.getCachedUnits(
+                                    idSite: idSite);
+
+                                context.read<DailyCheckPostBloc>().add(
+                                    DailyCheckPostEvent(
+                                        dailyCheck: filteredItemTask,
+                                        countAllTire: countAllTire,
+                                        allUnit: allUnit,
+                                        typeSend: 'single'));
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  backgroundColor: green00968A,
+                                  content: Text(
+                                    'Successful Save Data!',
+                                    style: getWhiteTextStyle(),
+                                  ),
+                                ));
+                              },
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: green00968A),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.send,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(
+                                      width: 12,
+                                    ),
+                                    Text(
+                                      'Send Data to CTS (One Day)',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                              ))),
+                    ],
                   );
                 }
                 return Container();

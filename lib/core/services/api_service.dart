@@ -20,41 +20,46 @@ class ApiService {
 
   // POST data daily check pressure
   static Future<void> postDailyCheckPressure(
-      List<DailyPress> dailyCheck,
-      Map<String, dynamic> summaryData,
-      List<Map<String, dynamic>> unitData) async {
-    log('daily check api service : ${unitData}');
+      List<Map<String, dynamic>> data1,
+      List<Map<String, dynamic>> data2,
+      List<Map<String, dynamic>> data3) async {
+    log('daily check api service : ${data3}');
 
     try {
       final response = await http.post(
         Uri.parse('${postUrl}post_daily'),
         headers: {"Content-Type": "application/json"},
+        // body: jsonEncode({
+        //   "data1": [
+        //     {
+        //       "target_daily": summaryData["target_daily"],
+        //       "checked": summaryData["checked"],
+        //       "low": summaryData["low"],
+        //       "id_site": '2',
+        //       "tgl_daily": dailyCheck[0].hari
+        //     }
+        //   ],
+        //   "data2": dailyCheck
+        //       .expand((daily) => daily.posisi
+        //           .map((pos) => {
+        //                 "id_daily": pos.idDaily,
+        //                 "id_unit_site": pos.idUnit,
+        //                 "pos": pos.pos,
+        //                 "inv": pos.idInventory,
+        //                 "tanggal_daily": daily.hari,
+        //                 "press": pos.pressure,
+        //                 "kondisi": pos.kondisi,
+        //                 "id_site": "2",
+        //                 "adj": "0"
+        //               })
+        //           .toList())
+        //       .toList(),
+        //   "data3": unitData,
+        // }),
         body: jsonEncode({
-          "data1": [
-            {
-              "target_daily": summaryData["target_daily"],
-              "checked": summaryData["checked"],
-              "low": summaryData["low"],
-              "id_site": '2',
-              "tgl_daily": dailyCheck[0].hari
-            }
-          ],
-          "data2": dailyCheck
-              .expand((daily) => daily.posisi
-                  .map((pos) => {
-                        "id_daily": pos.idDaily,
-                        "id_unit_site": pos.idUnit,
-                        "pos": pos.pos,
-                        "inv": pos.idInventory,
-                        "tanggal_daily": daily.hari,
-                        "press": pos.pressure,
-                        "kondisi": pos.kondisi,
-                        "id_site": "2",
-                        "adj": "0"
-                      })
-                  .toList())
-              .toList(),
-          "data3": unitData,
+          "data1": data1,
+          "data2": data2,
+          "data3": data3,
         }),
       );
       if (response.statusCode == 201 || response.statusCode == 200) {
