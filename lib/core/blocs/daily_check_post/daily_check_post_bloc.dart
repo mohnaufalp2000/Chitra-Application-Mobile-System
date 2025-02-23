@@ -6,12 +6,15 @@ import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/daily_press.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:equatable/equatable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 part 'daily_check_post_event.dart';
 part 'daily_check_post_state.dart';
 
 class DailyCheckPostBloc
     extends Bloc<DailyCheckPostEvent, DailyCheckPostState> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+
   DailyCheckPostBloc() : super(DailyCheckPostInitial()) {
     on<DailyCheckPostEvent>((event, emit) async {
       // emit(DailyCheckPostLoadingState());
@@ -84,22 +87,45 @@ class DailyCheckPostBloc
             .toList();
 
         // Data 3
+
         final Set<String> availableMonths = dailyCheckConverted
             .map((daily) => daily.hari.split('-').sublist(0, 2).join('-'))
             .toSet();
 
+        QuerySnapshot snapshot = await firestore
+            .collection('daily_pressure')
+            .where('idSite',
+                isEqualTo: dailyCheckConverted[0].idSite) // Filter site
+            .get(); // Ambil semua data dulu
+
+        List<Map<String, dynamic>> firestoreData = snapshot.docs
+            .map((doc) => doc.data() as Map<String, dynamic>)
+            .toList();
+
+        List<DailyPress> convertedData3 =
+            firestoreData.map((e) => DailyPress.fromFirestore(e)).toList();
+
+        final distinctData3 = Set<DailyPress>.from(convertedData3).toList();
+
         final data3 = event.allUnit.expand((unit) {
           return availableMonths.map((month) {
+            int count = distinctData3
+                .where((data) =>
+                    data.unit == unit.unitNumber &&
+                    (data.tanggal).startsWith(month))
+                .length;
+
             return {
               "id_daily_unit": "${unit.unitNumber}2$month",
               "unit": unit.unitNumber,
               "date": month,
-              "qty": dailyCheckConverted
-                  .where((daily) =>
-                      daily.unit == unit.unitNumber &&
-                      daily.hari.startsWith(
-                          month)) // Pastikan unit cocok dan di bulan yang benar
-                  .length,
+              // "qty": dailyCheckConverted
+              //     .where((daily) =>
+              //         daily.unit == unit.unitNumber &&
+              //         daily.hari.startsWith(
+              //             month)) // Pastikan unit cocok dan di bulan yang benar
+              //     .length,
+              "qty": count,
               "site": "2"
             };
           });
@@ -111,7 +137,8 @@ class DailyCheckPostBloc
               "data3": data3,
             })}');
 
-        await ApiService.postDailyCheckPressure(data1, data2, data3);
+        // JANGAN LUPA RUBAH ID SITE KE AKTUAL KALAU UDAH SELESAI
+        // await ApiService.postDailyCheckPressure(data1, data2, data3);
 
         emit(DailyCheckPostSuccessState(message: "Data berhasil dikirim!"));
       } catch (e) {
