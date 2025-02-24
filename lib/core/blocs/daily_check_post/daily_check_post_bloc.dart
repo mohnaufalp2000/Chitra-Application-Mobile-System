@@ -134,7 +134,7 @@ class DailyCheckPostBloc
             })}');
 
         // JANGAN LUPA RUBAH ID SITE KE AKTUAL KALAU UDAH SELESAI
-        // await ApiService.postDailyCheckPressure(data1, data2, data3);
+        await ApiService.postDailyCheckPressure(data1, data2, data3);
 
         emit(DailyCheckPostSuccessState(message: "Data berhasil dikirim!"));
       } catch (e) {
