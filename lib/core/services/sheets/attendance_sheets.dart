@@ -88,17 +88,16 @@ class AttendanceSheetsAPI {
       final rows =
           await userSheet!.values.allRows(fromRow: 2); // skip header row
 
-      print('data absensi api : $rows');
-
       // Find the row with the matching Nama_Karyawan and Tanggal
       for (var row in rows) {
-        var epoch = DateTime(1899, 12, 30);
-        var currentDate = epoch.add(Duration(days: int.tryParse(row[3])!));
-        var formattedDate = '${DateFormat('MM-dd-yyyy').format(currentDate)}';
-        log('tanggal numerik : $formattedDate');
+        if (row.isNotEmpty) {
+          var epoch = DateTime(1899, 12, 30);
+          var currentDate = epoch.add(Duration(days: int.tryParse(row[3])!));
+          var formattedDate = '${DateFormat('MM-dd-yyyy').format(currentDate)}';
 
-        if (row[2] == sn && (tanggal == formattedDate)) {
-          return row[0]; // Return the id (first column)
+          if (row[2] == sn && (tanggal == formattedDate)) {
+            return row[0]; // Return the id (first column)
+          }
         }
       }
     } catch (e) {

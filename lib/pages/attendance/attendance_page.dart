@@ -40,7 +40,6 @@ class _AttendancePageState extends State<AttendancePage> {
   FirebaseAuth firebaseAuth = FirebaseAuth.instance;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   String site = '';
-  String selectedShift = 'morning';
   final Box<AttendanceEntity> attendanceBox = store.box<AttendanceEntity>();
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> todayPresence() async* {
@@ -48,69 +47,21 @@ class _AttendancePageState extends State<AttendancePage> {
 
     String todayId =
         DateFormat.yMd().format(DateTime.now()).replaceAll('/', '-');
-    String yesterdayId = DateFormat.yMd()
-        .format(DateTime.now().subtract(Duration(days: 1)))
-        .replaceAll('/', '-');
 
     DateTime now = DateTime.now();
     TimeOfDay targetTime = TimeOfDay(hour: (16), minute: 0);
 
-    DateTime targetDateTime = DateTime(
-        now.year, now.month, now.day, targetTime.hour, targetTime.minute);
-
-    if (selectedShift == 'night') {
-      if (now.isAfter(targetDateTime)) {
-        yield* firestore
-            .collection('users')
-            .doc(uid)
-            .collection('presensi')
-            .doc(todayId)
-            .snapshots();
-      } else {
-        yield* firestore
-            .collection('users')
-            .doc(uid)
-            .collection('presensi')
-            .doc(yesterdayId)
-            .snapshots();
-      }
-    } else {
-      yield* firestore
-          .collection('users')
-          .doc(uid)
-          .collection('presensi')
-          .doc(todayId)
-          .snapshots();
-    }
-
-    // if (now.isAfter(targetDateTime) {
-    //   print('shift malam');
-    //   yield* firestore
-    //       .collection('users')
-    //       .doc(uid)
-    //       .collection('presensi')
-    //       .doc(todayId)
-    //       .snapshots();
-    // } else {
-    //   print('shift pagi');
-    //   yield* firestore
-    //       .collection('users')
-    //       .doc(uid)
-    //       .collection('presensi')
-    //       .doc(yesterdayId)
-    //       .snapshots();
-    // }
+    yield* firestore
+        .collection('users')
+        .doc(uid)
+        .collection('presensi')
+        .doc(todayId)
+        .snapshots();
   }
 
   @override
   void initState() {
     super.initState();
-    retrieveManpowerShift();
-  }
-
-  void retrieveManpowerShift() async {
-    String shift = await getManpowerShiftPreferences();
-    selectedShift = shift;
   }
 
   @override
@@ -307,31 +258,7 @@ class _AttendancePageState extends State<AttendancePage> {
                                           presence: snapshot.data?.docs));
                                 });
                           }),
-                      const SizedBox(
-                        height: 24,
-                      ),
-                      DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                            isDense: true,
-                            style: getBlackTextStyle(),
-                            value: selectedShift,
-                            items: [
-                              DropdownMenuItem(
-                                child: Text('Shift Pagi'),
-                                value: 'morning',
-                              ),
-                              DropdownMenuItem(
-                                child: Text('Shift Malam'),
-                                value: 'night',
-                              ),
-                            ],
-                            onChanged: (value) async {
-                              updateManpowerShiftPreference(value ?? '');
-                              setState(() {
-                                selectedShift = value ?? '';
-                              });
-                            }),
-                      ),
+
                       const SizedBox(
                         height: 24,
                       ),

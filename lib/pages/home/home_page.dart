@@ -56,6 +56,7 @@ import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 
 class HomePage extends StatefulWidget {
@@ -653,6 +654,46 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           Text(
                             'App Version : ${_packageInfo.version}',
                             style: getBlackTextStyle(fontWeight: w700),
+                          ),
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                String phoneNumber = "+6281252073489";
+                                String url = "https://wa.me/$phoneNumber";
+                                Uri uri = Uri.parse(url);
+
+                                try {
+                                  await launchUrl(uri,
+                                      mode: LaunchMode.externalApplication);
+                                } catch (e) {
+                                  print('error whatsapp : $e');
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: green00968A,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.wechat,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(
+                                    width: 12,
+                                  ),
+                                  Text(
+                                    "Contact Developer",
+                                    style: getWhiteTextStyle(),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                           const SizedBox(
                             height: 12,

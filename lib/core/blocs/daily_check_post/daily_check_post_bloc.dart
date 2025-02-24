@@ -64,8 +64,8 @@ class DailyCheckPostBloc
             'tgl_daily': entry.value['tgl_daily'],
             'checked': entry.value['checked_tire'],
             'low': countLowPressureTire[index]['low_pressure_tire'],
-            // 'id_site': dailyCheckConverted[0].idSite,
-            'id_site': '2',
+            'id_site': dailyCheckConverted[0].idSite,
+            // 'id_site': '2',
           };
         }).toList();
 
@@ -80,7 +80,8 @@ class DailyCheckPostBloc
                       "tanggal_daily": daily.hari,
                       "press": pos.pressure,
                       "kondisi": pos.kondisi,
-                      "id_site": "2",
+                      'id_site': dailyCheckConverted[0].idSite,
+                      // "id_site": "2",
                       "adj": "0"
                     })
                 .toList())
@@ -119,14 +120,9 @@ class DailyCheckPostBloc
               "id_daily_unit": "${unit.unitNumber}2$month",
               "unit": unit.unitNumber,
               "date": month,
-              // "qty": dailyCheckConverted
-              //     .where((daily) =>
-              //         daily.unit == unit.unitNumber &&
-              //         daily.hari.startsWith(
-              //             month)) // Pastikan unit cocok dan di bulan yang benar
-              //     .length,
               "qty": count,
-              "site": "2"
+              'site': dailyCheckConverted[0].idSite,
+              // "site": "2"
             };
           });
         }).toList();

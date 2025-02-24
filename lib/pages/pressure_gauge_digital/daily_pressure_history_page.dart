@@ -538,28 +538,35 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                   }
                                   if (snapshot.connectionState ==
                                       ConnectionState.active) {
+                                    final allData = snapshot.data?.docs
+                                        .map((doc) => DailyPress.fromFirestore(
+                                            doc.data() as Map<String, dynamic>))
+                                        .toList();
+
+                                    final distinctDaily =
+                                        Set<DailyPress>.from(allData ?? [])
+                                            .toList();
+
                                     final tmpDailyData =
                                         snapshot.data?.docs ?? [];
 
-                                    final dailyData = tmpDailyData.where((doc) {
-                                      final Map<String, dynamic> data =
-                                          doc.data() as Map<String, dynamic>;
-
+                                    final dailyData =
+                                        distinctDaily.where((doc) {
                                       // pilih all pit
                                       if (pit.isNotEmpty) {
                                         if (pit[selectedPit] == 'All') {
-                                          return data['idSite'] == idSite;
+                                          return doc.idSite == idSite;
                                         }
 
                                         // ada pit
-                                        if (data['pit'] != 'Default') {
-                                          return data['idSite'] == idSite &&
-                                              data['pit'] == pit[selectedPit];
+                                        if (doc.pit != 'Default') {
+                                          return doc.idSite == idSite &&
+                                              doc.pit == pit[selectedPit];
                                         }
                                       }
 
                                       // tidak ada pit
-                                      return data['idSite'] == idSite;
+                                      return doc.idSite == idSite;
                                     }).toList();
 
                                     // untuk data export excel
@@ -567,7 +574,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                     filteredItemTask.clear();
                                     dailyData.forEach((item) {
                                       Map<String, dynamic> cast =
-                                          item.data() as Map<String, dynamic>;
+                                          item.toFirestore();
 
                                       filteredItemTask.add(cast);
                                     });

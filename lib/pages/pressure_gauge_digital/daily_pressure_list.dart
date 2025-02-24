@@ -701,7 +701,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                         return Container();
                                       }
                                       final data = distinctDaily[index];
-                                      log('data daily : $data');
 
                                       if (searchQuery.isNotEmpty &&
                                           !data.unit!
@@ -1106,17 +1105,20 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                         luka ==
                                                                             null)
                                                                     ? Container()
-                                                                    : Text(
-                                                                        // pl['luka']
-                                                                        pl.luka.join(
-                                                                            '\n'),
-                                                                        textAlign:
-                                                                            TextAlign.end,
-                                                                        style: getWhiteTextStyle(
-                                                                            fontWeight:
-                                                                                w700,
-                                                                            fontSize:
-                                                                                18),
+                                                                    : Container(
+                                                                        width:
+                                                                            200,
+                                                                        child:
+                                                                            Text(
+                                                                          // pl['luka']
+                                                                          pl.luka
+                                                                              .join('\n'),
+                                                                          textAlign:
+                                                                              TextAlign.end,
+                                                                          style: getWhiteTextStyle(
+                                                                              fontWeight: w700,
+                                                                              fontSize: 18),
+                                                                        ),
                                                                       ),
                                                                 Text(
                                                                     // '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',

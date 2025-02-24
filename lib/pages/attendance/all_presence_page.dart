@@ -130,6 +130,7 @@ import 'package:camos/objectbox.g.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutterflow_paginate_firestore/paginate_firestore.dart';
 import 'package:intl/intl.dart';
 
 class AllPresencePage extends StatefulWidget {
@@ -154,70 +155,90 @@ class _AllPresencePageState extends State<AllPresencePage> {
       body: SafeArea(
           child: SingleChildScrollView(
         child: Padding(
-            padding: EdgeInsets.all(24),
-            child: ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: attendanceBox.getAll().length,
-                itemBuilder: (context, index) {
-                  final presence = attendanceBox.getAll()[index];
-                  return Card(
-                    color: grey8391A1,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                    elevation: 2,
-                    child: Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [
-                            green00968A,
-                            blue344BEF,
-                          ]),
-                          borderRadius: BorderRadius.circular(16)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+          padding: EdgeInsets.all(24),
+          child: PaginateFirestore(
+            query: firebaseFirestore
+                .collection('users')
+                .doc(uid)
+                .collection('presensi')
+                .orderBy('date',
+                    descending: true), // Sesuai kebutuhan, bisa ubah orderBy
+            itemBuilderType: PaginateBuilderType.listView,
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            itemsPerPage: 5,
+            isLive: true,
+            initialLoader:
+                const Center(child: CircularProgressIndicator.adaptive()),
+            bottomLoader:
+                const Center(child: CircularProgressIndicator.adaptive()),
+            onEmpty: Center(
+              child: Text(
+                'There is no data',
+                style: getWhiteTextStyle(fontWeight: w700),
+              ),
+            ),
+            itemBuilder: (context, snapshot, firebaseIndex) {
+              final presence =
+                  snapshot[firebaseIndex].data() as Map<String, dynamic>;
+
+              return Card(
+                color: grey8391A1,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                elevation: 2,
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [green00968A, blue344BEF],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'In',
-                                style: getWhiteTextStyle(fontWeight: w700),
-                              ),
-                              Text(
-                                DateFormat.yMMMMEEEEd()
-                                    .format(DateTime.parse(presence.date)),
-                                style: getWhiteTextStyle(
-                                  fontWeight: w700,
-                                ),
-                              ),
-                            ],
-                          ),
                           Text(
-                            presence.masuk == null
-                                ? '-'
-                                : '${DateFormat.Hms().format(DateTime.parse(presence.masuk))}',
-                            style: getWhiteTextStyle(),
-                          ),
-                          const SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            'Out',
+                            'In',
                             style: getWhiteTextStyle(fontWeight: w700),
                           ),
                           Text(
-                            presence.keluar == null
-                                ? '-'
-                                : '${DateFormat.Hms().format(DateTime.parse(presence.keluar))}',
-                            style: getWhiteTextStyle(),
+                            DateFormat.yMMMMEEEEd()
+                                .format(DateTime.parse(presence['date'])),
+                            style: getWhiteTextStyle(fontWeight: w700),
                           ),
                         ],
                       ),
-                    ),
-                  );
-                })),
+                      Text(
+                        presence['masuk'] == null
+                            ? '-'
+                            : DateFormat.Hms().format(
+                                DateTime.parse(presence['masuk']['date'])),
+                        style: getWhiteTextStyle(),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Out',
+                        style: getWhiteTextStyle(fontWeight: w700),
+                      ),
+                      Text(
+                        presence['keluar'] == null
+                            ? '-'
+                            : DateFormat.Hms().format(
+                                DateTime.parse(presence['keluar']['date'])),
+                        style: getWhiteTextStyle(),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       )),
     );
   }

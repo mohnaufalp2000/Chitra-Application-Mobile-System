@@ -18,7 +18,9 @@ import 'package:camos/main.dart';
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/attendance/all_presence_page.dart';
 import 'package:camos/pages/attendance/presence_camera_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -34,6 +36,8 @@ class PresencePage extends StatefulWidget {
 
 class _PresencePageState extends State<PresencePage> {
   final Box<AttendanceEntity> attendanceBox = store.box<AttendanceEntity>();
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   String selectedShift = 'morning';
   int selectedDate = -1;
@@ -54,6 +58,14 @@ class _PresencePageState extends State<PresencePage> {
 
   Stream<List<AttendanceEntity>>? attendanceStream;
 
+  Future<List<dynamic>> fetchBothData() async {
+    final result = await Future.wait([
+      getUserPreferences(),
+      getIdSitePreferences(),
+    ]);
+    return result;
+  }
+
   Map<String, dynamic> user = {};
   String idSite = '';
   List<String> dates = [];
@@ -71,76 +83,43 @@ class _PresencePageState extends State<PresencePage> {
     super.initState();
     selectedDate = DateTime.now().month;
 
-    retrieveManpowerShift();
     retrieveUser();
-    getDataPresenceToday();
   }
 
-  void getDataPresenceToday() {
-    DateTime now = DateTime.now();
-    String todayDocId = DateFormat.yMd().format(now).replaceAll('/', '-');
-    final tmpDate = DateFormat('MM-dd-yyyy').parse(todayDocId);
-    String formattedDate = DateFormat('yyyy-MM-dd').format(tmpDate);
-    isPresenceToday = attendanceBox
-        .query(AttendanceEntity_.date
-            .contains(formattedDate, caseSensitive: false))
-        .build()
-        .findFirst();
+  Stream<DocumentSnapshot<Map<String, dynamic>>> todayPresence() async* {
+    String uid = firebaseAuth.currentUser!.uid;
 
-    setState(() {});
-    if (isPresenceToday != null) {
-      InfoCheckIn = isPresenceToday!.keteranganMasuk;
-      InfoCheckOut = isPresenceToday!.keteranganKeluar;
-
-      infoCheckInCtrl.text = isPresenceToday!.keteranganMasuk;
-      infoCheckOutCtrl.text = isPresenceToday!.keteranganKeluar;
-    }
+    String todayId =
+        DateFormat.yMd().format(DateTime.now()).replaceAll('/', '-');
+    yield* firestore
+        .collection('users')
+        .doc(uid)
+        .collection('presensi')
+        .doc(todayId)
+        .snapshots();
   }
 
-  void retrieveUser() async {
+  Future<DocumentSnapshot<Map<String, dynamic>>> getYesterdayPresence() async {
+    String uid = firebaseAuth.currentUser!.uid;
+
+    // Ambil tanggal kemarin dalam format yang sesuai
+    String yesterdayId = DateFormat.yMd()
+        .format(DateTime.now().subtract(Duration(days: 1)))
+        .replaceAll('/', '-');
+
+    return await firestore
+        .collection('users')
+        .doc(uid)
+        .collection('presensi')
+        .doc(yesterdayId)
+        .get();
+  }
+
+  Future<void> retrieveUser() async {
     user = await getUserPreferences();
     idSite = await getIdSitePreferences();
     log(user.toString());
     // {image: image, id_site: 1, position: Innovation, sn: 72618, email: naufaldev2000@gmail.com, age: 23, username: Naufal, siteName: CK-MIFA Mining}
-  }
-
-  void retrieveManpowerShift() async {
-    String shift = await getManpowerShiftPreferences();
-    setState(() {
-      selectedShift = shift;
-    });
-    print('shift dipilih $selectedShift');
-    DateTime now = DateTime.now();
-    TimeOfDay targetTime = TimeOfDay(hour: (16), minute: 0);
-
-    DateTime targetDateTime = DateTime(
-        now.year, now.month, now.day, targetTime.hour, targetTime.minute);
-    if (selectedShift == 'morning') {
-      attendanceStream = attendanceBox
-          .query(AttendanceEntity_.date
-              .contains(DateTime.now().toIso8601String().split('T')[0]))
-          .watch(triggerImmediately: true)
-          .map((event) => event.find());
-    } else {
-      if (now.isAfter(targetDateTime)) {
-        print('malam');
-        attendanceStream = attendanceBox
-            .query(AttendanceEntity_.date
-                .contains(DateTime.now().toIso8601String().split('T')[0]))
-            .watch(triggerImmediately: true)
-            .map((event) => event.find());
-      } else {
-        print('pagi');
-        attendanceStream = attendanceBox
-            .query(AttendanceEntity_.date.contains(DateTime.now()
-                .subtract(Duration(days: 1))
-                .toIso8601String()
-                .split('T')[0]))
-            .watch(triggerImmediately: true)
-            .map((event) => event.find());
-      }
-      ;
-    }
   }
 
   void showAddInfoDialog(String type) {
@@ -312,73 +291,83 @@ class _PresencePageState extends State<PresencePage> {
               }
             },
             builder: (context, state) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextButton(
-                      onPressed: () async {
-                        final id = await AttendanceSheetsAPI.getRowCount() + 1;
-                        log('attendance_row_count : ${await AttendanceSheetsAPI.getRowCount()}');
-                      },
-                      child: Text('Test')),
-                  profileCard(),
-                  const SizedBox(
-                    height: 12,
-                  ),
-                  Container(
-                    height: 50.0, // Sesuaikan tinggi container sesuai kebutuhan
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: generalDate.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        return Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 8.0),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                selectedDate = generalDate[index].keys.first;
-                              });
-                            },
-                            style: ElevatedButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6)),
-                                backgroundColor: (selectedDate ==
-                                        generalDate[index].keys.first)
-                                    ? Colors.orange
-                                    : Colors.white70,
-                                padding: EdgeInsets.all(12.0)),
-                            child: Text(
-                              generalDate[index].values.first,
-                              style: TextStyle(
-                                  color: (selectedDate ==
-                                          generalDate[index].keys.first)
-                                      ? white
-                                      : black,
-                                  fontSize: 18.0),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 12,
-                  ),
-                  buttonSave(),
-                  const SizedBox(
-                    height: 24,
-                  ),
-                  dropdownShift(),
-                  const SizedBox(
-                    height: 24,
-                  ),
-                  todayPresenceCard(),
-                  const SizedBox(
-                    height: 24,
-                  ),
-                  historyPresence(),
-                ],
-              );
+              return FutureBuilder(
+                  future: fetchBothData(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(
+                          child: CircularProgressIndicator()); // Loading state
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                          child: Text(
+                              'Error: ${snapshot.error}')); // Error handling
+                    }
+
+                    // Ambil data dari snapshot
+                    user = snapshot.data![0];
+                    idSite = snapshot.data![1];
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        profileCard(),
+                        const SizedBox(
+                          height: 12,
+                        ),
+                        // Container(
+                        //   height:
+                        //       50.0, // Sesuaikan tinggi container sesuai kebutuhan
+                        //   child: ListView.builder(
+                        //     scrollDirection: Axis.horizontal,
+                        //     itemCount: generalDate.length,
+                        //     itemBuilder: (BuildContext context, int index) {
+                        //       return Padding(
+                        //         padding: EdgeInsets.symmetric(horizontal: 8.0),
+                        //         child: ElevatedButton(
+                        //           onPressed: () {
+                        //             setState(() {
+                        //               selectedDate =
+                        //                   generalDate[index].keys.first;
+                        //             });
+                        //           },
+                        //           style: ElevatedButton.styleFrom(
+                        //               shape: RoundedRectangleBorder(
+                        //                   borderRadius:
+                        //                       BorderRadius.circular(6)),
+                        //               backgroundColor: (selectedDate ==
+                        //                       generalDate[index].keys.first)
+                        //                   ? Colors.orange
+                        //                   : Colors.white70,
+                        //               padding: EdgeInsets.all(12.0)),
+                        //           child: Text(
+                        //             generalDate[index].values.first,
+                        //             style: TextStyle(
+                        //                 color: (selectedDate ==
+                        //                         generalDate[index].keys.first)
+                        //                     ? white
+                        //                     : black,
+                        //                 fontSize: 18.0),
+                        //           ),
+                        //         ),
+                        //       );
+                        //     },
+                        //   ),
+                        // ),
+                        // const SizedBox(
+                        //   height: 12,
+                        // ),
+                        // buttonSave(),
+                        const SizedBox(
+                          height: 24,
+                        ),
+                        todayPresenceCard(),
+                        const SizedBox(
+                          height: 24,
+                        ),
+                        historyPresence(),
+                      ],
+                    );
+                  });
             },
           ),
         ),
@@ -475,222 +464,91 @@ class _PresencePageState extends State<PresencePage> {
                 ]),
                 borderRadius: BorderRadius.circular(16)),
             child: StreamBuilder(
-                stream: attendanceStream,
+                stream: todayPresence(),
                 builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final att = snapshot.data;
-
-                    if (att!.isNotEmpty) {
-                      log('data checkout : ${att?[0].keluar}');
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Check-in',
-                                style: getWhiteTextStyle(),
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    (att![0].masuk == '')
-                                        ? '-'
-                                        : '${DateFormat.yMMMMEEEEd().format(DateTime.parse(att[0].masuk))}',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                  Text(
-                                    (att[0].masuk == '')
-                                        ? '-'
-                                        : '${DateFormat.Hms().format(DateTime.parse(att[0].masuk ?? ''))}',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              (att![0].masuk == '')
-                                  ? Text(
-                                      '-',
-                                      style: getWhiteTextStyle(),
-                                    )
-                                  : Row(
-                                      children: [
-                                        SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.7,
-                                          child: ButtonWidget(
-                                              name: (InfoCheckIn.isEmpty)
-                                                  ? Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.add,
-                                                        ),
-                                                        SizedBox(
-                                                          width: 6,
-                                                        ),
-                                                        Text(
-                                                          'Add Additional Info',
-                                                          style:
-                                                              getBlackTextStyle(),
-                                                        ),
-                                                      ],
-                                                    )
-                                                  : Column(
-                                                      children: [
-                                                        Text(
-                                                          InfoCheckIn,
-                                                          style:
-                                                              getBlackTextStyle(),
-                                                        ),
-                                                        Divider(),
-                                                        Row(
-                                                          children: [
-                                                            Icon(Icons.edit),
-                                                            const SizedBox(
-                                                              width: 6,
-                                                            ),
-                                                            Text(
-                                                              'Edit',
-                                                              style:
-                                                                  getBlackTextStyle(),
-                                                            ),
-                                                          ],
-                                                        )
-                                                      ],
-                                                    ),
-                                              color: white,
-                                              function: () {
-                                                getDataPresenceToday();
-                                                showAddInfoDialog('check-in');
-                                              }),
-                                        ),
-                                      ],
-                                    ),
-                              const SizedBox()
-                            ],
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Divider(
-                              thickness: 2,
-                              color: white,
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Check-out',
-                                style: getWhiteTextStyle(),
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    (att[0].keluar == '')
-                                        ? '-'
-                                        : '${DateFormat.yMMMMEEEEd().format(DateTime.parse(att[0].keluar ?? ''))}',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                  Text(
-                                    (att[0].keluar == '')
-                                        ? '-'
-                                        : '${DateFormat.Hms().format(DateTime.parse(att[0].keluar ?? ''))}',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              (att![0].keluar == '')
-                                  ? Text(
-                                      '-',
-                                      style: getWhiteTextStyle(),
-                                    )
-                                  : Row(
-                                      children: [
-                                        SizedBox(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.7,
-                                          child: ButtonWidget(
-                                              name: ((InfoCheckOut.isEmpty))
-                                                  ? Row(
-                                                      children: [
-                                                        Icon(
-                                                          Icons.add,
-                                                        ),
-                                                        SizedBox(
-                                                          width: 6,
-                                                        ),
-                                                        Text(
-                                                          'Add Additional Info',
-                                                          style:
-                                                              getBlackTextStyle(),
-                                                        ),
-                                                      ],
-                                                    )
-                                                  : Column(
-                                                      children: [
-                                                        Text(
-                                                          InfoCheckOut,
-                                                          style:
-                                                              getBlackTextStyle(),
-                                                        ),
-                                                        Divider(),
-                                                        Row(
-                                                          children: [
-                                                            Icon(Icons.edit),
-                                                            const SizedBox(
-                                                              width: 6,
-                                                            ),
-                                                            Text(
-                                                              'Edit',
-                                                              style:
-                                                                  getBlackTextStyle(),
-                                                            ),
-                                                          ],
-                                                        )
-                                                      ],
-                                                    ),
-                                              color: white,
-                                              function: () {
-                                                getDataPresenceToday();
-                                                showAddInfoDialog('check-out');
-                                              }),
-                                        ),
-                                      ],
-                                    ),
-                            ],
-                          ),
-                        ],
-                      );
-                    }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Container();
                   }
-
-                  return Container(
-                    child: Center(
+                  Map<String, dynamic>? dataToday = snapshot.data?.data();
+                  if (dataToday?['masuk'] == null) {
+                    return Center(
                       child: Text(
                         'You haven\'t done attendance today',
-                        style: getWhiteTextStyle(),
+                        style: getWhiteTextStyle(fontWeight: w700),
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Check-in',
+                              style: getWhiteTextStyle(),
+                            ),
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  (dataToday?['masuk'] == null)
+                                      ? '-'
+                                      : '${DateFormat.yMMMMEEEEd().format(DateTime.parse(dataToday?['masuk']['date']))}',
+                                  style: getWhiteTextStyle(),
+                                ),
+                                Text(
+                                  (dataToday?['masuk'] == null)
+                                      ? '-'
+                                      : '${DateFormat.Hms().format(DateTime.parse(dataToday?['masuk']['date']))}',
+                                  style: getWhiteTextStyle(),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Divider(
+                            thickness: 2,
+                            color: white,
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Check-out',
+                              style: getWhiteTextStyle(),
+                            ),
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  (dataToday?['keluar'] == null)
+                                      ? '-'
+                                      : '${DateFormat.yMMMMEEEEd().format(DateTime.parse(dataToday?['keluar']['date']))}',
+                                  style: getWhiteTextStyle(),
+                                ),
+                                Text(
+                                  (dataToday?['keluar'] == null)
+                                      ? '-'
+                                      : '${DateFormat.Hms().format(DateTime.parse(dataToday?['keluar']['date']))}',
+                                  style: getWhiteTextStyle(),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
+                      ],
+                    );
+                  }
                 }),
           ),
         )
@@ -722,69 +580,74 @@ class _PresencePageState extends State<PresencePage> {
         const SizedBox(
           height: 12,
         ),
-        ListView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            itemCount: attendanceBox.getAll().length,
-            itemBuilder: (contenxt, index) {
-              final presence = attendanceBox.getAll()[index];
-              return Card(
-                color: grey8391A1,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                elevation: 2,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [
-                        green00968A,
-                        blue344BEF,
-                      ]),
-                      borderRadius: BorderRadius.circular(16)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'In',
-                            style: getWhiteTextStyle(fontWeight: w700),
-                          ),
-                          Text(
-                            DateFormat.yMMMMEEEEd()
-                                .format(DateTime.parse(presence.date)),
-                            style: getWhiteTextStyle(
-                              fontWeight: w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        presence.masuk == null || presence.masuk == ''
-                            ? '-'
-                            : '${DateFormat.Hms().format(DateTime.parse(presence.masuk))}',
-                        style: getWhiteTextStyle(),
-                      ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Text(
-                        'Out',
-                        style: getWhiteTextStyle(fontWeight: w700),
-                      ),
-                      Text(
-                        presence.keluar == null || presence.keluar == ''
-                            ? '-'
-                            : '${DateFormat.Hms().format(DateTime.parse(presence.keluar))}',
-                        style: getWhiteTextStyle(),
-                      ),
-                    ],
-                  ),
+        FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          future: getYesterdayPresence(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            }
+
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return Center(
+                  child: Container(
+                margin: EdgeInsets.only(bottom: 18),
+                child: Text(
+                  "There is no data attendance yesterday",
+                  style: getBlackTextStyle(),
                 ),
-              );
-            })
+              ));
+            }
+
+            var presence = snapshot.data!.data();
+
+            return Card(
+              color: grey8391A1,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              elevation: 2,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [green00968A, blue344BEF]),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('In', style: getWhiteTextStyle(fontWeight: w700)),
+                        Text(
+                          DateFormat.yMMMMEEEEd().format(DateTime.parse(
+                              presence?['date'] ?? DateTime.now().toString())),
+                          style: getWhiteTextStyle(fontWeight: w700),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      presence?['masuk']['date'] == null ||
+                              presence?['masuk']['date'] == ''
+                          ? '-'
+                          : '${DateFormat.Hms().format(DateTime.parse(presence?['masuk']['date']))}',
+                      style: getWhiteTextStyle(),
+                    ),
+                    const SizedBox(height: 10),
+                    Text('Out', style: getWhiteTextStyle(fontWeight: w700)),
+                    Text(
+                      presence?['keluar']['date'] == null ||
+                              presence?['keluar']['date'] == ''
+                          ? '-'
+                          : '${DateFormat.Hms().format(DateTime.parse(presence?['keluar']['date']))}',
+                      style: getWhiteTextStyle(),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        )
       ],
     );
   }
@@ -824,40 +687,9 @@ class _PresencePageState extends State<PresencePage> {
               });
   }
 
-  SizedBox dropdownShift() {
-    return SizedBox(
-      width: double.infinity,
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-            isDense: true,
-            style: getBlackTextStyle(),
-            value: selectedShift,
-            items: [
-              DropdownMenuItem(
-                child: Text('Shift Pagi'),
-                value: 'morning',
-              ),
-              DropdownMenuItem(
-                child: Text('Shift Malam'),
-                value: 'night',
-              ),
-            ],
-            onChanged: (value) async {
-              log('changed value : $value');
-              updateManpowerShiftPreference(value ?? '');
-              setState(() {
-                selectedShift = value ?? '';
-              });
-            }),
-      ),
-    );
-  }
-
   Widget profileCard() {
     return InkWell(
-      onTap: () {
-        log(attendanceBox.getAll().toString());
-      },
+      onTap: () {},
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
