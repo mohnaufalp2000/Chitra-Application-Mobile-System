@@ -315,45 +315,86 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                         height: 16,
                       ),
                       SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                              onPressed: () async {
-                                context.read<DailyCheckPostBloc>().add(
-                                    DailyCheckPostEvent(
-                                        dailyCheck: filteredItemTask,
-                                        countAllTire: countAllTire,
-                                        allUnit: allUnit,
-                                        typeSend: 'single'));
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  backgroundColor: green00968A,
-                                  content: Text(
-                                    'Successful Save Data!',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                ));
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: green00968A),
-                              child: Container(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            bool? confirmSend = await showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Row(
                                   children: [
                                     Icon(
-                                      Icons.send,
-                                      color: Colors.white,
+                                      Icons.warning,
+                                      color: Colors.orange,
                                     ),
                                     const SizedBox(
                                       width: 12,
                                     ),
                                     Text(
-                                      'Send Data to CTS',
-                                      style: getWhiteTextStyle(),
+                                      "Warning",
+                                      style: getRedTextStyle(fontSize: 24)
+                                          .copyWith(
+                                        color: Colors.orange,
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ))),
+                                content: Text(
+                                  "Are you sure? Please Check Before Send Data!",
+                                  style: getBlackTextStyle(),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: Text("No"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: Text("Yes"),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirmSend == true) {
+                              context.read<DailyCheckPostBloc>().add(
+                                    DailyCheckPostEvent(
+                                      dailyCheck: filteredItemTask,
+                                      countAllTire: countAllTire,
+                                      allUnit: allUnit,
+                                      typeSend: 'single',
+                                    ),
+                                  );
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: green00968A,
+                                  content: Text(
+                                    'Successful Save Data!',
+                                    style: getWhiteTextStyle(),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: green00968A),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.send, color: Colors.white),
+                                SizedBox(width: 12),
+                                Text('Send Data to CTS',
+                                    style: getWhiteTextStyle()),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   );
                 }
@@ -457,27 +498,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
 
                                   final tmpDailyData =
                                       snapshot.data?.docs ?? [];
-
-                                  // final dailyData = tmpDailyData.where((doc) {
-                                  //   final Map<String, dynamic> data =
-                                  //       doc.data() as Map<String, dynamic>;
-
-                                  //   // pilih all pit
-                                  //   if (pit.isNotEmpty) {
-                                  //     if (pit[selectedPit] == 'All') {
-                                  //       return data['idSite'] == idSite;
-                                  //     }
-
-                                  //     // ada pit
-                                  //     if (data['pit'] != 'Default') {
-                                  //       return data['idSite'] == idSite &&
-                                  //           data['pit'] == pit[selectedPit];
-                                  //     }
-                                  //   }
-
-                                  //   // tidak ada pit
-                                  //   return data['idSite'] == idSite;
-                                  // }).toList();
 
                                   final dailyData = distinctDaily.where((doc) {
                                     // pilih all pit
@@ -680,15 +700,15 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                   return 0;
                                 });
 
-                                final Map<String, dynamic> dailyMap =
-                                    snapshot[firebaseIndex].data()
-                                        as Map<String, dynamic>;
+                                // final Map<String, dynamic> dailyMap =
+                                //     snapshot[firebaseIndex].data()
+                                //         as Map<String, dynamic>;
 
-                                if (selectedPit != 0) {
-                                  if (dailyMap['pit'] != pit[selectedPit]) {
-                                    return Container();
-                                  }
-                                }
+                                // if (selectedPit != 0) {
+                                //   if (dailyMap['pit'] != pit[selectedPit]) {
+                                //     return Container();
+                                //   }
+                                // }
 
                                 return ListView.builder(
                                     itemCount: distinctDaily.length,
@@ -707,6 +727,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                               .toLowerCase()
                                               .contains(searchQuery)) {
                                         return Container();
+                                      }
+
+                                      if (selectedPit != 0) {
+                                        if (data.pit != pit[selectedPit]) {
+                                          return Container();
+                                        }
                                       }
 
                                       bool isLowPressure =

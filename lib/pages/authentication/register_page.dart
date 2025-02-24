@@ -5,6 +5,7 @@ import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/widgets/button_widget.dart';
+import 'package:camos/core/widgets/contact_developer_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/pages/authentication/email_verification_page.dart';
 import 'package:camos/pages/authentication/login_page.dart';
@@ -242,6 +243,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     );
                   },
                 ),
+                const SizedBox(
+                  height: 48,
+                ),
+                ContactDeveloperWidget()
               ],
             ),
           ),

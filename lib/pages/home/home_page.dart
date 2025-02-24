@@ -29,6 +29,7 @@ import 'package:camos/core/widgets/box_menu_widget.dart';
 import 'package:camos/core/widgets/box_tire_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/check_box_modal_widget.dart';
+import 'package:camos/core/widgets/contact_developer_widget.dart';
 import 'package:camos/core/widgets/custom_error_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/core/widgets/network_checker_widget.dart';
@@ -658,43 +659,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           const SizedBox(
                             height: 12,
                           ),
-                          Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 8.0),
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                String phoneNumber = "+6281252073489";
-                                String url = "https://wa.me/$phoneNumber";
-                                Uri uri = Uri.parse(url);
-
-                                try {
-                                  await launchUrl(uri,
-                                      mode: LaunchMode.externalApplication);
-                                } catch (e) {
-                                  print('error whatsapp : $e');
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: green00968A,
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.wechat,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(
-                                    width: 12,
-                                  ),
-                                  Text(
-                                    "Contact Developer",
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                          ContactDeveloperWidget(),
                           const SizedBox(
                             height: 12,
                           ),

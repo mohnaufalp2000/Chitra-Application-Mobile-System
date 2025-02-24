@@ -432,26 +432,69 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                           width: double.infinity,
                           child: ElevatedButton(
                               onPressed: () async {
-                                final countAllTire =
-                                    await ApiService.getCachedCountAllTire(
-                                        idSite: idSite);
-                                final allUnit = await ApiService.getCachedUnits(
-                                    idSite: idSite);
-
-                                context.read<DailyCheckPostBloc>().add(
-                                    DailyCheckPostEvent(
-                                        dailyCheck: filteredItemTask,
-                                        countAllTire: countAllTire,
-                                        allUnit: allUnit,
-                                        typeSend: 'single'));
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  backgroundColor: green00968A,
-                                  content: Text(
-                                    'Successful Save Data!',
-                                    style: getWhiteTextStyle(),
+                                bool? confirmSend = await showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.warning,
+                                          color: Colors.orange,
+                                        ),
+                                        const SizedBox(
+                                          width: 12,
+                                        ),
+                                        Text(
+                                          "Warning",
+                                          style: getRedTextStyle(fontSize: 24)
+                                              .copyWith(
+                                            color: Colors.orange,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    content: Text(
+                                      "Are you sure? Please Check Before Send Data!",
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: Text("No"),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: Text("Yes"),
+                                      ),
+                                    ],
                                   ),
-                                ));
+                                );
+
+                                if (confirmSend == true) {
+                                  final countAllTire =
+                                      await ApiService.getCachedCountAllTire(
+                                          idSite: idSite);
+                                  final allUnit =
+                                      await ApiService.getCachedUnits(
+                                          idSite: idSite);
+
+                                  context.read<DailyCheckPostBloc>().add(
+                                      DailyCheckPostEvent(
+                                          dailyCheck: filteredItemTask,
+                                          countAllTire: countAllTire,
+                                          allUnit: allUnit,
+                                          typeSend: 'single'));
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                    backgroundColor: green00968A,
+                                    content: Text(
+                                      'Successful Save Data!',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                  ));
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                   backgroundColor: green00968A),
@@ -683,25 +726,6 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                     final distinctDaily =
                                         Set<DailyPress>.from(allData).toList();
 
-                                    final Map<String, dynamic> dailyMap =
-                                        snapshot[firebaseIndex].data()
-                                            as Map<String, dynamic>;
-                                    final positionList =
-                                        dailyMap['posisi'] as List<dynamic>;
-
-                                    if (selectedPit != 0) {
-                                      if (dailyMap['pit'] != pit[selectedPit]) {
-                                        return Container();
-                                      }
-                                    }
-
-                                    // if (searchQuery.isNotEmpty &&
-                                    //     !dailyMap['unit']!
-                                    //         .toLowerCase()
-                                    //         .contains(searchQuery)) {
-                                    //   return Container();
-                                    // }
-
                                     return ListView.builder(
                                         itemCount: distinctDaily.length,
                                         physics: NeverScrollableScrollPhysics(),
@@ -719,6 +743,12 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                   .toLowerCase()
                                                   .contains(searchQuery)) {
                                             return Container();
+                                          }
+
+                                          if (selectedPit != 0) {
+                                            if (data.pit != pit[selectedPit]) {
+                                              return Container();
+                                            }
                                           }
 
                                           return Card(
@@ -922,9 +952,6 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                       children:
                                                           // positionList.map((pl) {
                                                           data.posisi.map((pl) {
-                                                        final plIndex =
-                                                            positionList
-                                                                .indexOf(pl);
                                                         List<dynamic> luka = [];
 
                                                         // if (pl['luka'] != null &&

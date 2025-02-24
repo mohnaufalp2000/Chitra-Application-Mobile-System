@@ -6,6 +6,7 @@ import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/button_widget.dart';
+import 'package:camos/core/widgets/contact_developer_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
 import 'package:camos/core/widgets/text_button_widget.dart';
 import 'package:camos/pages/authentication/chat_bot_page.dart';
@@ -20,6 +21,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:translator/translator.dart';
 
@@ -39,13 +41,78 @@ class _LoginPageState extends State<LoginPage> {
   bool? isCompleted = false;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+  PackageInfo _packageInfo = PackageInfo(
+    appName: 'Unknown',
+    packageName: 'Unknown',
+    version: 'Unknown',
+    buildNumber: 'Unknown',
+    buildSignature: 'Unknown',
+    installerStore: 'Unknown',
+  );
+
+  Future<void> _initPackageInfo() async {
+    final info = await PackageInfo.fromPlatform();
+    setState(() {
+      _packageInfo = info;
+    });
+  }
+
   @override
   void initState() {
+    _initPackageInfo();
     requestGeolocatorPermission();
-
+    retrieveVersionNumber();
     context.read<AuthenticationBloc>().add(AuthenticationEventLogout());
 
     super.initState();
+  }
+
+  void retrieveVersionNumber() async {
+    final versionCol = FirebaseFirestore.instance.collection('version');
+    final versionDoc = await versionCol.doc('version').get();
+    String versionNumber = versionDoc.data()?['number'];
+    if (_packageInfo.version != versionNumber) {
+      showUpdateDialog(context);
+    }
+  }
+
+  Future<void> showUpdateDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible:
+          false, // Dialog tidak dapat ditutup dengan mengetuk di luar dialog
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Update Available'),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('A new version is available.'),
+                Text('Please update to the latest version.'),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(
+                'Close',
+                style: getGreyTextStyle(grey6A707C),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Update Now'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                openPlayStore('camos');
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // validation email and password
@@ -186,6 +253,7 @@ class _LoginPageState extends State<LoginPage> {
                       width: 120,
                       height: 120,
                     ),
+
                     const SizedBox(
                       height: 58,
                     ),
@@ -351,24 +419,17 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     const SizedBox(
+                      height: 48,
+                    ),
+                    ContactDeveloperWidget(),
+                    const SizedBox(
                       height: 12,
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          '${iconPath}/tpms_icon.png',
-                          width: 30,
-                          height: 30,
-                        ),
-                        TextButtonWidget(
-                          name: 'Open SPM / TPMS Page',
-                          style: getGreenTextStyle(fontSize: 16),
-                          function: () {
-                            push(context, TpmsPage.routeName);
-                          },
-                        ),
-                      ],
+                    Center(
+                      child: Text(
+                        'App Version : ${_packageInfo.version}',
+                        style: getBlackTextStyle(fontWeight: w700),
+                      ),
                     ),
                     // Row(
                     //   mainAxisAlignment: MainAxisAlignment.center,
