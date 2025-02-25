@@ -1,15 +1,14 @@
 import 'dart:async';
-
+import 'dart:convert';
 import 'package:camos/core/navigator/navigation_route.dart';
 import 'package:camos/core/styles/asset_path.dart';
-import 'package:camos/core/utils/notification/notification_api.dart';
-import 'package:camos/pages/authentication/email_verification_page.dart';
 import 'package:camos/pages/authentication/login_page.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/trial/home_page_trial.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   static const routeName = '/splash_screen';
@@ -29,31 +28,51 @@ class _SplashScreenState extends State<SplashScreen> {
     splashScreen();
   }
 
+  Future<List<Map<String, dynamic>>> getListFromSharedPrefs() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? encodedData = prefs.getString('listCustPgDigitalData');
+
+    if (encodedData != null) {
+      List<dynamic> decodedList = jsonDecode(encodedData);
+      return decodedList.map((e) => e as Map<String, dynamic>).toList();
+    }
+    return []; // Return list kosong jika tidak ada data
+  }
+
   splashScreen() async {
     final user = await firestore
         .collection('users')
         .where('email', isEqualTo: auth.currentUser?.email)
         .get();
 
-    return Timer(
-        const Duration(seconds: 2),
-        () => pushReplace(
+    if (auth.currentUser != null) {
+      if (auth.currentUser!.emailVerified) {
+        List<Map<String, dynamic>> listCustPgDigitalData =
+            await getListFromSharedPrefs();
+
+        // Ambil id_site dari user Firestore
+        String userIdSite = user.docs[0]['id_site'];
+
+        // Cek apakah id_site ada di listCustPgDigitalData
+        bool isSiteInList =
+            listCustPgDigitalData.any((e) => e['id_site'] == userIdSite);
+
+        // Navigasi setelah delay 2 detik
+        return Timer(
+          const Duration(seconds: 2),
+          () => pushReplace(
             context,
-            // check login is exist or not
-            // (auth.currentUser != null)
-            //     ? (auth.currentUser!.emailVerified)
-            //         ? HomePage.routeName
-            //         : LoginPage.routeName
-            //     : LoginPage.routeName,
-            (auth.currentUser != null)
-                ? (auth.currentUser!.emailVerified)
-                    ? (user.docs[0]['id_site'] == '3' ||
-                            user.docs[0]['id_site'] == '4' ||
-                            user.docs[0]['id_site'] == '999')
-                        ? HomePageTrial.routeName
-                        : HomePage.routeName
-                    : LoginPage.routeName
-                : LoginPage.routeName));
+            isSiteInList ? HomePageTrial.routeName : HomePage.routeName,
+          ),
+        );
+      } else {
+        return Timer(const Duration(seconds: 2),
+            () => pushReplace(context, LoginPage.routeName));
+      }
+    } else {
+      return Timer(const Duration(seconds: 2),
+          () => pushReplace(context, LoginPage.routeName));
+    }
   }
 
   @override

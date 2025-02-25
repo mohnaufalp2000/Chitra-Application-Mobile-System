@@ -175,3 +175,21 @@ Future<String> getUserDaily() async {
   SharedPreferences prefs = await getSharedPreferences();
   return prefs.getString(savedUserDailyCode) ?? '';
 }
+
+Future<void> saveListCustomer(
+    List<Map<String, dynamic>> listCustPgDigitalData) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  String encodedData = jsonEncode(listCustPgDigitalData);
+  await prefs.setString('listCustPgDigitalData', encodedData);
+}
+
+Future<List<Map<String, dynamic>>> getListListCustomer() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  String? encodedData = prefs.getString('listCustPgDigitalData');
+
+  if (encodedData != null) {
+    List<dynamic> decodedList = jsonDecode(encodedData);
+    return decodedList.map((e) => e as Map<String, dynamic>).toList();
+  }
+  return []; // Return list kosong jika tidak ada data
+}

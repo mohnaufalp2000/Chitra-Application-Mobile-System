@@ -335,6 +335,8 @@ class _LoginPageState extends State<LoginPage> {
 
                             print('user docs : ${listCustPgDigitalData}');
 
+                            saveListCustomer(listCustPgDigitalData);
+
                             // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
                             if ((listCustPgDigitalData).any((e) =>
                                 e['id_site'] == user.docs[0]['id_site'])) {
