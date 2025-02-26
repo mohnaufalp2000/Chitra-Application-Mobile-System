@@ -136,7 +136,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   //   final endOfDay =
   //       DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
   //   final ratingQuery = await firestore
-  //       .collection('daily_pressure')
+  //       .collection(dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
   //       .where('unit', isEqualTo: unit)
   //       .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
   //       .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
@@ -156,7 +156,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
       final ratingQuery = await firestore
-          .collection('daily_pressure')
+          .collection(
+              dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
           .where('unit', isEqualTo: unit)
           .where('tanggal',
               isGreaterThanOrEqualTo: startOfDay.toIso8601String())
@@ -195,7 +196,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       final startOfDay = DateTime(date.year, date.month, date.day);
       final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
       final damageQuery = await firestore
-          .collection('daily_pressure')
+          .collection(
+              dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
           .where('unit', isEqualTo: unit)
           .where('tanggal',
               isGreaterThanOrEqualTo: startOfDay.toIso8601String())
@@ -2105,7 +2107,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 final listImage = await uploadImageFirebase(idSite);
 
                 final querySnapshot = await FirebaseFirestore.instance
-                    .collection('daily_pressure')
+                    .collection(dataUnit['type'] == 'spm'
+                        ? 'adjusment_spm'
+                        : 'daily_pressure')
                     .where('unit', isEqualTo: dataUnit['unitNumber'])
                     .where('tanggal',
                         isGreaterThanOrEqualTo: startOfDay.toIso8601String())
@@ -2118,7 +2122,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                   // revisi data
                   await firestore
-                      .collection('daily_pressure')
+                      .collection(dataUnit['type'] == 'spm'
+                          ? 'adjusment_spm'
+                          : 'daily_pressure')
                       .doc(docId)
                       .update({
                     'idSite': idSite,
@@ -2160,7 +2166,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 } else {
                   final queryYesterdaySnapshot = await FirebaseFirestore
                       .instance
-                      .collection('daily_pressure')
+                      .collection(dataUnit['type'] == 'spm'
+                          ? 'adjusment_spm'
+                          : 'daily_pressure')
                       .where('unit', isEqualTo: dataUnit['unitNumber'])
                       .where('tanggal',
                           isGreaterThanOrEqualTo: DateTime(
@@ -2174,7 +2182,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                   if (queryYesterdaySnapshot.docs.isEmpty) {
                     // tambah data kemarin
-                    await firestore.collection('daily_pressure').add({
+                    await firestore
+                        .collection(dataUnit['type'] == 'spm'
+                            ? 'adjusment_spm'
+                            : 'daily_pressure')
+                        .add({
                       // 'nama': (user),
                       'idSite': idSite,
                       'user': user['username'] ?? auth.currentUser!.email,
@@ -2224,7 +2236,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                   }
 
                   // tambah data
-                  await firestore.collection('daily_pressure').add({
+                  await firestore
+                      .collection(dataUnit['type'] == 'spm'
+                          ? 'adjusment_spm'
+                          : 'daily_pressure')
+                      .add({
                     // 'nama': (user),
                     'idSite': idSite,
                     'user': user['username'] ?? auth.currentUser!.email,

@@ -672,7 +672,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                   if (isShowMore[indexUnit]) {
                                     return StreamBuilder<QuerySnapshot>(
                                       stream: firestore
-                                          .collection('daily_pressure')
+                                          .collection('adjusment_spm')
                                           .where('idSite', isEqualTo: idSite)
                                           .where('unit',
                                               isEqualTo: unit.devicename)
@@ -709,141 +709,153 @@ class _TpmsPageState extends State<TpmsPage> {
                                                 as List<dynamic>;
 
                                         return Column(
-                                          children: positionList.map((pl) {
-                                            return Column(
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Tireman : ${latestAdjustMap['user']}',
+                                              style: getBlackTextStyle(
+                                                fontSize: 18,
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            Column(
+                                              children: positionList.map((pl) {
+                                                if (pl['adjusmentPressure'] ==
+                                                        '' ||
+                                                    pl['adjusmentPressure'] ==
+                                                        null) {
+                                                  return Container();
+                                                }
+
+                                                return Column(
                                                   children: [
-                                                    Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
                                                       children: [
                                                         Text(
-                                                          'Pos. ${pl['pos']} : ${pl['pressure']} Psi',
+                                                          'Pos. ${pl['pos']} : ${pl['adjusmentPressure']} Psi',
                                                           style:
                                                               getBlackTextStyle(
                                                                   fontSize: 16),
                                                         ),
-                                                        (pl['adjusmentPressure'] !=
-                                                                    '' &&
-                                                                pl['adjusmentPressure'] !=
-                                                                    null)
-                                                            ? Text(
-                                                                'Adj. Pressure ${pl['adjusmentPressure']} Psi',
-                                                                style:
-                                                                    getBlackTextStyle(
-                                                                        fontSize:
-                                                                            16),
-                                                              )
-                                                            : Container()
+                                                        const SizedBox(
+                                                            width: 6),
+                                                        Text(
+                                                          DateFormat(
+                                                                  'dd MMMM yyyy  HH:mm:ss',
+                                                                  'id_ID')
+                                                              .format(DateTime.parse(
+                                                                  latestAdjustMap[
+                                                                      'tanggal'])),
+                                                          style:
+                                                              getBlackTextStyle(
+                                                                  fontSize: 16),
+                                                        ),
                                                       ],
                                                     ),
-                                                    const SizedBox(width: 6),
-                                                    Text(
-                                                      DateFormat(
-                                                              'dd MMMM yyyy  HH:mm:ss',
-                                                              'id_ID')
-                                                          .format(DateTime.parse(
-                                                              latestAdjustMap[
-                                                                  'tanggal'])),
-                                                      style: getBlackTextStyle(
-                                                          fontSize: 16),
-                                                    ),
-                                                  ],
-                                                ),
-                                                (pl['image'] != '' &&
-                                                        pl['image'] != null)
-                                                    ? Container(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                                top: 8),
-                                                        width: double.infinity,
-                                                        child: ElevatedButton(
-                                                          onPressed: () {
-                                                            showDialog(
-                                                              context: context,
-                                                              builder:
-                                                                  (context) =>
-                                                                      Dialog(
-                                                                child: Stack(
-                                                                  children: [
-                                                                    InteractiveViewer(
-                                                                      child: Image
-                                                                          .network(
-                                                                        pl['image'],
-                                                                        fit: BoxFit
-                                                                            .contain,
-                                                                      ),
+                                                    (pl['image'] != '' &&
+                                                            pl['image'] != null)
+                                                        ? Container(
+                                                            padding:
+                                                                EdgeInsets.only(
+                                                                    top: 8),
+                                                            width:
+                                                                double.infinity,
+                                                            child:
+                                                                ElevatedButton(
+                                                              onPressed: () {
+                                                                showDialog(
+                                                                  context:
+                                                                      context,
+                                                                  builder:
+                                                                      (context) =>
+                                                                          Dialog(
+                                                                    child:
+                                                                        Stack(
+                                                                      children: [
+                                                                        InteractiveViewer(
+                                                                          child:
+                                                                              Image.network(
+                                                                            pl['image'],
+                                                                            fit:
+                                                                                BoxFit.contain,
+                                                                          ),
+                                                                        ),
+                                                                        Positioned(
+                                                                          top:
+                                                                              8.0,
+                                                                          right:
+                                                                              8.0,
+                                                                          child:
+                                                                              IconButton(
+                                                                            icon:
+                                                                                Icon(Icons.close, color: Colors.black),
+                                                                            onPressed:
+                                                                                () {
+                                                                              Navigator.of(context).pop();
+                                                                            },
+                                                                          ),
+                                                                        ),
+                                                                      ],
                                                                     ),
-                                                                    Positioned(
-                                                                      top: 8.0,
-                                                                      right:
-                                                                          8.0,
-                                                                      child:
-                                                                          IconButton(
-                                                                        icon: Icon(
-                                                                            Icons
-                                                                                .close,
-                                                                            color:
-                                                                                Colors.black),
-                                                                        onPressed:
-                                                                            () {
-                                                                          Navigator.of(context)
-                                                                              .pop();
-                                                                        },
-                                                                      ),
+                                                                  ),
+                                                                );
+                                                              },
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    Colors
+                                                                        .orange,
+                                                              ),
+                                                              child: Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        8.0),
+                                                                child: Row(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .center,
+                                                                  children: [
+                                                                    Icon(
+                                                                        Icons
+                                                                            .photo,
+                                                                        color:
+                                                                            white),
+                                                                    const SizedBox(
+                                                                        width:
+                                                                            8),
+                                                                    Text(
+                                                                      'Show Image',
+                                                                      style: getWhiteTextStyle(
+                                                                          fontWeight:
+                                                                              w700,
+                                                                          fontSize:
+                                                                              18),
                                                                     ),
                                                                   ],
                                                                 ),
                                                               ),
-                                                            );
-                                                          },
-                                                          style: ElevatedButton
-                                                              .styleFrom(
-                                                            backgroundColor:
-                                                                Colors.orange,
-                                                          ),
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8.0),
-                                                            child: Row(
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                Icon(
-                                                                    Icons.photo,
-                                                                    color:
-                                                                        white),
-                                                                const SizedBox(
-                                                                    width: 8),
-                                                                Text(
-                                                                  'Show Image',
-                                                                  style: getWhiteTextStyle(
-                                                                      fontWeight:
-                                                                          w700,
-                                                                      fontSize:
-                                                                          18),
-                                                                ),
-                                                              ],
                                                             ),
-                                                          ),
-                                                        ),
-                                                      )
-                                                    : Container(),
-                                                Padding(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(vertical: 8.0),
-                                                  child: Divider(),
-                                                )
-                                              ],
-                                            );
-                                          }).toList(),
+                                                          )
+                                                        : Container(),
+                                                    Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 8.0),
+                                                      child: Divider(),
+                                                    )
+                                                  ],
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ],
                                         );
                                       },
                                     );
