@@ -29,33 +29,6 @@ class ApiService {
       final response = await http.post(
         Uri.parse('${postUrl}post_daily'),
         headers: {"Content-Type": "application/json"},
-        // body: jsonEncode({
-        //   "data1": [
-        //     {
-        //       "target_daily": summaryData["target_daily"],
-        //       "checked": summaryData["checked"],
-        //       "low": summaryData["low"],
-        //       "id_site": '2',
-        //       "tgl_daily": dailyCheck[0].hari
-        //     }
-        //   ],
-        //   "data2": dailyCheck
-        //       .expand((daily) => daily.posisi
-        //           .map((pos) => {
-        //                 "id_daily": pos.idDaily,
-        //                 "id_unit_site": pos.idUnit,
-        //                 "pos": pos.pos,
-        //                 "inv": pos.idInventory,
-        //                 "tanggal_daily": daily.hari,
-        //                 "press": pos.pressure,
-        //                 "kondisi": pos.kondisi,
-        //                 "id_site": "2",
-        //                 "adj": "0"
-        //               })
-        //           .toList())
-        //       .toList(),
-        //   "data3": unitData,
-        // }),
         body: jsonEncode({
           "data1": data1,
           "data2": data2,

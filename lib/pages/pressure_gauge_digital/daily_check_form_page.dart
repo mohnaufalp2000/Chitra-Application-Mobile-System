@@ -207,6 +207,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       if (damageQuery.docs.isNotEmpty) {
         final damageMap = damageQuery.docs.first;
         List<dynamic> damageList = damageMap.data()['posisi'] as List<dynamic>;
+
         return damageList.map((item) => item['luka'] ?? '').toList();
       }
 
@@ -223,7 +224,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       fixDamage = await fetchDamageData(dayBeforeYesterday);
     }
 
-    log('damage tire: $fixDamage');
+    log('damage tire: ${fixDamage[0].length}');
     return fixDamage;
   }
 
@@ -639,25 +640,18 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 // Input data damage sebelumnya
                 List<dynamic> damages =
                     await receiveDamageTire(dataUnit['unitNumber']);
-                setState(() {
-                  for (int i = 0; i < damages.length; i++) {
-                    // Cek jika posisi 'damage' sudah memiliki nilai, tidak akan ditimpa
-                    // if (position[i]['damage'] == null) {
-                    //   position[i]['damage'] = (damages[i][0] == '' &&
-                    //           (damages[i] as List<dynamic>).length == 1)
-                    //       ? null
-                    //       : damages[i];
-                    // }
-                    if (position[i].luka == '') {
-                      final damageValue = (damages[i][0] == '' &&
-                              (damages[i] as List<dynamic>).length == 1)
-                          ? ''
-                          : damages[i].join(
-                              ', '); // Asumsikan damages berupa List<String>
+                List<List<String>> convertedDamage = damages
+                    .map<List<String>>((e) => List<String>.from(e))
+                    .toList();
 
-                      position[i] = position[i].copyWith(
-                        luka: damageValue,
-                      );
+                log('damage tire : $damages');
+                setState(() {
+                  for (int i = 0; i < convertedDamage.length; i++) {
+                    // Cek jika posisi 'damage' sudah memiliki nilai, tidak akan ditimpa
+
+                    if (position[i].luka.isEmpty) {
+                      position[i] =
+                          position[i].copyWith(luka: convertedDamage[i]);
                     }
                   }
                 });
@@ -1688,29 +1682,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                         damageType.length,
                                                         false);
 
-                                                // if (position[posIndex]
-                                                //         ['damage'] !=
-                                                //     null) {
-                                                //   for (int i = 0;
-                                                //       i < damageType.length;
-                                                //       i++) {
-                                                //     if (position[posIndex]
-                                                //             ['damage']
-                                                //         .contains(
-                                                //             damageType[i])) {
-                                                //       checkedDamageValues[i] =
-                                                //           true;
-                                                //     }
-                                                //   }
-                                                //   damageCtrl.text =
-                                                //       position[posIndex]
-                                                //           ['damage'][0];
-                                                // }
-                                                if (position[posIndex].luka !=
-                                                        null ||
-                                                    position[posIndex]
-                                                        .luka
-                                                        .isNotEmpty) {
+                                                if (position[posIndex]
+                                                    .luka
+                                                    .isNotEmpty) {
                                                   for (int i = 0;
                                                       i < damageType.length;
                                                       i++) {
@@ -1882,14 +1856,24 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                                 posIndex]
                                                                             .copyWith(luka: []);
 
-                                                                        // position[posIndex]['damage']
-                                                                        //     .addAll(tmp);
                                                                         position[posIndex]
                                                                             .luka
                                                                             .addAll(tmp);
 
                                                                         log('hasil luka ban : ${position}');
                                                                       }
+
+                                                                      // jika hapus damage hari kemarin
+                                                                      if (position[posIndex].luka[0] ==
+                                                                              '' &&
+                                                                          position[posIndex].luka.length ==
+                                                                              1) {
+                                                                        position[
+                                                                            posIndex] = position[
+                                                                                posIndex]
+                                                                            .copyWith(luka: []);
+                                                                      }
+
                                                                       damageCtrl
                                                                           .clear();
 
@@ -1922,17 +1906,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                         BorderRadius.circular(
                                                             12),
                                                   )),
-                                              // child: Text(
-                                              //   (position[posIndex]['damage'] ==
-                                              //           null)
-                                              //       ? 'Damage Tire (None)'
-                                              //       : position[posIndex]
-                                              //               ['damage']
-                                              //           .join('\n---\n'),
-                                              //   textAlign: TextAlign.center,
-                                              //   style: getWhiteTextStyle(
-                                              //       fontSize: 14),
-                                              // ),
                                               child: Text(
                                                 (position[posIndex].luka ==
                                                             null ||

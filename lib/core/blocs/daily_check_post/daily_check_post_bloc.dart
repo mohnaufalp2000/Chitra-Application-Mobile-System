@@ -65,9 +65,11 @@ class DailyCheckPostBloc
             'checked': entry.value['checked_tire'],
             'low': countLowPressureTire[index]['low_pressure_tire'],
             'id_site': dailyCheckConverted[0].idSite,
-            // 'id_site': '2',
+            // 'id_site': '3',
           };
         }).toList();
+
+        // log('Data 1 raw: $data1');
 
         // Data 2
         final data2 = dailyCheckConverted
@@ -81,11 +83,13 @@ class DailyCheckPostBloc
                       "press": pos.pressure,
                       "kondisi": pos.kondisi,
                       'id_site': dailyCheckConverted[0].idSite,
-                      // "id_site": "2",
+                      // "id_site": "3",
                       "adj": "0"
                     })
                 .toList())
             .toList();
+
+        // log('Data 2 raw: $data2');
 
         // Data 3
 
@@ -122,19 +126,24 @@ class DailyCheckPostBloc
               "date": month,
               "qty": count,
               'site': dailyCheckConverted[0].idSite,
-              // "site": "2"
+              // "site": "3"
             };
           });
         }).toList();
+        log('Data 3 raw: $data3');
 
-        log('data multiple multiple : ${jsonEncode({
-              "data1": data1,
-              "data2": data2,
-              "data3": data3,
-            })}');
+        // log('Data 1: ${jsonEncode(data1)}');
+        // log('Data 2: ${jsonEncode(data2)}');
+        // log('Data 3: ${jsonEncode(data3)}');
+
+        // log('data multiple multiple : ${jsonEncode({
+        //       "data1": data1,
+        //       "data2": data2,
+        //       "data3": data3,
+        //     })}');
 
         // JANGAN LUPA RUBAH ID SITE KE AKTUAL KALAU UDAH SELESAI
-        await ApiService.postDailyCheckPressure(data1, data2, data3);
+        // await ApiService.postDailyCheckPressure(data1, data2, data3);
 
         emit(DailyCheckPostSuccessState(message: "Data berhasil dikirim!"));
       } catch (e) {
