@@ -2063,14 +2063,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 isProcessing = true;
               });
 
-              log('posisi ban : $position');
-
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  backgroundColor: green00968A,
-                  content: Text(
-                    'Data Succesfully Added',
-                    style: getWhiteTextStyle(),
-                  )));
               try {
                 final today = DateTime.now();
                 final startOfDay = DateTime(today.year, today.month, today.day);
@@ -2110,15 +2102,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     'posisi': position.map((p) {
                       final pIndex = position.indexOf(p);
 
-                      // return {
-                      //   'pos': '${pIndex + 1}',
-                      //   'rating': (p['rating']) ?? '',
-                      //   'pressure': (p['pressure']) ?? '0',
-                      //   'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                      //   'luka': (selectedType == 0) ? '' : p['damage'],
-                      //   'image':
-                      //       (listImage[pIndex] != '') ? listImage[pIndex] : '',
-                      // };
                       return {
                         'pos': '${pIndex + 1}',
                         'rating': (p.rating) ?? '',
@@ -2224,15 +2207,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     'hm': hmCtrl.text,
                     'posisi': position.map((p) {
                       final pIndex = position.indexOf(p);
-                      // return {
-                      //   'pos': '${pIndex + 1}',
-                      //   'pressure': (p['pressure']) ?? '0',
-                      //   'rating': (p['rating']) ?? '',
-                      //   'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                      //   'luka': (selectedType == 0) ? '' : p['damage'],
-                      //   'image':
-                      //       (listImage[pIndex] != '') ? listImage[pIndex] : '',
-                      // };
+
                       return {
                         'pos': '${pIndex + 1}',
                         'pressure': (p.pressure) ?? '0',
@@ -2250,7 +2225,17 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
                   });
+
+                  // tambah data ke daily check 3
+
+                  updateDailyPressure3(dataUnit, idSite);
                 }
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    backgroundColor: green00968A,
+                    content: Text(
+                      'Data Succesfully Added',
+                      style: getWhiteTextStyle(),
+                    )));
               } catch (e) {
                 print('error bmb : $e');
               } finally {
@@ -2275,5 +2260,68 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
         ),
       ),
     );
+  }
+
+  Future<void> updateDailyPressure3(
+      Map<String, dynamic> dataUnit, String idSite) async {
+    final monthNow = DateFormat('yyyy-MM').format(DateTime.now());
+
+    String idDailyUnit = '${dataUnit['unitNumber']}${idSite}${monthNow}';
+
+    DocumentReference docRef =
+        firestore.collection('daily_pressure_3').doc(idDailyUnit);
+
+    // Ambil data saat ini
+    DocumentSnapshot docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      Map<String, dynamic> docData = docSnap.data() as Map<String, dynamic>;
+
+      List<dynamic> dataArray = docData['data'] ?? [];
+
+      // Cek apakah id_daily_unit sudah ada di array
+      bool isUpdated = false;
+
+      for (var item in dataArray) {
+        if (item['id_daily_unit'] == idDailyUnit) {
+          item['qty'] = (item['qty'] ?? 0) + 1; // Increment qty
+          isUpdated = true;
+          break;
+        }
+      }
+
+      if (isUpdated) {
+        // Jika sudah ada, update seluruh array
+        await docRef.update({'data': dataArray});
+      } else {
+        // Jika belum ada, tambahkan ke array
+        await docRef.update({
+          'data': FieldValue.arrayUnion([
+            {
+              'id_daily_unit': idDailyUnit,
+              'unit': dataUnit['unitNumber'],
+              'date': monthNow,
+              'qty': 1, // Set qty awal ke 1
+              'site': idSite,
+            }
+          ])
+        });
+      }
+    } else {
+      // Jika dokumen belum ada, buat dokumen baru
+      await docRef.set({
+        'idSite': idSite,
+        'tanggal': monthNow,
+        'data': [
+          {
+            'id_daily_unit': idDailyUnit,
+            'unit': dataUnit['unitNumber'],
+            'date': monthNow,
+            'qty': 1,
+            'site': idSite,
+          }
+        ],
+      });
+    }
   }
 }

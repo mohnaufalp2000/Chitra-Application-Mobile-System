@@ -7,6 +7,7 @@ import 'package:camos/core/services/model/daily_press.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:equatable/equatable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 part 'daily_check_post_event.dart';
 part 'daily_check_post_state.dart';
@@ -27,120 +28,131 @@ class DailyCheckPostBloc
         List<DailyPress> dailyCheckConverted =
             data.map((e) => DailyPress.fromFirestore(e)).toList();
 
-        // log('daily check converted : $dailyCheckConverted');
-        List<String> uniqueDay =
-            dailyCheckConverted.map((e) => e.hari).toSet().toList();
-
-        final countCheckedTire = uniqueDay
-            .map((day) => {
-                  'tgl_daily': day,
-                  'checked_tire': dailyCheckConverted
-                      .where((daily) => daily.hari == day)
-                      .fold(
-                          0, (total, element) => total + element.posisi.length)
-                })
-            .toList();
-
-        final countLowPressureTire = uniqueDay
-            .map((day) => {
-                  'tgl_daily': day,
-                  'low_pressure_tire': dailyCheckConverted
-                      .where((daily) => daily.hari == day)
-                      .fold(
-                          0,
-                          (total, element) =>
-                              total +
-                              element.posisi
-                                  .where((pos) => pos.kondisi == "Low Pressure")
-                                  .length)
-                })
-            .toList();
-
         // Data 1
-        final data1 = countCheckedTire.asMap().entries.map((entry) {
-          int index = entry.key;
-          return {
-            'target_daily': event.countAllTire,
-            'tgl_daily': entry.value['tgl_daily'],
-            'checked': entry.value['checked_tire'],
-            'low': countLowPressureTire[index]['low_pressure_tire'],
-            'id_site': dailyCheckConverted[0].idSite,
-            // 'id_site': '3',
-          };
-        }).toList();
+        List<Map<String, dynamic>> data1 = [];
+        try {
+          List<String> uniqueDay = dailyCheckConverted
+              .map((e) => e.tanggal.split('T')[0])
+              .toSet()
+              .toList();
 
-        // log('Data 1 raw: $data1');
+          final countCheckedTire = uniqueDay
+              .map((day) => {
+                    'tgl_daily': day,
+                    'checked_tire': dailyCheckConverted
+                        .where((daily) => daily.tanggal.split('T')[0] == day)
+                        .fold(0,
+                            (total, element) => total + element.posisi.length)
+                  })
+              .toList();
+
+          final countLowPressureTire = uniqueDay
+              .map((day) => {
+                    'tgl_daily': day,
+                    'low_pressure_tire': dailyCheckConverted
+                        .where((daily) => daily.tanggal.split('T')[0] == day)
+                        .fold(
+                            0,
+                            (total, element) =>
+                                total +
+                                element.posisi
+                                    .where(
+                                        (pos) => pos.kondisi == "Low Pressure")
+                                    .length)
+                  })
+              .toList();
+
+          data1 = countCheckedTire.asMap().entries.map((entry) {
+            int index = entry.key;
+            return {
+              'target_daily': event.countAllTire,
+              'tgl_daily': entry.value['tgl_daily'],
+              'checked': entry.value['checked_tire'],
+              'low': countLowPressureTire[index]['low_pressure_tire'],
+              // 'id_site': dailyCheckConverted[0].idSite,
+              'id_site': '3',
+            };
+          }).toList();
+        } catch (e) {
+          log('error data 1 : $e');
+        }
 
         // Data 2
-        final data2 = dailyCheckConverted
-            .expand((daily) => daily.posisi
-                .map((pos) => {
-                      "id_daily": pos.idDaily,
-                      "id_unit_site": pos.idUnit,
-                      "pos": pos.pos,
-                      "inv": pos.idInventory,
-                      "tanggal_daily": daily.hari,
-                      "press": pos.pressure,
-                      "kondisi": pos.kondisi,
-                      'id_site': dailyCheckConverted[0].idSite,
-                      // "id_site": "3",
-                      "adj": "0"
-                    })
-                .toList())
-            .toList();
-
-        // log('Data 2 raw: $data2');
+        List<Map<String, dynamic>> data2 = [];
+        try {
+          data2 = dailyCheckConverted
+              .expand((daily) => daily.posisi
+                  .map((pos) => {
+                        "id_daily": pos.idDaily,
+                        "id_unit_site": pos.idUnit,
+                        "pos": pos.pos,
+                        "inv": pos.idInventory,
+                        "tanggal_daily": daily.tanggal.split('T')[0],
+                        "press": pos.pressure,
+                        "kondisi": pos.kondisi,
+                        // 'id_site': dailyCheckConverted[0].idSite,
+                        "id_site": "3",
+                        "adj": "0"
+                      })
+                  .toList())
+              .toList();
+        } catch (e) {
+          log('error data 2 : ${e.toString()}');
+        }
 
         // Data 3
+        List<Map<String, dynamic>> data3 = [];
+        try {
+          final now = DateTime.now();
+          final startOfMonth =
+              DateTime(now.year, now.month, 1); // Tanggal 1 di bulan ini
+          final endOfMonth = DateTime(now.year, now.month + 1, 0, 23, 59,
+              59); // Tanggal terakhir bulan ini
 
-        final Set<String> availableMonths = dailyCheckConverted
-            .map((daily) => daily.hari.split('-').sublist(0, 2).join('-'))
-            .toSet();
+          log('tanggal awal : ${startOfMonth}');
+          log('tanggal akhir : ${endOfMonth}');
 
-        QuerySnapshot snapshot = await firestore
-            .collection('daily_pressure')
-            .where('idSite',
-                isEqualTo: dailyCheckConverted[0].idSite) // Filter site
-            .get(); // Ambil semua data dulu
+          QuerySnapshot snapshot = await firestore
+              .collection('daily_pressure')
+              .where('tanggal',
+                  isGreaterThanOrEqualTo: startOfMonth.toIso8601String())
+              .where('tanggal',
+                  isLessThanOrEqualTo: endOfMonth.toIso8601String())
+              .where('idSite',
+                  isEqualTo: dailyCheckConverted[0].idSite) // Filter site
+              .get(); // Ambil semua data dulu
 
-        List<Map<String, dynamic>> firestoreData = snapshot.docs
-            .map((doc) => doc.data() as Map<String, dynamic>)
-            .toList();
+          List<Map<String, dynamic>> firestoreData = snapshot.docs
+              .map((doc) => doc.data() as Map<String, dynamic>)
+              .toList();
 
-        List<DailyPress> convertedData3 =
-            firestoreData.map((e) => DailyPress.fromFirestore(e)).toList();
+          List<DailyPress> convertedData3 =
+              firestoreData.map((e) => DailyPress.fromFirestore(e)).toList();
 
-        final distinctData3 = Set<DailyPress>.from(convertedData3).toList();
+          final distinctData3 = Set<DailyPress>.from(convertedData3).toList();
 
-        final data3 = event.allUnit.expand((unit) {
-          return availableMonths.map((month) {
-            int count = distinctData3
-                .where((data) =>
-                    data.unit == unit.unitNumber &&
-                    (data.tanggal).startsWith(month))
-                .length;
-
+          data3 = event.allUnit.map((e) {
+            var filteredList =
+                distinctData3.where((element) => element.unit == e.unitNumber);
             return {
-              "id_daily_unit": "${unit.unitNumber}2$month",
-              "unit": unit.unitNumber,
-              "date": month,
-              "qty": count,
-              'site': dailyCheckConverted[0].idSite,
-              // "site": "3"
+              "id_daily_unit":
+                  "${e.unitNumber}3${DateFormat('yyyy-MM').format(startOfMonth)}",
+              "unit": e.unitNumber,
+              "date": DateFormat('yyyy-MM').format(startOfMonth),
+              "qty": filteredList.isEmpty ? 0 : filteredList.length,
+              // 'site': dailyCheckConverted[0].idSite,
+              "site": "3"
             };
-          });
-        }).toList();
-        log('Data 3 raw: $data3');
+          }).toList();
+        } catch (e) {
+          log('error data 3 $e');
+        }
 
-        // log('Data 1: ${jsonEncode(data1)}');
-        // log('Data 2: ${jsonEncode(data2)}');
-        // log('Data 3: ${jsonEncode(data3)}');
-
-        // log('data multiple multiple : ${jsonEncode({
-        //       "data1": data1,
-        //       "data2": data2,
-        //       "data3": data3,
-        //     })}');
+        log('data multiple multiple : ${jsonEncode({
+              "data1": data1,
+              "data2": data2,
+              "data3": data3,
+            })}');
 
         // JANGAN LUPA RUBAH ID SITE KE AKTUAL KALAU UDAH SELESAI
         // await ApiService.postDailyCheckPressure(data1, data2, data3);

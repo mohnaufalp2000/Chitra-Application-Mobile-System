@@ -245,6 +245,34 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                     final lastPicked = selectedMonths[
                                         selectedMonths.length - 1];
 
+                                    // Cek apakah bulan berbeda
+                                    if (firstPicked.month != lastPicked.month ||
+                                        firstPicked.year != lastPicked.year) {
+                                      // Tampilkan modal dialog jika bulan berbeda
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: Text("Invalid Selection!",
+                                              style: getRedTextStyle(
+                                                  fontSize: 24)),
+                                          content: Text(
+                                              "Please select a date within the same month!",
+                                              style: getBlackTextStyle()),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.pop(
+                                                    context); // Tutup modal
+                                              },
+                                              child: Text("OK",
+                                                  style: getBlackTextStyle()),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                      return;
+                                    }
+
                                     final snapshot = await firestore
                                         .collection('daily_pressure')
                                         .where('idSite',
