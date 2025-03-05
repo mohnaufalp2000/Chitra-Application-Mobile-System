@@ -26,14 +26,6 @@ class SiteBloc extends Bloc<SiteEvent, SiteState> {
           1,
           Site(idSite: '2', site: 'All-CK', lastUpdate: '2023-10-16'),
         );
-        listSite.insert(
-          2,
-          Site(idSite: '3', site: 'PAMA-ASMI', lastUpdate: '2024-05-22'),
-        );
-        listSite.insert(
-          2,
-          Site(idSite: '4', site: 'PAMA-SMMS', lastUpdate: '2024-05-22'),
-        );
         // simpan list site ke local
         saveSiteToLocalPreferences(listSite);
         emit(SiteLoadedState(listSite: listSite));
