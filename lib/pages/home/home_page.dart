@@ -255,39 +255,67 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<void> showUpdateDialog(BuildContext context) async {
+    bool isLoadingUpdate =
+        false; // Dideklarasikan di luar StatefulBuilder agar tetap tersimpan
+
     return showDialog<void>(
       context: context,
       barrierDismissible:
           false, // Dialog tidak dapat ditutup dengan mengetuk di luar dialog
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Update Available'),
-          content: SingleChildScrollView(
-            child: ListBody(
-              children: <Widget>[
-                Text('A new version is available.'),
-                Text('Please update to the latest version.'),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text(
-                'Close',
-                style: getGreyTextStyle(grey6A707C),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Update Available'),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: <Widget>[
+                    Text('A new version is available.'),
+                    Text('Please update to the latest version.'),
+                  ],
+                ),
               ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Update Now'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                openPlayStore('camos');
-              },
-            ),
-          ],
+              actions: <Widget>[
+                TextButton(
+                  child: Text(
+                    'Close',
+                    style: getGreyTextStyle(grey6A707C),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                TextButton(
+                  child: isLoadingUpdate
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text('Update Now'),
+                  onPressed: isLoadingUpdate
+                      ? null
+                      : () async {
+                          setState(() {
+                            isLoadingUpdate = true;
+                          });
+
+                          final idSiteUpdate = await getIdSitePreferences();
+                          if (idSiteUpdate != '1' && idSiteUpdate != '2') {
+                            await ApiService.getUnits(idSite);
+                          }
+
+                          setState(() {
+                            isLoadingUpdate = false;
+                          });
+
+                          Navigator.of(context).pop();
+                          openPlayStore('camos');
+                        },
+                ),
+              ],
+            );
+          },
         );
       },
     );

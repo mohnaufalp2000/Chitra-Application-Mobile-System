@@ -69,8 +69,8 @@ class DailyCheckPostBloc
               'tgl_daily': entry.value['tgl_daily'],
               'checked': entry.value['checked_tire'],
               'low': countLowPressureTire[index]['low_pressure_tire'],
-              // 'id_site': dailyCheckConverted[0].idSite,
-              'id_site': '3',
+              'id_site': dailyCheckConverted[0].idSite,
+              // 'id_site': '3',
             };
           }).toList();
         } catch (e) {
@@ -90,8 +90,8 @@ class DailyCheckPostBloc
                         "tanggal_daily": daily.tanggal.split('T')[0],
                         "press": pos.pressure,
                         "kondisi": pos.kondisi,
-                        // 'id_site': dailyCheckConverted[0].idSite,
-                        "id_site": "3",
+                        'id_site': dailyCheckConverted[0].idSite,
+                        // "id_site": "3",
                         "adj": "0"
                       })
                   .toList())
@@ -140,13 +140,15 @@ class DailyCheckPostBloc
               "unit": e.unitNumber,
               "date": DateFormat('yyyy-MM').format(startOfMonth),
               "qty": filteredList.isEmpty ? 0 : filteredList.length,
-              // 'site': dailyCheckConverted[0].idSite,
-              "site": "3"
+              'site': dailyCheckConverted[0].idSite,
+              // "site": "3"
             };
           }).toList();
         } catch (e) {
           log('error data 3 $e');
         }
+
+        // log('jumlah data 2 id null : ${data2.where((e) => e['id_daily'] == null || e['id_unit_site'] == null || e['inv'] == null).length}');
 
         log('data multiple multiple : ${jsonEncode({
               "data1": data1,
@@ -155,7 +157,7 @@ class DailyCheckPostBloc
             })}');
 
         // JANGAN LUPA RUBAH ID SITE KE AKTUAL KALAU UDAH SELESAI
-        // await ApiService.postDailyCheckPressure(data1, data2, data3);
+        await ApiService.postDailyCheckPressure(data1, data2, data3);
 
         emit(DailyCheckPostSuccessState(message: "Data berhasil dikirim!"));
       } catch (e) {

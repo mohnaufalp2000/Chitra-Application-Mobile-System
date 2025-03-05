@@ -61,6 +61,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   List<String> damageType = [
     'Accident',
     'Bead Crack',
+    'Block Valve',
     'Boulder',
     'Bulging',
     'Bead Damage',
