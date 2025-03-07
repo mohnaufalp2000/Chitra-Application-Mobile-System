@@ -776,6 +776,9 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('G1').setText('Location');
       sheet.getRangeByName('H1').setText('Rating');
       sheet.getRangeByName('I1').setText('Condition');
+      sheet.getRangeByName('J1').setText('Size');
+
+      log('daily excel : $daily');
 
       for (int i = 0; i < daily!.length; i++) {
         final unit = daily[i]['unit'];
@@ -822,6 +825,12 @@ Future<List<int>> createExcel(String type,
           sheet
               .getRangeByName('I${i * posisi.length + j + 2}')
               .setText(daily[i]['unit_condition'] ?? '');
+          sheet
+              .getRangeByName('J${i * posisi.length + j + 2}')
+              .setText(posisi[j]['tireSize'] ?? '');
+          sheet
+              .getRangeByName('K${i * posisi.length + j + 2}')
+              .setText(posisi[j]['kondisi'] ?? '');
         }
       }
 

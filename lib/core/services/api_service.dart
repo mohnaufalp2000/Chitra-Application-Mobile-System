@@ -73,12 +73,36 @@ class ApiService {
 
     List<UnitTire> fixData = [];
 
-    listUnitTire.forEach((unit) {
-      if (fixData.any((item) => item.unitNumber == unit.unitNumber)) {
-        return;
+    // listUnitTire.forEach((unit) {
+    //   if (fixData.any((item) => item.unitNumber == unit.unitNumber)) {
+    //     return;
+    //   }
+    //   fixData.add(unit);
+    // });
+
+    Set<String> seenUnitNumbers = {}; // Untuk menyimpan unitNumber unik
+    Map<String, int> sizeCount = {};
+    Set<String> sizes = {};
+
+    for (var unit in listUnitTire) {
+      // Gunakan Set untuk pengecekan unitNumber agar lebih cepat
+      if (seenUnitNumbers.add(unit.unitNumber ?? '')) {
+        fixData.add(unit); // Tambahkan hanya jika unitNumber belum ada
       }
-      fixData.add(unit);
-    });
+
+      String size = unit.size ?? '';
+      if (size.isNotEmpty) {
+        sizes.add(size); // Simpan ukuran unik
+
+        // Hitung sizeCount untuk SEMUA data, tanpa tergantung fixData
+        sizeCount[size] = (sizeCount[size] ?? 0) + 1;
+      }
+    }
+// Buat struktur data baru
+    Map<String, dynamic> sizeResult = {
+      "sizes": sizes.toList(), // Konversi Set ke List
+      "sizeCount": sizeCount
+    };
 
     // save unit
     await cacheUnits(listUnitTire, site);
@@ -86,6 +110,8 @@ class ApiService {
     await cacheCountAllTire(countAllTire, site);
     // save recommendation pressure
     await cacheReccPress(recommendPressure);
+    // save size tire with quantity
+    await cacheTireSize(sizeCount, sizes.toList(), site);
 
     // for check data unit monthly
     await saveMonthYear(DateTime.now());
@@ -106,6 +132,20 @@ class ApiService {
   //     throw Exception('Gagal menyimpan data ke penyimpanan lokal: $e');
   //   }
   // }
+
+  static Future<void> cacheTireSize(
+      Map<String, int> sizeCount, List<String> sizes, String idSite) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Konversi sizeCount (Map) ke String JSON
+    String sizeCountJson = jsonEncode(sizeCount);
+
+    // Simpan daftar ukuran ban (sizes)
+    await prefs.setStringList("tire_sizes_$idSite", sizes);
+
+    // Simpan sizeCount sebagai JSON String
+    await prefs.setString("size_count_$idSite", sizeCountJson);
+  }
 
   static Future<void> cacheReccPress(
       List<Map<String, dynamic>> reccPress) async {
@@ -161,6 +201,27 @@ class ApiService {
 
     // Return an empty list if no data is cached
     return [];
+  }
+
+  static Future<Map<String, dynamic>> getCachedTireSize(
+      {String idSite = ''}) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Ambil daftar ukuran ban
+    List<String> sizes = prefs.getStringList("tire_sizes_$idSite") ?? [];
+
+    // Ambil sizeCount (konversi kembali dari JSON ke Map)
+    String? sizeCountJson = prefs.getString("size_count_$idSite");
+    Map<String, int> sizeCount = sizeCountJson != null
+        ? Map<String, int>.from(jsonDecode(sizeCountJson))
+        : {};
+
+    print("Data berhasil diambil dari SharedPreferences!");
+
+    return {
+      "sizes": sizes,
+      "sizeCount": sizeCount,
+    };
   }
 
   static Future<int> getCachedCountAllTire({String idSite = ''}) async {

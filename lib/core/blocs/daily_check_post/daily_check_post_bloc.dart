@@ -30,52 +30,145 @@ class DailyCheckPostBloc
 
         // Data 1
         List<Map<String, dynamic>> data1 = [];
+        log('all tire size post : ${event.allTireSize}');
+        // all tire size post : {sizes: [24.00R35, 27.00R49, 20.5R25], sizeCount: {24.00R35: 210, 27.00R49: 138, 20.5R25: 30}}
         try {
           List<String> uniqueDay = dailyCheckConverted
               .map((e) => e.tanggal.split('T')[0])
               .toSet()
               .toList();
+          final sizes = event.allTireSize['sizes'] as List<String>;
+          final sizeCount =
+              event.allTireSize['sizeCount'] as Map<String, dynamic>;
 
-          final countCheckedTire = uniqueDay
-              .map((day) => {
-                    'tgl_daily': day,
-                    'checked_tire': dailyCheckConverted
-                        .where((daily) => daily.tanggal.split('T')[0] == day)
-                        .fold(0,
-                            (total, element) => total + element.posisi.length)
-                  })
-              .toList();
+          List<Map<String, dynamic>> countCheckedTire = uniqueDay.map((day) {
+            List<Map<String, dynamic>> checkedBySize = [];
 
-          final countLowPressureTire = uniqueDay
-              .map((day) => {
-                    'tgl_daily': day,
-                    'low_pressure_tire': dailyCheckConverted
-                        .where((daily) => daily.tanggal.split('T')[0] == day)
-                        .fold(
-                            0,
-                            (total, element) =>
-                                total +
-                                element.posisi
-                                    .where(
-                                        (pos) => pos.kondisi == "Low Pressure")
-                                    .length)
-                  })
-              .toList();
+            for (var size in sizes) {
+              int count = dailyCheckConverted
+                  .where((daily) => daily.tanggal.split('T')[0] == day)
+                  .fold(0, (total, element) {
+                return total +
+                    element.posisi.where((pos) => pos.size == size).length;
+              });
 
-          data1 = countCheckedTire.asMap().entries.map((entry) {
-            int index = entry.key;
+              checkedBySize.add({
+                'size': size,
+                'checked_tire': count,
+              });
+            }
+
             return {
-              'target_daily': event.countAllTire,
-              'tgl_daily': entry.value['tgl_daily'],
-              'checked': entry.value['checked_tire'],
-              'low': countLowPressureTire[index]['low_pressure_tire'],
-              'id_site': dailyCheckConverted[0].idSite,
-              // 'id_site': '3',
+              'tgl_daily': day,
+              'sizes': checkedBySize,
             };
           }).toList();
+
+          List<Map<String, dynamic>> countLowPressureTire =
+              uniqueDay.map((day) {
+            List<Map<String, dynamic>> lowPressureBySize = [];
+
+            for (var size in sizes) {
+              int count = dailyCheckConverted
+                  .where((daily) => daily.tanggal.split('T')[0] == day)
+                  .fold(0, (total, element) {
+                return total +
+                    element.posisi
+                        .where((pos) =>
+                            pos.size == size && pos.kondisi == "Low Pressure")
+                        .length;
+              });
+
+              lowPressureBySize.add({
+                'size': size,
+                'low_pressure_tire': count,
+              });
+            }
+
+            return {
+              'tgl_daily': day,
+              'sizes': lowPressureBySize,
+            };
+          }).toList();
+
+          log('count checked tire : ${countCheckedTire}');
+          // [{tgl_daily: 2025-03-07, sizes: [{size: 24.00R35, checked_tire: 114}, {size: 27.00R49, checked_tire: 66}, {size: 20.5R25, checked_tire: 6}]}]
+          log('count low tire : ${countLowPressureTire}');
+          // [{tgl_daily: 2025-03-07, sizes: [{size: 24.00R35, low_pressure_tire: 6}, {size: 27.00R49, low_pressure_tire: 8}, {size: 20.5R25, low_pressure_tire: 0}]}]
+
+          for (int i = 0; i < countCheckedTire.length; i++) {
+            String tglDaily = countCheckedTire[i]['tgl_daily'];
+
+            for (var sizeData in countCheckedTire[i]['sizes']) {
+              String size = sizeData['size'];
+              int checkedTire = sizeData['checked_tire'];
+
+              int lowPressure = countLowPressureTire[i]['sizes'].firstWhere(
+                  (low) => low['size'] == size,
+                  orElse: () => {'low_pressure_tire': 0})['low_pressure_tire'];
+
+              data1.add({
+                'target_daily':
+                    sizeCount[size].toString(), // Ambil target dari sizeCount
+                'tgl_daily': tglDaily,
+                'checked': checkedTire.toString(),
+                'low': lowPressure.toString(),
+                // 'id_site': dailyCheckConverted[0].idSite.toString(),
+                'id_site': '5',
+                'size': size,
+              });
+            }
+          }
         } catch (e) {
           log('error data 1 : $e');
         }
+
+        // try {
+        //   List<String> uniqueDay = dailyCheckConverted
+        //       .map((e) => e.tanggal.split('T')[0])
+        //       .toSet()
+        //       .toList();
+
+        //   final countCheckedTire = uniqueDay
+        //       .map((day) => {
+        //             'tgl_daily': day,
+        //             'checked_tire': dailyCheckConverted
+        //                 .where((daily) => daily.tanggal.split('T')[0] == day)
+        //                 .fold(0,
+        //                     (total, element) => total + element.posisi.length)
+        //           })
+        //       .toList();
+
+        //   final countLowPressureTire = uniqueDay
+        //       .map((day) => {
+        //             'tgl_daily': day,
+        //             'low_pressure_tire': dailyCheckConverted
+        //                 .where((daily) => daily.tanggal.split('T')[0] == day)
+        //                 .fold(
+        //                     0,
+        //                     (total, element) =>
+        //                         total +
+        //                         element.posisi
+        //                             .where(
+        //                                 (pos) => pos.kondisi == "Low Pressure")
+        //                             .length)
+        //           })
+        //       .toList();
+
+        //   data1 = countCheckedTire.asMap().entries.map((entry) {
+        //     int index = entry.key;
+        //     return {
+        //       'target_daily': event.countAllTire,
+        //       'tgl_daily': entry.value['tgl_daily'],
+        //       'checked': entry.value['checked_tire'],
+        //       'low': countLowPressureTire[index]['low_pressure_tire'],
+        //       'id_site': dailyCheckConverted[0].idSite,
+        //       // 'id_site': '3',
+        //     };
+        //   }).toList();
+        // } catch (e) {
+        //   log('error data 1 : $e');
+        // }
 
         // Data 2
         List<Map<String, dynamic>> data2 = [];
@@ -90,8 +183,8 @@ class DailyCheckPostBloc
                         "tanggal_daily": daily.tanggal.split('T')[0],
                         "press": pos.pressure,
                         "kondisi": pos.kondisi,
-                        'id_site': dailyCheckConverted[0].idSite,
-                        // "id_site": "3",
+                        // 'id_site': dailyCheckConverted[0].idSite,
+                        "id_site": "5",
                         "adj": "0"
                       })
                   .toList())
@@ -140,8 +233,8 @@ class DailyCheckPostBloc
               "unit": e.unitNumber,
               "date": DateFormat('yyyy-MM').format(startOfMonth),
               "qty": filteredList.isEmpty ? 0 : filteredList.length,
-              'site': dailyCheckConverted[0].idSite,
-              // "site": "3"
+              // 'site': dailyCheckConverted[0].idSite,
+              "site": "5"
             };
           }).toList();
         } catch (e) {

@@ -53,6 +53,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   DateTime now = DateTime.now();
   bool isLoading = false;
   int countAllTire = 0;
+  Map<String, dynamic> allTireSize = {};
   List<UnitTire> allUnit = [];
   bool isEmpty = false;
 
@@ -362,6 +363,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                       dailyCheck: filteredItemTask,
                                       countAllTire: countAllTire,
                                       allUnit: allUnit,
+                                      allTireSize: allTireSize,
                                       typeSend: 'single',
                                     ),
                                   );
@@ -437,6 +439,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                     // Tambahkan setState agar UI diperbarui
                     allUnit = state.units;
                     countAllTire = state.countAllTire;
+                    allTireSize = state.allTireSize;
                   });
                   // log('ban daily : ${state.units}');
                 }

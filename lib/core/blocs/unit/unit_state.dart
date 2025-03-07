@@ -16,10 +16,13 @@ class UnitLoadedState extends UnitState {
   final List<UnitTire> units;
   final List<Map<String, dynamic>> reccPress;
   final int countAllTire;
-  UnitLoadedState(
-      {required this.units,
-      required this.reccPress,
-      required this.countAllTire});
+  final Map<String, dynamic> allTireSize;
+  UnitLoadedState({
+    required this.units,
+    required this.reccPress,
+    required this.countAllTire,
+    required this.allTireSize,
+  });
 }
 
 class UnitErrorState extends UnitState {

@@ -308,11 +308,16 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                         await ApiService.getCachedUnits(
                                             idSite: idSite);
 
+                                    final allTireSize =
+                                        await ApiService.getCachedTireSize(
+                                            idSite: idSite);
+
                                     context.read<DailyCheckPostBloc>().add(
                                         DailyCheckPostEvent(
                                             dailyCheck: itemTask,
                                             countAllTire: countAllTire,
                                             allUnit: allUnit,
+                                            allTireSize: allTireSize,
                                             typeSend: 'multiple'));
 
                                     ScaffoldMessenger.of(context)
@@ -507,12 +512,16 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                   final allUnit =
                                       await ApiService.getCachedUnits(
                                           idSite: idSite);
+                                  final allTireSize =
+                                      await ApiService.getCachedTireSize(
+                                          idSite: idSite);
 
                                   context.read<DailyCheckPostBloc>().add(
                                       DailyCheckPostEvent(
                                           dailyCheck: filteredItemTask,
                                           countAllTire: countAllTire,
                                           allUnit: allUnit,
+                                          allTireSize: allTireSize,
                                           typeSend: 'single'));
                                   ScaffoldMessenger.of(context)
                                       .showSnackBar(SnackBar(
