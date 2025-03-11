@@ -304,6 +304,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           if (idSiteUpdate != '1' && idSiteUpdate != '2') {
                             await ApiService.getUnits(idSite);
                           }
+                          await ApiService.getAllSite();
 
                           setState(() {
                             isLoadingUpdate = false;

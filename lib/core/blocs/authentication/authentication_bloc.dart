@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
+import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,6 +23,7 @@ class AuthenticationBloc
       // login
       try {
         emit(AuthenticatioLoadingState());
+        await ApiService.getAllSite();
         await auth.signInWithEmailAndPassword(
             email: event.email, password: event.password);
         emit(AuthenticatioLoginState());
@@ -123,6 +125,7 @@ class AuthenticationBloc
     on<AuthenticationEventUploadPhoto>((event, emit) async {
       try {
         emit(AuthenticatioLoadingState());
+        await ApiService.getAllSite();
         // upload image path to firestore
         await users
             .where('email', isEqualTo: auth.currentUser!.email)

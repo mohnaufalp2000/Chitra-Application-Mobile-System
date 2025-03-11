@@ -1,5 +1,9 @@
+import 'dart:developer';
+
 import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
 import 'package:camos/core/navigator/navigation_route.dart';
+import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
@@ -337,12 +341,39 @@ class _LoginPageState extends State<LoginPage> {
 
                             saveListCustomer(listCustPgDigitalData);
 
+                            List<Site> allSites =
+                                await ApiService.getCachedAllSites();
+
+                            if (allSites.isEmpty || allSites == null) {
+                              allSites = await ApiService.getAllSite();
+                            }
+
                             // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
                             if ((listCustPgDigitalData).any((e) =>
                                 e['id_site'] == user.docs[0]['id_site'])) {
                               pushReplace(context, HomePageTrial.routeName);
                             } else {
-                              pushReplace(context, HomePage.routeName);
+                              // cek apakah menggunakan cts atau tidak
+                              log('all sites : ${user.docs[0]['id_site']}');
+                              final isCTS = allSites
+                                  .firstWhere(
+                                      (site) =>
+                                          site.idSite ==
+                                          user.docs[0]['id_site'],
+                                      orElse: () => Site(
+                                          idSite: user.docs[0]['id_site'],
+                                          cts: '1'))
+                                  .cts;
+
+                              if (isCTS == '0') {
+                                Navigator.pushReplacementNamed(
+                                    context, TpmsPage.routeName, arguments: {
+                                  'idSite': user.docs[0]['id_site'],
+                                  'isCTS': false
+                                });
+                              } else {
+                                pushReplace(context, HomePage.routeName);
+                              }
                             }
                           } else {
                             push(context, EmailVerificationPage.routeName);

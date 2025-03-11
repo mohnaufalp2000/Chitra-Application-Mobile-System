@@ -31,6 +31,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 late Store store;
@@ -46,6 +47,7 @@ void main() async {
   await AttendanceSheetsAPI.initAttendanceSheets();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+  await initializeDateFormatting('id_ID', null);
   if (Platform.isIOS) {
     // await Firebase.initializeApp(
     //   options: DefaultFirebaseOptions.currentPlatform,

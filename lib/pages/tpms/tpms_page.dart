@@ -1,8 +1,11 @@
 import 'dart:developer';
 
+import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
 import 'package:camos/core/blocs/spm/spm_bloc.dart';
+import 'package:camos/core/navigator/navigation_route.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/daily_press.dart';
+import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -11,8 +14,10 @@ import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/text_button_widget.dart';
 import 'package:camos/core/widgets/tire_widget.dart';
+import 'package:camos/pages/authentication/login_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_check_form_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,6 +37,7 @@ class TpmsPage extends StatefulWidget {
 
 class _TpmsPageState extends State<TpmsPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  FirebaseAuth auth = FirebaseAuth.instance;
   WebViewController? webViewController;
   List<String> pressureData = [
     '1',
@@ -54,8 +60,59 @@ class _TpmsPageState extends State<TpmsPage> {
   //   context.read<SpmBloc>().add(GetListSpmEvent());
   // }
 
+  logoutConfirmation() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Logout Confirmation',
+                  style: getBlackTextStyle(
+                    fontSize: 16,
+                    fontWeight: w600,
+                  ),
+                ),
+                const SizedBox(
+                  height: 12,
+                ),
+                Text(
+                  'Are you sure you want to logout?',
+                  style: getBlackTextStyle(),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    back(context);
+                  },
+                  child: Text(
+                    'No',
+                    style: getGreyTextStyle(grey8391A1),
+                  )),
+              TextButton(
+                  onPressed: () async {
+                    // removeTireConditionPreferences();
+                    // removeTireSpecPreferences();
+                    // removeIdSitePreferences();
+                    // removeUserPreferences();
+                    context
+                        .read<AuthenticationBloc>()
+                        .add(AuthenticationEventLogout());
+                    pushRemoveUntil(context, LoginPage.routeName);
+                  },
+                  child: Text('Yes')),
+            ],
+          );
+        });
+  }
+
   @override
-  void didChangeDependencies() {
+  void didChangeDependencies() async {
     super.didChangeDependencies();
 
     final data =
@@ -63,6 +120,14 @@ class _TpmsPageState extends State<TpmsPage> {
     if (data != null) {
       // Pastikan data tidak null
       final idSite = data['idSite'];
+      if (data['isCTS'] != true && data['isCTS'] != null) {
+        final userDocs = await firestore
+            .collection('users')
+            .where('email', isEqualTo: auth.currentUser!.email)
+            .get();
+        final mapUser = userDocs.docs[0].data();
+        saveUserPreferences(mapUser);
+      }
       log('id site spm : $idSite');
       context.read<SpmBloc>().add(GetListSpmEvent(idSite: idSite));
     }
@@ -73,10 +138,60 @@ class _TpmsPageState extends State<TpmsPage> {
     Map<String, dynamic> data =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
     String idSite = data['idSite'];
-    log('id site spm : $idSite');
+
+    log('id site spm : ${data['isCTS']}');
 
     return Scaffold(
-      appBar: appBarWidget('SPM Page', context),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 18.0),
+          child: Text(
+            'SPM Page',
+            textAlign: TextAlign.center,
+            style: getBlackTextStyle(fontSize: 20, fontWeight: w700),
+          ),
+        ),
+        centerTitle: true,
+        leading: (data['isCTS'] == false || data['isCTS'] != null)
+            ? Container()
+            : Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Container(
+                  margin: const EdgeInsets.only(top: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: black),
+                  ),
+                  child: IconButton(
+                      onPressed: () {
+                        back(context);
+                      },
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: black,
+                        size: 24,
+                      )),
+                ),
+              ),
+        actions: [
+          (data['isCTS'] == true || data['isCTS'] == null)
+              ? Container()
+              : IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                  onPressed: () {
+                    logoutConfirmation();
+                  },
+                  icon: Icon(
+                    Icons.logout,
+                    color: Colors.red,
+                  )),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -96,35 +211,6 @@ class _TpmsPageState extends State<TpmsPage> {
                 ),
                 const SizedBox(
                   height: 12,
-                ),
-                // Identity Data
-                Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  color: Color(0xFF0C44A3),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Container(
-                        padding: const EdgeInsets.all(15),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            const Text(
-                              "Operator : CK",
-                              style:
-                                  TextStyle(fontSize: 16, color: Colors.white),
-                            ),
-                            Container(height: 10),
-                            Text('Project Synergy CP-CK',
-                                style: TextStyle(
-                                    fontSize: 16, color: Colors.grey[200])),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 SizedBox(
                   height: 12,
@@ -569,7 +655,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                           arguments: {
                                             'unitNumber': unit.devicename,
                                             'type': 'spm',
-                                            'position': position
+                                            'position': position,
+                                            'isCTS': data['isCTS']
                                             // 'position': [
                                             //   {
                                             //     'pressure':

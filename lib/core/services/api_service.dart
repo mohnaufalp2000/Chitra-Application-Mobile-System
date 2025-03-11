@@ -389,10 +389,29 @@ class ApiService {
             .where((site) => site.site?.substring(0, 2) == 'CK')
             .toList();
       }
+      await cachedAllSites(listSite);
       return listSite;
     } catch (e) {
       throw Exception(e.toString());
     }
+  }
+
+  static Future<void> cachedAllSites(List<Site> listSite) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String jsonData =
+        jsonEncode(listSite.map((site) => site.toJson()).toList());
+    await prefs.setString('cached_sites', jsonData);
+  }
+
+  // Fungsi untuk membaca listSite dari SharedPreferences
+  static Future<List<Site>> getCachedAllSites() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? jsonData = prefs.getString('cached_sites');
+
+    if (jsonData == null) return [];
+
+    final List<dynamic> decodedData = jsonDecode(jsonData);
+    return decodedData.map((e) => Site.fromJson(e)).toList();
   }
 
   // mendapatkan data salah satu site
@@ -428,8 +447,8 @@ class ApiService {
   }
 
   // api TPMS
-  static Future<List<Spm>> getApiSpm() async {
-    final response = await http.get(Uri.parse('${url}get_tpms'));
+  static Future<List<Spm>> getApiSpm(String idSite, String res) async {
+    final response = await http.get(Uri.parse('$res$idSite'));
 
     try {
       final body = response.body;

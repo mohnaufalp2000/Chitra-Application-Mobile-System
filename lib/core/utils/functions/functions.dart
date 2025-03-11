@@ -825,12 +825,12 @@ Future<List<int>> createExcel(String type,
           sheet
               .getRangeByName('I${i * posisi.length + j + 2}')
               .setText(daily[i]['unit_condition'] ?? '');
-          sheet
-              .getRangeByName('J${i * posisi.length + j + 2}')
-              .setText(posisi[j]['tireSize'] ?? '');
-          sheet
-              .getRangeByName('K${i * posisi.length + j + 2}')
-              .setText(posisi[j]['kondisi'] ?? '');
+          // sheet
+          //     .getRangeByName('J${i * posisi.length + j + 2}')
+          //     .setText(posisi[j]['tireSize'] ?? '');
+          // sheet
+          //     .getRangeByName('K${i * posisi.length + j + 2}')
+          //     .setText(posisi[j]['kondisi'] ?? '');
         }
       }
 

@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
 import 'package:camos/core/navigator/navigation_route.dart';
+import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -14,6 +16,7 @@ import 'package:camos/core/widgets/upload_photo_widget.dart';
 import 'package:camos/pages/authentication/login_page.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/trial/home_page_trial.dart';
+import 'package:camos/pages/tpms/tpms_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -270,6 +273,12 @@ class _ImageProfilePageState extends State<ImageProfilePage> {
                           .collection('users')
                           .where('email', isEqualTo: auth.currentUser?.email)
                           .get();
+                      List<Site> allSites =
+                          await ApiService.getCachedAllSites();
+
+                      if (allSites.isEmpty || allSites == null) {
+                        allSites = await ApiService.getAllSite();
+                      }
                       final listCustPgDigital = await firestore
                           .collection('list_site_pgdigital')
                           .get();
@@ -281,6 +290,24 @@ class _ImageProfilePageState extends State<ImageProfilePage> {
                           (e) => e['id_site'] == user.docs[0]['id_site'])) {
                         pushReplace(context, HomePageTrial.routeName);
                       } else {
+                        // cek apakah menggunakan cts atau tidak
+                        final isCTS = allSites
+                            .firstWhere(
+                                (site) =>
+                                    site.idSite == user.docs[0]['id_site'],
+                                orElse: () => Site(
+                                    idSite: user.docs[0]['id_site'], cts: '1'))
+                            .cts;
+
+                        if (isCTS == '0') {
+                          Navigator.pushReplacementNamed(
+                              context, TpmsPage.routeName, arguments: {
+                            'idSite': user.docs[0]['id_site'],
+                            'isCTS': false
+                          });
+                        } else {
+                          pushReplace(context, HomePage.routeName);
+                        }
                         pushReplace(context, HomePage.routeName);
                       }
                     }),
