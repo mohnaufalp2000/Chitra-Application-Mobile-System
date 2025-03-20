@@ -142,56 +142,57 @@ class _TpmsPageState extends State<TpmsPage> {
     log('id site spm : ${data['isCTS']}');
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Padding(
-          padding: const EdgeInsets.only(top: 18.0),
-          child: Text(
-            'SPM Page',
-            textAlign: TextAlign.center,
-            style: getBlackTextStyle(fontSize: 20, fontWeight: w700),
-          ),
-        ),
-        centerTitle: true,
-        leading: (data['isCTS'] == false || data['isCTS'] != null)
-            ? Container()
-            : Padding(
-                padding: const EdgeInsets.only(left: 16),
-                child: Container(
-                  margin: const EdgeInsets.only(top: 14),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: black),
-                  ),
-                  child: IconButton(
-                      onPressed: () {
-                        back(context);
-                      },
-                      icon: const Icon(
-                        Icons.arrow_back_ios,
-                        color: black,
-                        size: 24,
-                      )),
-                ),
-              ),
-        actions: [
-          (data['isCTS'] == true || data['isCTS'] == null)
-              ? Container()
-              : IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: BoxConstraints(),
-                  onPressed: () {
-                    logoutConfirmation();
-                  },
-                  icon: Icon(
-                    Icons.logout,
-                    color: Colors.red,
-                  )),
-        ],
-      ),
+      // appBar: AppBar(
+      //   backgroundColor: Colors.transparent,
+      //   elevation: 0,
+      //   title: Padding(
+      //     padding: const EdgeInsets.only(top: 18.0),
+      //     child: Text(
+      //       'SPM Page',
+      //       textAlign: TextAlign.center,
+      //       style: getBlackTextStyle(fontSize: 20, fontWeight: w700),
+      //     ),
+      //   ),
+      //   centerTitle: true,
+      //   leading: (data['isCTS'] == false || data['isCTS'] != null)
+      //       ? Container()
+      //       : Padding(
+      //           padding: const EdgeInsets.only(left: 16),
+      //           child: Container(
+      //             margin: const EdgeInsets.only(top: 14),
+      //             padding: const EdgeInsets.symmetric(horizontal: 4),
+      //             decoration: BoxDecoration(
+      //               color: Colors.transparent,
+      //               borderRadius: BorderRadius.circular(12),
+      //               border: Border.all(color: black),
+      //             ),
+      //             child: IconButton(
+      //                 onPressed: () {
+      //                   back(context);
+      //                 },
+      //                 icon: const Icon(
+      //                   Icons.arrow_back_ios,
+      //                   color: black,
+      //                   size: 24,
+      //                 )),
+      //           ),
+      //         ),
+      //   actions: [
+      //     (data['isCTS'] == true || data['isCTS'] == null)
+      //         ? Container()
+      //         : IconButton(
+      //             padding: EdgeInsets.zero,
+      //             constraints: BoxConstraints(),
+      //             onPressed: () {
+      //               logoutConfirmation();
+      //             },
+      //             icon: Icon(
+      //               Icons.logout,
+      //               color: Colors.red,
+      //             )),
+      //   ],
+      // ),
+      appBar: appBarWidget('SPM Page', context),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

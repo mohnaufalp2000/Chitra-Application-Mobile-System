@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'package:camos/core/navigator/navigation_route.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/site.dart';
@@ -67,30 +68,63 @@ class _SplashScreenState extends State<SplashScreen> {
         // cek apakah menggunakan cts atau tidak
         final isCTS = allSites
             .firstWhere((site) => site.idSite == userIdSite,
-                orElse: () => Site(idSite: userIdSite, cts: '1'))
+                orElse: () => Site(idSite: userIdSite, cts: '0'))
             .cts;
 
+        final isSPM = allSites
+            .firstWhere((site) => site.idSite == userIdSite,
+                orElse: () => Site(idSite: userIdSite, spm: '0'))
+            .spm;
+
         // Cek apakah id_site ada di listCustPgDigitalData
-        bool isSiteInList =
+        bool isSitePGInList =
             listCustPgDigitalData.any((e) => e['id_site'] == userIdSite);
 
-        // Navigasi setelah delay 2 detik
-        if (isCTS == '0') {
-          // jika tidak langsung diarahkan ke halaman SPM
-          return Timer(
-              const Duration(seconds: 2),
-              () => Navigator.pushReplacementNamed(context, TpmsPage.routeName,
-                  arguments: {'idSite': userIdSite, 'isCTS': false}));
+        // // Navigasi setelah delay 2 detik
+        // if (isCTS == '0') {
+        //   // jika tidak langsung diarahkan ke halaman SPM
+        //   return Timer(
+        //       const Duration(seconds: 2),
+        //       () => Navigator.pushReplacementNamed(context, TpmsPage.routeName,
+        //           arguments: {'idSite': userIdSite, 'isCTS': false}));
+        // } else {
+        //   // apakah customer menggunakan CTS?
+        //   return Timer(
+        //     const Duration(seconds: 2),
+        //     () => pushReplace(
+        //       context,
+        //       isSiteInList ? HomePageTrial.routeName : HomePage.routeName,
+        //     ),
+        //   );
+        // }
+        // user tidak beli CTS
+        log('isCTS : $isCTS');
+        String targetRoute = '';
+        Map<String, dynamic>? arguments = {};
+
+        if (isCTS == '0' || isCTS == null) {
+          if (userIdSite == '1') {
+            targetRoute = HomePage.routeName;
+          } else {
+            targetRoute = HomePageTrial.routeName;
+            arguments = {
+              'idSite': userIdSite,
+              'isSPM': isSPM == '1',
+              'isCTS': isCTS == '1',
+              'isPG': isSitePGInList,
+            };
+          }
         } else {
-          // apakah customer menggunakan CTS?
-          return Timer(
-            const Duration(seconds: 2),
-            () => pushReplace(
-              context,
-              isSiteInList ? HomePageTrial.routeName : HomePage.routeName,
-            ),
-          );
+          targetRoute = HomePage.routeName;
         }
+
+        return Timer(
+          const Duration(seconds: 2),
+          () => (arguments == null)
+              ? pushReplace(context, targetRoute)
+              : Navigator.pushReplacementNamed(context, targetRoute,
+                  arguments: arguments),
+        );
       } else {
         return Timer(const Duration(seconds: 2),
             () => pushReplace(context, LoginPage.routeName));

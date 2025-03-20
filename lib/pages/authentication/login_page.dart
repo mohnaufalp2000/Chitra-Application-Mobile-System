@@ -343,38 +343,81 @@ class _LoginPageState extends State<LoginPage> {
 
                             List<Site> allSites =
                                 await ApiService.getCachedAllSites();
+                            String userIdSite = user.docs[0]['id_site'];
 
                             if (allSites.isEmpty || allSites == null) {
                               allSites = await ApiService.getAllSite();
                             }
 
-                            // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
-                            if ((listCustPgDigitalData).any((e) =>
-                                e['id_site'] == user.docs[0]['id_site'])) {
-                              pushReplace(context, HomePageTrial.routeName);
-                            } else {
-                              // cek apakah menggunakan cts atau tidak
-                              log('all sites : ${user.docs[0]['id_site']}');
-                              final isCTS = allSites
-                                  .firstWhere(
-                                      (site) =>
-                                          site.idSite ==
-                                          user.docs[0]['id_site'],
-                                      orElse: () => Site(
-                                          idSite: user.docs[0]['id_site'],
-                                          cts: '1'))
-                                  .cts;
+                            // cek apakah menggunakan cts atau tidak
+                            final isCTS = allSites
+                                .firstWhere((site) => site.idSite == userIdSite,
+                                    orElse: () =>
+                                        Site(idSite: userIdSite, cts: '0'))
+                                .cts;
 
-                              if (isCTS == '0') {
-                                Navigator.pushReplacementNamed(
-                                    context, TpmsPage.routeName, arguments: {
-                                  'idSite': user.docs[0]['id_site'],
-                                  'isCTS': false
-                                });
-                              } else {
-                                pushReplace(context, HomePage.routeName);
-                              }
+                            final isSPM = allSites
+                                .firstWhere((site) => site.idSite == userIdSite,
+                                    orElse: () =>
+                                        Site(idSite: userIdSite, spm: '0'))
+                                .spm;
+
+                            bool isSitePGInList = listCustPgDigitalData
+                                .any((e) => e['id_site'] == userIdSite);
+
+                            // user tidak beli CTS
+                            log('isCTS : $isCTS');
+                            if (isCTS == '0' || isCTS == null) {
+                              String targetRoute = (userIdSite == '1')
+                                  ? HomePage.routeName
+                                  : HomePageTrial.routeName;
+
+                              Map<String, dynamic>? arguments =
+                                  (userIdSite == '1')
+                                      ? null
+                                      : {
+                                          'idSite': userIdSite,
+                                          'isSPM': isSPM == '1',
+                                          'isCTS': isCTS == '1',
+                                          'isPG': isSitePGInList,
+                                        };
+
+                              Navigator.pushReplacementNamed(
+                                  context, targetRoute,
+                                  arguments: arguments);
+                            } else {
+                              Navigator.pushReplacementNamed(
+                                  context, HomePage.routeName);
                             }
+
+                            // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
+                            // if ((listCustPgDigitalData).any((e) =>
+                            //     e['id_site'] == user.docs[0]['id_site'])) {
+                            //   pushReplace(context, HomePageTrial.routeName);
+                            // } else {
+                            //   // cek apakah menggunakan cts atau tidak
+                            //   log('all sites : ${user.docs[0]['id_site']}');
+                            //   final isCTS = allSites
+                            //       .firstWhere(
+                            //           (site) =>
+                            //               site.idSite ==
+                            //               user.docs[0]['id_site'],
+                            //           orElse: () => Site(
+                            //               idSite: user.docs[0]['id_site'],
+                            //               cts: '1'))
+                            //       .cts;
+
+                            //   if (isCTS == '0') {
+                            //     Navigator.pushReplacementNamed(
+                            //         context, TpmsPage.routeName,
+                            //         arguments: {
+                            //       'idSite': user.docs[0]['id_site'],
+                            //       'isCTS': false
+                            //     });
+                            //   } else {
+                            //     pushReplace(context, HomePage.routeName);
+                            //   }
+                            // }
                           } else {
                             push(context, EmailVerificationPage.routeName);
                           }

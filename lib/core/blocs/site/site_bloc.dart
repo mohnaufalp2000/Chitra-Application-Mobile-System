@@ -26,6 +26,7 @@ class SiteBloc extends Bloc<SiteEvent, SiteState> {
           1,
           Site(idSite: '2', site: 'All-CK', lastUpdate: '2023-10-16'),
         );
+        listSite.removeWhere((element) => element.cts == '0');
         // simpan list site ke local
         saveSiteToLocalPreferences(listSite);
         emit(SiteLoadedState(listSite: listSite));

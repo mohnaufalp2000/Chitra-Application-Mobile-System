@@ -15,34 +15,37 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     on<GetListSpmEvent>((event, emit) async {
       emit(SpmLoadingState());
-      try {
-        List<Site> allSites = await ApiService.getCachedAllSites();
+      List<Site> allSites = await ApiService.getCachedAllSites();
 
-        if (allSites.isEmpty || allSites == null) {
-          allSites = await ApiService.getAllSite();
-        }
+      if (allSites.isEmpty || allSites == null) {
+        allSites = await ApiService.getAllSite();
+      }
 
-        final idCompany = allSites
-            .firstWhere(
-              (site) => site.idSite == event.idSite,
-            )
-            .idCompany;
+      final idCompany = allSites
+          .firstWhere((site) => site.idSite == event.idSite,
+              orElse: () => Site(idSite: '', idCompany: ''))
+          .idCompany;
 
-        final responseQuery = await firestore
-            .collection('url_spm')
-            .where('id_company', isEqualTo: idCompany)
-            .get();
-        final response = responseQuery.docs.first.data()['url'];
+      if (idCompany!.isEmpty) {
+        emit(SpmLoadedState(listSpm: [], isShowMore: []));
+        return;
+      }
 
-        final apiListSpm = await ApiService.getApiSpm(event.idSite, response);
-        List<Spm> actualList = apiListSpm;
+      final responseQuery = await firestore
+          .collection('url_spm')
+          .where('id_company', isEqualTo: idCompany)
+          .get();
 
-        List<Spm> list =
-            actualList.where((spm) => spm.idSite == event.idSite).toList();
+      final response = responseQuery.docs.first.data()['url'];
 
-        List<bool> isShowMore = List.generate(list.length, (index) => false);
-        emit(SpmLoadedState(listSpm: list, isShowMore: isShowMore));
-      } catch (e) {}
+      final apiListSpm = await ApiService.getApiSpm(event.idSite, response);
+      List<Spm> actualList = apiListSpm;
+
+      List<Spm> list =
+          actualList.where((spm) => spm.idSite == event.idSite).toList();
+
+      List<bool> isShowMore = List.generate(list.length, (index) => false);
+      emit(SpmLoadedState(listSpm: list, isShowMore: isShowMore));
     });
   }
 }

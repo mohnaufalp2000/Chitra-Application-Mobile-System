@@ -108,6 +108,9 @@ class _HomePageTrialState extends State<HomePageTrial> {
 
   @override
   Widget build(BuildContext context) {
+    Map<String, dynamic> dataMap =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+
     return Scaffold(
       backgroundColor: white,
       body: SafeArea(
@@ -174,12 +177,12 @@ class _HomePageTrialState extends State<HomePageTrial> {
                                     crossAxisCount: 3,
                                     childAspectRatio: 0.9,
                                   ),
-                                  itemCount: 3,
+                                  itemCount: 4,
                                   itemBuilder: (context, index) {
                                     return BoxMenuWidget(
                                       menu: menus[index],
                                       isEnabled: true,
-                                      argument: {'idSite': idSite},
+                                      argument: dataMap,
                                     );
                                   },
                                 ),

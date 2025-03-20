@@ -1,8 +1,12 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
 import 'package:camos/core/navigator/navigation_route.dart';
+import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/site.dart';
+import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/pages/attendance/absence_page.dart';
 import 'package:camos/pages/attendance/attendance_page.dart';
@@ -25,6 +29,7 @@ import 'package:flutter/material.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/menu.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class BoxMenuWidget extends StatefulWidget {
   const BoxMenuWidget({
@@ -46,24 +51,41 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
+  Future<List<Map<String, dynamic>>> getListFromSharedPrefs() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? encodedData = prefs.getString('listCustPgDigitalData');
+
+    if (encodedData != null) {
+      List<dynamic> decodedList = jsonDecode(encodedData);
+      return decodedList.map((e) => e as Map<String, dynamic>).toList();
+    }
+    return []; // Return list kosong jika tidak ada data
+  }
+
   selectMenu(int id) async {
     switch (id) {
       case 1:
         // push(context, SelectUnitPage.routeName);
-        log('argumentasi dimensi : ${widget.argument?['idSite']}');
 
-        final listCustPgDigital =
-            await firestore.collection('list_site_pgdigital').get();
-        final listCustPgDigitalData = listCustPgDigital.docs
-            .map((e) => e.data() as Map<String, dynamic>)
-            .toList();
-        if ((listCustPgDigitalData)
-            .any((e) => e['id_site'] == widget.argument?['idSite'])) {
-          Navigator.pushNamed(context, DashboardDailyPage.routeName,
+        // List<Map<String, dynamic>> listCustPgDigitalData =
+        //     await getListFromSharedPrefs();
+
+        // if ((listCustPgDigitalData)
+        //     .any((e) => e['id_site'] == widget.argument?['idSite'])) {
+        //   Navigator.pushNamed(context, DashboardDailyPage.routeName,
+        //       arguments: widget.argument?['idSite']);
+        // } else {
+        //   push(context, SelectInspectionPage.routeName);
+        // }
+
+        if (widget.argument?['isCTS'] == null) {
+          Navigator.pushNamed(context, SelectInspectionPage.routeName,
               arguments: widget.argument?['idSite']);
         } else {
-          push(context, SelectInspectionPage.routeName);
+          Navigator.pushNamed(context, DashboardDailyPage.routeName,
+              arguments: widget.argument?['idSite']);
         }
+
         break;
       case 2:
         // if (Platform.isAndroid) {
@@ -78,15 +100,16 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
         // }
         break;
       case 4:
-        push(context, TireRepairInspectionPage.routeName);
+        Navigator.pushNamed(context, TpmsPage.routeName,
+            arguments: widget.argument);
         // push(context, CtsPage.routeName);
 
         break;
       case 5:
         // push(context, SelectTpmsPage.routeName);
         // push(context, QrTpmsPage.routeName);
-        Navigator.pushNamed(context, TpmsPage.routeName,
-            arguments: widget.argument);
+        Navigator.pushNamed(context, TireRepairInspectionPage.routeName);
+
         break;
       case 6:
         push(
