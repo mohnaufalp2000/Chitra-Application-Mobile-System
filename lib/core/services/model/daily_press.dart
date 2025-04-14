@@ -63,8 +63,9 @@ class DailyPress extends Equatable {
   @override
   List<Object?> get props => [
         unit,
-        hari,
+        // hari,
         onlyDate,
+        // posisi.map((p) => p.toString()).join('|'),
       ]; // Include idUnit in props
 }
 

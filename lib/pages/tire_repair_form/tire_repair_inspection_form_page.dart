@@ -542,25 +542,14 @@ class _TireRepairInspectionFormPageState
                     color: Colors.grey,
                     margin: EdgeInsets.symmetric(vertical: 20),
                   ),
-                  InkWell(
-                    onTap: () async {
-                      final querySnapshot = await firestore
-                          .collection('tire_repair_ins_report')
-                          .where('id', isEqualTo: id)
-                          .get();
-
-                      log('apakah sama 1 : ${id}');
-                      log('apakah sama 2 : ${querySnapshot.docs.isNotEmpty}');
-                    },
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: const Text(
-                        'Tire Detail',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: const Text(
+                      'Tire Detail',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
                       ),
                     ),
                   ),

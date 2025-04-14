@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:camos/core/services/model/daily_press.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
@@ -134,9 +135,21 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
                               .toIso8601String())
                       .get();
 
-                  snapshot.docs.forEach((data) {
-                    final dataDaily = data.data() as Map<String, dynamic>;
-                    excelItemTask.add(dataDaily);
+                  final allData = snapshot.docs
+                      .map((doc) => DailyPress.fromFirestore(
+                          doc.data() as Map<String, dynamic>))
+                      .toList();
+
+                  log('jumlah daily double 1 : ${allData.length}');
+
+                  final distinctDaily =
+                      Set<DailyPress>.from(allData ?? []).toList();
+
+                  log('jumlah daily double 2 : ${distinctDaily.length}');
+
+                  distinctDaily.forEach((item) {
+                    Map<String, dynamic> cast = item.toFirestore();
+                    excelItemTask.add(cast);
                   });
 
                   final id = Uuid();
