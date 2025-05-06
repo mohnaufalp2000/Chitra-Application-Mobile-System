@@ -22,9 +22,8 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
     with TickerProviderStateMixin {
   late AnimationController _controller;
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-
+  late Stream<QuerySnapshot> customerStream;
   String searchQuery = '';
-
   String? selectedCustomer;
   int selectedIndex = 0;
   List<String> status = ['REPAIR', 'RETREAD', 'REJECT'];
@@ -36,6 +35,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
+    customerStream = firestore.collection('list_customer').snapshots();
   }
 
   int repairDurationMatrix(String repairDuration) {
@@ -72,8 +72,25 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
       body: SingleChildScrollView(
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: TextField(
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                    hintText: 'Search... (SN or Customer)',
+                    hintStyle: getGreyTextStyle(grey8391A1),
+                    prefixIcon: Icon(Icons.search)),
+              ),
+            ),
+            const SizedBox(
+              height: 12,
+            ),
             StreamBuilder(
-                stream: firestore.collection('list_customer').snapshots(),
+                stream: customerStream,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return CircularProgressIndicator();
@@ -93,20 +110,6 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                     print('selectedCustomer : $selectedCustomer');
                     return Column(
                       children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: TextField(
-                            onChanged: (value) {
-                              setState(() {
-                                searchQuery = value;
-                              });
-                            },
-                            decoration: InputDecoration(
-                                hintText: 'Search... (SN or Customer)',
-                                hintStyle: getGreyTextStyle(grey8391A1),
-                                prefixIcon: Icon(Icons.search)),
-                          ),
-                        ),
                         Container(
                           margin: EdgeInsets.only(top: 24, left: 24, right: 24),
                           decoration: BoxDecoration(
@@ -168,7 +171,8 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                 DateFormat date = DateFormat('dd-MM-yy');
 
                 if (searchQuery.isNotEmpty &&
-                    !data['sn']!.toLowerCase().contains(searchQuery)) {
+                    !data['sn']!.toLowerCase().contains(searchQuery) &&
+                    !data['sn']!.toUpperCase().contains(searchQuery)) {
                   return Container();
                 }
 
@@ -438,62 +442,98 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
           ],
         ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [const Color(0xFFA3FF94), const Color(0xFF5A6AFB)],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-          ),
-          shape: BoxShape.circle,
-        ),
-        child: FloatingActionButton(
-          onPressed: () {
-            _controller.forward();
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                  transitionDuration: const Duration(milliseconds: 500),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                    const Offset begin = Offset(1.0, 0.0);
-                    const Offset end = Offset.zero;
-                    const Curve curve = Curves.easeInOut;
+      // floatingActionButton: Container(
+      //   decoration: BoxDecoration(
+      //     color: Colors.red,
+      //     shape: BoxShape.circle,
+      //   ),
+      //   child: FloatingActionButton(
+      //     onPressed: () {
+      //       _controller.forward();
+      //       Navigator.push(
+      //         context,
+      //         PageRouteBuilder(
+      //             transitionDuration: const Duration(milliseconds: 500),
+      //             transitionsBuilder:
+      //                 (context, animation, secondaryAnimation, child) {
+      //               const Offset begin = Offset(1.0, 0.0);
+      //               const Offset end = Offset.zero;
+      //               const Curve curve = Curves.easeInOut;
 
-                    var tween = Tween<Offset>(begin: begin, end: end);
-                    var offsetAnimation =
-                        animation.drive(tween.chain(CurveTween(curve: curve)));
+      //               var tween = Tween<Offset>(begin: begin, end: end);
+      //               var offsetAnimation =
+      //                   animation.drive(tween.chain(CurveTween(curve: curve)));
 
-                    return SlideTransition(
-                        position: offsetAnimation, child: child);
-                  },
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      TireRepairInspectionFormPage()),
-            );
-          },
-          child: const Icon(
-            Icons.add,
-            color: Colors.white,
-            size: 36.0,
+      //               return SlideTransition(
+      //                   position: offsetAnimation, child: child);
+      //             },
+      //             pageBuilder: (context, animation, secondaryAnimation) =>
+      //                 TireRepairInspectionFormPage()),
+      //       );
+      //     },
+      //     child: const Icon(
+      //       Icons.add,
+      //       color: Colors.white,
+      //       size: 36.0,
+      //     ),
+      //     backgroundColor: Colors.transparent,
+      //   ),
+      // ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 6),
+        child: SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white, // Warna latar putih
+              foregroundColor: Colors.green, // Warna teks dan ikon hijau
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+                side: const BorderSide(
+                    color: Colors.green, width: 6), // Border hijau
+              ),
+            ),
+            onPressed: () {
+              _controller.forward();
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                    transitionDuration: const Duration(milliseconds: 500),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      const Offset begin = Offset(1.0, 0.0);
+                      const Offset end = Offset.zero;
+                      const Curve curve = Curves.easeInOut;
+
+                      var tween = Tween<Offset>(begin: begin, end: end);
+                      var offsetAnimation = animation
+                          .drive(tween.chain(CurveTween(curve: curve)));
+
+                      return SlideTransition(
+                          position: offsetAnimation, child: child);
+                    },
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        TireRepairInspectionFormPage()),
+              );
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.add,
+                  color: black,
+                ),
+                const SizedBox(
+                  width: 12,
+                ),
+                Text("Add Tire", style: getBlackTextStyle(fontSize: 16)),
+              ],
+            ),
           ),
-          backgroundColor: Colors.transparent,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.tire_repair), label: 'Repair'),
-          BottomNavigationBarItem(icon: Icon(Icons.storm), label: 'Retread'),
-          BottomNavigationBarItem(icon: Icon(Icons.close), label: 'Reject'),
-        ],
-        currentIndex: selectedIndex,
-        onTap: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
-      ),
     );
   }
 }
