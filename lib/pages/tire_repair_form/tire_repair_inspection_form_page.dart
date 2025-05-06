@@ -5,6 +5,7 @@ import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/functions/functions.dart';
+import 'package:camos/core/widgets/text_button_widget.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -38,6 +39,8 @@ class _TireRepairInspectionFormPageState
 
   DateTime? selectedDate;
   DateTime? selectedReceivedDate;
+
+  bool isShowMore = false;
 
   TextEditingController customerCtrl = TextEditingController(text: '');
   TextEditingController siteCtrl = TextEditingController(text: '');
@@ -367,182 +370,6 @@ class _TireRepairInspectionFormPageState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Date Inspect',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () => _selectDate(context, 'inspect'),
-                    child: Container(
-                      padding: const EdgeInsets.only(
-                          right: 199.0, left: 20.0, top: 15, bottom: 15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        selectedDate == null
-                            ? 'Select Date'
-                            : '${selectedDate?.day}/${selectedDate?.month}/${selectedDate?.year}',
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Customer',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  StreamBuilder(
-                      stream: firestore.collection('list_customer').snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return CircularProgressIndicator();
-                        }
-
-                        List<Map<String, dynamic>> dataList =
-                            snapshot.data!.docs.map((doc) {
-                          return doc.data() as Map<String, dynamic>;
-                        }).toList();
-
-                        List<dynamic> customers = dataList[0]['customer'];
-                        selectedCustomer ??= customers[0];
-
-                        return Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            padding: EdgeInsets.symmetric(horizontal: 24),
-                            value: selectedCustomer,
-                            items: customers.map((customer) {
-                              return DropdownMenuItem<String>(
-                                value: customer,
-                                child: Text(customer),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedCustomer = newValue ?? '';
-                                customerCtrl.text = newValue ?? '';
-                              });
-                            },
-                          ),
-                        );
-                      }),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Site',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: siteCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Report by',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: reportNameCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 400,
-                    height: 2,
-                    color: Colors.grey,
-                    margin: EdgeInsets.symmetric(vertical: 20),
-                  ),
-                  Align(
                     alignment: Alignment.topCenter,
                     child: const Text(
                       'Tire Detail',
@@ -796,6 +623,210 @@ class _TireRepairInspectionFormPageState
                             ? 'Select Date'
                             : '${selectedReceivedDate?.day}/${selectedReceivedDate?.month}/${selectedReceivedDate?.year}',
                         style: const TextStyle(color: Colors.black),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      'Customer',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  StreamBuilder(
+                      stream: firestore.collection('list_customer').snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return CircularProgressIndicator();
+                        }
+
+                        List<Map<String, dynamic>> dataList =
+                            snapshot.data!.docs.map((doc) {
+                          return doc.data() as Map<String, dynamic>;
+                        }).toList();
+
+                        List<dynamic> customers = dataList[0]['customer'];
+                        selectedCustomer ??= customers[0];
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: DropdownButton<String>(
+                            isExpanded: true,
+                            padding: EdgeInsets.symmetric(horizontal: 24),
+                            value: selectedCustomer,
+                            items: customers.map((customer) {
+                              return DropdownMenuItem<String>(
+                                value: customer,
+                                child: Text(customer),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedCustomer = newValue ?? '';
+                                customerCtrl.text = newValue ?? '';
+                              });
+                            },
+                          ),
+                        );
+                      }),
+                  const SizedBox(height: 20.0),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      'Site',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: siteCtrl,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        contentPadding: EdgeInsets.only(left: 20),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Container(
+                    width: 400,
+                    height: 2,
+                    color: Colors.grey,
+                    margin: EdgeInsets.symmetric(vertical: 20),
+                  ),
+                  const Align(
+                    alignment: Alignment.topCenter,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Information Repair',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        SizedBox(
+                            height: 4), // Jarak antara teks utama dan subteks
+                        Text(
+                          'Can input later',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      'Date Inspect',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () => _selectDate(context, 'inspect'),
+                    child: Container(
+                      padding: const EdgeInsets.only(
+                          right: 199.0, left: 20.0, top: 15, bottom: 15),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 2,
+                            blurRadius: 5,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        selectedDate == null
+                            ? 'Select Date'
+                            : '${selectedDate?.day}/${selectedDate?.month}/${selectedDate?.year}',
+                        style: const TextStyle(color: Colors.black),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      'Report by',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 5,
+                          offset: Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: reportNameCtrl,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        contentPadding: EdgeInsets.only(left: 20),
                       ),
                     ),
                   ),

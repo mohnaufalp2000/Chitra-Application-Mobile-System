@@ -53,6 +53,14 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
     return 0;
   }
 
+  Future<List<String>> getCustomerList() async {
+    final snapshot =
+        await FirebaseFirestore.instance.collection('list_customer').get();
+    final dataList =
+        snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    return ['All (Select Customer)', ...dataList[0]['customer']];
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -81,7 +89,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                   });
                 },
                 decoration: InputDecoration(
-                    hintText: 'Search... (SN or Customer)',
+                    hintText: 'Search... (SN)',
                     hintStyle: getGreyTextStyle(grey8391A1),
                     prefixIcon: Icon(Icons.search)),
               ),
@@ -89,396 +97,177 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
             const SizedBox(
               height: 12,
             ),
-            StreamBuilder(
-                stream: customerStream,
+            FutureBuilder(
+                future: getCustomerList(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  }
+                  if (!snapshot.hasData) return CircularProgressIndicator();
 
-                  if (snapshot.connectionState == ConnectionState.active) {
-                    List<Map<String, dynamic>> dataList =
-                        snapshot.data!.docs.map((doc) {
-                      return doc.data() as Map<String, dynamic>;
-                    }).toList();
+                  List<String> customers = snapshot.data!;
+                  selectedCustomer ??= customers[0];
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: DropdownButton<String>(
+                          value: selectedCustomer,
+                          isExpanded: true,
+                          items: customers.map((customer) {
+                            return DropdownMenuItem<String>(
+                              value: customer,
+                              child: Text(customer),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              selectedCustomer = newValue!;
+                              print('select customer : $selectedCustomer');
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      PaginateFirestore(
+                        query: firestore
+                            .collection('tire_repair_ins_report')
+                            .where('status', isEqualTo: status[selectedIndex])
+                            .orderBy('date_inspect', descending: true),
+                        itemBuilderType: PaginateBuilderType.listView,
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemsPerPage: 5,
+                        isLive: true,
+                        initialLoader: const Center(
+                            child: CircularProgressIndicator.adaptive()),
+                        bottomLoader: const Center(
+                            child: CircularProgressIndicator.adaptive()),
+                        itemBuilder: (context, snapshot, index) {
+                          final Map<String, dynamic> data =
+                              snapshot[index].data() as Map<String, dynamic>;
+                          DateFormat date = DateFormat('dd-MM-yy');
 
-                    List<dynamic> customers = [
-                      'All',
-                      ...dataList[0]['customer']
-                    ];
-                    selectedCustomer ??= customers[0];
-                    print('selectedCustomer : $selectedCustomer');
-                    return Column(
-                      children: [
-                        Container(
-                          margin: EdgeInsets.only(top: 24, left: 24, right: 24),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            padding: EdgeInsets.symmetric(horizontal: 24),
-                            value: selectedCustomer,
-                            items: customers.map((customer) {
-                              return DropdownMenuItem<String>(
-                                value: customer,
-                                child: Text(customer),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedCustomer = newValue ?? '';
-                              });
+                          // filter sn
+                          if (searchQuery.isNotEmpty &&
+                              !data['sn']!
+                                  .toLowerCase()
+                                  .contains(searchQuery) &&
+                              !data['sn']!
+                                  .toUpperCase()
+                                  .contains(searchQuery)) {
+                            return Container();
+                          }
+
+                          // filter customer
+                          if (selectedCustomer != 'All (Select Customer)' &&
+                              !data['customer']!.contains(selectedCustomer)) {
+                            return Container();
+                          }
+
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                  context, DetailTireRepairInspection.routeName,
+                                  arguments: data['id']);
                             },
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                      ],
-                    );
-                  }
-                  return Container();
+                            child: Container(
+                              width: MediaQuery.of(context).size.width * 0.9,
+                              // height: 180,
+                              margin: EdgeInsets.only(
+                                  bottom: 6, top: 6, right: 24, left: 24),
+                              padding: const EdgeInsets.all(5.0),
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(20.0),
+                                  color: (data['repair_duration'] == '')
+                                      ? black
+                                      : (data['repair_duration'] == 'R1')
+                                          ? green00968A
+                                          : (data['repair_duration'] == 'R2')
+                                              ? Colors.yellow[800]
+                                              : (data['repair_duration'] ==
+                                                      'R3')
+                                                  ? blue344BEF
+                                                  : Colors.red),
+
+                              child: Stack(
+                                children: [
+                                  Row(
+                                    children: [
+                                      Image.asset(
+                                        'assets/images/ban.png',
+                                        width: 100.0,
+                                        height: 120.0,
+                                      ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            data['sn'],
+                                            style: getWhiteTextStyle(
+                                                fontSize: 24,
+                                                fontWeight: FontWeight.w700),
+                                          ),
+                                          const SizedBox(height: 4.0),
+                                          Container(
+                                            width: 120.0,
+                                            height: 2.0,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(height: 4.0),
+                                          Text(
+                                              '${data['brand']} / ${data['tire_size']}',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700)),
+                                          const SizedBox(height: 4.0),
+                                          Text(
+                                              'Inspected : ${date.format(DateTime.parse('${data['date_inspect']}'))}',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700)),
+                                          const SizedBox(height: 4.0),
+                                          Text(
+                                              'Repair Completed : ${date.format(DateTime.parse('${data['date_inspect']}').add(Duration(days: repairDurationMatrix('${data['repair_duration']}'))))}',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700)),
+                                          const SizedBox(height: 4.0),
+                                          Container(
+                                            width: 170,
+                                            child: Text('${data['customer']}',
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight:
+                                                        FontWeight.w700)),
+                                          ),
+                                          const SizedBox(height: 4.0),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  Align(
+                                    alignment: Alignment.topRight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text('${data['repair_duration']}',
+                                          style: getWhiteTextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w700)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  );
                 }),
-
-            PaginateFirestore(
-              query: firestore
-                  .collection('tire_repair_ins_report')
-                  .where('status', isEqualTo: status[selectedIndex])
-                  .orderBy('date_inspect', descending: true),
-              itemBuilderType: PaginateBuilderType.listView,
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              itemsPerPage: 5,
-              isLive: true,
-              initialLoader:
-                  const Center(child: CircularProgressIndicator.adaptive()),
-              bottomLoader:
-                  const Center(child: CircularProgressIndicator.adaptive()),
-              itemBuilder: (context, snapshot, index) {
-                final Map<String, dynamic> data =
-                    snapshot[index].data() as Map<String, dynamic>;
-                DateFormat date = DateFormat('dd-MM-yy');
-
-                if (searchQuery.isNotEmpty &&
-                    !data['sn']!.toLowerCase().contains(searchQuery) &&
-                    !data['sn']!.toUpperCase().contains(searchQuery)) {
-                  return Container();
-                }
-
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(
-                        context, DetailTireRepairInspection.routeName,
-                        arguments: data['id']);
-                  },
-                  child: Container(
-                    width: MediaQuery.of(context).size.width * 0.9,
-                    // height: 180,
-                    margin:
-                        EdgeInsets.only(bottom: 6, top: 6, right: 24, left: 24),
-                    padding: const EdgeInsets.all(5.0),
-                    decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20.0),
-                        color: (data['repair_duration'] == '')
-                            ? black
-                            : (data['repair_duration'] == 'R1')
-                                ? green00968A
-                                : (data['repair_duration'] == 'R2')
-                                    ? Colors.yellow[800]
-                                    : (data['repair_duration'] == 'R3')
-                                        ? blue344BEF
-                                        : Colors.red),
-                    child: Stack(
-                      children: [
-                        Row(
-                          children: [
-                            Image.asset(
-                              'assets/images/ban.png',
-                              width: 100.0,
-                              height: 120.0,
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  data['sn'],
-                                  style: getWhiteTextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700),
-                                ),
-                                const SizedBox(height: 4.0),
-                                Container(
-                                  width: 120.0,
-                                  height: 2.0,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(height: 4.0),
-                                Text('${data['brand']} / ${data['tire_size']}',
-                                    style: getWhiteTextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 4.0),
-                                Text(
-                                    'Inspected : ${date.format(DateTime.parse('${data['date_inspect']}'))}',
-                                    style: getWhiteTextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 4.0),
-                                Text(
-                                    'Repair Completed : ${date.format(DateTime.parse('${data['date_inspect']}').add(Duration(days: repairDurationMatrix('${data['repair_duration']}'))))}',
-                                    style: getWhiteTextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700)),
-                                const SizedBox(height: 4.0),
-                                Container(
-                                  width: 170,
-                                  child: Text('${data['customer']}',
-                                      style: getWhiteTextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700)),
-                                ),
-                                const SizedBox(height: 4.0),
-                              ],
-                            ),
-                          ],
-                        ),
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text('${data['repair_duration']}',
-                                style: getWhiteTextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w700)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            // StreamBuilder(
-            //     stream: selectedCustomer == 'All'
-            //         ? firestore
-            //             .collection('tire_repair_ins_report')
-            //             .where('status', isEqualTo: status[selectedIndex])
-            //             .snapshots()
-            //         : firestore
-            //             .collection('tire_repair_ins_report')
-            //             .where('customer', isEqualTo: selectedCustomer)
-            //             .where('status', isEqualTo: status[selectedIndex])
-            //             .snapshots(),
-            //     builder: (context, snapshot) {
-            //       if (snapshot.connectionState == ConnectionState.waiting) {
-            //         return Center(child: CircularProgressIndicator());
-            //       }
-            //       List<Map<String, dynamic>> dataList = [];
-            //       List<DocumentSnapshot> docs = snapshot.data!.docs;
-
-            //       for (var doc in docs) {
-            //         Map<String, dynamic> data =
-            //             doc.data() as Map<String, dynamic>;
-            //         dataList.add(data);
-            //       }
-
-            //       dataList.sort((a, b) {
-            //         DateTime dateA = DateTime.parse(a['created_at']);
-            //         DateTime dateB = DateTime.parse(b['created_at']);
-            //         return dateB.compareTo(
-            //             dateA); // Urutkan dari tanggal terlama ke terbaru
-            //       });
-            //       if (dataList.isEmpty) {
-            //         return Center(
-            //           child: Text(
-            //             'Empty',
-            //             style: getBlackTextStyle(
-            //               fontSize: 24,
-            //             ),
-            //           ),
-            //         );
-            //       }
-
-            //       return Column(
-            //         crossAxisAlignment: CrossAxisAlignment.start,
-            //         children: [
-            //           Column(
-            //             children: dataList.map((data) {
-            //               final index = dataList.indexOf(data);
-            //               DateFormat date = DateFormat('dd-MM-yy');
-            //               return Column(
-            //                 children: [
-            //                   const SizedBox(height: 20),
-            //                   Center(
-            //                     child: GestureDetector(
-            //                       onTap: () {
-            //                         Navigator.pushNamed(context,
-            //                             DetailTireRepairInspection.routeName,
-            //                             arguments: data['id']);
-            //                       },
-            //                       child: Container(
-            //                         width:
-            //                             MediaQuery.of(context).size.width * 0.9,
-            //                         // height: 180,
-            //                         margin: EdgeInsets.only(
-            //                             bottom: (index == dataList.length - 1)
-            //                                 ? 96
-            //                                 : 0),
-            //                         padding: const EdgeInsets.all(5.0),
-            //                         decoration: BoxDecoration(
-            //                             borderRadius:
-            //                                 BorderRadius.circular(20.0),
-            //                             color: (data['repair_duration'] == '')
-            //                                 ? black
-            //                                 : (data['repair_duration'] == 'R1')
-            //                                     ? green00968A
-            //                                     : (data['repair_duration'] ==
-            //                                             'R2')
-            //                                         ? Colors.yellow[800]
-            //                                         : (data['repair_duration'] ==
-            //                                                 'R3')
-            //                                             ? blue344BEF
-            //                                             : Colors.red),
-            //                         child: Stack(
-            //                           children: [
-            //                             Row(
-            //                               children: [
-            //                                 Image.asset(
-            //                                   'assets/images/ban.png',
-            //                                   width: 100.0,
-            //                                   height: 120.0,
-            //                                 ),
-            //                                 Column(
-            //                                   crossAxisAlignment:
-            //                                       CrossAxisAlignment.start,
-            //                                   mainAxisAlignment:
-            //                                       MainAxisAlignment.center,
-            //                                   children: [
-            //                                     Text(
-            //                                       data['sn'],
-            //                                       style: getWhiteTextStyle(
-            //                                           fontSize: 24,
-            //                                           fontWeight:
-            //                                               FontWeight.w700),
-            //                                     ),
-            //                                     const SizedBox(height: 4.0),
-            //                                     Container(
-            //                                       width: 120.0,
-            //                                       height: 2.0,
-            //                                       color: Colors.white,
-            //                                     ),
-            //                                     const SizedBox(height: 4.0),
-            //                                     Text(
-            //                                         '${data['brand']} / ${data['tire_size']}',
-            //                                         style: getWhiteTextStyle(
-            //                                             fontSize: 16,
-            //                                             fontWeight:
-            //                                                 FontWeight.w700)),
-            //                                     const SizedBox(height: 4.0),
-            //                                     Text(
-            //                                         'Inspected : ${date.format(DateTime.parse('${data['date_inspect']}'))}',
-            //                                         style: getWhiteTextStyle(
-            //                                             fontSize: 16,
-            //                                             fontWeight:
-            //                                                 FontWeight.w700)),
-            //                                     const SizedBox(height: 4.0),
-            //                                     Text(
-            //                                         'Repair Completed : ${date.format(DateTime.parse('${data['date_inspect']}').add(Duration(days: repairDurationMatrix('${data['repair_duration']}'))))}',
-            //                                         style: getWhiteTextStyle(
-            //                                             fontSize: 16,
-            //                                             fontWeight:
-            //                                                 FontWeight.w700)),
-            //                                     const SizedBox(height: 4.0),
-            //                                     Container(
-            //                                       width: 170,
-            //                                       child: Text(
-            //                                           '${data['customer']}',
-            //                                           style: getWhiteTextStyle(
-            //                                               fontSize: 16,
-            //                                               fontWeight:
-            //                                                   FontWeight.w700)),
-            //                                     ),
-            //                                     const SizedBox(height: 4.0),
-            //                                   ],
-            //                                 ),
-            //                               ],
-            //                             ),
-            //                             Align(
-            //                               alignment: Alignment.topRight,
-            //                               child: Padding(
-            //                                 padding: const EdgeInsets.all(8.0),
-            //                                 child: Text(
-            //                                     '${data['repair_duration']}',
-            //                                     style: getWhiteTextStyle(
-            //                                         fontSize: 20,
-            //                                         fontWeight:
-            //                                             FontWeight.w700)),
-            //                               ),
-            //                             ),
-            //                           ],
-            //                         ),
-            //                       ),
-            //                     ),
-            //                   ),
-            //                 ],
-            //               );
-            //             }).toList(),
-            //           ),
-            //         ],
-            //       );
-            //     }),
           ],
         ),
       ),
-      // floatingActionButton: Container(
-      //   decoration: BoxDecoration(
-      //     color: Colors.red,
-      //     shape: BoxShape.circle,
-      //   ),
-      //   child: FloatingActionButton(
-      //     onPressed: () {
-      //       _controller.forward();
-      //       Navigator.push(
-      //         context,
-      //         PageRouteBuilder(
-      //             transitionDuration: const Duration(milliseconds: 500),
-      //             transitionsBuilder:
-      //                 (context, animation, secondaryAnimation, child) {
-      //               const Offset begin = Offset(1.0, 0.0);
-      //               const Offset end = Offset.zero;
-      //               const Curve curve = Curves.easeInOut;
-
-      //               var tween = Tween<Offset>(begin: begin, end: end);
-      //               var offsetAnimation =
-      //                   animation.drive(tween.chain(CurveTween(curve: curve)));
-
-      //               return SlideTransition(
-      //                   position: offsetAnimation, child: child);
-      //             },
-      //             pageBuilder: (context, animation, secondaryAnimation) =>
-      //                 TireRepairInspectionFormPage()),
-      //       );
-      //     },
-      //     child: const Icon(
-      //       Icons.add,
-      //       color: Colors.white,
-      //       size: 36.0,
-      //     ),
-      //     backgroundColor: Colors.transparent,
-      //   ),
-      // ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 6),
         child: SizedBox(
