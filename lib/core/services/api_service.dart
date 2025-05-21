@@ -17,6 +17,36 @@ class ApiService {
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=';
   static const String postUrl =
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/getdatacamos.php?function=';
+  static const String tirePostUrl =
+      'https://chitraparatama.co.id/ICS/product/push_data.php?function=';
+
+  // POST data new tire repair
+  static Future<void> postNewTireRepair(Map<String, dynamic> newTireMap) async {
+    try {
+      final response = await http.post(
+          Uri.parse('${tirePostUrl}new_tire_repair'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(newTireMap));
+      log('success kirim data');
+      log('Response status: ${response.statusCode}');
+    } catch (e) {
+      print('Error saat mengirim data new tire repair: $e');
+    }
+  }
+
+  // EDIT data new tire repair
+  static Future<void> editNewTireRepair(
+      Map<String, dynamic> editTireMap) async {
+    log('body edit : $editTireMap');
+    try {
+      final response = await http.post(Uri.parse('${tirePostUrl}inspect'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(editTireMap));
+      log('Response status: ${response.statusCode}');
+    } catch (e) {
+      print('Error saat edit data new tire repair: $e');
+    }
+  }
 
   // POST data daily check pressure
   static Future<void> postDailyCheckPressure(

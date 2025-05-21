@@ -1,5 +1,8 @@
+import 'dart:developer';
+
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
+import 'package:camos/core/utils/firebase_key/firebase_key.dart';
 import 'package:camos/core/widgets/appbar_widget.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/tire_repair_form/detail_tire_repair_inspection_page.dart';
@@ -25,8 +28,9 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
   late Stream<QuerySnapshot> customerStream;
   String searchQuery = '';
   String? selectedCustomer;
-  int selectedIndex = 0;
+  int selectedIndex = 1;
   List<String> status = ['REPAIR', 'RETREAD', 'REJECT'];
+  List<String> statusTire = ['Inspected', 'Not Inspected'];
 
   final double containerWidthFactor = 0.8;
   void initState() {
@@ -127,10 +131,18 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                       ),
                       const SizedBox(height: 12),
                       PaginateFirestore(
-                        query: firestore
-                            .collection('tire_repair_ins_report')
-                            .where('status', isEqualTo: status[selectedIndex])
-                            .orderBy('date_inspect', descending: true),
+                        key: ValueKey(selectedIndex),
+                        query: selectedIndex == 1
+                            ? firestore
+                                .collection(FirestoreKey
+                                    .tireRepairInspectionReportTrial)
+                                .where('is_inspected', isEqualTo: selectedIndex)
+                                .orderBy('date_inspect', descending: true)
+                            : firestore
+                                .collection(FirestoreKey
+                                    .tireRepairInspectionReportTrial)
+                                .where('is_inspected',
+                                    isEqualTo: selectedIndex),
                         itemBuilderType: PaginateBuilderType.listView,
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
@@ -162,104 +174,194 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                             return Container();
                           }
 
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(
-                                  context, DetailTireRepairInspection.routeName,
-                                  arguments: data['id']);
-                            },
-                            child: Container(
-                              width: MediaQuery.of(context).size.width * 0.9,
-                              // height: 180,
-                              margin: EdgeInsets.only(
-                                  bottom: 6, top: 6, right: 24, left: 24),
-                              padding: const EdgeInsets.all(5.0),
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20.0),
-                                  color: (data['repair_duration'] == '')
-                                      ? black
-                                      : (data['repair_duration'] == 'R1')
-                                          ? green00968A
-                                          : (data['repair_duration'] == 'R2')
-                                              ? Colors.yellow[800]
-                                              : (data['repair_duration'] ==
-                                                      'R3')
-                                                  ? blue344BEF
-                                                  : Colors.red),
-
-                              child: Stack(
-                                children: [
-                                  Row(
+                          switch (selectedIndex) {
+                            case 0:
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context,
+                                      TireRepairInspectionFormPage.routeName,
+                                      arguments: data['id']);
+                                },
+                                child: Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.9,
+                                  // height: 180,
+                                  margin: EdgeInsets.only(
+                                      bottom: 6, top: 6, right: 24, left: 24),
+                                  padding: const EdgeInsets.all(5.0),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20.0),
+                                      border: Border.all(color: Colors.black),
+                                      color: Colors.transparent),
+                                  child: Stack(
                                     children: [
-                                      Image.asset(
-                                        'assets/images/ban.png',
-                                        width: 100.0,
-                                        height: 120.0,
-                                      ),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
+                                      Row(
                                         children: [
-                                          Text(
-                                            data['sn'],
-                                            style: getWhiteTextStyle(
-                                                fontSize: 24,
-                                                fontWeight: FontWeight.w700),
+                                          Image.asset(
+                                            'assets/images/ban.png',
+                                            width: 100.0,
+                                            height: 120.0,
                                           ),
-                                          const SizedBox(height: 4.0),
-                                          Container(
-                                            width: 120.0,
-                                            height: 2.0,
-                                            color: Colors.white,
-                                          ),
-                                          const SizedBox(height: 4.0),
-                                          Text(
-                                              '${data['brand']} / ${data['tire_size']}',
-                                              style: getWhiteTextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700)),
-                                          const SizedBox(height: 4.0),
-                                          Text(
-                                              'Inspected : ${date.format(DateTime.parse('${data['date_inspect']}'))}',
-                                              style: getWhiteTextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700)),
-                                          const SizedBox(height: 4.0),
-                                          Text(
-                                              'Repair Completed : ${date.format(DateTime.parse('${data['date_inspect']}').add(Duration(days: repairDurationMatrix('${data['repair_duration']}'))))}',
-                                              style: getWhiteTextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.w700)),
-                                          const SizedBox(height: 4.0),
-                                          Container(
-                                            width: 170,
-                                            child: Text('${data['customer']}',
-                                                style: getWhiteTextStyle(
-                                                    fontSize: 16,
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                data['sn'],
+                                                style: getBlackTextStyle(
+                                                    fontSize: 24,
                                                     fontWeight:
-                                                        FontWeight.w700)),
+                                                        FontWeight.w700),
+                                              ),
+                                              const SizedBox(height: 4.0),
+                                              Container(
+                                                width: 170,
+                                                child: Text(
+                                                    '${data['customer']}',
+                                                    style: getBlackTextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w700)),
+                                              ),
+                                              const SizedBox(height: 4.0),
+                                              Container(
+                                                width: 120.0,
+                                                height: 2.0,
+                                                color: Colors.black,
+                                              ),
+                                              const SizedBox(height: 4.0),
+                                              Text(
+                                                  '${data['brand']} / ${data['tire_size']}',
+                                                  style: getBlackTextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                              const SizedBox(height: 4.0),
+                                              Text('Need to be inspect!',
+                                                  style: getBlackTextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                              const SizedBox(height: 4.0),
+                                            ],
                                           ),
-                                          const SizedBox(height: 4.0),
                                         ],
                                       ),
                                     ],
                                   ),
-                                  Align(
-                                    alignment: Alignment.topRight,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Text('${data['repair_duration']}',
-                                          style: getWhiteTextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.w700)),
-                                    ),
+                                ),
+                              );
+                            case 1:
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.pushNamed(context,
+                                      DetailTireRepairInspection.routeName,
+                                      arguments: data['id']);
+                                },
+                                child: Container(
+                                  width:
+                                      MediaQuery.of(context).size.width * 0.9,
+                                  // height: 180,
+                                  margin: EdgeInsets.only(
+                                      bottom: 6, top: 6, right: 24, left: 24),
+                                  padding: const EdgeInsets.all(5.0),
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20.0),
+                                      color: (data['repair_duration'] == '')
+                                          ? black
+                                          : (data['repair_duration'] == 'R1')
+                                              ? green00968A
+                                              : (data['repair_duration'] ==
+                                                      'R2')
+                                                  ? Colors.yellow[800]
+                                                  : (data['repair_duration'] ==
+                                                          'R3')
+                                                      ? blue344BEF
+                                                      : Colors.red),
+
+                                  child: Stack(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Image.asset(
+                                            'assets/images/ban.png',
+                                            width: 100.0,
+                                            height: 120.0,
+                                          ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                data['sn'],
+                                                style: getWhiteTextStyle(
+                                                    fontSize: 24,
+                                                    fontWeight:
+                                                        FontWeight.w700),
+                                              ),
+                                              const SizedBox(height: 4.0),
+                                              Container(
+                                                width: 170,
+                                                child: Text(
+                                                    '${data['customer']}',
+                                                    style: getWhiteTextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.w700)),
+                                              ),
+                                              const SizedBox(height: 4.0),
+                                              Container(
+                                                width: 120.0,
+                                                height: 2.0,
+                                                color: Colors.white,
+                                              ),
+                                              const SizedBox(height: 4.0),
+                                              Text(
+                                                  '${data['brand']} / ${data['tire_size']}',
+                                                  style: getWhiteTextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                              const SizedBox(height: 4.0),
+                                              Text(
+                                                  'Inspected : ${date.format(DateTime.parse('${data['date_inspect']}'))}',
+                                                  style: getWhiteTextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                              const SizedBox(height: 4.0),
+                                              Text(
+                                                  'Repair Completed : ${date.format(DateTime.parse('${data['date_inspect']}').add(Duration(days: repairDurationMatrix('${data['repair_duration']}'))))}',
+                                                  style: getWhiteTextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w700)),
+                                              const SizedBox(height: 4.0),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      Align(
+                                        alignment: Alignment.topRight,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Text(
+                                              '${data['repair_duration']}',
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w700)),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                            ),
-                          );
+                                ),
+                              );
+                          }
+                          return Container();
                         },
                       ),
                     ],
@@ -323,6 +425,20 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+              icon: Icon(Icons.pending), label: 'Not Inspect'),
+          BottomNavigationBarItem(icon: Icon(Icons.done), label: 'Inspected'),
+        ],
+        currentIndex: selectedIndex,
+        onTap: (index) {
+          setState(() {
+            selectedIndex = index;
+            log('selectedindex = ${selectedIndex}');
+          });
+        },
+      ),
     );
   }
 }

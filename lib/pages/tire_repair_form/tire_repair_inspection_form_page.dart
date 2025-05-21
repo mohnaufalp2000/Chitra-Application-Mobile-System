@@ -1,9 +1,13 @@
 import 'dart:developer';
 import 'dart:io';
+import 'dart:math' as math;
 
+import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
+import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
+import 'package:camos/core/utils/firebase_key/firebase_key.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/text_button_widget.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
@@ -16,6 +20,7 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -52,10 +57,12 @@ class _TireRepairInspectionFormPageState
   TextEditingController patternCtrl = TextEditingController(text: '');
   TextEditingController noCM = TextEditingController(text: '');
   TextEditingController statusCtrl = TextEditingController(text: 'REPAIR');
+  TextEditingController repairLocationCtrl = TextEditingController(text: '');
   TextEditingController cargoManifestCtrl = TextEditingController(text: '');
   TextEditingController rtd1Ctrl = TextEditingController(text: '');
   TextEditingController rtd2Ctrl = TextEditingController(text: '');
   TextEditingController remarksCtrl = TextEditingController(text: '');
+  TextEditingController newLocationCtrl = TextEditingController();
 
   List<String> serialNumberPict = [];
   List<String> sidewallPic = [];
@@ -84,6 +91,7 @@ class _TireRepairInspectionFormPageState
 
   String selectedSize = '27.00R49';
   String selectedStatus = 'REPAIR';
+  String? selectedRepairLocation;
   String? selectedCustomer;
   String idSite = '';
   Map<String, dynamic> user = {};
@@ -209,6 +217,13 @@ class _TireRepairInspectionFormPageState
     user = await getUserPreferences();
   }
 
+  Future<List<Map<String, dynamic>>> getRepairLocationList() async {
+    final snapshot = await firestore.collection('list_repair_area').get();
+    final dataList =
+        snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    return dataList;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -231,7 +246,7 @@ class _TireRepairInspectionFormPageState
   Future<void> _fetchData(String id) async {
     try {
       final querySnapshot = await firestore
-          .collection('tire_repair_ins_report')
+          .collection(FirestoreKey.tireRepairInspectionReportTrial)
           .where('id', isEqualTo: id)
           .get();
 
@@ -240,8 +255,8 @@ class _TireRepairInspectionFormPageState
         final data = doc.data();
 
         setState(() {
-          log('tanggal sekarang : ${data['date_inspect']}');
-          selectedDate = DateTime.parse(data['date_inspect']);
+          // log('tanggal sekarang : ${data['date_inspect']}');
+          // selectedDate = DateTime.parse(data['date_inspect']);
           selectedReceivedDate = DateTime.parse(data['date_received']);
 
           selectedCustomer = data['customer'];
@@ -250,43 +265,43 @@ class _TireRepairInspectionFormPageState
           selectedSize = data['tire_size'];
           tireSizeCtrl.text = data['tire_size'];
 
-          selectedStatus = data['status'];
-          statusCtrl.text = data['status'];
+          // selectedStatus = data['status'];
+          // statusCtrl.text = data['status'];
 
           siteCtrl.text = data['site'];
-          reportNameCtrl.text = data['report_by'];
+          // reportNameCtrl.text = data['report_by'];
           tireSizeCtrl.text = data['tire_size'];
           serialNumberCtrl.text = data['sn'];
           brandCtrl.text = data['brand'];
           typeConstCtrl.text = data['type_construction'];
           patternCtrl.text = data['pattern'];
-          cargoManifestCtrl.text = data['no_cargo_manifest'];
-          rtd1Ctrl.text = data['rtd1'];
-          rtd2Ctrl.text = data['rtd2'];
-          remarksCtrl.text = data['remarks'];
-          _selectedButton = data['repair_duration'];
+          // cargoManifestCtrl.text = data['no_cargo_manifest'];
+          // rtd1Ctrl.text = data['rtd1'];
+          // rtd2Ctrl.text = data['rtd2'];
+          // remarksCtrl.text = data['remarks'];
+          // _selectedButton = data['repair_duration'];
 
-          serialNumberPict = (data['sn_pic'] as List<dynamic>)
-              .map((item) => item.toString())
-              .toList();
-          sidewallPic = (data['sidewall_pic'] as List<dynamic>)
-              .map((item) => item.toString())
-              .toList();
-          shoulderPic = (data['shoulder_pic'] as List<dynamic>)
-              .map((item) => item.toString())
-              .toList();
-          threatPic = (data['threat_pic'] as List<dynamic>)
-              .map((item) => item.toString())
-              .toList();
-          beadPic = (data['bead_pic'] as List<dynamic>)
-              .map((item) => item.toString())
-              .toList();
-          innerLinerPic = (data['inner_linner_pic'] as List<dynamic>)
-              .map((item) => item.toString())
-              .toList();
-          chafferPic = (data['chaffer_pic'] as List<dynamic>)
-              .map((item) => item.toString())
-              .toList();
+          // serialNumberPict = (data['sn_pic'] as List<dynamic>)
+          //     .map((item) => item.toString())
+          //     .toList();
+          // sidewallPic = (data['sidewall_pic'] as List<dynamic>)
+          //     .map((item) => item.toString())
+          //     .toList();
+          // shoulderPic = (data['shoulder_pic'] as List<dynamic>)
+          //     .map((item) => item.toString())
+          //     .toList();
+          // threatPic = (data['threat_pic'] as List<dynamic>)
+          //     .map((item) => item.toString())
+          //     .toList();
+          // beadPic = (data['bead_pic'] as List<dynamic>)
+          //     .map((item) => item.toString())
+          //     .toList();
+          // innerLinerPic = (data['inner_linner_pic'] as List<dynamic>)
+          //     .map((item) => item.toString())
+          //     .toList();
+          // chafferPic = (data['chaffer_pic'] as List<dynamic>)
+          //     .map((item) => item.toString())
+          //     .toList();
         });
       }
     } catch (e) {
@@ -309,6 +324,8 @@ class _TireRepairInspectionFormPageState
     rtd1Ctrl.clear();
     rtd2Ctrl.clear();
     remarksCtrl.clear();
+    repairLocationCtrl.clear();
+    newLocationCtrl.clear();
 
     customerCtrl.dispose();
     siteCtrl.dispose();
@@ -324,6 +341,8 @@ class _TireRepairInspectionFormPageState
     rtd1Ctrl.dispose();
     rtd2Ctrl.dispose();
     remarksCtrl.dispose();
+    repairLocationCtrl.clear();
+    newLocationCtrl.dispose();
   }
 
   @override
@@ -342,9 +361,44 @@ class _TireRepairInspectionFormPageState
         ),
         title: const Text(
           'Tire Inspection Report',
-          style: TextStyle(color: Colors.black),
+          style: TextStyle(color: Colors.black, fontSize: 16),
         ),
         centerTitle: true,
+        actions: [
+          InkWell(
+            onTap: () async {
+              String phoneNumber = "+6281252073489";
+              String url =
+                  "https://wa.me/$phoneNumber?text=Saya mau menambah data ... karena tidak ada di CAMOS.";
+              Uri uri = Uri.parse(url);
+
+              try {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              } catch (e) {
+                print('error whatsapp : $e');
+              }
+            },
+            child: Row(
+              children: [
+                Image.asset(
+                  '${iconPath}/whatsapp.png',
+                  width: 24,
+                  height: 24,
+                ),
+                const SizedBox(
+                  width: 4,
+                ),
+                Text(
+                  'Contact Dev.',
+                  style: getBlackTextStyle(fontSize: 12),
+                ),
+                const SizedBox(
+                  width: 16,
+                ),
+              ],
+            ),
+          ),
+        ],
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
             bottomLeft: Radius.circular(20.0),
@@ -357,756 +411,845 @@ class _TireRepairInspectionFormPageState
       body: Padding(
         padding: const EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0),
         child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20.0),
-            ),
-            child: Padding(
-              padding:
-                  const EdgeInsets.only(left: 16.0, right: 16.0, top: 20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Align(
-                    alignment: Alignment.topCenter,
-                    child: const Text(
-                      'Tire Detail',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 9),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Tire Size',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  StreamBuilder(
-                      stream: firestore.collection('tire_size').snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return CircularProgressIndicator();
-                        }
-
-                        List<Map<String, dynamic>> dataList =
-                            snapshot.data!.docs.map((doc) {
-                          return doc.data() as Map<String, dynamic>;
-                        }).toList();
-
-                        // log('size : ${dataList[0]['size']}');
-
-                        List<dynamic> size = dataList[0]['size'];
-                        log('tire size : $size');
-                        selectedSize ??= size[4];
-
-                        return Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            padding: EdgeInsets.symmetric(horizontal: 24),
-                            value: selectedSize,
-                            items: size.map((size) {
-                              return DropdownMenuItem<String>(
-                                value: size,
-                                child: Text(size),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedSize = newValue ?? '';
-                                tireSizeCtrl.text = newValue ?? '';
-                              });
-                            },
-                          ),
-                        );
-                      }),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Serial Number',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: serialNumberCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Brand',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: brandCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Type Construction',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: typeConstCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Pattern',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: patternCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Date Received',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () => _selectDate(context, 'received'),
-                    child: Container(
-                      padding: const EdgeInsets.only(
-                          right: 199.0, left: 20.0, top: 15, bottom: 15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        selectedReceivedDate == null
-                            ? 'Select Date'
-                            : '${selectedReceivedDate?.day}/${selectedReceivedDate?.month}/${selectedReceivedDate?.year}',
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Customer',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  StreamBuilder(
-                      stream: firestore.collection('list_customer').snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return CircularProgressIndicator();
-                        }
-
-                        List<Map<String, dynamic>> dataList =
-                            snapshot.data!.docs.map((doc) {
-                          return doc.data() as Map<String, dynamic>;
-                        }).toList();
-
-                        List<dynamic> customers = dataList[0]['customer'];
-                        selectedCustomer ??= customers[0];
-
-                        return Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: DropdownButton<String>(
-                            isExpanded: true,
-                            padding: EdgeInsets.symmetric(horizontal: 24),
-                            value: selectedCustomer,
-                            items: customers.map((customer) {
-                              return DropdownMenuItem<String>(
-                                value: customer,
-                                child: Text(customer),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedCustomer = newValue ?? '';
-                                customerCtrl.text = newValue ?? '';
-                              });
-                            },
-                          ),
-                        );
-                      }),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Site',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: siteCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Container(
-                    width: 400,
-                    height: 2,
-                    color: Colors.grey,
-                    margin: EdgeInsets.symmetric(vertical: 20),
-                  ),
-                  const Align(
-                    alignment: Alignment.topCenter,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Information Repair',
+          child: Column(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.only(left: 16.0, right: 16.0, top: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.topCenter,
+                        child: const Text(
+                          'Tire Detail',
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
                             fontSize: 20,
                           ),
                         ),
-                        SizedBox(
-                            height: 4), // Jarak antara teks utama dan subteks
-                        Text(
-                          'Can input later',
+                      ),
+                      const SizedBox(height: 9),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Tire Size',
                           style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                            fontStyle: FontStyle.italic,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Date Inspect',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  GestureDetector(
-                    onTap: () => _selectDate(context, 'inspect'),
-                    child: Container(
-                      padding: const EdgeInsets.only(
-                          right: 199.0, left: 20.0, top: 15, bottom: 15),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Text(
-                        selectedDate == null
-                            ? 'Select Date'
-                            : '${selectedDate?.day}/${selectedDate?.month}/${selectedDate?.year}',
-                        style: const TextStyle(color: Colors.black),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Report by',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: reportNameCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Status',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      padding: EdgeInsets.symmetric(horizontal: 24),
-                      value: selectedStatus,
-                      hint: Text('Choose Status'),
-                      items: listStatus.map((status) {
-                        return DropdownMenuItem<String>(
-                          value: status,
-                          child: Text(status),
-                        );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedStatus = newValue ?? '';
-                          statusCtrl.text = newValue ?? '';
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  (selectedStatus == 'REJECT')
-                      ? Container()
-                      : Container(
-                          padding: EdgeInsets.all(9),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFE2E2E2), // Hex color #E2E2E2
-                            borderRadius: BorderRadius.circular(
-                                20), // Optional: Adjust border radius if needed
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize
-                                .min, // Use min to avoid unnecessary space
-                            children: [
-                              Align(
-                                alignment: Alignment
-                                    .topCenter, // Align text to the top center
-                                child: Text(
-                                  'Repair Duration', // Replace with the content you want
-                                  style: TextStyle(
-                                    color: Color(0xFF45625E), // Text color
-                                    fontSize: 20, // Adjust text size if needed
-                                    fontWeight: FontWeight
-                                        .bold, // Optional: Adjust text weight if needed
+                      const SizedBox(height: 10),
+                      StreamBuilder(
+                          stream: firestore.collection('tire_size').snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return CircularProgressIndicator();
+                            }
+
+                            List<Map<String, dynamic>> dataList =
+                                snapshot.data!.docs.map((doc) {
+                              return doc.data() as Map<String, dynamic>;
+                            }).toList();
+
+                            // log('size : ${dataList[0]['size']}');
+
+                            List<dynamic> size = dataList[0]['size'];
+                            log('tire size : $size');
+                            selectedSize ??= size[4];
+
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
                                   ),
-                                  textAlign: TextAlign
-                                      .center, // Center align text within the widget
-                                ),
+                                ],
                               ),
-                              SizedBox(
-                                  height: 15), // Space between text and buttons
-                              Column(
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment
-                                        .spaceEvenly, // Distribute space evenly
-                                    children: [
-                                      _buildButton('R1', 'R1'),
-                                      _buildButton('R2', 'R2'),
-                                    ],
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                padding: EdgeInsets.symmetric(horizontal: 24),
+                                value: selectedSize,
+                                items: size.map((size) {
+                                  return DropdownMenuItem<String>(
+                                    value: size,
+                                    child: Text(size),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    selectedSize = newValue ?? '';
+                                    tireSizeCtrl.text = newValue ?? '';
+                                  });
+                                },
+                              ),
+                            );
+                          }),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Serial Number',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: serialNumberCtrl,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            contentPadding: EdgeInsets.only(left: 20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Brand',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: brandCtrl,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            contentPadding: EdgeInsets.only(left: 20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Type Construction',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: typeConstCtrl,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            contentPadding: EdgeInsets.only(left: 20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Pattern',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: patternCtrl,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            contentPadding: EdgeInsets.only(left: 20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Date Received',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () => _selectDate(context, 'received'),
+                        child: Container(
+                          padding: const EdgeInsets.only(
+                              right: 199.0, left: 20.0, top: 15, bottom: 15),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            selectedReceivedDate == null
+                                ? 'Select Date'
+                                : '${selectedReceivedDate?.day}/${selectedReceivedDate?.month}/${selectedReceivedDate?.year}',
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Customer',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      StreamBuilder(
+                          stream:
+                              firestore.collection('list_customer').snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return CircularProgressIndicator();
+                            }
+
+                            List<Map<String, dynamic>> dataList =
+                                snapshot.data!.docs.map((doc) {
+                              return doc.data() as Map<String, dynamic>;
+                            }).toList();
+
+                            List<dynamic> customers = dataList[0]['customer'];
+                            selectedCustomer ??= customers[0];
+
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
                                   ),
-                                  SizedBox(height: 12), // Space between rows
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment
-                                        .spaceEvenly, // Distribute space evenly
+                                ],
+                              ),
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                padding: EdgeInsets.symmetric(horizontal: 24),
+                                value: selectedCustomer,
+                                items: customers.map((customer) {
+                                  return DropdownMenuItem<String>(
+                                    value: customer,
+                                    child: Text(customer),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    selectedCustomer = newValue ?? '';
+                                    customerCtrl.text = newValue ?? '';
+                                  });
+                                },
+                              ),
+                            );
+                          }),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Site',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: siteCtrl,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            contentPadding: EdgeInsets.only(left: 20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Container(
+                        width: 400,
+                        height: 2,
+                        color: Colors.grey,
+                        margin: EdgeInsets.symmetric(vertical: 20),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(
+                height: 24,
+              ),
+              // --------------------------------------------------------------------Information Repair------------------------------------------------------------------------------------- //
+              Container(
+                padding:
+                    const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.0),
+                ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.only(left: 16.0, right: 16.0, top: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Align(
+                        alignment: Alignment.topCenter,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Information Repair',
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                            SizedBox(
+                                height:
+                                    4), // Jarak antara teks utama dan subteks
+                            Text(
+                              'Can input later',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Status',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          padding: EdgeInsets.symmetric(horizontal: 24),
+                          value: selectedStatus,
+                          hint: Text('Choose Status'),
+                          items: listStatus.map((status) {
+                            return DropdownMenuItem<String>(
+                              value: status,
+                              child: Text(status),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              selectedStatus = newValue ?? '';
+                              statusCtrl.text = newValue ?? '';
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Repair / Inspect Location',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      FutureBuilder(
+                          future: getRepairLocationList(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData)
+                              return CircularProgressIndicator();
+
+                            List<Map<String, dynamic>> listRepairLocation =
+                                snapshot.data ?? [];
+
+                            selectedRepairLocation ??=
+                                listRepairLocation[0]['idSite'];
+
+                            return Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                padding: EdgeInsets.symmetric(horizontal: 24),
+                                value: selectedRepairLocation,
+                                hint: Text('Choose Repair Location'),
+                                items: listRepairLocation.map((location) {
+                                  return DropdownMenuItem<String>(
+                                    value: location['idSite'],
+                                    child: Text(location['site']),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    selectedRepairLocation = newValue ?? '';
+                                    // repairLocationCtrl.text = newValue ?? '';
+                                  });
+                                },
+                              ),
+                            );
+                          }),
+                      const SizedBox(height: 20),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Date Inspect',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () => _selectDate(context, 'inspect'),
+                        child: Container(
+                          padding: const EdgeInsets.only(
+                              right: 199.0, left: 20.0, top: 15, bottom: 15),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            selectedDate == null
+                                ? 'Select Date'
+                                : '${selectedDate?.day}/${selectedDate?.month}/${selectedDate?.year}',
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Report by',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: reportNameCtrl,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            contentPadding: EdgeInsets.only(left: 20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      (selectedStatus == 'REJECT')
+                          ? Container()
+                          : Container(
+                              padding: EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFE2E2E2), // Hex color #E2E2E2
+                                borderRadius: BorderRadius.circular(
+                                    20), // Optional: Adjust border radius if needed
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize
+                                    .min, // Use min to avoid unnecessary space
+                                children: [
+                                  Align(
+                                    alignment: Alignment
+                                        .topCenter, // Align text to the top center
+                                    child: Text(
+                                      'Repair Duration', // Replace with the content you want
+                                      style: TextStyle(
+                                        color: Color(0xFF45625E), // Text color
+                                        fontSize:
+                                            20, // Adjust text size if needed
+                                        fontWeight: FontWeight
+                                            .bold, // Optional: Adjust text weight if needed
+                                      ),
+                                      textAlign: TextAlign
+                                          .center, // Center align text within the widget
+                                    ),
+                                  ),
+                                  SizedBox(
+                                      height:
+                                          15), // Space between text and buttons
+                                  Column(
                                     children: [
-                                      _buildButton('R3', 'R3'),
-                                      _buildButton('R4', 'R4'),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment
+                                            .spaceEvenly, // Distribute space evenly
+                                        children: [
+                                          _buildButton('R1', 'R1'),
+                                          _buildButton('R2', 'R2'),
+                                        ],
+                                      ),
+                                      SizedBox(
+                                          height: 12), // Space between rows
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment
+                                            .spaceEvenly, // Distribute space evenly
+                                        children: [
+                                          _buildButton('R3', 'R3'),
+                                          _buildButton('R4', 'R4'),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'No. Cargo Manifest',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'No. Cargo Manifest',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: cargoManifestCtrl,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        contentPadding: EdgeInsets.only(left: 20),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: const Text(
-                      'RTD (mm)',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
+                        child: TextField(
+                          controller: cargoManifestCtrl,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            contentPadding: EdgeInsets.only(left: 20),
                           ),
-                          child: TextField(
-                            controller: rtd1Ctrl,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
+                        ),
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: const Text(
+                          'RTD (mm)',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16.0, vertical: 12.0),
+                              child: TextField(
+                                controller: rtd1Ctrl,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16.0, vertical: 12.0),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('/'),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: rtd2Ctrl,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
+                          const SizedBox(width: 8),
+                          Text('/'),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey),
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(0, 3),
+                                  ),
+                                ],
                               ),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16.0, vertical: 12.0),
+                              child: TextField(
+                                controller: rtd2Ctrl,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 16.0, vertical: 12.0),
+                                ),
+                              ),
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 20.0),
+                      Align(
+                        alignment: Alignment.topLeft,
+                        child: Text(
+                          'Remarks',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 20.0),
-                  Align(
-                    alignment: Alignment.topLeft,
-                    child: Text(
-                      'Remarks',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: TextField(
-                      controller: remarksCtrl,
-                      maxLines: null,
-                      minLines: 5,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
+                      const SizedBox(height: 10),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.5),
+                              spreadRadius: 2,
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        contentPadding: EdgeInsets.only(left: 20, top: 40),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20.0),
-                  Column(
-                    children: [
-                      Text(
-                        '*Please Take a Picture with Landscape Mode!',
-                        style: getRedTextStyle(
-                          fontSize: 18,
+                        child: TextField(
+                          controller: remarksCtrl,
+                          maxLines: null,
+                          minLines: 5,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            contentPadding: EdgeInsets.only(left: 20, top: 40),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 12.0),
-                      // Serial Number Picture
-                      takePictureButton('Serial Number'),
                       const SizedBox(height: 20.0),
-                      takePictureButton('Area Sidewall'),
-                      const SizedBox(height: 20.0),
-                      takePictureButton('Area Shoulder'),
-                      const SizedBox(height: 20.0),
-                      takePictureButton('Area Tread'),
-                      const SizedBox(height: 20.0),
-                      takePictureButton('Area Bead'),
-                      const SizedBox(height: 20.0),
-                      takePictureButton('Area Inner Linner'),
-                      const SizedBox(height: 20.0),
-                      takePictureButton('Area Chaffer'),
-                      const SizedBox(height: 20.0),
-                      const SizedBox(height: 99.0),
+                      Column(
+                        children: [
+                          Text(
+                            '*Please Take a Picture with Landscape Mode!',
+                            style: getRedTextStyle(
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 12.0),
+                          // Serial Number Picture
+                          takePictureButton('Serial Number'),
+                          const SizedBox(height: 20.0),
+                          takePictureButton('Area Sidewall'),
+                          const SizedBox(height: 20.0),
+                          takePictureButton('Area Shoulder'),
+                          const SizedBox(height: 20.0),
+                          takePictureButton('Area Tread'),
+                          const SizedBox(height: 20.0),
+                          takePictureButton('Area Bead'),
+                          const SizedBox(height: 20.0),
+                          takePictureButton('Area Inner Linner'),
+                          const SizedBox(height: 20.0),
+                          takePictureButton('Area Chaffer'),
+                          const SizedBox(height: 20.0),
+                          const SizedBox(height: 99.0),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -1135,92 +1278,59 @@ class _TireRepairInspectionFormPageState
                           )),
                       TextButton(
                           onPressed: () async {
-                            // validate repair duration
-                            if (_selectedButton == '' &&
-                                statusCtrl.text != 'REJECT') {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context)
-                                  .hideCurrentSnackBar();
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text(
-                                  'Please choose repair duration first!',
-                                  style: getWhiteTextStyle(),
-                                ),
-                                backgroundColor: Colors.red,
-                              ));
-                              return;
-                            }
+                            await uploadImage();
 
-                            // validate date
-                            if (selectedDate == null ||
-                                selectedReceivedDate == null) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context)
-                                  .hideCurrentSnackBar();
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text(
-                                  'Please choose date received and inspected first!',
-                                  style: getWhiteTextStyle(),
-                                ),
-                                backgroundColor: Colors.red,
-                              ));
-                              return;
-                            }
+                            // EDIT DATA
+                            if (id != null && id != '') {
+                              log('id : ada');
+                              log('id data : ${id}');
 
-                            // validate sn pic and injury pic
-                            int picsCount = serialNumberPict.length +
-                                sidewallPic.length +
-                                shoulderPic.length +
-                                beadPic.length +
-                                threatPic.length +
-                                innerLinerPic.length +
-                                chafferPic.length;
+                              // int picsCount = serialNumberPict.length +
+                              //     sidewallPic.length +
+                              //     shoulderPic.length +
+                              //     beadPic.length +
+                              //     threatPic.length +
+                              //     innerLinerPic.length +
+                              //     chafferPic.length;
 
-                            if (id == '') {
-                              if (serialNumberPict.isEmpty) {
-                                Navigator.pop(context);
-                                errorImage(context, 'Serial Number');
-                                return;
-                              }
+                              // // if (id == '') {
+                              // if (serialNumberPict.isEmpty) {
+                              //   Navigator.pop(context);
+                              //   errorImage(context, 'Serial Number');
+                              //   return;
+                              // }
 
-                              if (picsCount <= 3) {
-                                Navigator.pop(context);
-                                errorImage(context, 'Injury Pict',
-                                    count: picsCount);
-                                return;
-                              }
-                            }
+                              // if (picsCount <= 3) {
+                              //   Navigator.pop(context);
+                              //   errorImage(context, 'Injury Pict',
+                              //       count: picsCount);
+                              //   return;
+                              // }
+                              // }
 
-                            // Tampilkan loading indicator
-                            showDialog(
-                              context: context,
-                              barrierDismissible:
-                                  false, // Agar dialog tidak bisa ditutup oleh user
-                              builder: (context) {
-                                return AlertDialog(
-                                  content: Row(
-                                    children: [
-                                      CircularProgressIndicator(),
-                                      SizedBox(width: 20),
-                                      Text("Loading..."),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
+                              // Tampilkan loading indicator
+                              showDialog(
+                                context: context,
+                                barrierDismissible:
+                                    false, // Agar dialog tidak bisa ditutup oleh user
+                                builder: (context) {
+                                  return const AlertDialog(
+                                    content: Row(
+                                      children: [
+                                        CircularProgressIndicator(),
+                                        SizedBox(width: 20),
+                                        Text("Loading..."),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
 
-                            // Edit Tire Inspection
-                            if (id != '' || id != null) {
-                              await uploadImage();
-
-                              log('cek kesamaan ${id != ''} & ${id != null}');
                               final querySnapshot = await firestore
-                                  .collection('tire_repair_ins_report')
+                                  .collection(FirestoreKey
+                                      .tireRepairInspectionReportTrial)
                                   .where('id', isEqualTo: id)
                                   .get();
-                              log('cek kesamaan2 ${id}');
 
                               if (querySnapshot.docs.isNotEmpty) {
                                 // Ambil dokumen pertama yang ditemukan
@@ -1228,6 +1338,7 @@ class _TireRepairInspectionFormPageState
                                 final docId = doc.id; // Ambil ID dokumen
 
                                 Map<String, dynamic> updateData = {
+                                  'id': id,
                                   'date_inspect':
                                       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
                                   'customer': customerCtrl.text,
@@ -1241,15 +1352,14 @@ class _TireRepairInspectionFormPageState
                                   'pattern': patternCtrl.text,
                                   'date_received':
                                       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+                                  'is_inspected': 1,
                                   'status': statusCtrl.text,
                                   'no_cargo_manifest': cargoManifestCtrl.text,
                                   'rtd1': rtd1Ctrl.text,
                                   'rtd2': rtd2Ctrl.text,
                                   'repair_duration': _selectedButton,
                                   'remarks': remarksCtrl.text,
-                                  'repair_location': (idSite == '1')
-                                      ? 'Workshop Office'
-                                      : user['siteName'],
+                                  'repair_location': selectedRepairLocation,
                                 };
 
                                 // Tambahkan atribut dinamis hanya jika daftar tidak kosong
@@ -1285,154 +1395,529 @@ class _TireRepairInspectionFormPageState
                                       FieldValue.arrayUnion(chafferPicFirebase);
                                 }
 
-                                // Perbarui dokumen dengan data yang sudah difilter
                                 await firestore
-                                    .collection('tire_repair_ins_report')
+                                    .collection(FirestoreKey
+                                        .tireRepairInspectionReportTrial)
                                     .doc(
                                         docId) // Gunakan ID dokumen yang ingin diperbarui
                                     .update(updateData);
 
-                                // await firestore
-                                //     .collection('tire_repair_ins_report')
-                                //     .doc(
-                                //         docId) // Gunakan ID dokumen yang ingin diperbarui
-                                //     .update({
-                                //   'date_inspect':
-                                //       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
-                                //   'customer': customerCtrl.text,
-                                //   'email': auth.currentUser?.email ?? '',
-                                //   'site': siteCtrl.text,
-                                //   'report_by': reportNameCtrl.text,
-                                //   'tire_size': tireSizeCtrl.text,
-                                //   'sn': serialNumberCtrl.text,
-                                //   'brand': brandCtrl.text,
-                                //   'type_construction': typeConstCtrl.text,
-                                //   'pattern': patternCtrl.text,
-                                //   'date_received':
-                                //       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
-                                //   'status': statusCtrl.text,
-                                //   'no_cargo_manifest': cargoManifestCtrl.text,
-                                //   'rtd1': rtd1Ctrl.text,
-                                //   'rtd2': rtd2Ctrl.text,
-                                //   'repair_duration': _selectedButton,
-                                //   'remarks': remarksCtrl.text,
-                                //   'sn_pic': serialNumberPictFirebase,
-                                //     'sidewall_pic': sidewallPicFirebase,
-                                //     'shoulder_pic': shoulderPicFirebase,
-                                //     'threat_pic': threatPicFirebase,
-                                //     'bead_pic': beadPicFirebase,
-                                //     'inner_linner_pic': innerLinerPicFirebase,
-                                //     'chaffer_pic': chafferPicFirebase,
-                                //   'repair_location': (idSite == '1')
-                                //       ? 'Workshop Office'
-                                //       : user['siteName']
-                                // });
-                              } else {
-                                try {
-                                  await uploadImage();
+                                await ApiService.editNewTireRepair(updateData);
 
-                                  log('serial number : ${sidewallPicFirebase}');
-                                  final newId = Uuid().v4();
-                                  await firestore
-                                      .collection('tire_repair_ins_report')
-                                      .doc(
-                                          '${DateTime.now().toIso8601String()}')
-                                      .set({
-                                    'id': newId,
-                                    'date_inspect':
-                                        '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
-                                    'customer': customerCtrl.text,
-                                    'created_at':
-                                        '${DateTime.now().toIso8601String()}',
-                                    'site': siteCtrl.text,
-                                    'email': auth.currentUser?.email ?? '',
-                                    'report_by': reportNameCtrl.text,
-                                    'tire_size': tireSizeCtrl.text,
-                                    'sn': serialNumberCtrl.text,
-                                    'brand': brandCtrl.text,
-                                    'type_construction': typeConstCtrl.text,
-                                    'pattern': patternCtrl.text,
-                                    'date_received':
-                                        '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
-                                    'status': statusCtrl.text,
-                                    'no_cargo_manifest': cargoManifestCtrl.text,
-                                    'rtd1': rtd1Ctrl.text,
-                                    'rtd2': rtd2Ctrl.text,
-                                    'repair_duration': _selectedButton,
-                                    'remarks': remarksCtrl.text,
-                                    'sn_pic': serialNumberPictFirebase,
-                                    'sidewall_pic': sidewallPicFirebase,
-                                    'shoulder_pic': shoulderPicFirebase,
-                                    'threat_pic': threatPicFirebase,
-                                    'bead_pic': beadPicFirebase,
-                                    'inner_linner_pic': innerLinerPicFirebase,
-                                    'chaffer_pic': chafferPicFirebase,
-                                    'repair_location': (idSite == '1')
-                                        ? 'Workshop Office'
-                                        : user['siteName']
-                                  });
-                                } catch (e) {}
+                                Navigator.pop(context);
+                                Navigator.pop(context);
+                                Navigator.pushReplacementNamed(context,
+                                    TireRepairInspectionPage.routeName);
                               }
-                              // Input Tire Inspection
                             } else {
-                              try {
-                                await uploadImage();
+                              log('id : kosong');
 
-                                log('serial number : ${sidewallPicFirebase}');
-                                final newId = Uuid().v4();
-                                await firestore
-                                    .collection('tire_repair_ins_report')
-                                    .doc('${DateTime.now().toIso8601String()}')
-                                    .set({
-                                  'id': newId,
-                                  'date_inspect':
-                                      '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
-                                  'customer': customerCtrl.text,
-                                  'email': auth.currentUser?.email ?? '',
-                                  'created_at':
-                                      '${DateTime.now().toIso8601String()}',
-                                  'site': siteCtrl.text,
-                                  'report_by': reportNameCtrl.text,
-                                  'tire_size': tireSizeCtrl.text,
-                                  'sn': serialNumberCtrl.text,
-                                  'brand': brandCtrl.text,
-                                  'type_construction': typeConstCtrl.text,
-                                  'pattern': patternCtrl.text,
-                                  'date_received':
-                                      '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
-                                  'status': statusCtrl.text,
-                                  'no_cargo_manifest': cargoManifestCtrl.text,
-                                  'rtd1': rtd1Ctrl.text,
-                                  'rtd2': rtd2Ctrl.text,
-                                  'repair_duration': _selectedButton,
-                                  'remarks': remarksCtrl.text,
-                                  'sn_pic': serialNumberPictFirebase,
-                                  'sidewall_pic': sidewallPicFirebase,
-                                  'shoulder_pic': shoulderPicFirebase,
-                                  'threat_pic': threatPicFirebase,
-                                  'bead_pic': beadPicFirebase,
-                                  'inner_linner_pic': innerLinerPicFirebase,
-                                  'chaffer_pic': chafferPicFirebase,
-                                  'repair_location': (idSite == '1')
-                                      ? 'Workshop Office'
-                                      : user['siteName']
-                                });
-                              } catch (e) {}
+                              const chars =
+                                  'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                              final rand = math.Random
+                                  .secure(); // lebih aman daripada Random()
+                              // final newId = const Uuid().v4();
+                              final newId = List.generate(10,
+                                      (_) => chars[rand.nextInt(chars.length)])
+                                  .join();
+
+                              final Map<String, dynamic> reportData = {
+                                'id': newId,
+                                'customer': customerCtrl.text,
+                                'created_at': DateTime.now().toIso8601String(),
+                                'site': siteCtrl.text,
+                                'receiver': 'naufal',
+                                'email': auth.currentUser?.email ?? '',
+                                'tire_size': tireSizeCtrl.text,
+                                'sn': serialNumberCtrl.text,
+                                'brand': brandCtrl.text,
+                                'type_construction': typeConstCtrl.text,
+                                'pattern': patternCtrl.text,
+                                'date_received': DateFormat('yyyy-MM-dd')
+                                    .format(selectedReceivedDate!),
+                              };
+
+                              // Tambahkan hanya jika controller tidak kosong
+                              if (selectedDate != null) {
+                                reportData['date_inspect'] =
+                                    DateFormat('yyyy-MM-dd')
+                                        .format(selectedDate!);
+                              }
+                              if (reportNameCtrl.text.isNotEmpty) {
+                                reportData['report_by'] = reportNameCtrl.text;
+                              }
+                              if (statusCtrl.text.isNotEmpty) {
+                                reportData['status'] = statusCtrl.text;
+                              }
+                              if (cargoManifestCtrl.text.isNotEmpty) {
+                                reportData['no_cargo_manifest'] =
+                                    cargoManifestCtrl.text;
+                              }
+                              if (rtd1Ctrl.text.isNotEmpty) {
+                                reportData['rtd1'] = rtd1Ctrl.text;
+                              }
+                              if (rtd2Ctrl.text.isNotEmpty) {
+                                reportData['rtd2'] = rtd2Ctrl.text;
+                              }
+                              if (_selectedButton != null &&
+                                  _selectedButton.isNotEmpty) {
+                                reportData['repair_duration'] = _selectedButton;
+                              }
+                              if (remarksCtrl.text.isNotEmpty) {
+                                reportData['remarks'] = remarksCtrl.text;
+                              }
+
+                              // Cek gambar yang mungkin berupa string URL dari Firebase Storage
+                              if (serialNumberPictFirebase != null &&
+                                  serialNumberPictFirebase.isNotEmpty) {
+                                reportData['sn_pic'] = serialNumberPictFirebase;
+                              } else {
+                                reportData['sn_pic'] = [];
+                              }
+                              if (sidewallPicFirebase != null &&
+                                  sidewallPicFirebase.isNotEmpty) {
+                                reportData['sidewall_pic'] =
+                                    sidewallPicFirebase;
+                              } else {
+                                reportData['sidewall_pic'] = [];
+                              }
+                              if (shoulderPicFirebase != null &&
+                                  shoulderPicFirebase.isNotEmpty) {
+                                reportData['shoulder_pic'] =
+                                    shoulderPicFirebase;
+                              } else {
+                                reportData['shoulder_pic'] = [];
+                              }
+                              if (threatPicFirebase != null &&
+                                  threatPicFirebase.isNotEmpty) {
+                                reportData['threat_pic'] = threatPicFirebase;
+                              } else {
+                                reportData['threat_pic'] = [];
+                              }
+                              if (beadPicFirebase != null &&
+                                  beadPicFirebase.isNotEmpty) {
+                                reportData['bead_pic'] = beadPicFirebase;
+                              } else {
+                                reportData['bead_pic'] = [];
+                              }
+                              if (innerLinerPicFirebase != null &&
+                                  innerLinerPicFirebase.isNotEmpty) {
+                                reportData['inner_linner_pic'] =
+                                    innerLinerPicFirebase;
+                              } else {
+                                reportData['inner_linner_pic'] = [];
+                              }
+                              if (chafferPicFirebase != null &&
+                                  chafferPicFirebase.isNotEmpty) {
+                                reportData['chaffer_pic'] = chafferPicFirebase;
+                              } else {
+                                reportData['chaffer_pic'] = [];
+                              }
+
+                              // Logika penentuan isInspected
+                              int isInspected = (selectedDate != null &&
+                                      reportNameCtrl.text.isNotEmpty &&
+                                      statusCtrl.text.isNotEmpty &&
+                                      rtd1Ctrl.text.isNotEmpty &&
+                                      rtd2Ctrl.text.isNotEmpty &&
+                                      _selectedButton != null &&
+                                      _selectedButton.isNotEmpty &&
+                                      remarksCtrl.text.isNotEmpty &&
+                                      serialNumberPictFirebase != null &&
+                                      serialNumberPictFirebase.isNotEmpty &&
+                                      sidewallPicFirebase != null &&
+                                      sidewallPicFirebase.isNotEmpty &&
+                                      shoulderPicFirebase != null &&
+                                      shoulderPicFirebase.isNotEmpty &&
+                                      threatPicFirebase != null &&
+                                      threatPicFirebase.isNotEmpty &&
+                                      beadPicFirebase != null &&
+                                      beadPicFirebase.isNotEmpty &&
+                                      innerLinerPicFirebase != null &&
+                                      innerLinerPicFirebase.isNotEmpty &&
+                                      chafferPicFirebase != null &&
+                                      chafferPicFirebase.isNotEmpty)
+                                  ? 1
+                                  : 0;
+
+                              reportData['is_inspected'] = isInspected;
+
+                              await firestore
+                                  .collection(FirestoreKey
+                                      .tireRepairInspectionReportTrial)
+                                  .doc(DateTime.now().toIso8601String())
+                                  .set(reportData);
+
+                              await ApiService.postNewTireRepair(reportData);
+
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                              Navigator.pushReplacementNamed(
+                                  context, TireRepairInspectionPage.routeName);
                             }
 
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                            Navigator.pushReplacementNamed(
-                                context, TireRepairInspectionPage.routeName);
+                            // await firestore
+                            //     .collection('tire_repair_ins_report')
+                            //     .doc('${DateTime.now().toIso8601String()}')
+                            //     .set({
+                            //   'id': newId,
+                            //   'date_inspect':
+                            //       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+                            //   'customer': customerCtrl.text,
+                            //   'created_at':
+                            //       '${DateTime.now().toIso8601String()}',
+                            //   'site': siteCtrl.text,
+                            //   'email': auth.currentUser?.email ?? '',
+                            //   // 'report_by': reportNameCtrl.text,
+                            //   'tire_size': tireSizeCtrl.text,
+                            //   'sn': serialNumberCtrl.text,
+                            //   'brand': brandCtrl.text,
+                            //   'type_construction': typeConstCtrl.text,
+                            //   'pattern': patternCtrl.text,
+                            //   'date_received':
+                            //       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+                            //   // 'status': statusCtrl.text,
+                            //   // 'no_cargo_manifest': cargoManifestCtrl.text,
+                            //   // 'rtd1': rtd1Ctrl.text,
+                            //   // 'rtd2': rtd2Ctrl.text,
+                            //   // 'repair_duration': _selectedButton,
+                            //   // 'remarks': remarksCtrl.text,
+                            //   // 'sn_pic': serialNumberPictFirebase,
+                            //   // 'sidewall_pic': sidewallPicFirebase,
+                            //   // 'shoulder_pic': shoulderPicFirebase,
+                            //   // 'threat_pic': threatPicFirebase,
+                            //   // 'bead_pic': beadPicFirebase,
+                            //   // 'inner_linner_pic': innerLinerPicFirebase,
+                            //   // 'chaffer_pic': chafferPicFirebase,
+                            //   // 'repair_location': (idSite == '1')
+                            // });
                           },
                           child: Text(
                             'Yes',
                             style: getRedTextStyle(),
-                          )),
+                          ))
                     ],
                   );
                 });
           },
+          // onPressed: () async {
+          //   showDialog(
+          //       context: context,
+          //       builder: (context) {
+          //         return AlertDialog(
+          //           content: Text(
+          //             'Are you sure you want to submit?',
+          //             style: getBlackTextStyle(),
+          //           ),
+          //           actions: [
+          //             TextButton(
+          //                 onPressed: () {
+          //                   Navigator.pop(context);
+          //                 },
+          //                 child: Text(
+          //                   'Cancel',
+          //                   style: getGreyTextStyle(grey8391A1),
+          //                 )),
+          //             TextButton(
+          //                 onPressed: () async {
+          //                   // validate repair duration
+          //                   if (_selectedButton == '' &&
+          //                       statusCtrl.text != 'REJECT') {
+          //                     Navigator.pop(context);
+          //                     ScaffoldMessenger.of(context)
+          //                         .hideCurrentSnackBar();
+          //                     ScaffoldMessenger.of(context)
+          //                         .showSnackBar(SnackBar(
+          //                       content: Text(
+          //                         'Please choose repair duration first!',
+          //                         style: getWhiteTextStyle(),
+          //                       ),
+          //                       backgroundColor: Colors.red,
+          //                     ));
+          //                     return;
+          //                   }
+
+          //                   // validate date
+          //                   if (selectedDate == null ||
+          //                       selectedReceivedDate == null) {
+          //                     Navigator.pop(context);
+          //                     ScaffoldMessenger.of(context)
+          //                         .hideCurrentSnackBar();
+          //                     ScaffoldMessenger.of(context)
+          //                         .showSnackBar(SnackBar(
+          //                       content: Text(
+          //                         'Please choose date received and inspected first!',
+          //                         style: getWhiteTextStyle(),
+          //                       ),
+          //                       backgroundColor: Colors.red,
+          //                     ));
+          //                     return;
+          //                   }
+
+          //                   // validate sn pic and injury pic
+          //                   int picsCount = serialNumberPict.length +
+          //                       sidewallPic.length +
+          //                       shoulderPic.length +
+          //                       beadPic.length +
+          //                       threatPic.length +
+          //                       innerLinerPic.length +
+          //                       chafferPic.length;
+
+          //                   if (id == '') {
+          //                     if (serialNumberPict.isEmpty) {
+          //                       Navigator.pop(context);
+          //                       errorImage(context, 'Serial Number');
+          //                       return;
+          //                     }
+
+          //                     if (picsCount <= 3) {
+          //                       Navigator.pop(context);
+          //                       errorImage(context, 'Injury Pict',
+          //                           count: picsCount);
+          //                       return;
+          //                     }
+          //                   }
+
+          //                   // Tampilkan loading indicator
+          //                   showDialog(
+          //                     context: context,
+          //                     barrierDismissible:
+          //                         false, // Agar dialog tidak bisa ditutup oleh user
+          //                     builder: (context) {
+          //                       return const AlertDialog(
+          //                         content: Row(
+          //                           children: [
+          //                             CircularProgressIndicator(),
+          //                             SizedBox(width: 20),
+          //                             Text("Loading..."),
+          //                           ],
+          //                         ),
+          //                       );
+          //                     },
+          //                   );
+
+          //                   // Edit Tire Inspection
+          //                   if (id != '' || id != null) {
+          //                     await uploadImage();
+
+          //                     log('cek kesamaan ${id != ''} & ${id != null}');
+          //                     final querySnapshot = await firestore
+          //                         .collection('tire_repair_ins_report')
+          //                         .where('id', isEqualTo: id)
+          //                         .get();
+          //                     log('cek kesamaan2 ${id}');
+
+          //                     if (querySnapshot.docs.isNotEmpty) {
+          //                       // Ambil dokumen pertama yang ditemukan
+          //                       final doc = querySnapshot.docs.first;
+          //                       final docId = doc.id; // Ambil ID dokumen
+
+          //                       Map<String, dynamic> updateData = {
+          //                         'date_inspect':
+          //                             '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+          //                         'customer': customerCtrl.text,
+          //                         'email': auth.currentUser?.email ?? '',
+          //                         'site': siteCtrl.text,
+          //                         'report_by': reportNameCtrl.text,
+          //                         'tire_size': tireSizeCtrl.text,
+          //                         'sn': serialNumberCtrl.text,
+          //                         'brand': brandCtrl.text,
+          //                         'type_construction': typeConstCtrl.text,
+          //                         'pattern': patternCtrl.text,
+          //                         'date_received':
+          //                             '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+          //                         'status': statusCtrl.text,
+          //                         'no_cargo_manifest': cargoManifestCtrl.text,
+          //                         'rtd1': rtd1Ctrl.text,
+          //                         'rtd2': rtd2Ctrl.text,
+          //                         'repair_duration': _selectedButton,
+          //                         'remarks': remarksCtrl.text,
+          //                         'repair_location': (idSite == '1')
+          //                             ? 'Workshop Office'
+          //                             : user['siteName'],
+          //                       };
+
+          //                       // Tambahkan atribut dinamis hanya jika daftar tidak kosong
+          //                       if (serialNumberPictFirebase.isNotEmpty) {
+          //                         updateData['sn_pic'] = FieldValue.arrayUnion(
+          //                             serialNumberPictFirebase);
+          //                       }
+          //                       if (sidewallPicFirebase.isNotEmpty) {
+          //                         updateData['sidewall_pic'] =
+          //                             FieldValue.arrayUnion(
+          //                                 sidewallPicFirebase);
+          //                       }
+          //                       if (shoulderPicFirebase.isNotEmpty) {
+          //                         updateData['shoulder_pic'] =
+          //                             FieldValue.arrayUnion(
+          //                                 shoulderPicFirebase);
+          //                       }
+          //                       if (threatPicFirebase.isNotEmpty) {
+          //                         updateData['threat_pic'] =
+          //                             FieldValue.arrayUnion(threatPicFirebase);
+          //                       }
+          //                       if (beadPicFirebase.isNotEmpty) {
+          //                         updateData['bead_pic'] =
+          //                             FieldValue.arrayUnion(beadPicFirebase);
+          //                       }
+          //                       if (innerLinerPicFirebase.isNotEmpty) {
+          //                         updateData['inner_linner_pic'] =
+          //                             FieldValue.arrayUnion(
+          //                                 innerLinerPicFirebase);
+          //                       }
+          //                       if (chafferPicFirebase.isNotEmpty) {
+          //                         updateData['chaffer_pic'] =
+          //                             FieldValue.arrayUnion(chafferPicFirebase);
+          //                       }
+
+          //                       // Perbarui dokumen dengan data yang sudah difilter
+          //                       await firestore
+          //                           .collection('tire_repair_ins_report')
+          //                           .doc(
+          //                               docId) // Gunakan ID dokumen yang ingin diperbarui
+          //                           .update(updateData);
+
+          //                       // await firestore
+          //                       //     .collection('tire_repair_ins_report')
+          //                       //     .doc(
+          //                       //         docId) // Gunakan ID dokumen yang ingin diperbarui
+          //                       //     .update({
+          //                       //   'date_inspect':
+          //                       //       '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+          //                       //   'customer': customerCtrl.text,
+          //                       //   'email': auth.currentUser?.email ?? '',
+          //                       //   'site': siteCtrl.text,
+          //                       //   'report_by': reportNameCtrl.text,
+          //                       //   'tire_size': tireSizeCtrl.text,
+          //                       //   'sn': serialNumberCtrl.text,
+          //                       //   'brand': brandCtrl.text,
+          //                       //   'type_construction': typeConstCtrl.text,
+          //                       //   'pattern': patternCtrl.text,
+          //                       //   'date_received':
+          //                       //       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+          //                       //   'status': statusCtrl.text,
+          //                       //   'no_cargo_manifest': cargoManifestCtrl.text,
+          //                       //   'rtd1': rtd1Ctrl.text,
+          //                       //   'rtd2': rtd2Ctrl.text,
+          //                       //   'repair_duration': _selectedButton,
+          //                       //   'remarks': remarksCtrl.text,
+          //                       //   'sn_pic': serialNumberPictFirebase,
+          //                       //     'sidewall_pic': sidewallPicFirebase,
+          //                       //     'shoulder_pic': shoulderPicFirebase,
+          //                       //     'threat_pic': threatPicFirebase,
+          //                       //     'bead_pic': beadPicFirebase,
+          //                       //     'inner_linner_pic': innerLinerPicFirebase,
+          //                       //     'chaffer_pic': chafferPicFirebase,
+          //                       //   'repair_location': (idSite == '1')
+          //                       //       ? 'Workshop Office'
+          //                       //       : user['siteName']
+          //                       // });
+          //                     } else {
+          //                       try {
+          //                         await uploadImage();
+
+          //                         log('serial number : ${sidewallPicFirebase}');
+          //                         final newId = Uuid().v4();
+          //                         await firestore
+          //                             .collection('tire_repair_ins_report')
+          //                             .doc(
+          //                                 '${DateTime.now().toIso8601String()}')
+          //                             .set({
+          //                           'id': newId,
+          //                           'date_inspect':
+          //                               '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+          //                           'customer': customerCtrl.text,
+          //                           'created_at':
+          //                               '${DateTime.now().toIso8601String()}',
+          //                           'site': siteCtrl.text,
+          //                           'email': auth.currentUser?.email ?? '',
+          //                           'report_by': reportNameCtrl.text,
+          //                           'tire_size': tireSizeCtrl.text,
+          //                           'sn': serialNumberCtrl.text,
+          //                           'brand': brandCtrl.text,
+          //                           'type_construction': typeConstCtrl.text,
+          //                           'pattern': patternCtrl.text,
+          //                           'date_received':
+          //                               '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+          //                           'status': statusCtrl.text,
+          //                           'no_cargo_manifest': cargoManifestCtrl.text,
+          //                           'rtd1': rtd1Ctrl.text,
+          //                           'rtd2': rtd2Ctrl.text,
+          //                           'repair_duration': _selectedButton,
+          //                           'remarks': remarksCtrl.text,
+          //                           'sn_pic': serialNumberPictFirebase,
+          //                           'sidewall_pic': sidewallPicFirebase,
+          //                           'shoulder_pic': shoulderPicFirebase,
+          //                           'threat_pic': threatPicFirebase,
+          //                           'bead_pic': beadPicFirebase,
+          //                           'inner_linner_pic': innerLinerPicFirebase,
+          //                           'chaffer_pic': chafferPicFirebase,
+          //                           'repair_location': (idSite == '1')
+          //                               ? 'Workshop Office'
+          //                               : user['siteName']
+          //                         });
+          //                       } catch (e) {}
+          //                     }
+          //                     // Input Tire Inspection
+          //                   } else {
+          //                     try {
+          //                       await uploadImage();
+
+          //                       log('serial number : ${sidewallPicFirebase}');
+          //                       final newId = Uuid().v4();
+          //                       await firestore
+          //                           .collection('tire_repair_ins_report')
+          //                           .doc('${DateTime.now().toIso8601String()}')
+          //                           .set({
+          //                         'id': newId,
+          //                         'date_inspect':
+          //                             '${DateFormat('yyyy-MM-dd').format(selectedDate!)}',
+          //                         'customer': customerCtrl.text,
+          //                         'email': auth.currentUser?.email ?? '',
+          //                         'created_at':
+          //                             '${DateTime.now().toIso8601String()}',
+          //                         'site': siteCtrl.text,
+          //                         'report_by': reportNameCtrl.text,
+          //                         'tire_size': tireSizeCtrl.text,
+          //                         'sn': serialNumberCtrl.text,
+          //                         'brand': brandCtrl.text,
+          //                         'type_construction': typeConstCtrl.text,
+          //                         'pattern': patternCtrl.text,
+          //                         'date_received':
+          //                             '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
+          //                         'status': statusCtrl.text,
+          //                         'no_cargo_manifest': cargoManifestCtrl.text,
+          //                         'rtd1': rtd1Ctrl.text,
+          //                         'rtd2': rtd2Ctrl.text,
+          //                         'repair_duration': _selectedButton,
+          //                         'remarks': remarksCtrl.text,
+          //                         'sn_pic': serialNumberPictFirebase,
+          //                         'sidewall_pic': sidewallPicFirebase,
+          //                         'shoulder_pic': shoulderPicFirebase,
+          //                         'threat_pic': threatPicFirebase,
+          //                         'bead_pic': beadPicFirebase,
+          //                         'inner_linner_pic': innerLinerPicFirebase,
+          //                         'chaffer_pic': chafferPicFirebase,
+          //                         'repair_location': (idSite == '1')
+          //                             ? 'Workshop Office'
+          //                             : user['siteName']
+          //                       });
+          //                     } catch (e) {}
+          //                   }
+
+          //                   Navigator.pop(context);
+          //                   Navigator.pop(context);
+          //                   Navigator.pushReplacementNamed(
+          //                       context, TireRepairInspectionPage.routeName);
+          //                 },
+          //                 child: Text(
+          //                   'Yes',
+          //                   style: getRedTextStyle(),
+          //                 )),
+          //           ],
+          //         );
+          //       });
+          // },
           style: ElevatedButton.styleFrom(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(30.0),
@@ -1642,7 +2127,7 @@ class _TireRepairInspectionFormPageState
                           fit: BoxFit.cover,
                         ),
                 ),
-                (id == null)
+                (id == null || id == '')
                     ? Align(
                         alignment: Alignment.bottomCenter,
                         child: SizedBox(

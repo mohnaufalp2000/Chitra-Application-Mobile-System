@@ -39,6 +39,7 @@ import 'package:camos/pages/tire_inventory/tire_inventory_page.dart';
 import 'package:camos/pages/tire_repair_form/detail_tire_repair_inspection_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_form_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_pdf_page.dart';
 import 'package:camos/pages/tkph_calculator/result_tkph_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
@@ -95,4 +96,5 @@ var routes = {
       DailyPressureHistoryTrialPage(),
   ScanDevicePage.routeName: (context) => ScanDevicePage(),
   DashboardDailyPage.routeName: (context) => DashboardDailyPage(),
+  TireRepairPDFPage.routeName: (context) => TireRepairPDFPage(),
 };
