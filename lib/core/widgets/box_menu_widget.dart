@@ -18,7 +18,8 @@ import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/dashboard_daily_page.dart';
 import 'package:camos/pages/site_condition/site_condition_page.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
+import 'package:camos/pages/tire_repair_form/select_tire_repair_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
 import 'package:camos/pages/tpms/tpms_page.dart';
@@ -108,7 +109,7 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
       case 5:
         // push(context, SelectTpmsPage.routeName);
         // push(context, QrTpmsPage.routeName);
-        Navigator.pushNamed(context, TireRepairInspectionPage.routeName);
+        Navigator.pushNamed(context, SelectTireRepairPage.routeName);
 
         break;
       case 6:

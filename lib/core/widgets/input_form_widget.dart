@@ -46,6 +46,13 @@ class _InputFormWidgetState extends State<InputFormWidget> {
     isPasswordVisible = false;
   }
 
+  @override
+  void dispose() {
+    widget.controller.clear();
+    widget.controller.dispose();
+    super.dispose();
+  }
+
   formatter() {
     if (widget.isDigitOnly) {
       List<TextInputFormatter>? format = [
@@ -81,7 +88,7 @@ class _InputFormWidgetState extends State<InputFormWidget> {
           filled: true,
           fillColor: greyF7F8F9,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(18),
             borderSide: const BorderSide(color: greyDADADA),
           ),
           hintText: widget.hint,

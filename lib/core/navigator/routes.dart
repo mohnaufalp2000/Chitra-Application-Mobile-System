@@ -36,10 +36,14 @@ import 'package:camos/pages/site_condition/site_condition_report_page.dart';
 import 'package:camos/pages/tire_condition/detail_tire_condition_page.dart';
 import 'package:camos/pages/tire_condition/tire_condition_page.dart';
 import 'package:camos/pages/tire_inventory/tire_inventory_page.dart';
-import 'package:camos/pages/tire_repair_form/detail_tire_repair_inspection_page.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection_form_page.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_pdf_page.dart';
+import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_form_page.dart';
+import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_qc_page.dart';
+import 'package:camos/pages/tire_repair_form/jobcard_repair/list_jobcard_repair_page.dart';
+import 'package:camos/pages/tire_repair_form/select_tire_repair_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection/detail_tire_repair_inspection_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_form_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_pdf_page.dart';
 import 'package:camos/pages/tkph_calculator/result_tkph_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
@@ -47,54 +51,63 @@ import 'package:camos/pages/tpms/tpms_page.dart';
 import 'package:image_picker/image_picker.dart';
 
 var routes = {
-  SplashScreen.routeName: (context) => SplashScreen(),
-  LoginPage.routeName: (context) => LoginPage(),
-  RegisterPage.routeName: (context) => RegisterPage(),
-  HomePage.routeName: (context) => HomePage(),
-  EmailVerificationPage.routeName: (context) => EmailVerificationPage(),
-  ImageProfilePage.routeName: (context) => ImageProfilePage(),
-  TKHPCalculator.routeName: (context) => TKHPCalculator(),
-  ResultTkphPage.routeName: (context) => ResultTkphPage(),
-  SiteConditionPage.routeName: (context) => SiteConditionPage(),
+  SplashScreen.routeName: (context) => const SplashScreen(),
+  LoginPage.routeName: (context) => const LoginPage(),
+  RegisterPage.routeName: (context) => const RegisterPage(),
+  HomePage.routeName: (context) => const HomePage(),
+  EmailVerificationPage.routeName: (context) => const EmailVerificationPage(),
+  ImageProfilePage.routeName: (context) => const ImageProfilePage(),
+  TKHPCalculator.routeName: (context) => const TKHPCalculator(),
+  ResultTkphPage.routeName: (context) => const ResultTkphPage(),
+  SiteConditionPage.routeName: (context) => const SiteConditionPage(),
   // SiteConditionReportPage.routeName: (context) => SiteConditionReportPage(),
-  SiteConditionPDF.routeName: (context) => SiteConditionPDF(),
-  SettingsPage.routeName: (context) => SettingsPage(),
-  EditProfilePage.routeName: (context) => EditProfilePage(),
-  FeedbackPage.routeName: (context) => FeedbackPage(),
-  SitePage.routeName: (context) => SitePage(),
+  SiteConditionPDF.routeName: (context) => const SiteConditionPDF(),
+  SettingsPage.routeName: (context) => const SettingsPage(),
+  EditProfilePage.routeName: (context) => const EditProfilePage(),
+  FeedbackPage.routeName: (context) => const FeedbackPage(),
+  SitePage.routeName: (context) => const SitePage(),
   SelectUnitPage.routeName: (context) => SelectUnitPage(),
-  AttendancePage.routeName: (context) => AttendancePage(),
-  AllPresencePage.routeName: (context) => AllPresencePage(),
-  CtsPage.routeName: (context) => CtsPage(),
-  TireConditionPage.routeName: (context) => TireConditionPage(),
-  TireInventoryPage.routeName: (context) => TireInventoryPage(),
-  DetailTireConditionPage.routeName: (context) => DetailTireConditionPage(),
-  OutstandingFilterPage.routeName: (context) => OutstandingFilterPage(),
-  PresencePage.routeName: (context) => PresencePage(),
-  DetailTireSitePage.routeName: (context) => DetailTireSitePage(),
-  TpmsPage.routeName: (context) => TpmsPage(),
-  SelectInspectionPage.routeName: (context) => SelectInspectionPage(),
-  DailyCheckFormPage.routeName: (context) => DailyCheckFormPage(),
-  DailyPressureListPage.routeName: (context) => DailyPressureListPage(),
-  QrTpmsPage.routeName: (context) => QrTpmsPage(),
-  DailyPressureHistoryPage.routeName: (context) => DailyPressureHistoryPage(),
-  HomePageTrial.routeName: (context) => HomePageTrial(),
-  DailyPressureTrialPage.routeName: (context) => DailyPressureTrialPage(),
-  PresenceCameraPage.routeName: (context) => PresenceCameraPage(),
-  AbsencePage.routeName: (context) => AbsencePage(),
-  PresenceCameraResultPage.routeName: (context) => PresenceCameraResultPage(),
-  HistorySiteConditionPage.routeName: (context) => HistorySiteConditionPage(),
-  TireInspectionFormPage.routeName: (context) => TireInspectionFormPage(),
+  AttendancePage.routeName: (context) => const AttendancePage(),
+  AllPresencePage.routeName: (context) => const AllPresencePage(),
+  CtsPage.routeName: (context) => const CtsPage(),
+  TireConditionPage.routeName: (context) => const TireConditionPage(),
+  TireInventoryPage.routeName: (context) => const TireInventoryPage(),
+  DetailTireConditionPage.routeName: (context) =>
+      const DetailTireConditionPage(),
+  OutstandingFilterPage.routeName: (context) => const OutstandingFilterPage(),
+  PresencePage.routeName: (context) => const PresencePage(),
+  DetailTireSitePage.routeName: (context) => const DetailTireSitePage(),
+  TpmsPage.routeName: (context) => const TpmsPage(),
+  SelectInspectionPage.routeName: (context) => const SelectInspectionPage(),
+  DailyCheckFormPage.routeName: (context) => const DailyCheckFormPage(),
+  DailyPressureListPage.routeName: (context) => const DailyPressureListPage(),
+  QrTpmsPage.routeName: (context) => const QrTpmsPage(),
+  DailyPressureHistoryPage.routeName: (context) =>
+      const DailyPressureHistoryPage(),
+  HomePageTrial.routeName: (context) => const HomePageTrial(),
+  DailyPressureTrialPage.routeName: (context) => const DailyPressureTrialPage(),
+  PresenceCameraPage.routeName: (context) => const PresenceCameraPage(),
+  AbsencePage.routeName: (context) => const AbsencePage(),
+  PresenceCameraResultPage.routeName: (context) =>
+      const PresenceCameraResultPage(),
+  HistorySiteConditionPage.routeName: (context) =>
+      const HistorySiteConditionPage(),
+  TireInspectionFormPage.routeName: (context) => const TireInspectionFormPage(),
   TireRepairInspectionFormPage.routeName: (context) =>
-      TireRepairInspectionFormPage(),
-  TireRepairInspectionPage.routeName: (context) => TireRepairInspectionPage(),
+      const TireRepairInspectionFormPage(),
+  TireRepairInspectionPage.routeName: (context) =>
+      const TireRepairInspectionPage(),
   DetailTireRepairInspection.routeName: (context) =>
       DetailTireRepairInspection(),
   DailyPressureListTrialPage.routeName: (context) =>
-      DailyPressureListTrialPage(),
+      const DailyPressureListTrialPage(),
   DailyPressureHistoryTrialPage.routeName: (context) =>
-      DailyPressureHistoryTrialPage(),
-  ScanDevicePage.routeName: (context) => ScanDevicePage(),
-  DashboardDailyPage.routeName: (context) => DashboardDailyPage(),
-  TireRepairPDFPage.routeName: (context) => TireRepairPDFPage(),
+      const DailyPressureHistoryTrialPage(),
+  ScanDevicePage.routeName: (context) => const ScanDevicePage(),
+  DashboardDailyPage.routeName: (context) => const DashboardDailyPage(),
+  TireRepairPDFPage.routeName: (context) => const TireRepairPDFPage(),
+  SelectTireRepairPage.routeName: (context) => const SelectTireRepairPage(),
+  ListJobcardRepair.routeName: (context) => const ListJobcardRepair(),
+  JobcardFormPage.routeName: (context) => const JobcardFormPage(),
+  JobcardQCPage.routeName: (context) => const JobcardQCPage(),
 };

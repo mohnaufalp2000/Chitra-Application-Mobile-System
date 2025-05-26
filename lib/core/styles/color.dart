@@ -9,4 +9,5 @@ const Color grey8391A1 = Color(0xff8391A1);
 const Color green35C2C1 = Color(0xff35C2C1);
 const Color green39D2C0 = Color(0xff39D2C0);
 const Color green00968A = Color(0xff00968A);
+const Color green359B7B = Color(0xFF359B7B);
 const Color blue344BEF = Color(0xff344BEF);

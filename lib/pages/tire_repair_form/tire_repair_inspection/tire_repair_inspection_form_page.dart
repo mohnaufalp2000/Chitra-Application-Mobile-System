@@ -10,7 +10,7 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/firebase_key/firebase_key.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/text_button_widget.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
