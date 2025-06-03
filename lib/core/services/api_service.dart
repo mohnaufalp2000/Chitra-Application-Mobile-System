@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:camos/core/services/model/daily_press.dart';
+import 'package:camos/core/services/model/material_repair_model.dart';
 import 'package:camos/core/services/model/recc_press.dart';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/model/tire_spec.dart';
@@ -19,6 +20,59 @@ class ApiService {
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/getdatacamos.php?function=';
   static const String tirePostUrl =
       'https://chitraparatama.co.id/ICS/product/push_data.php?function=';
+  static const String jobcardUrl =
+      'https://chitraparatama.co.id/ICS/product/get_api.php?function=';
+
+  // Get Material Repair
+  static Future<List<MaterialRepair>> getMaterialRepairList() async {
+    try {
+      final response =
+          await http.get(Uri.parse('${jobcardUrl}repair_material'));
+      if (response.statusCode == 200) {
+        final body = response.body;
+        final result = jsonDecode(body);
+
+        final List<MaterialRepair> materialList = List<MaterialRepair>.from(
+            result['data']
+                .map((material) => MaterialRepair.fromJson(material)));
+
+        return materialList;
+      } else {
+        throw Exception(
+            'Failed to load data, status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error Get Material Repair : $e');
+      return [];
+    }
+  }
+
+  // GET data WO Jobcard
+  static Future<List<Map<String, dynamic>>> getWOJobcardList() async {
+    try {
+      final response = await http.get(Uri.parse('${jobcardUrl}wo_repair'));
+
+      print('status code : ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final body = response.body;
+        final result = jsonDecode(body);
+        final List<dynamic> dataList = result['data'];
+
+        final List<Map<String, dynamic>> woList = dataList.map((item) {
+          return {'id_wo': item['id_wo'], 'wo': item['wo']};
+        }).toList();
+
+        return woList;
+      } else {
+        throw Exception(
+            'Failed to load data, status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error saat mendapatkan data wo jobcard repair: $e');
+      return [];
+    }
+  }
 
   // POST data new tire repair
   static Future<void> postNewTireRepair(Map<String, dynamic> newTireMap) async {

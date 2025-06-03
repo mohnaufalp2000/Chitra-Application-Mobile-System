@@ -13,17 +13,18 @@ import 'package:camos/core/blocs/detail_tire_condition/detail_tire_condition_blo
 import 'package:camos/core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart';
 import 'package:camos/core/blocs/network/network_bloc.dart';
 import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
+import 'package:camos/core/blocs/process_jobcard/process_jobcard_bloc.dart';
 import 'package:camos/core/blocs/site/site_bloc.dart';
 import 'package:camos/core/blocs/spm/spm_bloc.dart';
 import 'package:camos/core/blocs/tire/tire_bloc.dart';
 import 'package:camos/core/blocs/tire_condition/tire_condition_bloc.dart';
 import 'package:camos/core/blocs/tire_invent/tire_invent_bloc.dart';
 import 'package:camos/core/blocs/unit/unit_bloc.dart';
+import 'package:camos/core/blocs/wo_jobcard/wo_jobcard_bloc.dart';
 import 'package:camos/core/navigator/routes.dart';
 import 'package:camos/core/services/local_database/outstanding_task/objectbox.dart';
 import 'package:camos/core/services/sheets/attendance_sheets.dart';
 import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/firebase_options.dart';
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/opening/splash_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -112,6 +113,11 @@ class MyApp extends StatelessWidget {
         // post daily check pressure
         BlocProvider<DailyCheckPostBloc>(
             create: (context) => DailyCheckPostBloc()),
+        // get wo jobcard
+        BlocProvider<WoJobcardBloc>(create: (context) => WoJobcardBloc()),
+        // input jobcard
+        BlocProvider<ProcessJobcardBloc>(
+            create: (context) => ProcessJobcardBloc()),
 
         // bluetooth
         BlocProvider(create: ((context) => BluetoothOnOffCubit())),

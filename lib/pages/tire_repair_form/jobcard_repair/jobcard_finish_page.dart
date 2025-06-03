@@ -3,27 +3,26 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/jobcard_repair.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/core/widgets/input_form_widget.dart';
-import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_finish_page.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/widget/tire_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class JobcardQCPage extends StatefulWidget {
-  static const routeName = '/jobcard-qc-page';
-  const JobcardQCPage({super.key});
+class JobcardFinishPage extends StatefulWidget {
+  static const routeName = '/jobcard-finish-page';
+  const JobcardFinishPage({super.key});
 
   @override
-  State<JobcardQCPage> createState() => _JobcardQCPageState();
+  State<JobcardFinishPage> createState() => _JobcardFinishPageState();
 }
 
-class _JobcardQCPageState extends State<JobcardQCPage>
+class _JobcardFinishPageState extends State<JobcardFinishPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -46,19 +45,27 @@ class _JobcardQCPageState extends State<JobcardQCPage>
         iconTheme: const IconThemeData(color: Colors.white),
         bottom: TabBar(
           controller: _tabController,
+          isScrollable: true,
           labelColor: white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: white,
           tabs: const [
             Tab(text: 'Tire Detail'),
             Tab(text: 'Process Repair (1)'),
+            Tab(text: 'Process Repair (2)'),
+            Tab(text: 'Process Repair (3)'),
           ],
         ),
       ),
       body: SafeArea(
         child: TabBarView(
           controller: _tabController,
-          children: [TireDetail(tireDetail: tireDetail), DetailRepair()],
+          children: [
+            TireDetail(tireDetail: tireDetail),
+            DetailRepair(),
+            DetailRepair(),
+            DetailRepair()
+          ],
         ),
       ),
     );
@@ -80,6 +87,7 @@ class _DetailRepairState extends State<DetailRepair> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Align(
             alignment: Alignment.topLeft,
@@ -137,6 +145,21 @@ class _DetailRepairState extends State<DetailRepair> {
                         now,
                         style: getGreyTextStyle(grey8391A1),
                       ),
+                      // JIKA PROCESS DI SKIP
+
+                      // Column(
+                      //   crossAxisAlignment: CrossAxisAlignment.end,
+                      //   children: [
+                      //     Text(
+                      //       'By Whom',
+                      //       style: getBlackTextStyle(),
+                      //     ),
+                      //     Text(
+                      //       'Naufal',
+                      //       style: getBlackTextStyle(),
+                      //     ),
+                      //   ],
+                      // ),
                     ],
                   ),
                   const SizedBox(
@@ -217,47 +240,35 @@ class _DetailRepairState extends State<DetailRepair> {
               );
             }),
           ),
-          ButtonWidget(
-              color: Colors.red,
-              name: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.fast_rewind,
-                    color: white,
-                  ),
-                  const SizedBox(
-                    width: 12,
-                  ),
-                  Text(
-                    'Back To Repair',
-                    style: getWhiteTextStyle(),
-                  ),
-                ],
-              ),
-              function: () {}),
           const SizedBox(
-            height: 12,
+            height: 24,
           ),
-          ButtonWidget(
-              color: blue344BEF,
-              name: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.check_circle,
-                    color: white,
-                  ),
-                  const SizedBox(
-                    width: 12,
+                  Text(
+                    'QC By',
+                    style: getBlackTextStyle(),
                   ),
                   Text(
-                    'Complete',
-                    style: getWhiteTextStyle(),
+                    'Naufal',
+                    style: getBlackTextStyle(
+                      fontSize: 18,
+                      fontWeight: w700,
+                    ),
                   ),
                 ],
               ),
-              function: () {}),
+              Text(
+                now,
+                style: getBlackTextStyle(fontSize: 18, fontWeight: w700),
+              ),
+            ],
+          ),
         ],
       ),
     );

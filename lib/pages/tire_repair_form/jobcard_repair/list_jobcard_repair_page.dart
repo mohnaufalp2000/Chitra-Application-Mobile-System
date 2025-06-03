@@ -1,10 +1,14 @@
-import 'package:camos/core/styles/asset_path.dart';
+import 'package:camos/core/blocs/wo_jobcard/wo_jobcard_bloc.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/jobcard_repair.dart';
+import 'package:camos/core/utils/firebase_key/firebase_key.dart';
+import 'package:camos/pages/tire_repair_form/jobcard_repair/history_jobcard_repair_page.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_form_page.dart';
-import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_qc_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutterflow_paginate_firestore/paginate_firestore.dart';
 
 class ListJobcardRepair extends StatefulWidget {
   static const routeName = '/list-jobcard-repair';
@@ -16,19 +20,23 @@ class ListJobcardRepair extends StatefulWidget {
 
 class _ListJobcardRepairState extends State<ListJobcardRepair> {
   bool isChecked = false;
-  final List<String> jobName = JobcardRepair.jobName;
+  final List<String> jobName =
+      JobcardRepair.jobName.map((item) => item['name'] as String).toList();
   int selectedMenu = 0;
+  List<Map<String, dynamic>> WOlist = [];
 
   List<bool> isCheckedList =
       List.generate(10, (_) => false); // Sesuaikan jumlah item
 
-  void _onSkipPressed() {
-    // Aksi saat tombol skip ditekan
-    print("Skip button pressed");
+  void _onHistoryPressed() {
+    // Navigator.pushNamed(context, JobcardQCPage.routeName);
+    Navigator.pushNamed(context, HistoryJobcardRepairPage.routeName);
   }
 
-  void _onHistoryPressed() {
-    Navigator.pushNamed(context, JobcardQCPage.routeName);
+  @override
+  void initState() {
+    super.initState();
+    context.read<WoJobcardBloc>().add(WoJobcardEvent());
   }
 
   @override
@@ -53,218 +61,33 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
       body: SafeArea(
           child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              Center(
-                child: Card(
-                  color: white,
-                  elevation: 50,
-                  shadowColor: black,
-                  child: Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Customer : PT. Cipta Kridatama',
-                        ),
-                        const SizedBox(
-                          height: 6,
-                        ),
-                        Text(
-                          'Repair Location : BSF',
-                        ),
-                        const SizedBox(
-                          height: 14,
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'W/O #',
-                              style: getGreyTextStyle(const Color(0xff969696)),
-                            ),
-                            const SizedBox(
-                              height: 4,
-                            ),
-                            Text(
-                              '80000033714',
-                              style: getBlackTextStyle(
-                                fontSize: 18,
-                                fontWeight: w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 6,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Serial Number',
-                                  style:
-                                      getGreyTextStyle(const Color(0xff969696)),
-                                ),
-                                const SizedBox(
-                                  height: 4,
-                                ),
-                                Text(
-                                  'FGR3463GRE',
-                                  style: getBlackTextStyle(
-                                    fontSize: 18,
-                                    fontWeight: w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(
-                              width: 6,
-                            ),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Tire Size',
-                                  style:
-                                      getGreyTextStyle(const Color(0xff969696)),
-                                ),
-                                const SizedBox(
-                                  height: 4,
-                                ),
-                                Text(
-                                  '27.00R49',
-                                  style: getBlackTextStyle(
-                                    fontSize: 18,
-                                    fontWeight: w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(
-                              width: 6,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Column(
-                          children: List.generate(jobName.length, (index) {
-                            return InkWell(
-                              onTap: () {
-                                Navigator.pushNamed(
-                                    context, JobcardFormPage.routeName);
-                              },
-                              child: Container(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  decoration: const BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
-                                      ),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          // (index == 0)
-                                          //     ? SizedBox(
-                                          //         width: 20,
-                                          //         height: 20,
-                                          //         child: Image.asset(
-                                          //             '${iconPath}/accept.png'),
-                                          //       )
-                                          //     : Container(
-                                          //         width: 20,
-                                          //         height: 20,
-                                          //         decoration: BoxDecoration(
-                                          //             borderRadius:
-                                          //                 BorderRadius.circular(
-                                          //                     6),
-                                          //             border: Border.all(
-                                          //                 color: black)),
-                                          //       ),
-                                          Container(
-                                            width: 20,
-                                            height: 20,
-                                            decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                border:
-                                                    Border.all(color: black)),
-                                          ),
-                                          const SizedBox(
-                                            width: 6,
-                                          ),
-                                          Text(
-                                            jobName[index],
-                                            style: getBlackTextStyle(),
-                                          )
-                                        ],
-                                      ),
-                                      SizedBox(
-                                        width: 60,
-                                        height: 25,
-                                        child: TextButton(
-                                          onPressed: () {
-                                            print(
-                                                "Skip ${jobName[index]} pressed");
-                                          },
-                                          style: TextButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFF35469B),
-                                            padding: EdgeInsets.zero,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                          ),
-                                          child: const FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.skip_next_outlined,
-                                                  color: Colors.white,
-                                                  size: 14,
-                                                ),
-                                                SizedBox(width: 2),
-                                                Text(
-                                                  'Skip',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  )),
-                            );
-                          }),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+            padding: const EdgeInsets.all(24.0),
+            child: BlocConsumer<WoJobcardBloc, WoJobcardState>(
+              listener: (context, state) {
+                if (state is WoJobcardLoadedState) {
+                  WOlist.clear();
+                  WOlist.addAll(state.WOList);
+                }
+              },
+              builder: (context, state) {
+                if (state is WoJobcardLoadingState) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (state is WoJobcardLoadedState) {
+                  final widgetOptions = [
+                    WaitingWO(woList: WOlist),
+                    OnProgress(woList: WOlist),
+                    const WaitingQC()
+                  ];
+                  return widgetOptions.elementAt(selectedMenu);
+                } else if (state is WoJobcardErrorState) {
+                  return const Center(
+                    child: Icon(Icons.error),
+                  );
+                } else {
+                  return Container();
+                }
+              },
+            )),
       )),
       bottomNavigationBar: BottomNavigationBar(
           currentIndex: selectedMenu,
@@ -273,7 +96,7 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
               selectedMenu = index;
             });
           },
-          items: [
+          items: const [
             BottomNavigationBarItem(
                 icon: Icon(Icons.tag), label: 'Waiting WO#'),
             BottomNavigationBarItem(
@@ -281,6 +104,611 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
             BottomNavigationBarItem(
                 icon: Icon(Icons.fact_check), label: 'Waiting QC'),
           ]),
+    );
+  }
+}
+
+class WaitingWO extends StatefulWidget {
+  final List<Map<String, dynamic>> woList;
+
+  const WaitingWO({super.key, required this.woList});
+
+  @override
+  State<WaitingWO> createState() => _WaitingWOState();
+}
+
+class _WaitingWOState extends State<WaitingWO> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> idWoList =
+        widget.woList.map((item) => item['id_wo'] as String).toList();
+    return PaginateFirestore(
+        query: firestore
+            .collection(FirestoreKey.tireRepairInspectionReportTrial)
+            .where('id', whereIn: idWoList),
+        itemBuilderType: PaginateBuilderType.listView,
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        itemsPerPage: 5,
+        isLive: false,
+        initialLoader:
+            const Center(child: CircularProgressIndicator.adaptive()),
+        bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
+        itemBuilder: (context, snapshot, index) {
+          final Map<String, dynamic> data =
+              snapshot[index].data() as Map<String, dynamic>;
+          return WaitingWOCard(data: data);
+        });
+  }
+}
+
+class OnProgress extends StatefulWidget {
+  const OnProgress({super.key, required this.woList});
+  final List<Map<String, dynamic>> woList;
+
+  @override
+  State<OnProgress> createState() => _OnProgressState();
+}
+
+class _OnProgressState extends State<OnProgress> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> idWoList =
+        widget.woList.map((item) => item['id_wo'] as String).toList();
+    return PaginateFirestore(
+        query: firestore
+            .collection(FirestoreKey.tireRepairInspectionReportTrial)
+            .where('id', whereIn: idWoList),
+        itemBuilderType: PaginateBuilderType.listView,
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        itemsPerPage: 5,
+        isLive: false,
+        initialLoader:
+            const Center(child: CircularProgressIndicator.adaptive()),
+        bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
+        itemBuilder: (context, snapshot, index) {
+          final Map<String, dynamic> data =
+              snapshot[index].data() as Map<String, dynamic>;
+          final WO = widget.woList.firstWhere(
+              (element) => element['id_wo'] == data['id'],
+              orElse: () => {'wo': ''})['wo'];
+          if (WO == '') {
+            return Container();
+          }
+          return JobcardCard(
+            wo: WO,
+            data: data,
+          );
+        });
+  }
+}
+
+class WaitingQC extends StatelessWidget {
+  const WaitingQC({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [],
+    );
+  }
+}
+
+class WaitingWOCard extends StatelessWidget {
+  WaitingWOCard({
+    super.key,
+    required this.data,
+  });
+
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Card(
+        color: white,
+        elevation: 50,
+        shadowColor: black,
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Customer : ${data['customer']}',
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Text(
+                'Repair Location : BSF',
+              ),
+              const SizedBox(
+                height: 14,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'W/O #',
+                    style: getGreyTextStyle(const Color(0xff969696)),
+                  ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    'Waiting WO',
+                    style: getBlackTextStyle(
+                      fontSize: 18,
+                      fontWeight: w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Serial Number',
+                        style: getGreyTextStyle(const Color(0xff969696)),
+                      ),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Text(
+                        // 'FGR3463GRE',
+                        '${data['sn']}',
+                        style: getBlackTextStyle(
+                          fontSize: 18,
+                          fontWeight: w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 6,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tire Size',
+                        style: getGreyTextStyle(const Color(0xff969696)),
+                      ),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Text(
+                        '27.00R49',
+                        style: getBlackTextStyle(
+                          fontSize: 18,
+                          fontWeight: w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 6,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class JobcardCard extends StatefulWidget {
+  const JobcardCard({
+    super.key,
+    required this.wo,
+    required this.data,
+  });
+
+  final String wo;
+  final Map<String, dynamic> data;
+
+  @override
+  State<JobcardCard> createState() => _JobcardCardState();
+}
+
+class _JobcardCardState extends State<JobcardCard> {
+  final List<String> jobName =
+      JobcardRepair.jobName.map((item) => item['name'] as String).toList();
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Card(
+        color: white,
+        elevation: 50,
+        shadowColor: black,
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Customer : ${widget.data['customer']}',
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Text(
+                'Repair Location : BSF',
+              ),
+              const SizedBox(
+                height: 14,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'W/O #',
+                    style: getGreyTextStyle(const Color(0xff969696)),
+                  ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    widget.wo,
+                    style: getBlackTextStyle(
+                      fontSize: 18,
+                      fontWeight: w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Brand',
+                    style: getGreyTextStyle(const Color(0xff969696)),
+                  ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    '${widget.data['brand']}',
+                    style: getBlackTextStyle(
+                      fontSize: 18,
+                      fontWeight: w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Serial Number',
+                        style: getGreyTextStyle(const Color(0xff969696)),
+                      ),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Text(
+                        // 'FGR3463GRE',
+                        '${widget.data['sn']}',
+                        style: getBlackTextStyle(
+                          fontSize: 18,
+                          fontWeight: w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 6,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tire Size',
+                        style: getGreyTextStyle(const Color(0xff969696)),
+                      ),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Text(
+                        '27.00R49',
+                        style: getBlackTextStyle(
+                          fontSize: 18,
+                          fontWeight: w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 6,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (_isExpanded)
+                ...List.generate(
+                    (widget.data['process_repair_count'] ?? 0) as int, (index) {
+                  return ItemJob(
+                    jobName: jobName,
+                    data: widget.data,
+                    cardIndex: index,
+                  );
+                }),
+
+              //   Column(
+              //     children: [
+              //       ItemJob(
+              //         jobName: jobName,
+              //         data: widget.data,
+              //         cardIndex: 0,
+              //       ),
+              //       const Padding(
+              //         padding: const EdgeInsets.symmetric(vertical: 10.0),
+              //         child: Divider(
+              //           color: black,
+              //           thickness: 4,
+              //         ),
+              //       ),
+              //       const SizedBox(
+              //         height: 6,
+              //       ),
+              //       // ADD PROCESS BUTTON
+              //       // ButtonWidget(
+              //       //     color: green359B7B,
+              //       //     name: Row(
+              //       //       mainAxisAlignment: MainAxisAlignment.center,
+              //       //       children: [
+              //       //         const Icon(
+              //       //           Icons.add_circle,
+              //       //           color: white,
+              //       //         ),
+              //       //         const SizedBox(
+              //       //           width: 12,
+              //       //         ),
+              //       //         Text(
+              //       //           'Add Proccess',
+              //       //           style: getWhiteTextStyle(),
+              //       //         ),
+              //       //       ],
+              //       //     ),
+              //       //     function: () {})
+              //     ],
+              //   )
+              // else
+              //   Container(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _isExpanded = !_isExpanded;
+                      });
+                    },
+                    child: Row(
+                      children: [
+                        Icon(
+                          (_isExpanded)
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: green35C2C1,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          _isExpanded ? 'Hide' : 'Show Job Repair',
+                          style: getGreenTextStyle(
+                            fontWeight: w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class ItemJob extends StatelessWidget {
+  const ItemJob({
+    super.key,
+    required this.jobName,
+    required this.data,
+    required this.cardIndex,
+  });
+
+  final List<String> jobName;
+  final Map<String, dynamic> data;
+  final int cardIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.work,
+            ),
+            const SizedBox(
+              width: 6,
+            ),
+            Text(
+              'Process Repair (${cardIndex + 1})',
+              style: getBlackTextStyle(
+                fontSize: 16,
+                fontWeight: w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(
+          height: 6,
+        ),
+        Column(
+          children: List.generate(jobName.length, (index) {
+            return Column(
+              children: [
+                InkWell(
+                  onTap: () {
+                    Navigator.pushNamed(context, JobcardFormPage.routeName,
+                        arguments: data);
+                  },
+                  child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.grey,
+                            width: 1.0,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              // Jika sudah dikerjakan, centang. Jika belum, kosong.
+                              // (index == 0)
+                              //     ? SizedBox(
+                              //         width: 20,
+                              //         height: 20,
+                              //         child: Image.asset(
+                              //             '${iconPath}/accept.png'),
+                              //       )
+                              //     : Container(
+                              //         width: 20,
+                              //         height: 20,
+                              //         decoration: BoxDecoration(
+                              //             borderRadius:
+                              //                 BorderRadius.circular(
+                              //                     6),
+                              //             border: Border.all(
+                              //                 color: black)),
+                              //       ),
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: black)),
+                              ),
+                              const SizedBox(
+                                width: 6,
+                              ),
+                              Text(
+                                jobName[index],
+                                style: getBlackTextStyle(),
+                              )
+                            ],
+                          ),
+                          SizedBox(
+                            width: 60,
+                            height: 25,
+                            child: TextButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return AlertDialog(
+                                      title: Text(
+                                        'Confirmation Skip (${jobName[index]})',
+                                        style: getBlackTextStyle(),
+                                      ),
+                                      content: Text(
+                                        'Are you sure you want to skip this process (${jobName[index]})?',
+                                        style: getBlackTextStyle(),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.of(context)
+                                              .pop(), // Tutup dialog
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pop(); // Tutup dialog
+                                            // Tambahkan aksi skip di sini
+                                          },
+                                          child: const Text('Yes'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: const Color(0xFF35469B),
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.skip_next_outlined,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 2),
+                                    Text(
+                                      'Skip',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )),
+                ),
+              ],
+            );
+          }),
+        ),
+      ],
     );
   }
 }
