@@ -20,6 +20,16 @@ class ProcessJobcardBloc
       }
     });
 
-    on<SubmitJobcardEvent>((event, emit) {});
+    on<SubmitJobcardEvent>((event, emit) async {
+      emit(SubmitLoadingState());
+
+      try {
+        await ApiService.postJobJobcardRepair(event.jobcard);
+
+        emit(SubmitSuccessState());
+      } catch (e) {
+        emit(SubmitErrorState());
+      }
+    });
   }
 }

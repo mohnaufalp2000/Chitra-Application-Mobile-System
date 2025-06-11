@@ -265,7 +265,7 @@ class _TireRepairInspectionFormPageState
           selectedSize = data['tire_size'];
           tireSizeCtrl.text = data['tire_size'];
 
-          // selectedStatus = data['status'];
+          selectedStatus = data['status'];
           // statusCtrl.text = data['status'];
 
           siteCtrl.text = data['site'];
@@ -1353,6 +1353,7 @@ class _TireRepairInspectionFormPageState
                                   'date_received':
                                       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
                                   'is_inspected': 1,
+                                  'jobcard': [],
                                   'status': statusCtrl.text,
                                   'no_cargo_manifest': cargoManifestCtrl.text,
                                   'rtd1': rtd1Ctrl.text,
@@ -1360,6 +1361,7 @@ class _TireRepairInspectionFormPageState
                                   'repair_duration': _selectedButton,
                                   'remarks': remarksCtrl.text,
                                   'repair_location': selectedRepairLocation,
+                                  'process_repair_count': 1,
                                 };
 
                                 // Tambahkan atribut dinamis hanya jika daftar tidak kosong

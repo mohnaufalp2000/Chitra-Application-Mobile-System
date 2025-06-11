@@ -23,6 +23,19 @@ class ApiService {
   static const String jobcardUrl =
       'https://chitraparatama.co.id/ICS/product/get_api.php?function=';
 
+  // Post job jobcard repair
+  static Future<void> postJobJobcardRepair(Map<String, dynamic> jobcard) async {
+    try {
+      final response = await http.post(Uri.parse('${tirePostUrl}new_job'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(jobcard));
+      log('success kirim data');
+      log('Response status: ${response.statusCode}');
+    } catch (e) {
+      print('Error saat mengirim data jobcard repair: $e');
+    }
+  }
+
   // Get Material Repair
   static Future<List<MaterialRepair>> getMaterialRepairList() async {
     try {

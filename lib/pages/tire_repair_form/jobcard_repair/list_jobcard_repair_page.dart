@@ -1,4 +1,6 @@
 import 'package:camos/core/blocs/wo_jobcard/wo_jobcard_bloc.dart';
+import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/jobcard_repair.dart';
@@ -9,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutterflow_paginate_firestore/paginate_firestore.dart';
+import 'package:intl/intl.dart';
 
 class ListJobcardRepair extends StatefulWidget {
   static const routeName = '/list-jobcard-repair';
@@ -91,7 +94,14 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
       )),
       bottomNavigationBar: BottomNavigationBar(
           currentIndex: selectedMenu,
-          onTap: (index) {
+          onTap: (index) async {
+            // FirebaseFirestore firestore = FirebaseFirestore.instance;
+            // final snapshot = await firestore
+            //     .collection(FirestoreKey.tireRepairInspectionReportTrial)
+            //     .where('id', isEqualTo: 'v2qvvHSZF6')
+            //     .get();
+
+            // print('firebase kuy: ${snapshot.docs[0].data()}');
             setState(() {
               selectedMenu = index;
             });
@@ -124,13 +134,15 @@ class _WaitingWOState extends State<WaitingWO> {
   Widget build(BuildContext context) {
     final List<String> idWoList =
         widget.woList.map((item) => item['id_wo'] as String).toList();
+
+    print('id wo list : ${idWoList}');
     return PaginateFirestore(
-        query: firestore
-            .collection(FirestoreKey.tireRepairInspectionReportTrial)
-            .where('id', whereIn: idWoList),
+        query:
+            firestore.collection(FirestoreKey.tireRepairInspectionReportTrial),
+        // .where('id', whereIn: idWoList),
         itemBuilderType: PaginateBuilderType.listView,
         shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         itemsPerPage: 5,
         isLive: false,
         initialLoader:
@@ -139,6 +151,9 @@ class _WaitingWOState extends State<WaitingWO> {
         itemBuilder: (context, snapshot, index) {
           final Map<String, dynamic> data =
               snapshot[index].data() as Map<String, dynamic>;
+          if (idWoList.contains(data['id'])) {
+            return Container();
+          }
           return WaitingWOCard(data: data);
         });
   }
@@ -552,8 +567,39 @@ class ItemJob extends StatelessWidget {
   final Map<String, dynamic> data;
   final int cardIndex;
 
+  bool containsAnyMatch({
+    required List<String> listA,
+    required List<dynamic> listB,
+    required String matchKey,
+  }) {
+    print('sama a : ${listA}');
+    print('sama b : ${listB}');
+    final setA = listA.toSet();
+    return listB.any((mapItem) => setA.contains(mapItem[matchKey]));
+  }
+
   @override
   Widget build(BuildContext context) {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+    String existingJob = '';
+
+    if (data['jobcard'].isEmpty) {
+      existingJob = 'Skiving';
+    } else {
+      final lastName = data['jobcard'].last['name'];
+
+      final jobList = JobcardRepair.jobName;
+      final currentIndex = jobList.indexWhere((job) => job['name'] == lastName);
+
+      existingJob = data['jobcard'].last['name'];
+      if (currentIndex != -1 && currentIndex < jobList.length - 1) {
+        existingJob = jobList[currentIndex + 1]['name'];
+      } else {
+        // Kalau tidak ketemu atau sudah di akhir list, tetap pakai lastName
+        existingJob = lastName;
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -579,6 +625,10 @@ class ItemJob extends StatelessWidget {
         ),
         Column(
           children: List.generate(jobName.length, (index) {
+            final jobcardItem = data['jobcard'].firstWhere(
+              (item) => item['name'] == jobName[index],
+              orElse: () => null,
+            );
             return Column(
               children: [
                 InkWell(
@@ -599,108 +649,155 @@ class ItemJob extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              // Jika sudah dikerjakan, centang. Jika belum, kosong.
-                              // (index == 0)
-                              //     ? SizedBox(
-                              //         width: 20,
-                              //         height: 20,
-                              //         child: Image.asset(
-                              //             '${iconPath}/accept.png'),
-                              //       )
-                              //     : Container(
-                              //         width: 20,
-                              //         height: 20,
-                              //         decoration: BoxDecoration(
-                              //             borderRadius:
-                              //                 BorderRadius.circular(
-                              //                     6),
-                              //             border: Border.all(
-                              //                 color: black)),
-                              //       ),
-                              Container(
-                                width: 20,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: black)),
-                              ),
-                              const SizedBox(
-                                width: 6,
-                              ),
-                              Text(
-                                jobName[index],
-                                style: getBlackTextStyle(),
-                              )
-                            ],
-                          ),
-                          SizedBox(
-                            width: 60,
-                            height: 25,
-                            child: TextButton(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: Text(
-                                        'Confirmation Skip (${jobName[index]})',
-                                        style: getBlackTextStyle(),
-                                      ),
-                                      content: Text(
-                                        'Are you sure you want to skip this process (${jobName[index]})?',
-                                        style: getBlackTextStyle(),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.of(context)
-                                              .pop(), // Tutup dialog
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.of(context)
-                                                .pop(); // Tutup dialog
-                                            // Tambahkan aksi skip di sini
-                                          },
-                                          child: const Text('Yes'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-                              },
-                              style: TextButton.styleFrom(
-                                backgroundColor: const Color(0xFF35469B),
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                          if (jobcardItem != null &&
+                              jobcardItem['hours'] == '0')
+                            Text(
+                              jobName[index],
+                              style: getBlackTextStyle().copyWith(
+                                  decoration: TextDecoration.lineThrough,
+                                  decorationThickness: 3.0),
+                            )
+                          else
+                            Row(
+                              children: [
+                                if (data['jobcard'].any(
+                                    (item) => item['name'] == jobName[index]))
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child:
+                                        Image.asset('${iconPath}/accept.png'),
+                                  )
+                                else
+                                  Container(
+                                    width: 20,
+                                    height: 20,
+                                    decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: black)),
+                                  ),
+                                const SizedBox(
+                                  width: 6,
                                 ),
-                              ),
-                              child: const FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.skip_next_outlined,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                                    SizedBox(width: 2),
-                                    Text(
-                                      'Skip',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                                Text(
+                                  jobName[index],
+                                  style: getBlackTextStyle(),
+                                )
+                              ],
                             ),
-                          ),
+                          if (!data['jobcard'].any(
+                                  (item) => item['name'] == jobName[index]) &&
+                              existingJob == jobName[index])
+                            SizedBox(
+                              width: 60,
+                              height: 25,
+                              child: TextButton(
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: Text(
+                                          'Confirmation Skip (${jobName[index]})',
+                                          style: getBlackTextStyle(),
+                                        ),
+                                        content: Text(
+                                          'Are you sure you want to skip this process (${jobName[index]})?',
+                                          style: getBlackTextStyle(),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(context)
+                                                    .pop(), // Tutup dialog
+                                            child: const Text('Cancel'),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () async {
+                                              final oldData = await firestore
+                                                  .collection(
+                                                      'tire_repair_inspection_report_trial')
+                                                  .where('id',
+                                                      isEqualTo: data['id'])
+                                                  .get();
+                                              final jobcardData = {
+                                                'name': jobName[index],
+                                                'fulldate': DateTime.now()
+                                                    .toIso8601String(),
+                                                'date': DateFormat('dd-MM-yyyy')
+                                                    .format(DateTime.now()),
+                                                'material': [
+                                                  {
+                                                    'id_matstock': '',
+                                                    'name': '',
+                                                    'qty': '',
+                                                  }
+                                                ],
+                                                'hours': '0',
+                                                'minutes': '0',
+                                                'bywhom': '',
+                                                'remarks': '',
+                                                'process_repair_count':
+                                                    oldData.docs.first[
+                                                        'process_repair_count'],
+                                                'id_wo': data['id'],
+                                                'dimensi': '',
+                                                'created_at': DateTime.now()
+                                                    .toIso8601String(),
+                                              };
+
+                                              await oldData.docs[0].reference
+                                                  .update({
+                                                'jobcard':
+                                                    FieldValue.arrayUnion(
+                                                        [jobcardData]),
+                                              });
+
+                                              await ApiService
+                                                  .postJobJobcardRepair(
+                                                      jobcardData);
+                                              Navigator.of(context)
+                                                  .pop(); // Tutup dialog
+                                            },
+                                            child: const Text('Yes'),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  backgroundColor: const Color(0xFF35469B),
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.skip_next_outlined,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                      SizedBox(width: 2),
+                                      Text(
+                                        'Skip',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            Container()
                         ],
                       )),
                 ),

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:camos/core/blocs/process_jobcard/process_jobcard_bloc.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -91,7 +93,14 @@ class _ProcessRepairState extends State<ProcessRepair> {
   final TextEditingController hoursController = TextEditingController();
   final TextEditingController minutesController = TextEditingController();
   final TextEditingController repairmanController = TextEditingController();
+
+  final TextEditingController LController = TextEditingController();
+  final TextEditingController WController = TextEditingController();
+  final TextEditingController PController = TextEditingController();
+  final TextEditingController TController = TextEditingController();
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  DateTime? selectedDate;
 
   @override
   void initState() {
@@ -128,8 +137,23 @@ class _ProcessRepairState extends State<ProcessRepair> {
     super.dispose();
   }
 
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('existing job : ${existingJob}');
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -169,27 +193,32 @@ class _ProcessRepairState extends State<ProcessRepair> {
         const SizedBox(
           height: 12,
         ),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.5),
-                spreadRadius: 2,
-                blurRadius: 5,
-                offset: Offset(0, 3),
-              ),
-            ],
+        GestureDetector(
+          onTap: () => _selectDate(
+            context,
           ),
-          child: TextField(
-            controller: dateController,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              contentPadding: EdgeInsets.only(left: 20),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(
+                right: 24.0, left: 24.0, top: 15, bottom: 15),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Text(
+              selectedDate == null
+                  ? 'Select Date'
+                  : '${selectedDate?.day}/${selectedDate?.month}/${selectedDate?.year}',
+              style: const TextStyle(color: Colors.black),
             ),
           ),
         ),
@@ -220,7 +249,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                             ],
                           ),
                           child: TextField(
-                            controller: dateController,
+                            controller: LController,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
@@ -257,7 +286,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                             ],
                           ),
                           child: TextField(
-                            controller: dateController,
+                            controller: WController,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
@@ -294,7 +323,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                             ],
                           ),
                           child: TextField(
-                            controller: dateController,
+                            controller: PController,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
@@ -331,7 +360,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                             ],
                           ),
                           child: TextField(
-                            controller: dateController,
+                            controller: TController,
                             decoration: InputDecoration(
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
@@ -352,7 +381,9 @@ class _ProcessRepairState extends State<ProcessRepair> {
           )
         else
           Container(),
-        if (existingJob != 'Install Patch' || existingJob != 'Painting')
+        if (existingJob != 'Install Patch' &&
+            existingJob != 'Painting' &&
+            existingJob != 'Dimensi Luka')
           Column(
             children: [
               BlocConsumer<ProcessJobcardBloc, ProcessJobcardState>(
@@ -371,7 +402,10 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                   existingJob)['type_material'] ==
                               material.category.name,
                         )
-                        .toList();
+                        .toList()
+                      ..sort(
+                          (a, b) => a.materialName.compareTo(b.materialName));
+
                     // if (!filteredMaterials
                     //     .any((e) => e.idMatstock == selectedMaterial)) {
                     //   selectedMaterial = null;
@@ -386,48 +420,189 @@ class _ProcessRepairState extends State<ProcessRepair> {
                           onTap: () {
                             showModalBottomSheet(
                               context: context,
+                              isScrollControlled: true,
                               builder: (context) {
                                 return StatefulBuilder(
                                   builder: (BuildContext context,
                                       StateSetter setModalState) {
-                                    return ListView(
-                                      children:
-                                          filteredMaterials.map((material) {
-                                        final isSelected =
-                                            selectedMaterials.any((element) =>
-                                                element['id_matstock'] ==
-                                                    material.idMatstock &&
-                                                element['name'] ==
-                                                    material.materialName);
-
-                                        return CheckboxListTile(
-                                          title: Text(material.materialName),
-                                          value: isSelected,
-                                          onChanged: (bool? selected) {
-                                            setModalState(() {
-                                              if (selected == true) {
-                                                selectedMaterials.add({
-                                                  'id_matstock':
-                                                      material.idMatstock,
-                                                  'name': material.materialName
-                                                });
-                                              } else {
-                                                selectedMaterials.removeWhere(
-                                                    (element) =>
+                                    return Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text(
+                                            'Choose Materials & Input Qty',
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          Flexible(
+                                            child: ListView(
+                                              shrinkWrap: true,
+                                              children: filteredMaterials
+                                                  .map((material) {
+                                                final isSelected = selectedMaterials
+                                                    .any((element) =>
                                                         element['id_matstock'] ==
                                                             material
                                                                 .idMatstock &&
                                                         element['name'] ==
                                                             material
                                                                 .materialName);
-                                              }
-                                            });
 
-                                            // Update state di widget utama juga, supaya tampilan luar ikut berubah saat modal ditutup
-                                            setState(() {});
-                                          },
-                                        );
-                                      }).toList(),
+                                                final currentQty =
+                                                    selectedMaterials
+                                                        .firstWhere(
+                                                  (element) =>
+                                                      element['id_matstock'] ==
+                                                          material.idMatstock &&
+                                                      element['name'] ==
+                                                          material.materialName,
+                                                  orElse: () => {'qty': ''},
+                                                )['qty'];
+
+                                                return CheckboxListTile(
+                                                  title: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(material
+                                                          .materialName),
+                                                      if (isSelected)
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                                  top: 8.0),
+                                                          child: TextFormField(
+                                                            initialValue:
+                                                                currentQty,
+                                                            keyboardType:
+                                                                TextInputType
+                                                                    .number,
+                                                            decoration:
+                                                                const InputDecoration(
+                                                              labelText: 'Qty',
+                                                              border:
+                                                                  OutlineInputBorder(),
+                                                              contentPadding:
+                                                                  EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          12),
+                                                            ),
+                                                            onChanged: (value) {
+                                                              setModalState(() {
+                                                                final index =
+                                                                    selectedMaterials
+                                                                        .indexWhere(
+                                                                  (element) =>
+                                                                      element['id_matstock'] ==
+                                                                          material
+                                                                              .idMatstock &&
+                                                                      element['name'] ==
+                                                                          material
+                                                                              .materialName,
+                                                                );
+                                                                if (index !=
+                                                                    -1) {
+                                                                  selectedMaterials[
+                                                                          index]
+                                                                      [
+                                                                      'qty'] = value;
+                                                                }
+                                                              });
+                                                              setState(() {});
+                                                            },
+                                                          ),
+                                                        ),
+                                                      const Divider(
+                                                        color: black,
+                                                        thickness: 1.5,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  value: isSelected,
+                                                  onChanged: (bool? selected) {
+                                                    setModalState(() {
+                                                      if (selected == true) {
+                                                        selectedMaterials.add({
+                                                          'id_matstock':
+                                                              material
+                                                                  .idMatstock,
+                                                          'name': material
+                                                              .materialName,
+                                                          'qty': '',
+                                                        });
+                                                      } else {
+                                                        selectedMaterials
+                                                            .removeWhere(
+                                                          (element) =>
+                                                              element['id_matstock'] ==
+                                                                  material
+                                                                      .idMatstock &&
+                                                              element['name'] ==
+                                                                  material
+                                                                      .materialName,
+                                                        );
+                                                      }
+                                                    });
+
+                                                    // Update tampilan utama juga
+                                                    setState(() {});
+                                                  },
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          ElevatedButton.icon(
+                                            onPressed: () {
+                                              final hasEmptyQty =
+                                                  selectedMaterials.any(
+                                                      (item) =>
+                                                          item['qty'] == null ||
+                                                          item['qty']
+                                                              .toString()
+                                                              .trim()
+                                                              .isEmpty);
+
+                                              if (hasEmptyQty) {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (context) =>
+                                                      AlertDialog(
+                                                    title: const Text(
+                                                        'Qty belum diisi'),
+                                                    content: const Text(
+                                                        'Please input QTY.'),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.pop(
+                                                                context),
+                                                        child: const Text('OK'),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              } else {
+                                                Navigator.pop(context);
+                                              }
+                                            },
+                                            icon: const Icon(Icons.check),
+                                            label: const Text('Selesai'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  Colors.green[700],
+                                              foregroundColor: Colors.white,
+                                              minimumSize:
+                                                  const Size.fromHeight(48),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     );
                                   },
                                 );
@@ -435,6 +610,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                             );
                           },
                           child: Container(
+                            width: double.infinity,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 12),
                             decoration: BoxDecoration(
@@ -445,48 +621,13 @@ class _ProcessRepairState extends State<ProcessRepair> {
                               selectedMaterials.isEmpty
                                   ? 'Choose Materials'
                                   : selectedMaterials
-                                      .map((e) => e['name'])
-                                      .join(', '),
+                                      .map((e) =>
+                                          '${e['name']} (QTY : ${e['qty']})')
+                                      .join(',\n'),
                               style: getBlackTextStyle(),
                             ),
                           ),
-                        ),
-
-                        // Container(
-                        //   decoration: BoxDecoration(
-                        //     border: Border.all(color: Colors.grey),
-                        //     color: Colors.white,
-                        //     borderRadius: BorderRadius.circular(30),
-                        //     boxShadow: [
-                        //       BoxShadow(
-                        //         color: Colors.grey.withOpacity(0.5),
-                        //         spreadRadius: 2,
-                        //         blurRadius: 5,
-                        //         offset: Offset(0, 3),
-                        //       ),
-                        //     ],
-                        //   ),
-                        //   child: DropdownButton<String>(
-                        //     isExpanded: true,
-                        //     padding: EdgeInsets.symmetric(horizontal: 24),
-                        //     value: selectedMaterial,
-                        //     hint: const Text('Choose Material'),
-                        //     items: filteredMaterials
-                        //         .map((e) => DropdownMenuItem<String>(
-                        //               value: e.idMatstock,
-                        //               child: Text(
-                        //                 e.materialName,
-                        //                 style: getBlackTextStyle(),
-                        //               ),
-                        //             ))
-                        //         .toList(),
-                        //     onChanged: (newValue) {
-                        //       setState(() {
-                        //         selectedMaterial = newValue ?? '';
-                        //       });
-                        //     },
-                        //   ),
-                        // ),
+                        )
                       ],
                     );
                   } else if (state is MaterialErrorState) {
@@ -506,17 +647,17 @@ class _ProcessRepairState extends State<ProcessRepair> {
         else
           Container(),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const FormTitle(title: 'QTY'),
+                const FormTitle(title: 'Hours'),
                 const SizedBox(
                   height: 12,
                 ),
                 Container(
-                  width: 120,
+                  width: 80,
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey),
                     color: Colors.white,
@@ -531,7 +672,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                     ],
                   ),
                   child: TextField(
-                    controller: qtyController,
+                    controller: hoursController,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -542,78 +683,40 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 ),
               ],
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Text(
+              ' : ',
+              style: getBlackTextStyle(fontSize: 32),
+            ),
+            Column(
               children: [
-                Column(
-                  children: [
-                    const FormTitle(title: 'Hours'),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    Container(
-                      width: 80,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: hoursController,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          contentPadding: EdgeInsets.only(left: 20),
-                        ),
-                      ),
-                    ),
-                  ],
+                const FormTitle(title: 'Minutes'),
+                const SizedBox(
+                  height: 12,
                 ),
-                Text(
-                  ' : ',
-                  style: getBlackTextStyle(fontSize: 32),
-                ),
-                Column(
-                  children: [
-                    const FormTitle(title: 'Minutes'),
-                    const SizedBox(
-                      height: 12,
-                    ),
-                    Container(
-                      width: 80,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        color: Colors.white,
+                Container(
+                  width: 80,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 2,
+                        blurRadius: 5,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: minutesController,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.5),
-                            spreadRadius: 2,
-                            blurRadius: 5,
-                            offset: Offset(0, 3),
-                          ),
-                        ],
                       ),
-                      child: TextField(
-                        controller: minutesController,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          contentPadding: EdgeInsets.only(left: 20),
-                        ),
-                      ),
+                      contentPadding: EdgeInsets.only(left: 20),
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -665,9 +768,38 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 const SizedBox(
                   width: 12,
                 ),
-                Text(
-                  'Save',
-                  style: getWhiteTextStyle(),
+                BlocConsumer<ProcessJobcardBloc, ProcessJobcardState>(
+                  listener: (context, state) {
+                    if (state is SubmitSuccessState) {
+                      Navigator.pop(context);
+                    } else if (state is SubmitErrorState) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal menyimpan data')),
+                      );
+                    }
+                  },
+                  builder: (context, state) {
+                    if (state is SubmitLoadingState) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    } else if (state is SubmitErrorState) {
+                      return Text(
+                        'Error, please try again',
+                        style: getWhiteTextStyle(),
+                      );
+                    } else if (state is SubmitSuccessState) {
+                      return Text(
+                        'Save',
+                        style: getWhiteTextStyle(),
+                      );
+                    } else {
+                      return Text(
+                        'Save',
+                        style: getWhiteTextStyle(),
+                      );
+                    }
+                  },
                 ),
               ],
             ),
@@ -677,21 +809,61 @@ class _ProcessRepairState extends State<ProcessRepair> {
                   .where('id', isEqualTo: widget.tireDetail['id'])
                   .get();
 
+              final processRepairCount =
+                  oldData.docs.first['process_repair_count'];
+
+              if (selectedMaterials.isEmpty) {
+                selectedMaterials.add({
+                  'id_matstock': '',
+                  'name': '',
+                  'qty': '',
+                });
+              }
+
+              final jobcardData = {
+                'name': existingJob,
+                'fulldate': selectedDate?.toIso8601String(),
+                'date': DateFormat('dd-MM-yyyy').format(selectedDate!),
+                'material': selectedMaterials,
+                'hours': hoursController.text,
+                'minutes': minutesController.text,
+                'bywhom': repairmanController.text,
+                'remarks': injuriesController.text,
+                'process_repair_count': processRepairCount,
+                'id_wo': widget.tireDetail['id'],
+                'dimensi':
+                    'L${LController.text},W${WController.text},P${PController.text},T${TController.text}',
+                'created_at': DateTime.now().toIso8601String(),
+              };
+
+              print('format json jobcard : ${jsonEncode(jobcardData)}');
+
+              // Simpan ke Firestore
               await oldData.docs[0].reference.update({
-                'jobcard': FieldValue.arrayUnion([
-                  {
-                    'name': existingJob,
-                    'fulldate': DateTime.now().toIso8601String(),
-                    'date': DateFormat('dd-MM-yyyy').format(DateTime.now()),
-                    'material': FieldValue.arrayUnion(selectedMaterials),
-                    'qty': qtyController.text,
-                    'hours': hoursController.text,
-                    'minutes': minutesController.text,
-                    'bywhom': repairmanController.text,
-                    'remarks': injuriesController.text,
-                  }
-                ])
+                'jobcard': FieldValue.arrayUnion([jobcardData]),
               });
+
+              context
+                  .read<ProcessJobcardBloc>()
+                  .add(SubmitJobcardEvent(jobcard: jobcardData));
+
+              // await oldData.docs[0].reference.update({
+              //   'jobcard': FieldValue.arrayUnion([
+              //     {
+              //       'name': existingJob,
+              //       'fulldate': DateTime.now().toIso8601String(),
+              //       'date': DateFormat('dd-MM-yyyy').format(DateTime.now()),
+              //       'material': selectedMaterials,
+              //       'qty': qtyController.text,
+              //       'hours': hoursController.text,
+              //       'minutes': minutesController.text,
+              //       'bywhom': repairmanController.text,
+              //       'remarks': injuriesController.text,
+              //       'dimensi':
+              //           '${LController.text},${WController.text},${PController.text}, ${TController.text}'
+              //     }
+              //   ])
+              // });
             })
       ]),
     );

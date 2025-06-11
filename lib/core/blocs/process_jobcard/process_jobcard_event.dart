@@ -9,4 +9,8 @@ class ProcessJobcardEvent extends Equatable {
 
 class FetchMaterialListEvent extends ProcessJobcardEvent {}
 
-class SubmitJobcardEvent extends ProcessJobcardEvent {}
+class SubmitJobcardEvent extends ProcessJobcardEvent {
+  final Map<String, dynamic> jobcard;
+
+  SubmitJobcardEvent({required this.jobcard});
+}
