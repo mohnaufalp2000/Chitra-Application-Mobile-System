@@ -5,6 +5,7 @@ import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/jobcard_repair.dart';
 import 'package:camos/core/utils/firebase_key/firebase_key.dart';
+import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/history_jobcard_repair_page.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_form_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -33,6 +34,7 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
 
   void _onHistoryPressed() {
     // Navigator.pushNamed(context, JobcardQCPage.routeName);
+    // Navigator.pushNamed(context, HistoryJobcardRepairPage.routeName);
     Navigator.pushNamed(context, HistoryJobcardRepairPage.routeName);
   }
 
@@ -79,7 +81,7 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
                   final widgetOptions = [
                     WaitingWO(woList: WOlist),
                     OnProgress(woList: WOlist),
-                    const WaitingQC()
+                    // const WaitingQC()
                   ];
                   return widgetOptions.elementAt(selectedMenu);
                 } else if (state is WoJobcardErrorState) {
@@ -111,8 +113,8 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
                 icon: Icon(Icons.tag), label: 'Waiting WO#'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.work_history), label: 'On Progress'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.fact_check), label: 'Waiting QC'),
+            // BottomNavigationBarItem(
+            //     icon: Icon(Icons.fact_check), label: 'Waiting QC'),
           ]),
     );
   }
@@ -135,7 +137,6 @@ class _WaitingWOState extends State<WaitingWO> {
     final List<String> idWoList =
         widget.woList.map((item) => item['id_wo'] as String).toList();
 
-    print('id wo list : ${idWoList}');
     return PaginateFirestore(
         query:
             firestore.collection(FirestoreKey.tireRepairInspectionReportTrial),
@@ -172,8 +173,20 @@ class _OnProgressState extends State<OnProgress> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> idWoList =
-        widget.woList.map((item) => item['id_wo'] as String).toList();
+    // JANGAN LUPA DIUNCOMMENT KALAU ICS UDAH BENER
+    // final List<String> idWoList =
+    //     widget.woList.map((item) => item['id_wo'] as String).toList();
+    final List<String> idWoList = ['uv7E2T3PQo', 'v2qvvHSZF6', '7Lazwubkbb'];
+    print('id wo list : ${idWoList}');
+
+    if (idWoList.isEmpty) {
+      return Center(
+          child: Text(
+        'No data available',
+        style: getBlackTextStyle(),
+      ));
+    }
+
     return PaginateFirestore(
         query: firestore
             .collection(FirestoreKey.tireRepairInspectionReportTrial)
@@ -189,9 +202,14 @@ class _OnProgressState extends State<OnProgress> {
         itemBuilder: (context, snapshot, index) {
           final Map<String, dynamic> data =
               snapshot[index].data() as Map<String, dynamic>;
-          final WO = widget.woList.firstWhere(
-              (element) => element['id_wo'] == data['id'],
-              orElse: () => {'wo': ''})['wo'];
+          // mendapatkan nomor WO
+          // final WO = widget.woList.firstWhere(
+          //     (element) => element['id_wo'] == data['id'],
+          //     orElse: () => {'wo': ''})['wo'];
+          final WO = idWoList.firstWhere(
+            (element) => element == data['id'],
+          );
+          print('WO : $WO');
           if (WO == '') {
             return Container();
           }
@@ -343,6 +361,7 @@ class JobcardCard extends StatefulWidget {
 }
 
 class _JobcardCardState extends State<JobcardCard> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
   final List<String> jobName =
       JobcardRepair.jobName.map((item) => item['name'] as String).toList();
   bool _isExpanded = false;
@@ -470,10 +489,51 @@ class _JobcardCardState extends State<JobcardCard> {
               if (_isExpanded)
                 ...List.generate(
                     (widget.data['process_repair_count'] ?? 0) as int, (index) {
-                  return ItemJob(
-                    jobName: jobName,
-                    data: widget.data,
-                    cardIndex: index,
+                  return Column(
+                    children: [
+                      ItemJob(
+                        jobName: jobName,
+                        data: widget.data,
+                        cardIndex: index,
+                      ),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                      // ADD PROCESS BUTTON
+                      ButtonWidget(
+                          color: green359B7B,
+                          name: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.add_circle,
+                                color: white,
+                              ),
+                              const SizedBox(
+                                width: 12,
+                              ),
+                              Text(
+                                'Add Proccess',
+                                style: getWhiteTextStyle(),
+                              ),
+                            ],
+                          ),
+                          function: () async {
+                            final oldData = await firestore
+                                .collection(
+                                    'tire_repair_inspection_report_trial')
+                                .where('id', isEqualTo: widget.data['id'])
+                                .get();
+
+                            await oldData.docs[0].reference.update({
+                              'process_repair_count': FieldValue.increment(1),
+                            });
+                            setState(() {});
+                          }),
+                      const SizedBox(
+                        height: 12,
+                      ),
+                    ],
                   );
                 }),
 
@@ -494,30 +554,31 @@ class _JobcardCardState extends State<JobcardCard> {
               //       const SizedBox(
               //         height: 6,
               //       ),
-              //       // ADD PROCESS BUTTON
-              //       // ButtonWidget(
-              //       //     color: green359B7B,
-              //       //     name: Row(
-              //       //       mainAxisAlignment: MainAxisAlignment.center,
-              //       //       children: [
-              //       //         const Icon(
-              //       //           Icons.add_circle,
-              //       //           color: white,
-              //       //         ),
-              //       //         const SizedBox(
-              //       //           width: 12,
-              //       //         ),
-              //       //         Text(
-              //       //           'Add Proccess',
-              //       //           style: getWhiteTextStyle(),
-              //       //         ),
-              //       //       ],
-              //       //     ),
-              //       //     function: () {})
+              // ADD PROCESS BUTTON
+              // ButtonWidget(
+              //     color: green359B7B,
+              //     name: Row(
+              //       mainAxisAlignment: MainAxisAlignment.center,
+              //       children: [
+              //         const Icon(
+              //           Icons.add_circle,
+              //           color: white,
+              //         ),
+              //         const SizedBox(
+              //           width: 12,
+              //         ),
+              //         Text(
+              //           'Add Proccess',
+              //           style: getWhiteTextStyle(),
+              //         ),
+              //       ],
+              //     ),
+              //     function: () {})
               //     ],
               //   )
               // else
               //   Container(),
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -583,15 +644,22 @@ class ItemJob extends StatelessWidget {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     String existingJob = '';
 
-    if (data['jobcard'].isEmpty) {
+    String processRepairCount = '';
+    int indexCount = cardIndex + 1;
+    if (indexCount != 1) {
+      processRepairCount = '$indexCount';
+    }
+    print('process : ${processRepairCount}');
+
+    if (data['jobcard$processRepairCount'].isEmpty) {
       existingJob = 'Skiving';
     } else {
-      final lastName = data['jobcard'].last['name'];
+      final lastName = data['jobcard$processRepairCount'].last['name'];
 
       final jobList = JobcardRepair.jobName;
       final currentIndex = jobList.indexWhere((job) => job['name'] == lastName);
 
-      existingJob = data['jobcard'].last['name'];
+      existingJob = data['jobcard$processRepairCount'].last['name'];
       if (currentIndex != -1 && currentIndex < jobList.length - 1) {
         existingJob = jobList[currentIndex + 1]['name'];
       } else {
@@ -625,7 +693,7 @@ class ItemJob extends StatelessWidget {
         ),
         Column(
           children: List.generate(jobName.length, (index) {
-            final jobcardItem = data['jobcard'].firstWhere(
+            final jobcardItem = data['jobcard$processRepairCount'].firstWhere(
               (item) => item['name'] == jobName[index],
               orElse: () => null,
             );
@@ -634,7 +702,10 @@ class ItemJob extends StatelessWidget {
                 InkWell(
                   onTap: () {
                     Navigator.pushNamed(context, JobcardFormPage.routeName,
-                        arguments: data);
+                        arguments: {
+                          'tireDetail': data,
+                          'processRepairCount': processRepairCount
+                        });
                   },
                   child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -660,7 +731,7 @@ class ItemJob extends StatelessWidget {
                           else
                             Row(
                               children: [
-                                if (data['jobcard'].any(
+                                if (data['jobcard$processRepairCount'].any(
                                     (item) => item['name'] == jobName[index]))
                                   SizedBox(
                                     width: 20,
@@ -685,7 +756,7 @@ class ItemJob extends StatelessWidget {
                                 )
                               ],
                             ),
-                          if (!data['jobcard'].any(
+                          if (!data['jobcard$processRepairCount'].any(
                                   (item) => item['name'] == jobName[index]) &&
                               existingJob == jobName[index])
                             SizedBox(

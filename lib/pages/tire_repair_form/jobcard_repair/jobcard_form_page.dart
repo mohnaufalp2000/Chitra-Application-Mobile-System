@@ -37,8 +37,10 @@ class _JobcardFormPageState extends State<JobcardFormPage>
 
   @override
   Widget build(BuildContext context) {
-    final tireDetail =
+    final map =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    final tireDetail = map['tireDetail'];
+    final processRepairCountBefore = map['processRepairCount'];
 
     return Scaffold(
       appBar: AppBar(
@@ -55,7 +57,7 @@ class _JobcardFormPageState extends State<JobcardFormPage>
           indicatorColor: white,
           tabs: const [
             Tab(text: 'Tire Detail'),
-            Tab(text: 'Process Repair (1)'),
+            Tab(text: 'Process Repair'),
           ],
         ),
       ),
@@ -66,6 +68,7 @@ class _JobcardFormPageState extends State<JobcardFormPage>
             TireDetail(tireDetail: tireDetail),
             ProcessRepair(
               tireDetail: tireDetail,
+              processRepairCountBefore: processRepairCountBefore,
             ),
           ],
         ),
@@ -76,8 +79,12 @@ class _JobcardFormPageState extends State<JobcardFormPage>
 
 class ProcessRepair extends StatefulWidget {
   final Map<String, dynamic> tireDetail;
+  final String processRepairCountBefore;
 
-  const ProcessRepair({super.key, required this.tireDetail});
+  const ProcessRepair(
+      {super.key,
+      required this.tireDetail,
+      required this.processRepairCountBefore});
 
   @override
   State<ProcessRepair> createState() => _ProcessRepairState();
@@ -108,15 +115,18 @@ class _ProcessRepairState extends State<ProcessRepair> {
     context.read<ProcessJobcardBloc>().add(FetchMaterialListEvent());
     injuriesController.text = widget.tireDetail['remarks'];
 
-    if (widget.tireDetail['jobcard'].isEmpty) {
+    if (widget
+        .tireDetail['jobcard${widget.processRepairCountBefore}'].isEmpty) {
       existingJob = 'Skiving';
     } else {
-      final lastName = widget.tireDetail['jobcard'].last['name'];
+      final lastName = widget
+          .tireDetail['jobcard${widget.processRepairCountBefore}'].last['name'];
 
       final jobList = JobcardRepair.jobName;
       final currentIndex = jobList.indexWhere((job) => job['name'] == lastName);
 
-      existingJob = widget.tireDetail['jobcard'].last['name'];
+      existingJob = widget
+          .tireDetail['jobcard${widget.processRepairCountBefore}'].last['name'];
       if (currentIndex != -1 && currentIndex < jobList.length - 1) {
         existingJob = jobList[currentIndex + 1]['name'];
       } else {
