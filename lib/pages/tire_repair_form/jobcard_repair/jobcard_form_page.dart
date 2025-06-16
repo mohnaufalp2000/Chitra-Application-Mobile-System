@@ -4,6 +4,7 @@ import 'package:camos/core/blocs/process_jobcard/process_jobcard_bloc.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/jobcard_repair.dart';
+import 'package:camos/core/utils/firebase_key/firebase_key.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/widget/tire_detail.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -40,12 +41,14 @@ class _JobcardFormPageState extends State<JobcardFormPage>
     final map =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
     final tireDetail = map['tireDetail'];
+    final wo = map['wo'];
+    final woDate = map['woDate'];
     final processRepairCountBefore = map['processRepairCount'];
 
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Jobcard Repair (${JobcardRepair.jobName[0]['name']})',
+          'Jobcard Repair',
           style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
         ),
         backgroundColor: green359B7B,
@@ -65,7 +68,7 @@ class _JobcardFormPageState extends State<JobcardFormPage>
         child: TabBarView(
           controller: _tabController,
           children: [
-            TireDetail(tireDetail: tireDetail),
+            TireDetail(tireDetail: tireDetail, wo: wo, woDate: woDate),
             ProcessRepair(
               tireDetail: tireDetail,
               processRepairCountBefore: processRepairCountBefore,
@@ -429,189 +432,227 @@ class _ProcessRepairState extends State<ProcessRepair> {
                         GestureDetector(
                           onTap: () {
                             showModalBottomSheet(
+                              isDismissible: false,
                               context: context,
                               isScrollControlled: true,
+                              enableDrag: false,
                               builder: (context) {
                                 return StatefulBuilder(
                                   builder: (BuildContext context,
                                       StateSetter setModalState) {
-                                    return Padding(
-                                      padding: const EdgeInsets.all(16),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Text(
-                                            'Choose Materials & Input Qty',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Flexible(
-                                            child: ListView(
-                                              shrinkWrap: true,
-                                              children: filteredMaterials
-                                                  .map((material) {
-                                                final isSelected = selectedMaterials
-                                                    .any((element) =>
+                                    return WillPopScope(
+                                      onWillPop: () async => false, //
+                                      child: Padding(
+                                        padding: EdgeInsets.only(
+                                            bottom: MediaQuery.of(context)
+                                                .viewInsets
+                                                .bottom,
+                                            top: 16,
+                                            left: 16,
+                                            right: 16),
+                                        child: SingleChildScrollView(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  const Text(
+                                                    'Choose Materials & Input Qty',
+                                                    style: TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 16),
+                                                  ),
+                                                  IconButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(context);
+                                                      },
+                                                      icon: Icon(Icons.close))
+                                                ],
+                                              ),
+                                              const SizedBox(height: 12),
+                                              ListView(
+                                                shrinkWrap: true,
+                                                physics:
+                                                    const NeverScrollableScrollPhysics(),
+                                                children: filteredMaterials
+                                                    .map((material) {
+                                                  final isSelected = selectedMaterials
+                                                      .any((element) =>
+                                                          element['id_matstock'] ==
+                                                              material
+                                                                  .idMatstock &&
+                                                          element['name'] ==
+                                                              material
+                                                                  .materialName);
+
+                                                  final currentQty =
+                                                      selectedMaterials
+                                                          .firstWhere(
+                                                    (element) =>
                                                         element['id_matstock'] ==
                                                             material
                                                                 .idMatstock &&
                                                         element['name'] ==
                                                             material
-                                                                .materialName);
+                                                                .materialName,
+                                                    orElse: () => {'qty': ''},
+                                                  )['qty'];
 
-                                                final currentQty =
-                                                    selectedMaterials
-                                                        .firstWhere(
-                                                  (element) =>
-                                                      element['id_matstock'] ==
-                                                          material.idMatstock &&
-                                                      element['name'] ==
-                                                          material.materialName,
-                                                  orElse: () => {'qty': ''},
-                                                )['qty'];
-
-                                                return CheckboxListTile(
-                                                  title: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(material
-                                                          .materialName),
-                                                      if (isSelected)
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  top: 8.0),
-                                                          child: TextFormField(
-                                                            initialValue:
-                                                                currentQty,
-                                                            keyboardType:
-                                                                TextInputType
-                                                                    .number,
-                                                            decoration:
-                                                                const InputDecoration(
-                                                              labelText: 'Qty',
-                                                              border:
-                                                                  OutlineInputBorder(),
-                                                              contentPadding:
-                                                                  EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          12),
+                                                  return CheckboxListTile(
+                                                    title: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(material
+                                                            .materialName),
+                                                        if (isSelected)
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .only(
+                                                                    top: 8.0),
+                                                            child:
+                                                                TextFormField(
+                                                              initialValue:
+                                                                  currentQty,
+                                                              keyboardType:
+                                                                  TextInputType
+                                                                      .number,
+                                                              decoration:
+                                                                  const InputDecoration(
+                                                                labelText:
+                                                                    'Qty',
+                                                                border:
+                                                                    OutlineInputBorder(),
+                                                                contentPadding:
+                                                                    EdgeInsets.symmetric(
+                                                                        horizontal:
+                                                                            12),
+                                                              ),
+                                                              onChanged:
+                                                                  (value) {
+                                                                setModalState(
+                                                                    () {
+                                                                  final index =
+                                                                      selectedMaterials
+                                                                          .indexWhere(
+                                                                    (element) =>
+                                                                        element['id_matstock'] ==
+                                                                            material
+                                                                                .idMatstock &&
+                                                                        element['name'] ==
+                                                                            material.materialName,
+                                                                  );
+                                                                  if (index !=
+                                                                      -1) {
+                                                                    selectedMaterials[
+                                                                            index]
+                                                                        [
+                                                                        'qty'] = value;
+                                                                  }
+                                                                });
+                                                                setState(() {});
+                                                              },
                                                             ),
-                                                            onChanged: (value) {
-                                                              setModalState(() {
-                                                                final index =
-                                                                    selectedMaterials
-                                                                        .indexWhere(
-                                                                  (element) =>
-                                                                      element['id_matstock'] ==
-                                                                          material
-                                                                              .idMatstock &&
-                                                                      element['name'] ==
-                                                                          material
-                                                                              .materialName,
-                                                                );
-                                                                if (index !=
-                                                                    -1) {
-                                                                  selectedMaterials[
-                                                                          index]
-                                                                      [
-                                                                      'qty'] = value;
-                                                                }
-                                                              });
-                                                              setState(() {});
-                                                            },
                                                           ),
+                                                        const Divider(
+                                                          color: black,
+                                                          thickness: 1.5,
                                                         ),
-                                                      const Divider(
-                                                        color: black,
-                                                        thickness: 1.5,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  value: isSelected,
-                                                  onChanged: (bool? selected) {
-                                                    setModalState(() {
-                                                      if (selected == true) {
-                                                        selectedMaterials.add({
-                                                          'id_matstock':
-                                                              material
-                                                                  .idMatstock,
-                                                          'name': material
-                                                              .materialName,
-                                                          'qty': '',
-                                                        });
-                                                      } else {
-                                                        selectedMaterials
-                                                            .removeWhere(
-                                                          (element) =>
-                                                              element['id_matstock'] ==
-                                                                  material
-                                                                      .idMatstock &&
-                                                              element['name'] ==
-                                                                  material
-                                                                      .materialName,
-                                                        );
-                                                      }
-                                                    });
+                                                      ],
+                                                    ),
+                                                    value: isSelected,
+                                                    onChanged:
+                                                        (bool? selected) {
+                                                      setModalState(() {
+                                                        if (selected == true) {
+                                                          selectedMaterials
+                                                              .add({
+                                                            'id_matstock':
+                                                                material
+                                                                    .idMatstock,
+                                                            'name': material
+                                                                .materialName,
+                                                            'qty': '',
+                                                          });
+                                                        } else {
+                                                          selectedMaterials
+                                                              .removeWhere(
+                                                            (element) =>
+                                                                element['id_matstock'] ==
+                                                                    material
+                                                                        .idMatstock &&
+                                                                element['name'] ==
+                                                                    material
+                                                                        .materialName,
+                                                          );
+                                                        }
+                                                      });
 
-                                                    // Update tampilan utama juga
-                                                    setState(() {});
-                                                  },
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          ElevatedButton.icon(
-                                            onPressed: () {
-                                              final hasEmptyQty =
-                                                  selectedMaterials.any(
-                                                      (item) =>
-                                                          item['qty'] == null ||
-                                                          item['qty']
-                                                              .toString()
-                                                              .trim()
-                                                              .isEmpty);
+                                                      // Update tampilan utama juga
+                                                      setState(() {});
+                                                    },
+                                                  );
+                                                }).toList(),
+                                              ),
+                                              const SizedBox(height: 12),
+                                              ElevatedButton.icon(
+                                                onPressed: () {
+                                                  final hasEmptyQty =
+                                                      selectedMaterials.any(
+                                                          (item) =>
+                                                              item['qty'] ==
+                                                                  null ||
+                                                              item['qty']
+                                                                  .toString()
+                                                                  .trim()
+                                                                  .isEmpty);
 
-                                              if (hasEmptyQty) {
-                                                showDialog(
-                                                  context: context,
-                                                  builder: (context) =>
-                                                      AlertDialog(
-                                                    title: const Text(
-                                                        'Qty belum diisi'),
-                                                    content: const Text(
-                                                        'Please input QTY.'),
-                                                    actions: [
-                                                      TextButton(
-                                                        onPressed: () =>
-                                                            Navigator.pop(
-                                                                context),
-                                                        child: const Text('OK'),
+                                                  if (hasEmptyQty) {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (context) =>
+                                                          AlertDialog(
+                                                        title: const Text(
+                                                            'Qty belum diisi'),
+                                                        content: const Text(
+                                                            'Please input QTY.'),
+                                                        actions: [
+                                                          TextButton(
+                                                            onPressed: () =>
+                                                                Navigator.pop(
+                                                                    context),
+                                                            child: const Text(
+                                                                'OK'),
+                                                          ),
+                                                        ],
                                                       ),
-                                                    ],
-                                                  ),
-                                                );
-                                              } else {
-                                                Navigator.pop(context);
-                                              }
-                                            },
-                                            icon: const Icon(Icons.check),
-                                            label: const Text('Selesai'),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor:
-                                                  Colors.green[700],
-                                              foregroundColor: Colors.white,
-                                              minimumSize:
-                                                  const Size.fromHeight(48),
-                                            ),
+                                                    );
+                                                  } else {
+                                                    Navigator.pop(context);
+                                                  }
+                                                },
+                                                icon: const Icon(Icons.check),
+                                                label: const Text('Selesai'),
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      Colors.green[700],
+                                                  foregroundColor: Colors.white,
+                                                  minimumSize:
+                                                      const Size.fromHeight(48),
+                                                ),
+                                              ),
+                                              const SizedBox(
+                                                height: 12,
+                                              ),
+                                            ],
                                           ),
-                                        ],
+                                        ),
                                       ),
                                     );
                                   },
@@ -815,7 +856,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
             ),
             function: () async {
               final oldData = await firestore
-                  .collection('tire_repair_inspection_report_trial')
+                  .collection(FirestoreKey.tireRepairInspectionReport)
                   .where('id', isEqualTo: widget.tireDetail['id'])
                   .get();
 

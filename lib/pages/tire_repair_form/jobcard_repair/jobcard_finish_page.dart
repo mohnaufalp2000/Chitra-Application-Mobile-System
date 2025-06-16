@@ -61,7 +61,11 @@ class _JobcardFinishPageState extends State<JobcardFinishPage>
         child: TabBarView(
           controller: _tabController,
           children: [
-            TireDetail(tireDetail: tireDetail),
+            TireDetail(
+              tireDetail: tireDetail,
+              wo: '',
+              woDate: '',
+            ),
             DetailRepair(),
             DetailRepair(),
             DetailRepair()

@@ -73,7 +73,11 @@ class ApiService {
         final List<dynamic> dataList = result['data'];
 
         final List<Map<String, dynamic>> woList = dataList.map((item) {
-          return {'id_wo': item['id_wo'], 'wo': item['wo']};
+          return {
+            'id_wo': item['id_wo'],
+            'wo': item['wo'],
+            'wo_date': item['wo_date']
+          };
         }).toList();
 
         return woList;

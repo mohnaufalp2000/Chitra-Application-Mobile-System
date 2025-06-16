@@ -87,7 +87,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
             child: SingleChildScrollView(
       child: StreamBuilder(
           stream: firestore
-              .collection(FirestoreKey.tireRepairInspectionReportTrial)
+              .collection(FirestoreKey.tireRepairInspectionReport)
               .where('id', isEqualTo: id)
               .snapshots(),
           builder: (context, snapshot) {
@@ -170,7 +170,7 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                   final querySnapshot =
                                                       await firestore
                                                           .collection(FirestoreKey
-                                                              .tireRepairInspectionReportTrial)
+                                                              .tireRepairInspectionReport)
                                                           .where('id',
                                                               isEqualTo: id)
                                                           .get();
@@ -1212,6 +1212,10 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                 _buildTextWithDashedLine(
                                   'Site',
                                   '${data['site']}',
+                                ),
+                                _buildTextWithDashedLine(
+                                  'Repair Location',
+                                  '${data['repair_location']}',
                                 ),
                                 _yanpagaris(
                                   'Report by',

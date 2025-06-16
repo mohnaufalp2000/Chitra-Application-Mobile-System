@@ -246,7 +246,7 @@ class _TireRepairInspectionFormPageState
   Future<void> _fetchData(String id) async {
     try {
       final querySnapshot = await firestore
-          .collection(FirestoreKey.tireRepairInspectionReportTrial)
+          .collection(FirestoreKey.tireRepairInspectionReport)
           .where('id', isEqualTo: id)
           .get();
 
@@ -266,7 +266,7 @@ class _TireRepairInspectionFormPageState
           tireSizeCtrl.text = data['tire_size'];
 
           selectedStatus = data['status'];
-          // statusCtrl.text = data['status'];
+          statusCtrl.text = data['status'];
 
           siteCtrl.text = data['site'];
           // reportNameCtrl.text = data['report_by'];
@@ -903,7 +903,7 @@ class _TireRepairInspectionFormPageState
                                 snapshot.data ?? [];
 
                             selectedRepairLocation ??=
-                                listRepairLocation[0]['idSite'];
+                                listRepairLocation[0]['site'];
 
                             return Container(
                               decoration: BoxDecoration(
@@ -923,10 +923,10 @@ class _TireRepairInspectionFormPageState
                                 isExpanded: true,
                                 padding: EdgeInsets.symmetric(horizontal: 24),
                                 value: selectedRepairLocation,
-                                hint: Text('Choose Repair Location'),
+                                hint: const Text('Choose Repair Location'),
                                 items: listRepairLocation.map((location) {
                                   return DropdownMenuItem<String>(
-                                    value: location['idSite'],
+                                    value: location['site'],
                                     child: Text(location['site']),
                                   );
                                 }).toList(),
@@ -1327,8 +1327,8 @@ class _TireRepairInspectionFormPageState
                               );
 
                               final querySnapshot = await firestore
-                                  .collection(FirestoreKey
-                                      .tireRepairInspectionReportTrial)
+                                  .collection(
+                                      FirestoreKey.tireRepairInspectionReport)
                                   .where('id', isEqualTo: id)
                                   .get();
 
@@ -1398,8 +1398,8 @@ class _TireRepairInspectionFormPageState
                                 }
 
                                 await firestore
-                                    .collection(FirestoreKey
-                                        .tireRepairInspectionReportTrial)
+                                    .collection(
+                                        FirestoreKey.tireRepairInspectionReport)
                                     .doc(
                                         docId) // Gunakan ID dokumen yang ingin diperbarui
                                     .update(updateData);
@@ -1461,6 +1461,11 @@ class _TireRepairInspectionFormPageState
                               if (rtd2Ctrl.text.isNotEmpty) {
                                 reportData['rtd2'] = rtd2Ctrl.text;
                               }
+                              if (selectedRepairLocation != '') {
+                                reportData['repair_location'] =
+                                    selectedRepairLocation;
+                              }
+
                               if (_selectedButton != null &&
                                   _selectedButton.isNotEmpty) {
                                 reportData['repair_duration'] = _selectedButton;
@@ -1524,29 +1529,31 @@ class _TireRepairInspectionFormPageState
                                       rtd2Ctrl.text.isNotEmpty &&
                                       _selectedButton != null &&
                                       _selectedButton.isNotEmpty &&
+                                      selectedRepairLocation != null &&
                                       remarksCtrl.text.isNotEmpty &&
                                       serialNumberPictFirebase != null &&
-                                      serialNumberPictFirebase.isNotEmpty &&
-                                      sidewallPicFirebase != null &&
-                                      sidewallPicFirebase.isNotEmpty &&
-                                      shoulderPicFirebase != null &&
-                                      shoulderPicFirebase.isNotEmpty &&
-                                      threatPicFirebase != null &&
-                                      threatPicFirebase.isNotEmpty &&
-                                      beadPicFirebase != null &&
-                                      beadPicFirebase.isNotEmpty &&
-                                      innerLinerPicFirebase != null &&
-                                      innerLinerPicFirebase.isNotEmpty &&
-                                      chafferPicFirebase != null &&
-                                      chafferPicFirebase.isNotEmpty)
+                                      serialNumberPictFirebase.isNotEmpty
+                                  // sidewallPicFirebase != null ||
+                                  // sidewallPicFirebase.isNotEmpty ||
+                                  // shoulderPicFirebase != null ||
+                                  // shoulderPicFirebase.isNotEmpty ||
+                                  // threatPicFirebase != null ||
+                                  // threatPicFirebase.isNotEmpty ||
+                                  // beadPicFirebase != null ||
+                                  // beadPicFirebase.isNotEmpty ||
+                                  // innerLinerPicFirebase != null ||
+                                  // innerLinerPicFirebase.isNotEmpty ||
+                                  // chafferPicFirebase != null ||
+                                  // chafferPicFirebase.isNotEmpty
+                                  )
                                   ? 1
                                   : 0;
 
                               reportData['is_inspected'] = isInspected;
 
                               await firestore
-                                  .collection(FirestoreKey
-                                      .tireRepairInspectionReportTrial)
+                                  .collection(
+                                      FirestoreKey.tireRepairInspectionReport)
                                   .doc(DateTime.now().toIso8601String())
                                   .set(reportData);
 

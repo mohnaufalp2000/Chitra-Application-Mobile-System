@@ -137,15 +137,15 @@ class _WaitingWOState extends State<WaitingWO> {
     final List<String> idWoList =
         widget.woList.map((item) => item['id_wo'] as String).toList();
 
+    print('id wo list : ${idWoList}');
+
     return PaginateFirestore(
-        query:
-            firestore.collection(FirestoreKey.tireRepairInspectionReportTrial),
-        // .where('id', whereIn: idWoList),
+        query: firestore.collection(FirestoreKey.tireRepairInspectionReport),
         itemBuilderType: PaginateBuilderType.listView,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemsPerPage: 5,
-        isLive: false,
+        isLive: true,
         initialLoader:
             const Center(child: CircularProgressIndicator.adaptive()),
         bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
@@ -155,6 +155,7 @@ class _WaitingWOState extends State<WaitingWO> {
           if (idWoList.contains(data['id'])) {
             return Container();
           }
+
           return WaitingWOCard(data: data);
         });
   }
@@ -173,11 +174,8 @@ class _OnProgressState extends State<OnProgress> {
 
   @override
   Widget build(BuildContext context) {
-    // JANGAN LUPA DIUNCOMMENT KALAU ICS UDAH BENER
-    // final List<String> idWoList =
-    //     widget.woList.map((item) => item['id_wo'] as String).toList();
-    final List<String> idWoList = ['uv7E2T3PQo', 'v2qvvHSZF6', '7Lazwubkbb'];
-    print('id wo list : ${idWoList}');
+    final List<String> idWoList =
+        widget.woList.map((item) => item['id_wo'] as String).toList();
 
     if (idWoList.isEmpty) {
       return Center(
@@ -189,13 +187,14 @@ class _OnProgressState extends State<OnProgress> {
 
     return PaginateFirestore(
         query: firestore
-            .collection(FirestoreKey.tireRepairInspectionReportTrial)
+            .collection(FirestoreKey.tireRepairInspectionReport)
+            // .collection('tire_repair_ins_report')
             .where('id', whereIn: idWoList),
         itemBuilderType: PaginateBuilderType.listView,
         shrinkWrap: true,
         physics: NeverScrollableScrollPhysics(),
         itemsPerPage: 5,
-        isLive: false,
+        isLive: true,
         initialLoader:
             const Center(child: CircularProgressIndicator.adaptive()),
         bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
@@ -203,18 +202,21 @@ class _OnProgressState extends State<OnProgress> {
           final Map<String, dynamic> data =
               snapshot[index].data() as Map<String, dynamic>;
           // mendapatkan nomor WO
-          // final WO = widget.woList.firstWhere(
-          //     (element) => element['id_wo'] == data['id'],
-          //     orElse: () => {'wo': ''})['wo'];
-          final WO = idWoList.firstWhere(
-            (element) => element == data['id'],
-          );
+          final WO = widget.woList.firstWhere(
+              (element) => element['id_wo'] == data['id'],
+              orElse: () => {'wo': ''})['wo'];
+          // mendapatkan WO date
+          final WODate = widget.woList.firstWhere(
+              (element) => element['id_wo'] == data['id'],
+              orElse: () => {'wo': ''})['wo_date'];
+
           print('WO : $WO');
           if (WO == '') {
             return Container();
           }
           return JobcardCard(
             wo: WO,
+            woDate: WODate,
             data: data,
           );
         });
@@ -233,7 +235,7 @@ class WaitingQC extends StatelessWidget {
 }
 
 class WaitingWOCard extends StatelessWidget {
-  WaitingWOCard({
+  const WaitingWOCard({
     super.key,
     required this.data,
   });
@@ -260,7 +262,13 @@ class WaitingWOCard extends StatelessWidget {
                 height: 6,
               ),
               Text(
-                'Repair Location : BSF',
+                'Site : ${data['site']}',
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Text(
+                'Repair Location : ${data['repair_location']}',
               ),
               const SizedBox(
                 height: 14,
@@ -347,13 +355,11 @@ class WaitingWOCard extends StatelessWidget {
 }
 
 class JobcardCard extends StatefulWidget {
-  const JobcardCard({
-    super.key,
-    required this.wo,
-    required this.data,
-  });
+  const JobcardCard(
+      {super.key, required this.wo, required this.data, required this.woDate});
 
   final String wo;
+  final String woDate;
   final Map<String, dynamic> data;
 
   @override
@@ -386,7 +392,13 @@ class _JobcardCardState extends State<JobcardCard> {
                 height: 6,
               ),
               Text(
-                'Repair Location : BSF',
+                'Site : ${widget.data['site']}',
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Text(
+                'Repair Location : ${widget.data['repair_location']}',
               ),
               const SizedBox(
                 height: 14,
@@ -495,6 +507,8 @@ class _JobcardCardState extends State<JobcardCard> {
                         jobName: jobName,
                         data: widget.data,
                         cardIndex: index,
+                        wo: widget.wo,
+                        woDate: widget.woDate,
                       ),
                       const SizedBox(
                         height: 12,
@@ -525,9 +539,14 @@ class _JobcardCardState extends State<JobcardCard> {
                                 .where('id', isEqualTo: widget.data['id'])
                                 .get();
 
+                            final repairCount =
+                                oldData.docs[0].data()['process_repair_count'];
+
                             await oldData.docs[0].reference.update({
                               'process_repair_count': FieldValue.increment(1),
+                              'jobcard${repairCount + 1}': [],
                             });
+
                             setState(() {});
                           }),
                       const SizedBox(
@@ -536,49 +555,6 @@ class _JobcardCardState extends State<JobcardCard> {
                     ],
                   );
                 }),
-
-              //   Column(
-              //     children: [
-              //       ItemJob(
-              //         jobName: jobName,
-              //         data: widget.data,
-              //         cardIndex: 0,
-              //       ),
-              //       const Padding(
-              //         padding: const EdgeInsets.symmetric(vertical: 10.0),
-              //         child: Divider(
-              //           color: black,
-              //           thickness: 4,
-              //         ),
-              //       ),
-              //       const SizedBox(
-              //         height: 6,
-              //       ),
-              // ADD PROCESS BUTTON
-              // ButtonWidget(
-              //     color: green359B7B,
-              //     name: Row(
-              //       mainAxisAlignment: MainAxisAlignment.center,
-              //       children: [
-              //         const Icon(
-              //           Icons.add_circle,
-              //           color: white,
-              //         ),
-              //         const SizedBox(
-              //           width: 12,
-              //         ),
-              //         Text(
-              //           'Add Proccess',
-              //           style: getWhiteTextStyle(),
-              //         ),
-              //       ],
-              //     ),
-              //     function: () {})
-              //     ],
-              //   )
-              // else
-              //   Container(),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -622,11 +598,15 @@ class ItemJob extends StatelessWidget {
     required this.jobName,
     required this.data,
     required this.cardIndex,
+    required this.wo,
+    required this.woDate,
   });
 
   final List<String> jobName;
   final Map<String, dynamic> data;
   final int cardIndex;
+  final String wo;
+  final String woDate;
 
   bool containsAnyMatch({
     required List<String> listA,
@@ -704,6 +684,8 @@ class ItemJob extends StatelessWidget {
                     Navigator.pushNamed(context, JobcardFormPage.routeName,
                         arguments: {
                           'tireDetail': data,
+                          'wo': wo,
+                          'woDate': woDate,
                           'processRepairCount': processRepairCount
                         });
                   },

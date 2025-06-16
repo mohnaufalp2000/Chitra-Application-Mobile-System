@@ -134,13 +134,13 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                         key: ValueKey(selectedIndex),
                         query: selectedIndex == 1
                             ? firestore
-                                .collection(FirestoreKey
-                                    .tireRepairInspectionReportTrial)
+                                .collection(
+                                    FirestoreKey.tireRepairInspectionReport)
                                 .where('is_inspected', isEqualTo: selectedIndex)
                                 .orderBy('date_inspect', descending: true)
                             : firestore
-                                .collection(FirestoreKey
-                                    .tireRepairInspectionReportTrial)
+                                .collection(
+                                    FirestoreKey.tireRepairInspectionReport)
                                 .where('is_inspected',
                                     isEqualTo: selectedIndex),
                         itemBuilderType: PaginateBuilderType.listView,
@@ -364,6 +364,9 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                           return Container();
                         },
                       ),
+                      const SizedBox(
+                        height: 84,
+                      )
                     ],
                   );
                 }),

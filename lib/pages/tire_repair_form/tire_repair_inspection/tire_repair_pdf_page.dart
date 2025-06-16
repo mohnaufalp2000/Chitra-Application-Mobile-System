@@ -723,9 +723,18 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(category,
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300], // warna background
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(category,
+                        style: getBlackTextStyle(
+                          fontWeight: w700,
+                        )),
+                  ),
                   const SizedBox(height: 8),
                   GridView.builder(
                     shrinkWrap: true,

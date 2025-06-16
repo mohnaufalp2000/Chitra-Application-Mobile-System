@@ -58,7 +58,14 @@ class _JobcardQCPageState extends State<JobcardQCPage>
       body: SafeArea(
         child: TabBarView(
           controller: _tabController,
-          children: [TireDetail(tireDetail: tireDetail), DetailRepair()],
+          children: [
+            TireDetail(
+              tireDetail: tireDetail,
+              wo: '',
+              woDate: '',
+            ),
+            DetailRepair()
+          ],
         ),
       ),
     );
