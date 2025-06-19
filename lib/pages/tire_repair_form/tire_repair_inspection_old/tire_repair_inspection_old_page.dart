@@ -274,6 +274,7 @@ class _TireRepairInspectionOldPageState
                           // filter repair location
                           if (selectedRepairLocation != 'All' &&
                               data['repair_location'] != null &&
+                              // data['repair_location'] != '1' &&
                               !data['repair_location']
                                   .contains(selectedRepairLocation)) {
                             return Container(); // hanya sembunyikan jika ada nilai tapi tidak cocok

@@ -809,6 +809,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                             const SizedBox(
                                               height: 12,
                                             ),
+                                            Text(
+                                                'Last Event Low Pressure : ${DateFormat('dd MMMM yyyy  HH:mm:ss', 'id_ID').format(DateTime.parse(latestAdjustMap['timeLowPressureSPM']))}'),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
                                             Column(
                                               children: positionList.map((pl) {
                                                 if (pl['adjusmentPressure'] ==
@@ -819,6 +824,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                                 }
 
                                                 return Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
                                                   children: [
                                                     Row(
                                                       mainAxisAlignment:

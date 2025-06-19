@@ -114,7 +114,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   List<BluetoothDevice> devices = [];
   Map<String, dynamic> user = {};
 
-  bool isProcessing = false;
   final ImagePicker _picker = ImagePicker();
 
   // startScanBluetooth() async {
@@ -225,7 +224,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       fixDamage = await fetchDamageData(dayBeforeYesterday);
     }
 
-    log('damage tire: ${fixDamage[0].length}');
     return fixDamage;
   }
 
@@ -3070,6 +3068,256 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           height: 52,
           child: ElevatedButton(
             onPressed: () async {
+              DateTime? selectedDateTimeSPM = DateTime.now();
+
+              // POP UP input time event low pressure (hanya adjustment tapping spm)
+              if (dataUnit['type'] == 'spm') {
+                bool adjustmentEmpty = position.any((item) =>
+                    item.adjusmentPressure != null &&
+                    item.adjusmentPressure.toString().trim().isNotEmpty);
+
+                if (!adjustmentEmpty) {
+                  print('data adjust kosong');
+                  return;
+                }
+
+                print('POP UP MUNCUL!');
+
+                selectedDateTimeSPM = await showDialog<DateTime>(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (BuildContext context) {
+                    DateTime tempDate =
+                        DateTime.now(); // waktu sementara di dalam dialog
+
+                    return StatefulBuilder(
+                      builder: (context, setStateBtn) {
+                        return AlertDialog(
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          content: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.battery_alert,
+                                      color: Colors.black),
+                                  const SizedBox(width: 12),
+                                  Text('Event Low Pressure Time',
+                                      style: getBlackTextStyle(
+                                          fontSize: 18, fontWeight: w700)),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                'Silahkan pilih tanggal dan waktu terjadinya event notifikasi low tire pressure :',
+                                style: getBlackTextStyle(fontSize: 14),
+                              ),
+                              const SizedBox(height: 32),
+                              Text('Pilih tanggal',
+                                  style: getBlackTextStyle(fontSize: 14)),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  final DateTime? pickedDate =
+                                      await showDatePicker(
+                                    context: context,
+                                    initialDate: tempDate,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime(2100),
+                                  );
+                                  if (pickedDate != null) {
+                                    tempDate = DateTime(
+                                      pickedDate.year,
+                                      pickedDate.month,
+                                      pickedDate.day,
+                                      tempDate.hour,
+                                      tempDate.minute,
+                                    );
+                                    setStateBtn(() {});
+                                  }
+                                },
+                                child: Text(
+                                    DateFormat('dd MMM yyyy').format(tempDate)),
+                              ),
+                              const SizedBox(height: 16),
+                              Text('Pilih jam dan menit',
+                                  style: getBlackTextStyle(fontSize: 14)),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  final TimeOfDay? pickedTime =
+                                      await showTimePicker(
+                                    context: context,
+                                    initialTime:
+                                        TimeOfDay.fromDateTime(tempDate),
+                                  );
+                                  if (pickedTime != null) {
+                                    tempDate = DateTime(
+                                      tempDate.year,
+                                      tempDate.month,
+                                      tempDate.day,
+                                      pickedTime.hour,
+                                      pickedTime.minute,
+                                    );
+                                    setStateBtn(() {});
+                                  }
+                                },
+                                child:
+                                    Text(DateFormat('HH:mm').format(tempDate)),
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(context,
+                                      tempDate); // ⬅️ kirim balik waktu
+                                },
+                                child: Text('Save', style: getWhiteTextStyle()),
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+
+                // showDialog(
+                //   context: context,
+                //   barrierDismissible: true, // bisa tap luar untuk menutup
+                //   builder: (BuildContext context) {
+                //     return StatefulBuilder(builder:
+                //         (BuildContext context, StateSetter setStateBtn) {
+                //       return AlertDialog(
+                //         contentPadding:
+                //             EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                //         shape: RoundedRectangleBorder(
+                //           borderRadius: BorderRadius.circular(12),
+                //         ),
+                //         content: Column(
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           mainAxisSize: MainAxisSize.min,
+                //           children: [
+                //             Row(
+                //               children: [
+                //                 const Icon(
+                //                   Icons.battery_alert,
+                //                   color: black,
+                //                 ),
+                //                 const SizedBox(
+                //                   width: 12,
+                //                 ),
+                //                 Text('Event Low Pressure Time',
+                //                     style: getBlackTextStyle(
+                //                       fontSize: 18,
+                //                       fontWeight: w700,
+                //                     )),
+                //               ],
+                //             ),
+                //             const SizedBox(height: 10),
+                //             Text(
+                //               'Choose Date and Time Event Low Tire Pressure :',
+                //               style: getBlackTextStyle(fontSize: 14),
+                //             ),
+                //             const SizedBox(height: 32),
+                //             Column(
+                //               crossAxisAlignment: CrossAxisAlignment.start,
+                //               children: [
+                //                 Text(
+                //                   'Select Date Event Notif Low Pressure',
+                //                   style: getBlackTextStyle(fontSize: 14),
+                //                 ),
+                //                 SizedBox(
+                //                   width: double.infinity,
+                //                   child: ElevatedButton(
+                //                     onPressed: () async {
+                //                       final DateTime? pickedDate =
+                //                           await showDatePicker(
+                //                         context: context,
+                //                         initialDate: selectedDateTimeSPM,
+                //                         firstDate: DateTime(2020),
+                //                         lastDate: DateTime(2100),
+                //                       );
+                //                       if (pickedDate != null) {
+                //                         selectedDateTimeSPM = DateTime(
+                //                           pickedDate.year,
+                //                           pickedDate.month,
+                //                           pickedDate.day,
+                //                           selectedDateTimeSPM.hour,
+                //                           selectedDateTimeSPM.minute,
+                //                         );
+                //                       }
+                //                       setStateBtn(() {});
+                //                     },
+                //                     child: Text(DateFormat('dd MMM yyyy')
+                //                         .format(selectedDateTimeSPM)),
+                //                   ),
+                //                 ),
+                //               ],
+                //             ),
+                //             const SizedBox(height: 24),
+                //             Column(
+                //               crossAxisAlignment: CrossAxisAlignment.start,
+                //               children: [
+                //                 Text(
+                //                   'Select Time Event Notif Low Pressure',
+                //                   style: getBlackTextStyle(fontSize: 14),
+                //                 ),
+                //                 SizedBox(
+                //                   width: double.infinity,
+                //                   child: ElevatedButton(
+                //                     onPressed: () async {
+                //                       final TimeOfDay? pickedTime =
+                //                           await showTimePicker(
+                //                         context: context,
+                //                         initialTime: TimeOfDay.fromDateTime(
+                //                             selectedDateTimeSPM),
+                //                       );
+                //                       if (pickedTime != null) {
+                //                         selectedDateTimeSPM = DateTime(
+                //                           selectedDateTimeSPM.year,
+                //                           selectedDateTimeSPM.month,
+                //                           selectedDateTimeSPM.day,
+                //                           pickedTime.hour,
+                //                           pickedTime.minute,
+                //                         );
+                //                       }
+                //                       setStateBtn(() {});
+                //                     },
+                //                     child: Text(DateFormat('HH:mm')
+                //                         .format(selectedDateTimeSPM)),
+                //                   ),
+                //                 ),
+                //               ],
+                //             ),
+                //             const SizedBox(height: 10),
+                //             SizedBox(
+                //               width: double.infinity,
+                //               child: ElevatedButton(
+                //                 onPressed: () async {
+                //                   Navigator.pop(context);
+                //                 },
+                //                 style: ElevatedButton.styleFrom(
+                //                   backgroundColor: Colors.green,
+                //                 ),
+                //                 child: Text(
+                //                   'Save',
+                //                   style: getWhiteTextStyle(),
+                //                 ),
+                //               ),
+                //             ),
+                //           ],
+                //         ),
+                //       );
+                //     });
+                //   },
+                // );
+              }
+
               // jika salah satu data pressure ada yang kosong
               bool hasEmptyPressure = position.any((p) => p.pressure.isEmpty);
 
@@ -3108,23 +3356,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
               }
 
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-              if (isProcessing) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Text(
-                      'Please wait a moment before pressing again.',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                );
-                return;
-              }
-
-              setState(() {
-                isProcessing = true;
-              });
 
               try {
                 final today = DateTime.now();
@@ -3181,6 +3412,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
+                    'timeLowPressureSPM': (dataUnit['type'] == 'spm')
+                        ? selectedDateTimeSPM?.toIso8601String()
+                        : '',
                   });
                 } else {
                   final queryYesterdaySnapshot = await FirebaseFirestore
@@ -3251,6 +3485,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         };
                       }),
                       'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
+                      'timeLowPressureSPM': (dataUnit['type'] == 'spm')
+                          ? selectedDateTimeSPM?.toIso8601String()
+                          : '',
                     });
                   }
 
@@ -3287,11 +3524,14 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
+                    'timeLowPressureSPM': (dataUnit['type'] == 'spm')
+                        ? selectedDateTimeSPM?.toIso8601String()
+                        : '',
                   });
 
                   // tambah data ke daily check 3
 
-                  updateDailyPressure3(dataUnit, idSite);
+                  // updateDailyPressure3(dataUnit, idSite);
                 }
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     backgroundColor: green00968A,
@@ -3301,12 +3541,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     )));
               } catch (e) {
                 print('error bmb : $e');
-              } finally {
-                await Future.delayed(
-                    Duration(seconds: 3)); // Jeda waktu 3 detik
-                setState(() {
-                  isProcessing = false;
-                });
               }
             },
             style: ElevatedButton.styleFrom(
