@@ -59,8 +59,8 @@ class _JobcardFormPageState extends State<JobcardFormPage>
           unselectedLabelColor: Colors.white70,
           indicatorColor: white,
           tabs: const [
-            Tab(text: 'Tire Detail'),
             Tab(text: 'Process Repair'),
+            Tab(text: 'Tire Detail'),
           ],
         ),
       ),
@@ -68,11 +68,11 @@ class _JobcardFormPageState extends State<JobcardFormPage>
         child: TabBarView(
           controller: _tabController,
           children: [
-            TireDetail(tireDetail: tireDetail, wo: wo, woDate: woDate),
             ProcessRepair(
               tireDetail: tireDetail,
               processRepairCountBefore: processRepairCountBefore,
             ),
+            TireDetail(tireDetail: tireDetail, wo: wo, woDate: woDate),
           ],
         ),
       ),
@@ -111,6 +111,21 @@ class _ProcessRepairState extends State<ProcessRepair> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   DateTime? selectedDate;
+
+  List<String> dimensiLuka = [];
+
+  void addDimensiLuka() {
+    String dimensi =
+        'L${LController.text},W${WController.text},P${PController.text},T${TController.text}';
+
+    dimensiLuka.add(dimensi);
+
+    // Kosongkan input setelah ditambahkan
+    LController.clear();
+    WController.clear();
+    PController.clear();
+    TController.clear();
+  }
 
   @override
   void initState() {
@@ -238,155 +253,36 @@ class _ProcessRepairState extends State<ProcessRepair> {
         if (existingJob == 'Dimensi Luka')
           Column(
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const FormTitle(title: 'L'),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: LController,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              contentPadding: EdgeInsets.only(left: 20),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 6,
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const FormTitle(title: 'W'),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: WController,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              contentPadding: EdgeInsets.only(left: 20),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 6,
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const FormTitle(title: 'P'),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: PController,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              contentPadding: EdgeInsets.only(left: 20),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 6,
-                  ),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        const FormTitle(title: 'T'),
-                        const SizedBox(
-                          height: 12,
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 5,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: TController,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              contentPadding: EdgeInsets.only(left: 20),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              const SizedBox(
+                height: 12,
               ),
+              DimensiLukaWidget(
+                  LController: LController,
+                  WController: WController,
+                  PController: PController,
+                  TController: TController),
+              const SizedBox(
+                height: 12,
+              ),
+              ButtonWidget(
+                  name: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.add,
+                        color: white,
+                      ),
+                      const SizedBox(
+                        width: 6,
+                      ),
+                      Text(
+                        'Add Dimensi Luka',
+                        style: getWhiteTextStyle(),
+                      ),
+                    ],
+                  ),
+                  color: green00968A,
+                  function: () {}),
               const SizedBox(
                 height: 12,
               ),
@@ -395,6 +291,8 @@ class _ProcessRepairState extends State<ProcessRepair> {
         else
           Container(),
         if (existingJob != 'Install Patch' &&
+            existingJob != 'Skiving' &&
+            existingJob != 'Buffing' &&
             existingJob != 'Painting' &&
             existingJob != 'Dimensi Luka')
           Column(
@@ -703,6 +601,9 @@ class _ProcessRepairState extends State<ProcessRepair> {
           children: [
             Column(
               children: [
+                const SizedBox(
+                  height: 12,
+                ),
                 const FormTitle(title: 'Hours'),
                 const SizedBox(
                   height: 12,
@@ -860,6 +761,24 @@ class _ProcessRepairState extends State<ProcessRepair> {
                   .where('id', isEqualTo: widget.tireDetail['id'])
                   .get();
 
+              print(
+                  'process repair count before : ${widget.processRepairCountBefore}');
+              print(
+                  'process repair count : ${oldData.docs.first['process_repair_count']}');
+
+              if (hoursController.text.isEmpty &&
+                  minutesController.text.isEmpty) {
+                hoursController.text = '0';
+                minutesController.text = '1';
+              }
+
+              // int processRepairCount;
+
+              // if (widget.processRepairCountBefore != '') {
+              //   processRepairCount = int.parse(widget.processRepairCountBefore);
+              // } else {
+              //   processRepairCount = oldData.docs.first['process_repair_count'];
+              // }
               final processRepairCount =
                   oldData.docs.first['process_repair_count'];
 
@@ -891,7 +810,8 @@ class _ProcessRepairState extends State<ProcessRepair> {
 
               // Simpan ke Firestore
               await oldData.docs[0].reference.update({
-                'jobcard': FieldValue.arrayUnion([jobcardData]),
+                'jobcard$processRepairCount':
+                    FieldValue.arrayUnion([jobcardData]),
               });
 
               context
@@ -917,6 +837,174 @@ class _ProcessRepairState extends State<ProcessRepair> {
               // });
             })
       ]),
+    );
+  }
+}
+
+class DimensiLukaWidget extends StatelessWidget {
+  const DimensiLukaWidget({
+    super.key,
+    required this.LController,
+    required this.WController,
+    required this.PController,
+    required this.TController,
+  });
+
+  final TextEditingController LController;
+  final TextEditingController WController;
+  final TextEditingController PController;
+  final TextEditingController TController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            children: [
+              const FormTitle(title: 'L'),
+              const SizedBox(
+                height: 12,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: LController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    contentPadding: EdgeInsets.only(left: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(
+          width: 6,
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              const FormTitle(title: 'W'),
+              const SizedBox(
+                height: 12,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: WController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    contentPadding: EdgeInsets.only(left: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(
+          width: 6,
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              const FormTitle(title: 'P'),
+              const SizedBox(
+                height: 12,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: PController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    contentPadding: EdgeInsets.only(left: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(
+          width: 6,
+        ),
+        Expanded(
+          child: Column(
+            children: [
+              const FormTitle(title: 'T'),
+              const SizedBox(
+                height: 12,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: TController,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    contentPadding: EdgeInsets.only(left: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

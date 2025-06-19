@@ -141,6 +141,7 @@ class _WaitingWOState extends State<WaitingWO> {
 
     return PaginateFirestore(
         query: firestore.collection(FirestoreKey.tireRepairInspectionReport),
+        // .orderBy('created_at', descending: true),
         itemBuilderType: PaginateBuilderType.listView,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -535,7 +536,7 @@ class _JobcardCardState extends State<JobcardCard> {
                           function: () async {
                             final oldData = await firestore
                                 .collection(
-                                    'tire_repair_inspection_report_trial')
+                                    FirestoreKey.tireRepairInspectionReport)
                                 .where('id', isEqualTo: widget.data['id'])
                                 .get();
 
@@ -626,9 +627,8 @@ class ItemJob extends StatelessWidget {
 
     String processRepairCount = '';
     int indexCount = cardIndex + 1;
-    if (indexCount != 1) {
-      processRepairCount = '$indexCount';
-    }
+    processRepairCount = '$indexCount';
+
     print('process : ${processRepairCount}');
 
     if (data['jobcard$processRepairCount'].isEmpty) {
@@ -703,7 +703,8 @@ class ItemJob extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           if (jobcardItem != null &&
-                              jobcardItem['hours'] == '0')
+                              jobcardItem['hours'] == '0' &&
+                              jobcardItem['minutes'] == '0')
                             Text(
                               jobName[index],
                               style: getBlackTextStyle().copyWith(
@@ -768,8 +769,8 @@ class ItemJob extends StatelessWidget {
                                           ElevatedButton(
                                             onPressed: () async {
                                               final oldData = await firestore
-                                                  .collection(
-                                                      'tire_repair_inspection_report_trial')
+                                                  .collection(FirestoreKey
+                                                      .tireRepairInspectionReport)
                                                   .where('id',
                                                       isEqualTo: data['id'])
                                                   .get();

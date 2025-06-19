@@ -5,7 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="0613cd96-f692-4dca-9b08-5b19c53a1d94" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/camos.iml" beforeDir="false" afterPath="$PROJECT_DIR$/camos.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/utils/data/jobcard_repair.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/data/jobcard_repair.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/utils/firebase_key/firebase_key.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/utils/firebase_key/firebase_key.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/tire_repair_form/jobcard_repair/jobcard_form_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/tire_repair_form/jobcard_repair/jobcard_form_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/tire_repair_form/jobcard_repair/list_jobcard_repair_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/tire_repair_form/jobcard_repair/list_jobcard_repair_page.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_form_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_form_page.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,9 +35,9 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 0
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
   <component name="ProjectId" id="2oQ7oWzjRUf7BLPSBCRfxQOtPpN" />
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1" />
@@ -59,7 +63,8 @@
     "last_opened_file_path": "D:/Software_Engineer_Projects/Flutter/camos",
     "project.structure.last.edited": "SDKs",
     "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0"
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.pluginManager"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />

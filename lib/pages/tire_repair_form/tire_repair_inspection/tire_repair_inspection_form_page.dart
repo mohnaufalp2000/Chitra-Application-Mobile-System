@@ -11,6 +11,7 @@ import 'package:camos/core/utils/firebase_key/firebase_key.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/text_button_widget.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection_old/tire_repair_inspection_old_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -39,6 +40,7 @@ class _TireRepairInspectionFormPageState
   FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
   String _selectedButton = '';
+  String? selectedConstructionType;
 
   String? id = '';
 
@@ -585,6 +587,7 @@ class _TireRepairInspectionFormPageState
                         ),
                       ),
                       const SizedBox(height: 10),
+
                       Container(
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey),
@@ -599,16 +602,56 @@ class _TireRepairInspectionFormPageState
                             ),
                           ],
                         ),
-                        child: TextField(
-                          controller: typeConstCtrl,
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16), // agar dropdown tidak mepet
+                        child: DropdownButtonFormField<String>(
+                          value: selectedConstructionType,
+                          items: ['RADIAL', 'BIAS'].map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            selectedConstructionType = value;
+                            // setState(() {}); // jika di StatefulWidget
+                          },
                           decoration: InputDecoration(
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(30),
+                              borderSide:
+                                  BorderSide.none, // hilangkan border bawaan
                             ),
-                            contentPadding: EdgeInsets.only(left: 20),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 16),
                           ),
+                          dropdownColor: Colors.white,
                         ),
                       ),
+                      // Container(
+                      //   decoration: BoxDecoration(
+                      //     border: Border.all(color: Colors.grey),
+                      //     color: Colors.white,
+                      //     borderRadius: BorderRadius.circular(30),
+                      //     boxShadow: [
+                      //       BoxShadow(
+                      //         color: Colors.grey.withOpacity(0.5),
+                      //         spreadRadius: 2,
+                      //         blurRadius: 5,
+                      //         offset: Offset(0, 3),
+                      //       ),
+                      //     ],
+                      //   ),
+                      //   child: TextField(
+                      //     controller: typeConstCtrl,
+                      //     decoration: InputDecoration(
+                      //       border: OutlineInputBorder(
+                      //         borderRadius: BorderRadius.circular(30),
+                      //       ),
+                      //       contentPadding: EdgeInsets.only(left: 20),
+                      //     ),
+                      //   ),
+                      // ),
                       const SizedBox(height: 20.0),
                       Align(
                         alignment: Alignment.topLeft,
@@ -825,14 +868,14 @@ class _TireRepairInspectionFormPageState
                             SizedBox(
                                 height:
                                     4), // Jarak antara teks utama dan subteks
-                            Text(
-                              'Can input later',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 14,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
+                            // Text(
+                            //   'Can input later',
+                            //   style: TextStyle(
+                            //     color: Colors.grey,
+                            //     fontSize: 14,
+                            //     fontStyle: FontStyle.italic,
+                            //   ),
+                            // ),
                           ],
                         ),
                       ),
@@ -1353,7 +1396,7 @@ class _TireRepairInspectionFormPageState
                                   'date_received':
                                       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
                                   'is_inspected': 1,
-                                  'jobcard': [],
+                                  'jobcard1': [],
                                   'status': statusCtrl.text,
                                   'no_cargo_manifest': cargoManifestCtrl.text,
                                   'rtd1': rtd1Ctrl.text,
@@ -1557,12 +1600,12 @@ class _TireRepairInspectionFormPageState
                                   .doc(DateTime.now().toIso8601String())
                                   .set(reportData);
 
-                              await ApiService.postNewTireRepair(reportData);
+                              // await ApiService.postNewTireRepair(reportData);
 
                               Navigator.pop(context);
                               Navigator.pop(context);
-                              Navigator.pushReplacementNamed(
-                                  context, TireRepairInspectionPage.routeName);
+                              Navigator.pushReplacementNamed(context,
+                                  TireRepairInspectionOldPage.routeName);
                             }
 
                             // await firestore

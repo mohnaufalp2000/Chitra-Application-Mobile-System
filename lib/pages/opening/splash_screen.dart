@@ -103,7 +103,7 @@ class _SplashScreenState extends State<SplashScreen> {
         Map<String, dynamic>? arguments = {};
 
         if (isCTS == '0' || isCTS == null) {
-          if (userIdSite == '1') {
+          if (userIdSite == '1' || userIdSite == '15') {
             targetRoute = HomePage.routeName;
           } else {
             targetRoute = HomePageTrial.routeName;

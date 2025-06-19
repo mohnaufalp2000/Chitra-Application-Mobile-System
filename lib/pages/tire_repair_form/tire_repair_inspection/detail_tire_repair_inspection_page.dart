@@ -7,7 +7,7 @@ import 'package:camos/core/utils/firebase_key/firebase_key.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_form_page.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
+// import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_pdf_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -181,10 +181,10 @@ class _DetailTireRepairInspectionState extends State<DetailTireRepairInspection>
                                                         .delete(); // Menghapus dokumen
                                                   }
 
-                                                  Navigator.pushReplacementNamed(
-                                                      context,
-                                                      TireRepairInspectionPage
-                                                          .routeName);
+                                                  // Navigator.pushReplacementNamed(
+                                                  //     context,
+                                                  //     TireRepairInspectionPage
+                                                  //         .routeName);
                                                 } catch (e) {}
                                               },
                                               child: Text(

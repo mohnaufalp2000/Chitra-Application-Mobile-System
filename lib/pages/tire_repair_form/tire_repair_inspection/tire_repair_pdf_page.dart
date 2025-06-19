@@ -702,7 +702,7 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           backgroundColor: green00968A,
           content: Text(
-            'Successfull Save Data!',
+            'Successfull Save Data! Please Check Internal Storage/Download ',
             style: getWhiteTextStyle(),
           )));
     }

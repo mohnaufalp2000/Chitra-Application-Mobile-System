@@ -46,6 +46,7 @@ import 'package:camos/pages/tire_repair_form/tire_repair_inspection/detail_tire_
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_form_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_pdf_page.dart';
+import 'package:camos/pages/tire_repair_form/tire_repair_inspection_old/tire_repair_inspection_old_page.dart';
 import 'package:camos/pages/tkph_calculator/result_tkph_page.dart';
 import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
@@ -115,4 +116,7 @@ var routes = {
   JobcardFinishPage.routeName: (context) => const JobcardFinishPage(),
   HistoryJobcardRepairPage.routeName: (context) =>
       const HistoryJobcardRepairPage(),
+
+  TireRepairInspectionOldPage.routeName: (context) =>
+      const TireRepairInspectionOldPage(),
 };

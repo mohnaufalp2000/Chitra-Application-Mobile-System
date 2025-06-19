@@ -368,6 +368,11 @@ class _LoginPageState extends State<LoginPage> {
                             // user tidak beli CTS
                             log('isCTS : $isCTS');
                             if (isCTS == '0' || isCTS == null) {
+                              if (userIdSite == '15') {
+                                Navigator.pushReplacementNamed(
+                                    context, HomePage.routeName);
+                                return;
+                              }
                               String targetRoute = (userIdSite == '1')
                                   ? HomePage.routeName
                                   : HomePageTrial.routeName;
