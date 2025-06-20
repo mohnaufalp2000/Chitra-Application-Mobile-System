@@ -140,8 +140,9 @@ class _WaitingWOState extends State<WaitingWO> {
     print('id wo list : ${idWoList}');
 
     return PaginateFirestore(
-        query: firestore.collection(FirestoreKey.tireRepairInspectionReport),
-        // .orderBy('created_at', descending: true),
+        query: firestore
+            .collection(FirestoreKey.tireRepairInspectionReport)
+            .orderBy('created_at', descending: true),
         itemBuilderType: PaginateBuilderType.listView,
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),

@@ -15,33 +15,33 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
     on<GetListSpmEvent>((event, emit) async {
       emit(SpmLoadingState());
-      // List<Site> allSites = await ApiService.getCachedAllSites();
+      List<Site> allSites = await ApiService.getCachedAllSites();
 
-      // if (allSites.isEmpty || allSites == null) {
-      //   allSites = await ApiService.getAllSite();
-      // }
+      if (allSites.isEmpty || allSites == null) {
+        allSites = await ApiService.getAllSite();
+      }
 
-      // final idCompany = allSites
-      //     .firstWhere((site) => site.idSite == event.idSite,
-      //         orElse: () => Site(idSite: '', idCompany: ''))
-      //     .idCompany;
+      final idCompany = allSites
+          .firstWhere((site) => site.idSite == event.idSite,
+              orElse: () => Site(idSite: '', idCompany: ''))
+          .idCompany;
 
-      // if (idCompany!.isEmpty) {
-      //   emit(SpmLoadedState(listSpm: [], isShowMore: []));
-      //   return;
-      // }
+      if (idCompany!.isEmpty) {
+        emit(SpmLoadedState(listSpm: [], isShowMore: []));
+        return;
+      }
 
-      // final responseQuery = await firestore
-      //     .collection('url_spm')
-      //     .where('id_company', isEqualTo: idCompany)
-      //     .get();
+      final responseQuery = await firestore
+          .collection('url_spm')
+          .where('id_company', isEqualTo: idCompany)
+          .get();
 
-      // final response = responseQuery.docs.first.data()['url'];
+      final response = responseQuery.docs.first.data()['url'];
 
-      // final apiListSpm = await ApiService.getApiSpm(event.idSite, response);
+      final apiListSpm = await ApiService.getApiSpm(event.idSite, response);
 
-      final apiListSpm = await ApiService.getApiSpm(event.idSite,
-          'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=get_tpms&idsite=');
+      // final apiListSpm = await ApiService.getApiSpm(event.idSite,
+      //     'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=get_tpms&idsite=');
       List<Spm> actualList = apiListSpm;
 
       List<Spm> list =

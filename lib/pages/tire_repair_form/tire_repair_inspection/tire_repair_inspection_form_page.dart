@@ -40,7 +40,7 @@ class _TireRepairInspectionFormPageState
   FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
   String _selectedButton = '';
-  String? selectedConstructionType;
+  String selectedConstructionType = 'RADIAL';
 
   String? id = '';
 
@@ -613,7 +613,7 @@ class _TireRepairInspectionFormPageState
                             );
                           }).toList(),
                           onChanged: (value) {
-                            selectedConstructionType = value;
+                            selectedConstructionType = value ?? '';
                             // setState(() {}); // jika di StatefulWidget
                           },
                           decoration: InputDecoration(
@@ -1397,7 +1397,8 @@ class _TireRepairInspectionFormPageState
                                       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
                                   'is_inspected': 1,
                                   'jobcard1': [],
-                                  'status': statusCtrl.text,
+                                  // 'status': statusCtrl.text,
+                                  'status': selectedStatus,
                                   'no_cargo_manifest': cargoManifestCtrl.text,
                                   'rtd1': rtd1Ctrl.text,
                                   'rtd2': rtd2Ctrl.text,
@@ -1440,6 +1441,8 @@ class _TireRepairInspectionFormPageState
                                       FieldValue.arrayUnion(chafferPicFirebase);
                                 }
 
+                                log('update data : $updateData');
+
                                 await firestore
                                     .collection(
                                         FirestoreKey.tireRepairInspectionReport)
@@ -1447,12 +1450,25 @@ class _TireRepairInspectionFormPageState
                                         docId) // Gunakan ID dokumen yang ingin diperbarui
                                     .update(updateData);
 
-                                await ApiService.editNewTireRepair(updateData);
+                                // agar data bisa ke post
+                                updateData.remove('jobcard1');
+                                updateData.remove('sn_pic');
+                                updateData.remove('sidewall_pic');
+                                updateData.remove('shoulder_pic');
+                                updateData.remove('threat_pic');
+                                updateData.remove('bead_pic');
+                                updateData.remove('inner_linner_pic');
+                                updateData.remove('chaffer_pic');
+
+                                // JANGAN LUPA UNCOMMENT
+                                // await ApiService.editNewTireRepair(updateData);
 
                                 Navigator.pop(context);
                                 Navigator.pop(context);
+                                // Navigator.pushReplacementNamed(context,
+                                //     TireRepairInspectionPage.routeName);
                                 Navigator.pushReplacementNamed(context,
-                                    TireRepairInspectionPage.routeName);
+                                    TireRepairInspectionOldPage.routeName);
                               }
                             } else {
                               log('id : kosong');
@@ -1593,6 +1609,9 @@ class _TireRepairInspectionFormPageState
                                   : 0;
 
                               reportData['is_inspected'] = isInspected;
+                              if (isInspected == 1) {
+                                reportData['jobcard1'] = [];
+                              }
 
                               await firestore
                                   .collection(
@@ -1600,10 +1619,23 @@ class _TireRepairInspectionFormPageState
                                   .doc(DateTime.now().toIso8601String())
                                   .set(reportData);
 
+                              // agar data bisa ke post
+                              reportData.remove('jobcard1');
+                              reportData.remove('sn_pic');
+                              reportData.remove('sidewall_pic');
+                              reportData.remove('shoulder_pic');
+                              reportData.remove('threat_pic');
+                              reportData.remove('bead_pic');
+                              reportData.remove('inner_linner_pic');
+                              reportData.remove('chaffer_pic');
+
+                              // JANGAN LUPA UNCOMMENT
                               // await ApiService.postNewTireRepair(reportData);
 
                               Navigator.pop(context);
                               Navigator.pop(context);
+                              // Navigator.pushReplacementNamed(
+                              //     context, TireRepairInspectionPage.routeName);
                               Navigator.pushReplacementNamed(context,
                                   TireRepairInspectionOldPage.routeName);
                             }

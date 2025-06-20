@@ -31,6 +31,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
   int selectedIndex = 1;
   List<String> status = ['REPAIR', 'RETREAD', 'REJECT'];
   List<String> statusTire = ['Inspected', 'Not Inspected'];
+  String selectedStatus = 'REPAIR';
 
   final double containerWidthFactor = 0.8;
   void initState() {
@@ -130,6 +131,37 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                         ),
                       ),
                       const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Select Status',
+                              style: getBlackTextStyle(
+                                fontSize: 12,
+                              ),
+                            ),
+                            DropdownButton<String>(
+                              value: selectedStatus,
+                              isExpanded: true,
+                              items: status.map((stat) {
+                                return DropdownMenuItem<String>(
+                                  value: stat,
+                                  child: Text(stat),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                setState(() {
+                                  selectedStatus = newValue!;
+                                  print('select status : $selectedStatus');
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       PaginateFirestore(
                         key: ValueKey(selectedIndex),
                         query: selectedIndex == 1
@@ -165,6 +197,11 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                               !data['sn']!
                                   .toUpperCase()
                                   .contains(searchQuery)) {
+                            return Container();
+                          }
+
+                          // filter status tire
+                          if (!data['status'].contains(selectedStatus)) {
                             return Container();
                           }
 
@@ -219,8 +256,8 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                               Container(
                                                 width: 170,
                                                 child: Text(
-                                                    '${data['customer']}',
-                                                    style: getBlackTextStyle(
+                                                    '${data['customer']} site : ${data['site']}',
+                                                    style: getWhiteTextStyle(
                                                         fontSize: 16,
                                                         fontWeight:
                                                             FontWeight.w700)),
@@ -307,7 +344,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                               Container(
                                                 width: 170,
                                                 child: Text(
-                                                    '${data['customer']}',
+                                                    '${data['customer']} site : ${data['site']}',
                                                     style: getWhiteTextStyle(
                                                         fontSize: 16,
                                                         fontWeight:

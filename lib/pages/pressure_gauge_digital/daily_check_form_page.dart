@@ -533,6 +533,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
   @override
   void dispose() {
+    pressureCtrl.dispose();
+    damageCtrl.dispose();
+    hmCtrl.dispose();
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     super.dispose();
@@ -1075,8 +1078,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                     if (pressureCtrl
                                                                             .text !=
                                                                         '') {
-                                                                      // position[posIndex]['adjusmentPressure'] =
-                                                                      //     pressureCtrl.text;
                                                                       position[
                                                                           posIndex] = position[
                                                                               posIndex]
@@ -1646,6 +1647,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           pit.add('Utara');
                           pit.add('Serongga');
                           pit.add('WS');
+                          break;
+                        case '166':
+                          pit.add('WS');
+                          pit.add('Pondok Operator');
+                          pit.add('Pit Stop Toll');
                           break;
                       }
                       if (dataUnit['position'] != null) {

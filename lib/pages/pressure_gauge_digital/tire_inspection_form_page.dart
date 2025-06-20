@@ -1073,6 +1073,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         pit.add('Serongga');
         pit.add('WS');
         break;
+      case '166':
+        pit.add('WS');
+        pit.add('Pondok Operator');
+        pit.add('Pit Stop Toll');
+        break;
     }
     print('dipanggil (pgd)');
     dataUnit =

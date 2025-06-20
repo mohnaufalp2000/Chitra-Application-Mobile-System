@@ -173,6 +173,12 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
         pit.add('Serongga');
         pit.add('WS');
         break;
+      case '166':
+        pit.add('All');
+        pit.add('WS');
+        pit.add('Pondok Operator');
+        pit.add('Pit Stop Toll');
+        break;
     }
 
     return Scaffold(

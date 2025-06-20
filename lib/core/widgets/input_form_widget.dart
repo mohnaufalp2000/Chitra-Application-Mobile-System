@@ -49,7 +49,7 @@ class _InputFormWidgetState extends State<InputFormWidget> {
   @override
   void dispose() {
     widget.controller.clear();
-    widget.controller.dispose();
+    // widget.controller.dispose();
     super.dispose();
   }
 

@@ -104,34 +104,33 @@ class _ProcessRepairState extends State<ProcessRepair> {
   final TextEditingController minutesController = TextEditingController();
   final TextEditingController repairmanController = TextEditingController();
 
-  final TextEditingController LController = TextEditingController();
-  final TextEditingController WController = TextEditingController();
-  final TextEditingController PController = TextEditingController();
-  final TextEditingController TController = TextEditingController();
+  // final TextEditingController LController = TextEditingController();
+  // final TextEditingController WController = TextEditingController();
+  // final TextEditingController PController = TextEditingController();
+  // final TextEditingController TController = TextEditingController();
+  List<TextEditingController> LController = [];
+  List<TextEditingController> WController = [];
+  List<TextEditingController> PController = [];
+  List<TextEditingController> TController = [];
   FirebaseFirestore firestore = FirebaseFirestore.instance;
 
   DateTime? selectedDate;
 
-  List<String> dimensiLuka = [];
-
-  void addDimensiLuka() {
-    String dimensi =
-        'L${LController.text},W${WController.text},P${PController.text},T${TController.text}';
-
-    dimensiLuka.add(dimensi);
-
-    // Kosongkan input setelah ditambahkan
-    LController.clear();
-    WController.clear();
-    PController.clear();
-    TController.clear();
-  }
+  int dimensiLukaMax = 5;
+  int visibleItemCountDimensi = 1;
 
   @override
   void initState() {
     super.initState();
     context.read<ProcessJobcardBloc>().add(FetchMaterialListEvent());
     injuriesController.text = widget.tireDetail['remarks'];
+
+    for (int i = 0; i < dimensiLukaMax; i++) {
+      LController.add(TextEditingController());
+      WController.add(TextEditingController());
+      PController.add(TextEditingController());
+      TController.add(TextEditingController());
+    }
 
     if (widget
         .tireDetail['jobcard${widget.processRepairCountBefore}'].isEmpty) {
@@ -256,33 +255,43 @@ class _ProcessRepairState extends State<ProcessRepair> {
               const SizedBox(
                 height: 12,
               ),
-              DimensiLukaWidget(
-                  LController: LController,
-                  WController: WController,
-                  PController: PController,
-                  TController: TController),
-              const SizedBox(
-                height: 12,
-              ),
-              ButtonWidget(
-                  name: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.add,
-                        color: white,
-                      ),
-                      const SizedBox(
-                        width: 6,
-                      ),
-                      Text(
-                        'Add Dimensi Luka',
-                        style: getWhiteTextStyle(),
-                      ),
-                    ],
+              ...List.generate(dimensiLukaMax, (index) {
+                if (index >= visibleItemCountDimensi) return const SizedBox();
+                return Column(
+                  children: [
+                    DimensiLukaWidget(
+                      index: index,
+                      LController: LController[index],
+                      WController: WController[index],
+                      PController: PController[index],
+                      TController: TController[index],
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                );
+              }),
+
+              // Tombol Show More
+              if (visibleItemCountDimensi < dimensiLukaMax)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: green00968A,
                   ),
-                  color: green00968A,
-                  function: () {}),
+                  onPressed: () {
+                    setState(() {
+                      visibleItemCountDimensi++;
+                    });
+                  },
+                  child: Text(
+                    'Add More',
+                    style: getWhiteTextStyle(),
+                  ),
+                )
+              else
+                Text(
+                  'Semua dimensi luka sudah ditampilkan',
+                  style: getWhiteTextStyle(),
+                ),
               const SizedBox(
                 height: 12,
               ),
@@ -366,6 +375,9 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                   ),
                                                   IconButton(
                                                       onPressed: () {
+                                                        selectedMaterials
+                                                            .clear();
+                                                        setState(() {});
                                                         Navigator.pop(context);
                                                       },
                                                       icon: Icon(Icons.close))
@@ -414,48 +426,57 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                                 const EdgeInsets
                                                                     .only(
                                                                     top: 8.0),
-                                                            child:
-                                                                TextFormField(
-                                                              initialValue:
-                                                                  currentQty,
-                                                              keyboardType:
-                                                                  TextInputType
-                                                                      .number,
-                                                              decoration:
-                                                                  const InputDecoration(
-                                                                labelText:
-                                                                    'Qty',
-                                                                border:
-                                                                    OutlineInputBorder(),
-                                                                contentPadding:
-                                                                    EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            12),
-                                                              ),
-                                                              onChanged:
-                                                                  (value) {
-                                                                setModalState(
-                                                                    () {
-                                                                  final index =
-                                                                      selectedMaterials
-                                                                          .indexWhere(
-                                                                    (element) =>
-                                                                        element['id_matstock'] ==
-                                                                            material
-                                                                                .idMatstock &&
-                                                                        element['name'] ==
-                                                                            material.materialName,
-                                                                  );
-                                                                  if (index !=
-                                                                      -1) {
-                                                                    selectedMaterials[
-                                                                            index]
-                                                                        [
-                                                                        'qty'] = value;
-                                                                  }
-                                                                });
-                                                                setState(() {});
-                                                              },
+                                                            child: Row(
+                                                              children: [
+                                                                SizedBox(
+                                                                  width: 120,
+                                                                  child:
+                                                                      TextFormField(
+                                                                    initialValue:
+                                                                        currentQty,
+                                                                    keyboardType:
+                                                                        TextInputType
+                                                                            .number,
+                                                                    decoration:
+                                                                        const InputDecoration(
+                                                                      labelText:
+                                                                          'Qty',
+                                                                      border:
+                                                                          OutlineInputBorder(),
+                                                                      contentPadding:
+                                                                          EdgeInsets.symmetric(
+                                                                              horizontal: 12),
+                                                                    ),
+                                                                    onChanged:
+                                                                        (value) {
+                                                                      setModalState(
+                                                                          () {
+                                                                        final index =
+                                                                            selectedMaterials.indexWhere(
+                                                                          (element) =>
+                                                                              element['id_matstock'] == material.idMatstock &&
+                                                                              element['name'] == material.materialName,
+                                                                        );
+                                                                        if (index !=
+                                                                            -1) {
+                                                                          selectedMaterials[index]['qty'] =
+                                                                              value;
+                                                                        }
+                                                                      });
+                                                                      setState(
+                                                                          () {});
+                                                                    },
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  width: 12,
+                                                                ),
+                                                                // Text(
+                                                                //   '${material.smu.name}',
+                                                                //   style:
+                                                                //       getBlackTextStyle(),
+                                                                // )
+                                                              ],
                                                             ),
                                                           ),
                                                         const Divider(
@@ -790,6 +811,24 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 });
               }
 
+              String dimensiString =
+                  List.generate(visibleItemCountDimensi, (index) {
+                final l = LController[index].text.trim();
+                final w = WController[index].text.trim();
+                final p = PController[index].text.trim();
+                final t = TController[index].text.trim();
+
+                // Cek kalau semua field tidak kosong
+                if (l.isNotEmpty &&
+                    w.isNotEmpty &&
+                    p.isNotEmpty &&
+                    t.isNotEmpty) {
+                  return 'L$l,W$w,P$p,T$t';
+                } else {
+                  return ''; // kosong → akan dihapus di filter
+                }
+              }).where((e) => e.isNotEmpty).join(' ');
+
               final jobcardData = {
                 'name': existingJob,
                 'fulldate': selectedDate?.toIso8601String(),
@@ -801,8 +840,9 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 'remarks': injuriesController.text,
                 'process_repair_count': processRepairCount,
                 'id_wo': widget.tireDetail['id'],
-                'dimensi':
-                    'L${LController.text},W${WController.text},P${PController.text},T${TController.text}',
+                // 'dimensi':
+                //     'L${LController.text},W${WController.text},P${PController.text},T${TController.text}',
+                'dimensi': dimensiString,
                 'created_at': DateTime.now().toIso8601String(),
               };
 
@@ -848,12 +888,14 @@ class DimensiLukaWidget extends StatelessWidget {
     required this.WController,
     required this.PController,
     required this.TController,
+    required this.index,
   });
 
   final TextEditingController LController;
   final TextEditingController WController;
   final TextEditingController PController;
   final TextEditingController TController;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
@@ -862,7 +904,7 @@ class DimensiLukaWidget extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              const FormTitle(title: 'L'),
+              if (index == 0) FormTitle(title: 'L') else Container(),
               const SizedBox(
                 height: 12,
               ),
@@ -899,7 +941,7 @@ class DimensiLukaWidget extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              const FormTitle(title: 'W'),
+              if (index == 0) FormTitle(title: 'W') else Container(),
               const SizedBox(
                 height: 12,
               ),
@@ -936,7 +978,7 @@ class DimensiLukaWidget extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              const FormTitle(title: 'P'),
+              if (index == 0) FormTitle(title: 'P') else Container(),
               const SizedBox(
                 height: 12,
               ),
@@ -973,7 +1015,7 @@ class DimensiLukaWidget extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              const FormTitle(title: 'T'),
+              if (index == 0) FormTitle(title: 'T') else Container(),
               const SizedBox(
                 height: 12,
               ),
