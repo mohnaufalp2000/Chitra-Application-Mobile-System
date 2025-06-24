@@ -713,130 +713,147 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
     return Scaffold(
       appBar: appBarWidget('Choose Image', context),
       body: SafeArea(
-        child: ListView(
-          children: categorizedImages.entries.map((entry) {
-            final category = entry.key;
-            final images = entry.value;
-
-            return Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300], // warna background
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(category,
-                        style: getBlackTextStyle(
-                          fontWeight: w700,
-                        )),
-                  ),
-                  const SizedBox(height: 8),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: images.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2, // Gambar lebih besar (2 per baris)
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                    ),
-                    itemBuilder: (context, index) {
-                      final imagePath = images[index];
-
-                      return Stack(
-                        children: [
-                          GestureDetector(
-                            onTap: () =>
-                                toggleImageSelection(imagePath, category),
-                            child: Transform.rotate(
-                              angle: imageRotations[imagePath] ?? 0.0,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: selectedImages.contains(imagePath)
-                                        ? Colors.green
-                                        : Colors.grey,
-                                    width: 2,
-                                  ),
-                                ),
-                                child: ClipRRect(
-                                  child: Transform.scale(
-                                    scale: 1.0,
-                                    child: Image.network(
-                                      imagePath,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: 160,
-                                      errorBuilder: (_, __, ___) =>
-                                          const Icon(Icons.broken_image),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: Checkbox(
-                              value: selectedImages.contains(imagePath),
-                              onChanged: (_) =>
-                                  toggleImageSelection(imagePath, category),
-                              side: const BorderSide(
-                                  color: Colors.white, width: 2),
-                              checkColor: Colors.white,
-                              fillColor:
-                                  MaterialStateProperty.resolveWith<Color>(
-                                      (states) {
-                                if (states.contains(MaterialState.selected)) {
-                                  return Colors.green;
-                                }
-                                return Colors.transparent;
-                              }),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 4,
-                            right: 4,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(
-                                    0.6), // Latar belakang gelap semi transparan
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: IconButton(
-                                icon: Row(
-                                  children: [
-                                    Text(
-                                      'Rotate',
-                                      style: getWhiteTextStyle(),
-                                    ),
-                                    const SizedBox(
-                                      width: 6,
-                                    ),
-                                    const Icon(Icons.rotate_right,
-                                        color: Colors.white, size: 28),
-                                  ],
-                                ),
-                                onPressed: () => rotateImage(imagePath),
-                                tooltip: 'Rotate',
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Text(
+                '*Pilih Max. 1 Foto SN dan Max. 3 Foto Luka',
+                style: getRedTextStyle(),
               ),
-            );
-          }).toList(),
+              const SizedBox(
+                height: 12,
+              ),
+              ListView(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                children: categorizedImages.entries.map((entry) {
+                  final category = entry.key;
+                  final images = entry.value;
+
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300], // warna background
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(category,
+                              style: getBlackTextStyle(
+                                fontWeight: w700,
+                              )),
+                        ),
+                        const SizedBox(height: 8),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: images.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount:
+                                2, // Gambar lebih besar (2 per baris)
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                          ),
+                          itemBuilder: (context, index) {
+                            final imagePath = images[index];
+
+                            return Stack(
+                              children: [
+                                GestureDetector(
+                                  onTap: () =>
+                                      toggleImageSelection(imagePath, category),
+                                  child: Transform.rotate(
+                                    angle: imageRotations[imagePath] ?? 0.0,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color:
+                                              selectedImages.contains(imagePath)
+                                                  ? Colors.green
+                                                  : Colors.grey,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: ClipRRect(
+                                        child: Transform.scale(
+                                          scale: 1.0,
+                                          child: Image.network(
+                                            imagePath,
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            height: 160,
+                                            errorBuilder: (_, __, ___) =>
+                                                const Icon(Icons.broken_image),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: Checkbox(
+                                    value: selectedImages.contains(imagePath),
+                                    onChanged: (_) => toggleImageSelection(
+                                        imagePath, category),
+                                    side: const BorderSide(
+                                        color: Colors.white, width: 2),
+                                    checkColor: Colors.white,
+                                    fillColor: MaterialStateProperty
+                                        .resolveWith<Color>((states) {
+                                      if (states
+                                          .contains(MaterialState.selected)) {
+                                        return Colors.green;
+                                      }
+                                      return Colors.transparent;
+                                    }),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 4,
+                                  right: 4,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(
+                                          0.6), // Latar belakang gelap semi transparan
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: IconButton(
+                                      icon: Row(
+                                        children: [
+                                          Text(
+                                            'Rotate',
+                                            style: getWhiteTextStyle(),
+                                          ),
+                                          const SizedBox(
+                                            width: 6,
+                                          ),
+                                          const Icon(Icons.rotate_right,
+                                              color: Colors.white, size: 28),
+                                        ],
+                                      ),
+                                      onPressed: () => rotateImage(imagePath),
+                                      tooltip: 'Rotate',
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: Padding(

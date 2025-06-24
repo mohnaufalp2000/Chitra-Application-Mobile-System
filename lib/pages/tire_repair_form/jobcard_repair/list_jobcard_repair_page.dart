@@ -131,6 +131,7 @@ class WaitingWO extends StatefulWidget {
 
 class _WaitingWOState extends State<WaitingWO> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  String searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -139,27 +140,57 @@ class _WaitingWOState extends State<WaitingWO> {
 
     print('id wo list : ${idWoList}');
 
-    return PaginateFirestore(
-        query: firestore
-            .collection(FirestoreKey.tireRepairInspectionReport)
-            .orderBy('created_at', descending: true),
-        itemBuilderType: PaginateBuilderType.listView,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemsPerPage: 5,
-        isLive: true,
-        initialLoader:
-            const Center(child: CircularProgressIndicator.adaptive()),
-        bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
-        itemBuilder: (context, snapshot, index) {
-          final Map<String, dynamic> data =
-              snapshot[index].data() as Map<String, dynamic>;
-          if (idWoList.contains(data['id'])) {
-            return Container();
-          }
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: TextField(
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+                hintText: 'Search... (SN)',
+                hintStyle: getGreyTextStyle(grey8391A1),
+                prefixIcon: Icon(Icons.search)),
+          ),
+        ),
+        const SizedBox(
+          height: 12,
+        ),
+        PaginateFirestore(
+            query: firestore
+                .collection(FirestoreKey.tireRepairInspectionReport)
+                .orderBy('created_at', descending: true),
+            itemBuilderType: PaginateBuilderType.listView,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemsPerPage: 5,
+            key: const Key('waiting_wo'),
+            isLive: true,
+            initialLoader:
+                const Center(child: CircularProgressIndicator.adaptive()),
+            bottomLoader:
+                const Center(child: CircularProgressIndicator.adaptive()),
+            itemBuilder: (context, snapshot, index) {
+              final Map<String, dynamic> data =
+                  snapshot[index].data() as Map<String, dynamic>;
 
-          return WaitingWOCard(data: data);
-        });
+              if (searchQuery.isNotEmpty &&
+                  !data['sn']!.toLowerCase().contains(searchQuery) &&
+                  !data['sn']!.toUpperCase().contains(searchQuery)) {
+                return Container();
+              }
+
+              if (idWoList.contains(data['id'])) {
+                return Container();
+              }
+
+              return WaitingWOCard(data: data);
+            }),
+      ],
+    );
   }
 }
 
@@ -173,6 +204,7 @@ class OnProgress extends StatefulWidget {
 
 class _OnProgressState extends State<OnProgress> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  String searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -187,41 +219,70 @@ class _OnProgressState extends State<OnProgress> {
       ));
     }
 
-    return PaginateFirestore(
-        query: firestore
-            .collection(FirestoreKey.tireRepairInspectionReport)
-            // .collection('tire_repair_ins_report')
-            .where('id', whereIn: idWoList),
-        itemBuilderType: PaginateBuilderType.listView,
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        itemsPerPage: 5,
-        isLive: true,
-        initialLoader:
-            const Center(child: CircularProgressIndicator.adaptive()),
-        bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
-        itemBuilder: (context, snapshot, index) {
-          final Map<String, dynamic> data =
-              snapshot[index].data() as Map<String, dynamic>;
-          // mendapatkan nomor WO
-          final WO = widget.woList.firstWhere(
-              (element) => element['id_wo'] == data['id'],
-              orElse: () => {'wo': ''})['wo'];
-          // mendapatkan WO date
-          final WODate = widget.woList.firstWhere(
-              (element) => element['id_wo'] == data['id'],
-              orElse: () => {'wo': ''})['wo_date'];
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: TextField(
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+                hintText: 'Search... (SN)',
+                hintStyle: getGreyTextStyle(grey8391A1),
+                prefixIcon: Icon(Icons.search)),
+          ),
+        ),
+        const SizedBox(
+          height: 12,
+        ),
+        PaginateFirestore(
+            query: firestore
+                .collection(FirestoreKey.tireRepairInspectionReport)
+                // .collection('tire_repair_ins_report')
+                .where('id', whereIn: idWoList),
+            itemBuilderType: PaginateBuilderType.listView,
+            shrinkWrap: true,
+            key: const Key('on_progress'),
+            physics: NeverScrollableScrollPhysics(),
+            itemsPerPage: 5,
+            isLive: true,
+            initialLoader:
+                const Center(child: CircularProgressIndicator.adaptive()),
+            bottomLoader:
+                const Center(child: CircularProgressIndicator.adaptive()),
+            itemBuilder: (context, snapshot, index) {
+              final Map<String, dynamic> data =
+                  snapshot[index].data() as Map<String, dynamic>;
+              // mendapatkan nomor WO
+              final WO = widget.woList.firstWhere(
+                  (element) => element['id_wo'] == data['id'],
+                  orElse: () => {'wo': ''})['wo'];
+              // mendapatkan WO date
+              final WODate = widget.woList.firstWhere(
+                  (element) => element['id_wo'] == data['id'],
+                  orElse: () => {'wo': ''})['wo_date'];
 
-          print('WO : $WO');
-          if (WO == '') {
-            return Container();
-          }
-          return JobcardCard(
-            wo: WO,
-            woDate: WODate,
-            data: data,
-          );
-        });
+              if (searchQuery.isNotEmpty &&
+                  !data['sn']!.toLowerCase().contains(searchQuery) &&
+                  !data['sn']!.toUpperCase().contains(searchQuery)) {
+                return Container();
+              }
+
+              print('WO : $WO');
+              if (WO == '') {
+                return Container();
+              }
+              return JobcardCard(
+                wo: WO,
+                woDate: WODate,
+                data: data,
+              );
+            }),
+      ],
+    );
   }
 }
 
@@ -803,7 +864,7 @@ class ItemJob extends StatelessWidget {
 
                                               await oldData.docs[0].reference
                                                   .update({
-                                                'jobcard':
+                                                'jobcard$processRepairCount':
                                                     FieldValue.arrayUnion(
                                                         [jobcardData]),
                                               });

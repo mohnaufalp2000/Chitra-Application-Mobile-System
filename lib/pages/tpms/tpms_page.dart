@@ -796,6 +796,29 @@ class _TpmsPageState extends State<TpmsPage> {
                                             latestAdjustMap['posisi']
                                                 as List<dynamic>;
 
+                                        bool adjustmentEmpty = positionList.any(
+                                            (item) =>
+                                                item['adjusmentPressure'] !=
+                                                    null &&
+                                                item['adjusmentPressure']
+                                                    .toString()
+                                                    .trim()
+                                                    .isNotEmpty);
+
+                                        if (!adjustmentEmpty) {
+                                          print('data adjust kosong');
+                                          return Center(
+                                            child: Container(
+                                              margin:
+                                                  EdgeInsets.only(bottom: 12),
+                                              child: Text(
+                                                'No data available',
+                                                style: getBlackTextStyle(),
+                                              ),
+                                            ),
+                                          );
+                                        }
+
                                         return Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
@@ -809,8 +832,16 @@ class _TpmsPageState extends State<TpmsPage> {
                                             const SizedBox(
                                               height: 12,
                                             ),
-                                            Text(
-                                                'Last Event Low Pressure : ${DateFormat('dd MMMM yyyy  HH:mm:ss', 'id_ID').format(DateTime.parse(latestAdjustMap['timeLowPressureSPM']))}'),
+                                            // timelowpressure BIKIN ERROR
+                                            if (latestAdjustMap[
+                                                    'timeLowPressureSPM'] !=
+                                                null)
+                                              Text(
+                                                'Last Event Low Pressure : ${DateFormat('dd MMMM yyyy  HH:mm:ss', 'id_ID').format(DateTime.parse(latestAdjustMap['timeLowPressureSPM']))}',
+                                              )
+                                            else
+                                              SizedBox.shrink(),
+
                                             const SizedBox(
                                               height: 12,
                                             ),

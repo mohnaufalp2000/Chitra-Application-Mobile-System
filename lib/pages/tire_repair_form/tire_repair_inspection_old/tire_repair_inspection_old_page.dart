@@ -232,8 +232,9 @@ class _TireRepairInspectionOldPageState
                       PaginateFirestore(
                         query: firestore
                             .collection('tire_repair_ins_report')
-                            // .where('status', isEqualTo: status[selectedIndex])
-                            .orderBy('date_inspect', descending: true),
+                            .orderBy('created_at', descending: true),
+                        // .where('status', isEqualTo: status[selectedIndex])
+                        // .orderBy('date_inspect', descending: true),
                         itemBuilderType: PaginateBuilderType.listView,
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),

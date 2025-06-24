@@ -299,11 +299,14 @@ class _ProcessRepairState extends State<ProcessRepair> {
           )
         else
           Container(),
-        if (existingJob != 'Install Patch' &&
-            existingJob != 'Skiving' &&
+        if (existingJob != 'Skiving' &&
             existingJob != 'Buffing' &&
             existingJob != 'Painting' &&
-            existingJob != 'Dimensi Luka')
+            existingJob != 'Dimensi Luka' &&
+            existingJob != 'Buffing Innerlinner' &&
+            existingJob != 'Curing' &&
+            existingJob != 'Finishing' &&
+            existingJob != 'Painting')
           Column(
             children: [
               BlocConsumer<ProcessJobcardBloc, ProcessJobcardState>(
