@@ -110,8 +110,8 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
       case 5:
         // push(context, SelectTpmsPage.routeName);
         // push(context, QrTpmsPage.routeName);
-        // Navigator.pushNamed(context, SelectTireRepairPage.routeName);
-        Navigator.pushNamed(context, TireRepairInspectionOldPage.routeName);
+        Navigator.pushNamed(context, SelectTireRepairPage.routeName);
+        // Navigator.pushNamed(context, TireRepairInspectionOldPage.routeName);
 
         break;
       case 6:

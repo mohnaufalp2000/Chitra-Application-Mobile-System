@@ -45,6 +45,8 @@ class ApiService {
         final body = response.body;
         final result = jsonDecode(body);
 
+        print('material data : $result');
+
         final List<MaterialRepair> materialList = List<MaterialRepair>.from(
             result['data']
                 .map((material) => MaterialRepair.fromJson(material)));

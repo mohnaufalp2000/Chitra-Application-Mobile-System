@@ -169,7 +169,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                 .collection(
                                     FirestoreKey.tireRepairInspectionReport)
                                 .where('is_inspected', isEqualTo: selectedIndex)
-                                .orderBy('date_inspect', descending: true)
+                                .orderBy('created_at', descending: true)
                             : firestore
                                 .collection(
                                     FirestoreKey.tireRepairInspectionReport)
@@ -257,7 +257,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                                 width: 170,
                                                 child: Text(
                                                     '${data['customer']} site : ${data['site']}',
-                                                    style: getWhiteTextStyle(
+                                                    style: getBlackTextStyle(
                                                         fontSize: 16,
                                                         fontWeight:
                                                             FontWeight.w700)),

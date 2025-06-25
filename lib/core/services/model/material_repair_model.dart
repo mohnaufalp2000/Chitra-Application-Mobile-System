@@ -93,9 +93,9 @@ final categoryValues = EnumValues({
   "RUBBER": Category.RUBBER
 });
 
-enum Smu { CAN, KG, PC }
+enum Smu { mL, KG, PC }
 
-final smuValues = EnumValues({"CAN": Smu.CAN, "KG": Smu.KG, "PC": Smu.PC});
+final smuValues = EnumValues({"mL": Smu.mL, "KG": Smu.KG, "PC": Smu.PC});
 
 class EnumValues<T> {
   Map<String, T> map;

@@ -276,6 +276,7 @@ class _TireRepairInspectionFormPageState
           serialNumberCtrl.text = data['sn'];
           brandCtrl.text = data['brand'];
           typeConstCtrl.text = data['type_construction'];
+          selectedConstructionType = data['type_construction'];
           patternCtrl.text = data['pattern'];
           // cargoManifestCtrl.text = data['no_cargo_manifest'];
           // rtd1Ctrl.text = data['rtd1'];
@@ -1391,7 +1392,7 @@ class _TireRepairInspectionFormPageState
                                   'tire_size': tireSizeCtrl.text,
                                   'sn': serialNumberCtrl.text,
                                   'brand': brandCtrl.text,
-                                  'type_construction': typeConstCtrl.text,
+                                  'type_construction': selectedConstructionType,
                                   'pattern': patternCtrl.text,
                                   'date_received':
                                       '${DateFormat('yyyy-MM-dd').format(selectedReceivedDate!)}',
@@ -1461,14 +1462,14 @@ class _TireRepairInspectionFormPageState
                                 updateData.remove('chaffer_pic');
 
                                 // JANGAN LUPA UNCOMMENT
-                                // await ApiService.editNewTireRepair(updateData);
+                                await ApiService.editNewTireRepair(updateData);
 
                                 Navigator.pop(context);
                                 Navigator.pop(context);
-                                // Navigator.pushReplacementNamed(context,
-                                //     TireRepairInspectionPage.routeName);
                                 Navigator.pushReplacementNamed(context,
-                                    TireRepairInspectionOldPage.routeName);
+                                    TireRepairInspectionPage.routeName);
+                                // Navigator.pushReplacementNamed(context,
+                                //     TireRepairInspectionOldPage.routeName);
                               }
                             } else {
                               log('id : kosong');
@@ -1492,92 +1493,102 @@ class _TireRepairInspectionFormPageState
                                 'tire_size': tireSizeCtrl.text,
                                 'sn': serialNumberCtrl.text,
                                 'brand': brandCtrl.text,
-                                'type_construction': typeConstCtrl.text,
+                                'type_construction': selectedConstructionType,
                                 'pattern': patternCtrl.text,
                                 'date_received': DateFormat('yyyy-MM-dd')
                                     .format(selectedReceivedDate!),
                               };
 
+                              await ApiService.postNewTireRepair(reportData);
+
+                              Map<String, dynamic> inspectReportData = {};
+
                               // Tambahkan hanya jika controller tidak kosong
                               if (selectedDate != null) {
-                                reportData['date_inspect'] =
+                                inspectReportData['date_inspect'] =
                                     DateFormat('yyyy-MM-dd')
                                         .format(selectedDate!);
                               }
                               if (reportNameCtrl.text.isNotEmpty) {
-                                reportData['report_by'] = reportNameCtrl.text;
+                                inspectReportData['report_by'] =
+                                    reportNameCtrl.text;
                               }
-                              if (statusCtrl.text.isNotEmpty) {
-                                reportData['status'] = statusCtrl.text;
+                              if (statusCtrl.text.isNotEmpty ||
+                                  selectedStatus.isNotEmpty) {
+                                inspectReportData['status'] = statusCtrl.text;
                               }
                               if (cargoManifestCtrl.text.isNotEmpty) {
-                                reportData['no_cargo_manifest'] =
+                                inspectReportData['no_cargo_manifest'] =
                                     cargoManifestCtrl.text;
                               }
                               if (rtd1Ctrl.text.isNotEmpty) {
-                                reportData['rtd1'] = rtd1Ctrl.text;
+                                inspectReportData['rtd1'] = rtd1Ctrl.text;
                               }
                               if (rtd2Ctrl.text.isNotEmpty) {
-                                reportData['rtd2'] = rtd2Ctrl.text;
+                                inspectReportData['rtd2'] = rtd2Ctrl.text;
                               }
                               if (selectedRepairLocation != '') {
-                                reportData['repair_location'] =
+                                inspectReportData['repair_location'] =
                                     selectedRepairLocation;
                               }
 
                               if (_selectedButton != null &&
                                   _selectedButton.isNotEmpty) {
-                                reportData['repair_duration'] = _selectedButton;
+                                inspectReportData['repair_duration'] =
+                                    _selectedButton;
                               }
                               if (remarksCtrl.text.isNotEmpty) {
-                                reportData['remarks'] = remarksCtrl.text;
+                                inspectReportData['remarks'] = remarksCtrl.text;
                               }
 
                               // Cek gambar yang mungkin berupa string URL dari Firebase Storage
                               if (serialNumberPictFirebase != null &&
                                   serialNumberPictFirebase.isNotEmpty) {
-                                reportData['sn_pic'] = serialNumberPictFirebase;
+                                inspectReportData['sn_pic'] =
+                                    serialNumberPictFirebase;
                               } else {
-                                reportData['sn_pic'] = [];
+                                inspectReportData['sn_pic'] = [];
                               }
                               if (sidewallPicFirebase != null &&
                                   sidewallPicFirebase.isNotEmpty) {
-                                reportData['sidewall_pic'] =
+                                inspectReportData['sidewall_pic'] =
                                     sidewallPicFirebase;
                               } else {
-                                reportData['sidewall_pic'] = [];
+                                inspectReportData['sidewall_pic'] = [];
                               }
                               if (shoulderPicFirebase != null &&
                                   shoulderPicFirebase.isNotEmpty) {
-                                reportData['shoulder_pic'] =
+                                inspectReportData['shoulder_pic'] =
                                     shoulderPicFirebase;
                               } else {
-                                reportData['shoulder_pic'] = [];
+                                inspectReportData['shoulder_pic'] = [];
                               }
                               if (threatPicFirebase != null &&
                                   threatPicFirebase.isNotEmpty) {
-                                reportData['threat_pic'] = threatPicFirebase;
+                                inspectReportData['threat_pic'] =
+                                    threatPicFirebase;
                               } else {
-                                reportData['threat_pic'] = [];
+                                inspectReportData['threat_pic'] = [];
                               }
                               if (beadPicFirebase != null &&
                                   beadPicFirebase.isNotEmpty) {
-                                reportData['bead_pic'] = beadPicFirebase;
+                                inspectReportData['bead_pic'] = beadPicFirebase;
                               } else {
-                                reportData['bead_pic'] = [];
+                                inspectReportData['bead_pic'] = [];
                               }
                               if (innerLinerPicFirebase != null &&
                                   innerLinerPicFirebase.isNotEmpty) {
-                                reportData['inner_linner_pic'] =
+                                inspectReportData['inner_linner_pic'] =
                                     innerLinerPicFirebase;
                               } else {
-                                reportData['inner_linner_pic'] = [];
+                                inspectReportData['inner_linner_pic'] = [];
                               }
                               if (chafferPicFirebase != null &&
                                   chafferPicFirebase.isNotEmpty) {
-                                reportData['chaffer_pic'] = chafferPicFirebase;
+                                inspectReportData['chaffer_pic'] =
+                                    chafferPicFirebase;
                               } else {
-                                reportData['chaffer_pic'] = [];
+                                inspectReportData['chaffer_pic'] = [];
                               }
 
                               // Logika penentuan isInspected
@@ -1595,36 +1606,43 @@ class _TireRepairInspectionFormPageState
                                   ? 1
                                   : 0;
 
-                              reportData['is_inspected'] = isInspected;
+                              inspectReportData['is_inspected'] = isInspected;
                               if (isInspected == 1) {
-                                reportData['jobcard1'] = [];
+                                inspectReportData['jobcard1'] = [];
+                                inspectReportData['process_repair_count'] = 1;
                               }
+
+                              inspectReportData.addAll(reportData);
 
                               await firestore
                                   .collection(
                                       FirestoreKey.tireRepairInspectionReport)
                                   .doc(DateTime.now().toIso8601String())
-                                  .set(reportData);
+                                  .set(inspectReportData);
 
                               // agar data bisa ke post
-                              reportData.remove('jobcard1');
-                              reportData.remove('sn_pic');
-                              reportData.remove('sidewall_pic');
-                              reportData.remove('shoulder_pic');
-                              reportData.remove('threat_pic');
-                              reportData.remove('bead_pic');
-                              reportData.remove('inner_linner_pic');
-                              reportData.remove('chaffer_pic');
+                              inspectReportData.remove('jobcard1');
+                              inspectReportData.remove('sn_pic');
+                              inspectReportData.remove('sidewall_pic');
+                              inspectReportData.remove('shoulder_pic');
+                              inspectReportData.remove('threat_pic');
+                              inspectReportData.remove('bead_pic');
+                              inspectReportData.remove('inner_linner_pic');
+                              inspectReportData.remove('chaffer_pic');
+                              inspectReportData.remove('is_inspected');
 
-                              // JANGAN LUPA UNCOMMENT
-                              // await ApiService.postNewTireRepair(reportData);
+                              if (isInspected == 1) {
+                                // JANGAN LUPA UNCOMMENT
+                                await ApiService.editNewTireRepair(
+                                    inspectReportData);
+                              }
 
                               Navigator.pop(context);
                               Navigator.pop(context);
-                              // Navigator.pushReplacementNamed(
-                              //     context, TireRepairInspectionPage.routeName);
-                              Navigator.pushReplacementNamed(context,
-                                  TireRepairInspectionOldPage.routeName);
+                              Navigator.pushReplacementNamed(
+                                  context, TireRepairInspectionPage.routeName);
+                              // Navigator.pushReplacementNamed(context,
+                              //     TireRepairInspectionOldPage.routeName);
                             }
                           },
                           child: Text(

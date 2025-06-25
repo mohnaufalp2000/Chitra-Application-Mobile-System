@@ -242,6 +242,7 @@ class _OnProgressState extends State<OnProgress> {
             query: firestore
                 .collection(FirestoreKey.tireRepairInspectionReport)
                 // .collection('tire_repair_ins_report')
+                .orderBy('created_at', descending: true)
                 .where('id', whereIn: idWoList),
             itemBuilderType: PaginateBuilderType.listView,
             shrinkWrap: true,

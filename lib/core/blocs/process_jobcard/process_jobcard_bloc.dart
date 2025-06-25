@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/material_repair_model.dart';
@@ -13,6 +15,8 @@ class ProcessJobcardBloc
       emit(MaterialLoadingState());
       try {
         final materialList = await ApiService.getMaterialRepairList();
+
+        log('material list : ${materialList}');
 
         emit(MaterialLoadedState(materialList));
       } catch (e) {

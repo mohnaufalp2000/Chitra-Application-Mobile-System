@@ -303,7 +303,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
             existingJob != 'Buffing' &&
             existingJob != 'Painting' &&
             existingJob != 'Dimensi Luka' &&
-            existingJob != 'Buffing Innerlinner' &&
+            existingJob != 'Buffing InnerLinner' &&
             existingJob != 'Curing' &&
             existingJob != 'Finishing' &&
             existingJob != 'Painting')
@@ -333,6 +333,10 @@ class _ProcessRepairState extends State<ProcessRepair> {
                     //     .any((e) => e.idMatstock == selectedMaterial)) {
                     //   selectedMaterial = null;
                     // }
+
+                    final existingMaterialUnit = (filteredMaterials.isNotEmpty)
+                        ? filteredMaterials[0].smu.name
+                        : '';
 
                     return Column(
                       children: [
@@ -474,11 +478,12 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                                 const SizedBox(
                                                                   width: 12,
                                                                 ),
-                                                                // Text(
-                                                                //   '${material.smu.name}',
-                                                                //   style:
-                                                                //       getBlackTextStyle(),
-                                                                // )
+                                                                Text(
+                                                                  material
+                                                                      .smu.name,
+                                                                  style:
+                                                                      getBlackTextStyle(),
+                                                                )
                                                               ],
                                                             ),
                                                           ),
@@ -595,7 +600,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                   ? 'Choose Materials'
                                   : selectedMaterials
                                       .map((e) =>
-                                          '${e['name']} (QTY : ${e['qty']})')
+                                          '${e['name']} (QTY : ${e['qty']} $existingMaterialUnit)')
                                       .join(',\n'),
                               style: getBlackTextStyle(),
                             ),
