@@ -256,56 +256,62 @@ class _TireRepairInspectionFormPageState
         final doc = querySnapshot.docs.first;
         final data = doc.data();
 
-        setState(() {
-          // log('tanggal sekarang : ${data['date_inspect']}');
-          // selectedDate = DateTime.parse(data['date_inspect']);
-          selectedReceivedDate = DateTime.parse(data['date_received']);
+        // log('tanggal sekarang : ${data['date_inspect']}');
+        // selectedDate = DateTime.parse(data['date_inspect']);
+        selectedReceivedDate = DateTime.parse(data['date_received']);
 
-          selectedCustomer = data['customer'];
-          customerCtrl.text = data['customer'];
+        selectedCustomer = data['customer'];
+        customerCtrl.text = data['customer'];
 
-          selectedSize = data['tire_size'];
-          tireSizeCtrl.text = data['tire_size'];
+        selectedSize = data['tire_size'];
+        tireSizeCtrl.text = data['tire_size'];
 
+        selectedStatus = data['status'];
+        statusCtrl.text = data['status'];
+
+        siteCtrl.text = data['site'];
+        tireSizeCtrl.text = data['tire_size'];
+        serialNumberCtrl.text = data['sn'];
+        brandCtrl.text = data['brand'];
+        typeConstCtrl.text = data['type_construction'];
+        selectedConstructionType = data['type_construction'];
+        patternCtrl.text = data['pattern'];
+
+        if (data['is_inspected'] == 1) {
+          cargoManifestCtrl.text = data['no_cargo_manifest'];
+          rtd1Ctrl.text = data['rtd1'];
+          rtd2Ctrl.text = data['rtd2'];
+          remarksCtrl.text = data['remarks'];
+          _selectedButton = data['repair_duration'];
+          reportNameCtrl.text = data['report_by'];
           selectedStatus = data['status'];
-          statusCtrl.text = data['status'];
+          selectedRepairLocation = data['repair_location'];
+          selectedDate = DateTime.parse(data['date_inspect']);
 
-          siteCtrl.text = data['site'];
-          // reportNameCtrl.text = data['report_by'];
-          tireSizeCtrl.text = data['tire_size'];
-          serialNumberCtrl.text = data['sn'];
-          brandCtrl.text = data['brand'];
-          typeConstCtrl.text = data['type_construction'];
-          selectedConstructionType = data['type_construction'];
-          patternCtrl.text = data['pattern'];
-          // cargoManifestCtrl.text = data['no_cargo_manifest'];
-          // rtd1Ctrl.text = data['rtd1'];
-          // rtd2Ctrl.text = data['rtd2'];
-          // remarksCtrl.text = data['remarks'];
-          // _selectedButton = data['repair_duration'];
+          serialNumberPict = (data['sn_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          sidewallPic = (data['sidewall_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          shoulderPic = (data['shoulder_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          threatPic = (data['threat_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          beadPic = (data['bead_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          innerLinerPic = (data['inner_linner_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+          chafferPic = (data['chaffer_pic'] as List<dynamic>)
+              .map((item) => item.toString())
+              .toList();
+        }
 
-          // serialNumberPict = (data['sn_pic'] as List<dynamic>)
-          //     .map((item) => item.toString())
-          //     .toList();
-          // sidewallPic = (data['sidewall_pic'] as List<dynamic>)
-          //     .map((item) => item.toString())
-          //     .toList();
-          // shoulderPic = (data['shoulder_pic'] as List<dynamic>)
-          //     .map((item) => item.toString())
-          //     .toList();
-          // threatPic = (data['threat_pic'] as List<dynamic>)
-          //     .map((item) => item.toString())
-          //     .toList();
-          // beadPic = (data['bead_pic'] as List<dynamic>)
-          //     .map((item) => item.toString())
-          //     .toList();
-          // innerLinerPic = (data['inner_linner_pic'] as List<dynamic>)
-          //     .map((item) => item.toString())
-          //     .toList();
-          // chafferPic = (data['chaffer_pic'] as List<dynamic>)
-          //     .map((item) => item.toString())
-          //     .toList();
-        });
+        setState(() {});
       }
     } catch (e) {
       print('Error fetching data: $e');
@@ -1483,44 +1489,96 @@ class _TireRepairInspectionFormPageState
                                       .format(selectedReceivedDate!),
                                 };
 
+                                // 1. Cek apakah ADA salah satu field inspeksi yang diisi user
+                                final bool hasAnyInspectField = selectedDate !=
+                                        null ||
+                                    reportNameCtrl.text.trim().isNotEmpty ||
+                                    statusCtrl.text.trim().isNotEmpty ||
+                                    rtd1Ctrl.text.trim().isNotEmpty ||
+                                    rtd2Ctrl.text.trim().isNotEmpty ||
+                                    selectedRepairLocation != null ||
+                                    (serialNumberPictFirebase != null &&
+                                        serialNumberPictFirebase.isNotEmpty) ||
+                                    (_selectedButton != null &&
+                                        _selectedButton!.isNotEmpty) ||
+                                    remarksCtrl.text.trim().isNotEmpty;
+
+                                // 2. Set nilai isInspected
+                                int isInspected = hasAnyInspectField ? 1 : 0;
+
+                                // 3. Simpan ke inspectReportData dengan default fallback ('' / 0 / [])
                                 Map<String, dynamic> inspectReportData = {};
 
-                                if (selectedDate != null) {
-                                  inspectReportData['date_inspect'] =
-                                      DateFormat('yyyy-MM-dd')
-                                          .format(selectedDate!);
-                                }
-                                if (reportNameCtrl.text.isNotEmpty) {
-                                  inspectReportData['report_by'] =
-                                      reportNameCtrl.text;
-                                }
-                                if (statusCtrl.text.isNotEmpty ||
-                                    selectedStatus.isNotEmpty) {
-                                  inspectReportData['status'] = statusCtrl.text;
-                                }
-                                if (cargoManifestCtrl.text.isNotEmpty) {
-                                  inspectReportData['no_cargo_manifest'] =
-                                      cargoManifestCtrl.text;
-                                }
-                                if (rtd1Ctrl.text.isNotEmpty) {
-                                  inspectReportData['rtd1'] = rtd1Ctrl.text;
-                                }
-                                if (rtd2Ctrl.text.isNotEmpty) {
-                                  inspectReportData['rtd2'] = rtd2Ctrl.text;
-                                }
-                                if (selectedRepairLocation != '') {
-                                  inspectReportData['repair_location'] =
-                                      selectedRepairLocation;
-                                }
-                                if (_selectedButton != null &&
-                                    _selectedButton.isNotEmpty) {
-                                  inspectReportData['repair_duration'] =
-                                      _selectedButton;
-                                }
-                                if (remarksCtrl.text.isNotEmpty) {
-                                  inspectReportData['remarks'] =
-                                      remarksCtrl.text;
-                                }
+                                // if (selectedDate != null) {
+                                //   inspectReportData['date_inspect'] =
+                                //       DateFormat('yyyy-MM-dd')
+                                //           .format(selectedDate!);
+                                // }
+                                inspectReportData['date_inspect'] =
+                                    selectedDate != null
+                                        ? DateFormat('yyyy-MM-dd')
+                                            .format(selectedDate!)
+                                        : DateFormat('yyyy-MM-dd')
+                                            .format(DateTime.now());
+
+                                // if (reportNameCtrl.text.isNotEmpty) {
+                                //   inspectReportData['report_by'] =
+                                //       reportNameCtrl.text;
+                                // }
+                                inspectReportData['report_by'] =
+                                    reportNameCtrl.text.trim();
+
+                                // if (statusCtrl.text.isNotEmpty ||
+                                //     selectedStatus.isNotEmpty) {
+                                //   inspectReportData['status'] = statusCtrl.text;
+                                // }
+                                inspectReportData['status'] =
+                                    statusCtrl.text.trim();
+
+                                // if (cargoManifestCtrl.text.isNotEmpty) {
+                                //   inspectReportData['no_cargo_manifest'] =
+                                //       cargoManifestCtrl.text;
+                                // }
+                                inspectReportData['no_cargo_manifest'] =
+                                    cargoManifestCtrl.text.trim();
+
+                                // if (rtd1Ctrl.text.isNotEmpty) {
+                                //   inspectReportData['rtd1'] = rtd1Ctrl.text;
+                                // }
+                                inspectReportData['rtd1'] =
+                                    rtd1Ctrl.text.isNotEmpty
+                                        ? rtd1Ctrl.text
+                                        : '0';
+
+                                // if (rtd2Ctrl.text.isNotEmpty) {
+                                //   inspectReportData['rtd2'] = rtd2Ctrl.text;
+                                // }
+                                inspectReportData['rtd2'] =
+                                    rtd2Ctrl.text.isNotEmpty
+                                        ? rtd2Ctrl.text
+                                        : '0';
+
+                                // if (selectedRepairLocation != '') {
+                                //   inspectReportData['repair_location'] =
+                                //       selectedRepairLocation;
+                                // }
+                                inspectReportData['repair_location'] =
+                                    selectedRepairLocation ?? '';
+
+                                // if (_selectedButton != null &&
+                                //     _selectedButton.isNotEmpty) {
+                                //   inspectReportData['repair_duration'] =
+                                //       _selectedButton;
+                                // }
+                                inspectReportData['repair_duration'] =
+                                    _selectedButton ?? '';
+
+                                // if (remarksCtrl.text.isNotEmpty) {
+                                //   inspectReportData['remarks'] =
+                                //       remarksCtrl.text;
+                                // }
+                                inspectReportData['remarks'] =
+                                    remarksCtrl.text.trim();
 
                                 inspectReportData['sn_pic'] =
                                     serialNumberPictFirebase ?? [];
@@ -1537,22 +1595,8 @@ class _TireRepairInspectionFormPageState
                                 inspectReportData['chaffer_pic'] =
                                     chafferPicFirebase ?? [];
 
-                                int isInspected = (selectedDate != null &&
-                                        reportNameCtrl.text.isNotEmpty &&
-                                        statusCtrl.text.isNotEmpty &&
-                                        rtd1Ctrl.text.isNotEmpty &&
-                                        rtd2Ctrl.text.isNotEmpty &&
-                                        selectedRepairLocation != null &&
-                                        remarksCtrl.text.isNotEmpty &&
-                                        serialNumberPictFirebase != null &&
-                                        serialNumberPictFirebase.isNotEmpty &&
-                                        (statusCtrl.text == "REJECT" ||
-                                            (_selectedButton != null &&
-                                                _selectedButton.isNotEmpty)))
-                                    ? 1
-                                    : 0;
-
                                 inspectReportData['is_inspected'] = isInspected;
+
                                 if (isInspected == 1) {
                                   inspectReportData['jobcard1'] = [];
                                   inspectReportData['process_repair_count'] = 1;
@@ -1560,9 +1604,10 @@ class _TireRepairInspectionFormPageState
 
                                 inspectReportData.addAll(reportData);
 
+                                await ApiService.postNewTireRepair(reportData);
+
                                 // 🔁 Jalankan API & Firestore secara paralel
                                 List<Future> futures = [
-                                  ApiService.postNewTireRepair(reportData),
                                   firestore
                                       .collection(FirestoreKey
                                           .tireRepairInspectionReport)

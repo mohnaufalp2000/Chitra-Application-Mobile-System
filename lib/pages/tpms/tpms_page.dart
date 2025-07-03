@@ -695,56 +695,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                                 'type': 'spm',
                                                 'position': position,
                                                 'isCTS': data['isCTS']
-                                                // 'position': [
-                                                //   {
-                                                //     'pressure':
-                                                //         '${allUnits[indexUnit][0][0]['pressure1']}',
-                                                //     'adjusmentPressure': '',
-                                                //     'rating': '',
-                                                //     'damage': null,
-                                                //     'image': ''
-                                                //   },
-                                                //   {
-                                                //     'pressure':
-                                                //         '${allUnits[indexUnit][0][1]['pressure2']}',
-                                                //     'adjusmentPressure': '',
-                                                //     'rating': '',
-                                                //     'damage': null,
-                                                //     'image': ''
-                                                //   },
-                                                //   {
-                                                //     'pressure':
-                                                //         '${allUnits[indexUnit][0][2]['pressure3']}',
-                                                //     'adjusmentPressure': '',
-                                                //     'rating': '',
-                                                //     'damage': null,
-                                                //     'image': ''
-                                                //   },
-                                                //   {
-                                                //     'pressure':
-                                                //         '${allUnits[indexUnit][0][3]['pressure4']}',
-                                                //     'adjusmentPressure': '',
-                                                //     'rating': '',
-                                                //     'damage': null,
-                                                //     'image': ''
-                                                //   },
-                                                //   {
-                                                //     'pressure':
-                                                //         '${allUnits[indexUnit][0][4]['pressure5']}',
-                                                //     'adjusmentPressure': '',
-                                                //     'rating': '',
-                                                //     'damage': null,
-                                                //     'image': ''
-                                                //   },
-                                                //   {
-                                                //     'pressure':
-                                                //         '${allUnits[indexUnit][0][5]['pressure6']}',
-                                                //     'adjusmentPressure': '',
-                                                //     'rating': '',
-                                                //     'damage': null,
-                                                //     'image': ''
-                                                //   },
-                                                // ],
                                               });
                                         },
                                       ),

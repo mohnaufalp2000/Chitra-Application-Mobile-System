@@ -396,7 +396,7 @@ class WaitingWOCard extends StatelessWidget {
                         height: 4,
                       ),
                       Text(
-                        '27.00R49',
+                        '${data['tire_size']}',
                         style: getBlackTextStyle(
                           fontSize: 18,
                           fontWeight: w700,
