@@ -306,7 +306,8 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                   padding: const EdgeInsets.all(5.0),
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(20.0),
-                                      color: (data['repair_duration'] == '')
+                                      color: (data['repair_duration'] == '' ||
+                                              data['repair_duration'] == null)
                                           ? black
                                           : (data['repair_duration'] == 'R1')
                                               ? green00968A
@@ -387,7 +388,9 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                                         child: Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: Text(
-                                              '${data['repair_duration']}',
+                                              (data['repair_duration'] == null)
+                                                  ? ''
+                                                  : '${data['repair_duration']}',
                                               style: getWhiteTextStyle(
                                                   fontSize: 20,
                                                   fontWeight: FontWeight.w700)),

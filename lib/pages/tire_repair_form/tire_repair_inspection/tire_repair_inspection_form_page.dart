@@ -231,7 +231,8 @@ class _TireRepairInspectionFormPageState
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       id = ModalRoute.of(context)?.settings.arguments as String?;
-      if (id != null || id != '') {
+      // if (id != null || id != '') {
+      if (id != null && id!.isNotEmpty) {
         await _fetchData(id ?? '');
       }
     });
@@ -258,35 +259,52 @@ class _TireRepairInspectionFormPageState
 
         // log('tanggal sekarang : ${data['date_inspect']}');
         // selectedDate = DateTime.parse(data['date_inspect']);
-        selectedReceivedDate = DateTime.parse(data['date_received']);
+        selectedReceivedDate = DateTime.parse(data['date_received']) ??
+            DateTime.parse(DateTime.now().toIso8601String());
 
-        selectedCustomer = data['customer'];
-        customerCtrl.text = data['customer'];
+        log('received data : ${selectedReceivedDate}');
 
-        selectedSize = data['tire_size'];
-        tireSizeCtrl.text = data['tire_size'];
+        selectedCustomer = data['customer'] ?? 'PT Cipta Kridatama';
+        customerCtrl.text = data['customer'] ?? 'PT Cipta Kridatama';
 
-        selectedStatus = data['status'];
-        statusCtrl.text = data['status'];
+        selectedSize = data['tire_size'] ?? '';
+        tireSizeCtrl.text = data['tire_size'] ?? '';
 
-        siteCtrl.text = data['site'];
-        tireSizeCtrl.text = data['tire_size'];
-        serialNumberCtrl.text = data['sn'];
-        brandCtrl.text = data['brand'];
-        typeConstCtrl.text = data['type_construction'];
-        selectedConstructionType = data['type_construction'];
-        patternCtrl.text = data['pattern'];
+        siteCtrl.text = data['site'] ?? '';
+        tireSizeCtrl.text = data['tire_size'] ?? '';
+        serialNumberCtrl.text = data['sn'] ?? '';
+        brandCtrl.text = data['brand'] ?? '';
+        typeConstCtrl.text = (data['type_construction'] ?? 'RADIAL')
+            .toString()
+            .toUpperCase()
+            .trim();
+        selectedConstructionType = (data['type_construction'] ?? 'RADIAL')
+            .toString()
+            .toUpperCase()
+            .trim();
+
+        patternCtrl.text = data['pattern'] ?? '';
 
         if (data['is_inspected'] == 1) {
-          cargoManifestCtrl.text = data['no_cargo_manifest'];
-          rtd1Ctrl.text = data['rtd1'];
-          rtd2Ctrl.text = data['rtd2'];
-          remarksCtrl.text = data['remarks'];
-          _selectedButton = data['repair_duration'];
-          reportNameCtrl.text = data['report_by'];
+          cargoManifestCtrl.text = data['no_cargo_manifest'] ?? '';
+          rtd1Ctrl.text = data['rtd1'] ?? '';
+          rtd2Ctrl.text = data['rtd2'] ?? '';
+          remarksCtrl.text = data['remarks'] ?? '';
+          reportNameCtrl.text = data['report_by'] ?? '';
           selectedStatus = data['status'];
-          selectedRepairLocation = data['repair_location'];
-          selectedDate = DateTime.parse(data['date_inspect']);
+          log('selected status : ${selectedStatus}');
+          // _selectedButton = data['repair_duration'] ??
+          //         (selectedStatus == ('REJECT').toUpperCase().trim())
+          //     ? ""
+          //     : 'R2';
+          _selectedButton = (selectedStatus == ('REJECT').toUpperCase().trim())
+              ? ''
+              : data['repair_duration'] ?? '';
+
+          statusCtrl.text = data['status'];
+          selectedRepairLocation = data['repair_location'] ?? 'BSF';
+          selectedDate = DateTime.parse(data['date_inspect']) ??
+              DateTime.parse(DateTime.now().toIso8601String());
 
           serialNumberPict = (data['sn_pic'] as List<dynamic>)
               .map((item) => item.toString())
@@ -311,7 +329,9 @@ class _TireRepairInspectionFormPageState
               .toList();
         }
 
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
       }
     } catch (e) {
       print('Error fetching data: $e');
@@ -927,6 +947,12 @@ class _TireRepairInspectionFormPageState
                             setState(() {
                               selectedStatus = newValue ?? '';
                               statusCtrl.text = newValue ?? '';
+                              // kalau reject jangan pilih repair duration
+                              if ((newValue)?.toUpperCase().trim() ==
+                                  'REJECT') {
+                                _selectedButton = '';
+                              }
+                              log('durasi kerja : ${_selectedButton}');
                             });
                           },
                         ),
@@ -1486,7 +1512,9 @@ class _TireRepairInspectionFormPageState
                                   'type_construction': selectedConstructionType,
                                   'pattern': patternCtrl.text,
                                   'date_received': DateFormat('yyyy-MM-dd')
-                                      .format(selectedReceivedDate!),
+                                          .format(selectedReceivedDate!) ??
+                                      DateTime.parse(
+                                          DateTime.now().toIso8601String()),
                                 };
 
                                 // 1. Cek apakah ADA salah satu field inspeksi yang diisi user
