@@ -548,7 +548,7 @@ class _JobcardCardState extends State<JobcardCard> {
                         height: 4,
                       ),
                       Text(
-                        '27.00R49',
+                        '${widget.data['tire_size']}',
                         style: getBlackTextStyle(
                           fontSize: 18,
                           fontWeight: w700,
