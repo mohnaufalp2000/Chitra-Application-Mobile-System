@@ -176,13 +176,6 @@ class ApiService {
 
     List<UnitTire> fixData = [];
 
-    // listUnitTire.forEach((unit) {
-    //   if (fixData.any((item) => item.unitNumber == unit.unitNumber)) {
-    //     return;
-    //   }
-    //   fixData.add(unit);
-    // });
-
     Set<String> seenUnitNumbers = {}; // Untuk menyimpan unitNumber unik
     Map<String, int> sizeCount = {};
     Set<String> sizes = {};
@@ -223,18 +216,6 @@ class ApiService {
     //   throw Exception(e.toString());
     // }
   }
-
-  // static Future<void> cacheUnits(List<UnitTire> units) async {
-  //   try {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     final unitsJson = units.map((unit) => unit.toJson()).toList();
-  //     final unitsJsonString = jsonEncode(unitsJson);
-  //     await prefs.setString('cached_units', unitsJsonString);
-  //   } catch (e) {
-  //     // Handle error jika gagal menyimpan data.
-  //     throw Exception('Gagal menyimpan data ke penyimpanan lokal: $e');
-  //   }
-  // }
 
   static Future<void> cacheTireSize(
       Map<String, int> sizeCount, List<String> sizes, String idSite) async {
