@@ -8,6 +8,7 @@ import 'package:camos/core/utils/firebase_key/firebase_key.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/history_jobcard_repair_page.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_form_page.dart';
+import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_selected_job_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -562,86 +563,141 @@ class _JobcardCardState extends State<JobcardCard> {
                 ],
               ),
               const SizedBox(height: 12),
-              if (_isExpanded)
-                ...List.generate(
-                    (widget.data['process_repair_count'] ?? 0) as int, (index) {
-                  return Column(
-                    children: [
-                      ItemJob(
-                        jobName: jobName,
-                        data: widget.data,
-                        cardIndex: index,
-                        wo: widget.wo,
-                        woDate: widget.woDate,
-                      ),
-                      const SizedBox(
-                        height: 12,
-                      ),
-                      // ADD PROCESS BUTTON
-                      ButtonWidget(
-                          color: green359B7B,
-                          name: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.add_circle,
-                                color: white,
-                              ),
-                              const SizedBox(
-                                width: 12,
-                              ),
-                              Text(
-                                'Add Proccess',
-                                style: getWhiteTextStyle(),
-                              ),
-                            ],
-                          ),
-                          function: () async {
-                            final oldData = await firestore
-                                .collection(
-                                    FirestoreKey.tireRepairInspectionReport)
-                                .where('id', isEqualTo: widget.data['id'])
-                                .get();
+              // if (_isExpanded)
+              //   ItemJob(
+              //     jobName: jobName,
+              //     data: widget.data,
+              //     cardIndex: 0,
+              //     wo: widget.wo,
+              //     woDate: widget.woDate,
+              //   ),
+              // ...List.generate(
+              //     (widget.data['process_repair_count'] ?? 0) as int, (index) {
+              //   return Column(
+              //     children: [
+              //       ItemJob(
+              //         jobName: jobName,
+              //         data: widget.data,
+              //         cardIndex: index,
+              //         wo: widget.wo,
+              //         woDate: widget.woDate,
+              //       ),
+              //       const SizedBox(
+              //         height: 12,
+              //       ),
+              //       // ADD PROCESS BUTTON
+              //       ButtonWidget(
+              //           color: green359B7B,
+              //           name: Row(
+              //             mainAxisAlignment: MainAxisAlignment.center,
+              //             children: [
+              //               const Icon(
+              //                 Icons.add_circle,
+              //                 color: white,
+              //               ),
+              //               const SizedBox(
+              //                 width: 12,
+              //               ),
+              //               Text(
+              //                 'Add Proccess',
+              //                 style: getWhiteTextStyle(),
+              //               ),
+              //             ],
+              //           ),
+              //           function: () async {
+              //             final oldData = await firestore
+              //                 .collection(
+              //                     FirestoreKey.tireRepairInspectionReport)
+              //                 .where('id', isEqualTo: widget.data['id'])
+              //                 .get();
 
-                            final repairCount =
-                                oldData.docs[0].data()['process_repair_count'];
+              //             final repairCount =
+              //                 oldData.docs[0].data()['process_repair_count'];
 
-                            await oldData.docs[0].reference.update({
-                              'process_repair_count': FieldValue.increment(1),
-                              'jobcard${repairCount + 1}': [],
-                            });
+              //             await oldData.docs[0].reference.update({
+              //               'process_repair_count': FieldValue.increment(1),
+              //               'jobcard${repairCount + 1}': [],
+              //             });
 
-                            setState(() {});
-                          }),
-                      const SizedBox(
-                        height: 12,
-                      ),
-                    ],
-                  );
-                }),
+              //             setState(() {});
+              //           }),
+              //       const SizedBox(
+              //         height: 12,
+              //       ),
+              //     ],
+              //   );
+              // }),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.end,
+              //   children: [
+              //     TextButton(
+              //       onPressed: () {
+              //         setState(() {
+              //           _isExpanded = !_isExpanded;
+              //         });
+              //       },
+              //       child: Row(
+              //         children: [
+              //           Icon(
+              //             (_isExpanded)
+              //                 ? Icons.visibility_off
+              //                 : Icons.visibility,
+              //             color: green35C2C1,
+              //           ),
+              //           const SizedBox(width: 6),
+              //           Text(
+              //             _isExpanded ? 'Hide' : 'Show Job Repair',
+              //             style: getGreenTextStyle(
+              //               fontWeight: w700,
+              //             ),
+              //           ),
+              //         ],
+              //       ),
+              //     ),
+              //   ],
+              // )
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _isExpanded = !_isExpanded;
-                      });
+                  ElevatedButton(
+                    onPressed: () async {
+                      //     jobName: jobName,
+                      //     data: widget.data,
+                      //     cardIndex: 0,
+                      //     wo: widget.wo,
+                      //     woDate: widget.woDate,
+                      await Navigator.pushNamed(
+                        context,
+                        JobcardSelectedJobPage.routeName,
+                        arguments: {
+                          'wo': widget.wo,
+                          'woDate': widget.woDate,
+                          'data': widget.data,
+                        },
+                      );
+                      if (context.mounted) {
+                        context.read<WoJobcardBloc>().add(WoJobcardEvent());
+                      }
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: green35C2C1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          (_isExpanded)
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: green35C2C1,
+                        const Icon(
+                          Icons.add_circle,
+                          color: Colors.white,
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          _isExpanded ? 'Hide' : 'Show Job Repair',
+                          'Input Jobcard',
                           style: getGreenTextStyle(
                             fontWeight: w700,
-                          ),
+                          ).copyWith(color: Colors.white),
                         ),
                       ],
                     ),
@@ -743,14 +799,19 @@ class ItemJob extends StatelessWidget {
             return Column(
               children: [
                 InkWell(
-                  onTap: () {
-                    Navigator.pushNamed(context, JobcardFormPage.routeName,
+                  onTap: () async {
+                    await Navigator.pushNamed(
+                        context, JobcardSelectedJobPage.routeName,
                         arguments: {
                           'tireDetail': data,
                           'wo': wo,
                           'woDate': woDate,
-                          'processRepairCount': processRepairCount
+                          'processRepairCount': processRepairCount,
+                          'isFromListJobcard': true,
                         });
+                    if (context.mounted) {
+                      context.read<WoJobcardBloc>().add(WoJobcardEvent());
+                    }
                   },
                   child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),

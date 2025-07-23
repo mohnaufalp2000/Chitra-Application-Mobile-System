@@ -40,6 +40,7 @@ import 'package:camos/pages/tire_repair_form/jobcard_repair/history_jobcard_repa
 import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_finish_page.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_form_page.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_qc_page.dart';
+import 'package:camos/pages/tire_repair_form/jobcard_repair/jobcard_selected_job_page.dart';
 import 'package:camos/pages/tire_repair_form/jobcard_repair/list_jobcard_repair_page.dart';
 import 'package:camos/pages/tire_repair_form/select_tire_repair_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/detail_tire_repair_inspection_page.dart';
@@ -119,4 +120,5 @@ var routes = {
 
   TireRepairInspectionOldPage.routeName: (context) =>
       const TireRepairInspectionOldPage(),
+  JobcardSelectedJobPage.routeName: (context) => const JobcardSelectedJobPage(),
 };

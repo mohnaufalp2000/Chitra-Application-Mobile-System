@@ -752,7 +752,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 BlocConsumer<ProcessJobcardBloc, ProcessJobcardState>(
                   listener: (context, state) {
                     if (state is SubmitSuccessState) {
-                      Navigator.pop(context);
+                      Navigator.pop(context, true);
                     } else if (state is SubmitErrorState) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Gagal menyimpan data')),
