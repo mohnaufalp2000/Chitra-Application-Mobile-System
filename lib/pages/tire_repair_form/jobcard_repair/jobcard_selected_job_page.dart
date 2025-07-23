@@ -56,11 +56,6 @@ class _JobcardSelectedJobPageState extends State<JobcardSelectedJobPage> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
     print('initial jobcard : ${arguments}');
 
-    // if (arguments['isFromJobcardList'] == true) {
-    //   log('halaman sebelum A');
-    //   data = arguments['data'] ?? [];
-    // }
-
     String existingJob = '';
 
     String processRepairCount = '1';
@@ -78,6 +73,37 @@ class _JobcardSelectedJobPageState extends State<JobcardSelectedJobPage> {
       if (currentIndex != -1 && currentIndex < jobList.length - 1) {
         existingJob = jobList[currentIndex + 1]['name'];
       }
+    }
+
+    String formatDataDimensi(String rawData) {
+      // 1. Pisahkan setiap grup data berdasarkan spasi.
+      // Hasil: ["L25,W33,P22,T55", "L54,W66,P32,T75"]
+      List<String> groups = rawData.split(' ');
+
+      // 2. Proses setiap grup menggunakan .map()
+      var formattedDimensiLuka = groups.map((group) {
+        // 3. Pisahkan setiap pasangan key-value berdasarkan koma.
+        // Hasil: ["L25", "W33", "P22", "T55"]
+        List<String> pairs = group.split(',');
+
+        // 4. Proses setiap pasangan untuk menambahkan " : ".
+        var formattedPairs = pairs.map((pair) {
+          if (pair.isNotEmpty) {
+            // Ambil huruf pertama sebagai key, sisanya sebagai value.
+            String key = pair.substring(0, 1);
+            String value = pair.substring(1);
+            return '$key : $value'; // Hasil: "L : 25"
+          }
+          return '';
+        });
+
+        // 5. Gabungkan kembali pasangan yang sudah diformat dengan spasi.
+        // Hasil: "L : 25 W : 33 P : 22 T : 55"
+        return formattedPairs.join(' ');
+      });
+
+      // 6. Gabungkan semua grup yang sudah diformat dengan baris baru (\n).
+      return formattedDimensiLuka.join('\n');
     }
 
     // if (data['jobcard$processRepairCount'].isEmpty) {
@@ -140,18 +166,15 @@ class _JobcardSelectedJobPageState extends State<JobcardSelectedJobPage> {
                 children: List.generate(JobcardRepair.jobName.length, (index) {
                   final jobName = JobcardRepair.jobName[index];
 
-                  // Cek dulu apakah key 'jobcard...' ada dan merupakan sebuah List
                   final List<dynamic> jobcardList =
                       data['jobcard${processRepairCount}'] is List
                           ? data['jobcard${processRepairCount}']
                           : [];
 
-                  // Cari item yang cocok dari list yang sudah aman
                   final Map<String, dynamic>? jobcardItem =
                       jobcardList.firstWhere(
                     (item) => item is Map && item['name'] == jobName['name'],
-                    orElse: () =>
-                        null, // Gunakan null jika tidak ada, lebih aman
+                    orElse: () => null,
                   );
 
                   return Column(
@@ -208,38 +231,131 @@ class _JobcardSelectedJobPageState extends State<JobcardSelectedJobPage> {
                                       decorationThickness: 3.0),
                                 )
                               else
-                                Row(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    // PENGECEKAN UI YANG DIPERBAIKI
-                                    if (jobcardItem !=
-                                        null) // Cukup cek apakah itemnya ada
-                                      SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: Image.asset(
-                                            '${iconPath}/accept.png'),
-                                      )
-                                    else
-                                      Container(
-                                        width: 20,
-                                        height: 20,
-                                        decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                            border: Border.all(color: black)),
-                                      ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      jobName['name'],
-                                      style: getBlackTextStyle(),
-                                    )
+                                    Row(
+                                      children: [
+                                        // PENGECEKAN UI YANG DIPERBAIKI
+                                        if (jobcardItem !=
+                                            null) // Cukup cek apakah itemnya ada
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: Image.asset(
+                                                '${iconPath}/accept.png'),
+                                          )
+                                        else
+                                          Container(
+                                            width: 20,
+                                            height: 20,
+                                            decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                                border:
+                                                    Border.all(color: black)),
+                                          ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          jobName['name'],
+                                          style: getBlackTextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(
+                                      height: 12,
+                                    ),
+                                    (index < jobcardList.length)
+                                        ? Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Repairman : ' +
+                                                    jobcardList[index]
+                                                        ['bywhom'],
+                                                style: getBlackTextStyle(),
+                                              ),
+                                              const SizedBox(
+                                                height: 6,
+                                              ),
+                                              Text(
+                                                'Date : ' +
+                                                    jobcardList[index]['date'],
+                                                style: getBlackTextStyle(),
+                                              ),
+                                              const SizedBox(
+                                                height: 6,
+                                              ),
+                                              Text(
+                                                'Duration : ' +
+                                                    '${(jobcardList[index]['hours'] == null || jobcardList[index]['hours'].isEmpty) ? '0' : jobcardList[index]['hours']} Hours  ${(jobcardList[index]['minutes'] == null || jobcardList[index]['minutes'].isEmpty) ? '0' : jobcardList[index]['minutes']} Minutes',
+                                                style: getBlackTextStyle(),
+                                              ),
+                                              const SizedBox(
+                                                height: 6,
+                                              ),
+                                              if (jobcardList[index]['name'] ==
+                                                  'Dimensi Luka')
+                                                Text(
+                                                  '${formatDataDimensi(jobcardList[index]['dimensi'])}',
+                                                  style: getBlackTextStyle(),
+                                                )
+                                              else
+                                                Container(),
+                                              const SizedBox(
+                                                height: 6,
+                                              ),
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  if ((jobcardList[index]
+                                                              ['material'][0]
+                                                          ['name'] !=
+                                                      '' as String)) ...[
+                                                    for (final item
+                                                        in jobcardList[index]
+                                                                ['material']
+                                                            as List)
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Text(
+                                                          '${item['name'] ?? ''} - (Jumlah: ${item['qty'] ?? ''})',
+                                                          style:
+                                                              getBlackTextStyle(),
+                                                        ),
+                                                      ),
+                                                  ] else
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8.0),
+                                                      child: Text(
+                                                        'No Material.', // Lebih baik daripada Container() kosong
+                                                        style: getBlackTextStyle()
+                                                            .copyWith(
+                                                                fontStyle:
+                                                                    FontStyle
+                                                                        .italic),
+                                                      ),
+                                                    ),
+                                                ],
+                                              )
+                                            ],
+                                          )
+                                        : Container(),
                                   ],
                                 ),
-                              // Sisa kode ...
                             ],
                           ),
                         ),
                       ),
+                      const Divider(
+                        thickness: 1.5,
+                      )
                     ],
                   );
                 }),
