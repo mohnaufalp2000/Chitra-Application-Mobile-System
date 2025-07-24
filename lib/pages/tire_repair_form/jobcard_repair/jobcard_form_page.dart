@@ -43,7 +43,7 @@ class _JobcardFormPageState extends State<JobcardFormPage>
     final tireDetail = map['tireDetail'];
     final wo = map['wo'];
     final woDate = map['woDate'];
-    final processRepairCountBefore = map['processRepairCount'];
+    final processRepairCountBefore = 1;
 
     return Scaffold(
       appBar: AppBar(
@@ -70,7 +70,7 @@ class _JobcardFormPageState extends State<JobcardFormPage>
           children: [
             ProcessRepair(
               tireDetail: tireDetail,
-              processRepairCountBefore: processRepairCountBefore,
+              processRepairCountBefore: '1',
             ),
             TireDetail(tireDetail: tireDetail, wo: wo, woDate: woDate),
           ],
@@ -132,18 +132,15 @@ class _ProcessRepairState extends State<ProcessRepair> {
       TController.add(TextEditingController());
     }
 
-    if (widget
-        .tireDetail['jobcard${widget.processRepairCountBefore}'].isEmpty) {
+    if (widget.tireDetail['jobcard1'].isEmpty) {
       existingJob = 'Skiving';
     } else {
-      final lastName = widget
-          .tireDetail['jobcard${widget.processRepairCountBefore}'].last['name'];
+      final lastName = widget.tireDetail['jobcard1'].last['name'];
 
       final jobList = JobcardRepair.jobName;
       final currentIndex = jobList.indexWhere((job) => job['name'] == lastName);
 
-      existingJob = widget
-          .tireDetail['jobcard${widget.processRepairCountBefore}'].last['name'];
+      existingJob = widget.tireDetail['jobcard1'].last['name'];
       if (currentIndex != -1 && currentIndex < jobList.length - 1) {
         existingJob = jobList[currentIndex + 1]['name'];
       } else {
@@ -184,6 +181,10 @@ class _ProcessRepairState extends State<ProcessRepair> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        FormTitle(title: 'Job : $existingJob'),
+        const SizedBox(
+          height: 12,
+        ),
         const FormTitle(title: 'Injuries'),
         const SizedBox(
           height: 12,
@@ -479,8 +480,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                                   width: 12,
                                                                 ),
                                                                 Text(
-                                                                  material
-                                                                      .smu.name,
+                                                                  existingMaterialUnit,
                                                                   style:
                                                                       getBlackTextStyle(),
                                                                 )
@@ -506,18 +506,17 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                             'name': material
                                                                 .materialName,
                                                             'qty': '',
+                                                            'smu':
+                                                                existingMaterialUnit
                                                           });
                                                         } else {
-                                                          selectedMaterials
-                                                              .removeWhere(
-                                                            (element) =>
-                                                                element['id_matstock'] ==
-                                                                    material
-                                                                        .idMatstock &&
-                                                                element['name'] ==
-                                                                    material
-                                                                        .materialName,
-                                                          );
+                                                          selectedMaterials.removeWhere((element) =>
+                                                              element['id_matstock'] == material.idMatstock &&
+                                                              element['name'] ==
+                                                                  material
+                                                                      .materialName &&
+                                                              element['smu'] ==
+                                                                  existingMaterialUnit);
                                                         }
                                                       });
 
@@ -788,7 +787,10 @@ class _ProcessRepairState extends State<ProcessRepair> {
               final oldData = await firestore
                   .collection(FirestoreKey.tireRepairInspectionReport)
                   .where('id', isEqualTo: widget.tireDetail['id'])
+                  .limit(1)
                   .get();
+              final oldRef = oldData.docs.first.reference;
+              final oldMapData = oldData.docs.first.data();
 
               print(
                   'process repair count before : ${widget.processRepairCountBefore}');
@@ -808,14 +810,14 @@ class _ProcessRepairState extends State<ProcessRepair> {
               // } else {
               //   processRepairCount = oldData.docs.first['process_repair_count'];
               // }
-              final processRepairCount =
-                  oldData.docs.first['process_repair_count'];
+              final processRepairCount = 1;
 
               if (selectedMaterials.isEmpty) {
                 selectedMaterials.add({
                   'id_matstock': '',
                   'name': '',
                   'qty': '',
+                  'smu': '',
                 });
               }
 
@@ -837,6 +839,8 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 }
               }).where((e) => e.isNotEmpty).join(' ');
 
+              print('format material : ${selectedMaterials}');
+
               final jobcardData = {
                 'name': existingJob,
                 'fulldate': selectedDate?.toIso8601String(),
@@ -848,41 +852,41 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 'remarks': injuriesController.text,
                 'process_repair_count': processRepairCount,
                 'id_wo': widget.tireDetail['id'],
-                // 'dimensi':
-                //     'L${LController.text},W${WController.text},P${PController.text},T${TController.text}',
                 'dimensi': dimensiString,
                 'created_at': DateTime.now().toIso8601String(),
               };
 
               print('format json jobcard : ${jsonEncode(jobcardData)}');
 
+              // LANGKAH 1: READ
+              // Ambil array yang ada dari dokumen. Default ke list kosong jika tidak ada.
+              List<dynamic> jobcardOldList =
+                  List.from(oldMapData['jobcard1'] ?? []);
+
+              // LANGKAH 2: MODIFY
+              // Cari index dari jobcard yang memiliki 'name' yang sama
+              int existingIndex = jobcardOldList.indexWhere(
+                  (job) => job is Map && job['name'] == jobcardData['name']);
+
+              if (existingIndex != -1) {
+                // JIKA DITEMUKAN: timpa data pada index tersebut
+                jobcardOldList[existingIndex] = jobcardData;
+              } else {
+                // JIKA TIDAK DITEMUKAN: Tambahkan data baru ke list
+                jobcardOldList.add(jobcardData);
+              }
+
               // Simpan ke Firestore
-              await oldData.docs[0].reference.update({
-                'jobcard$processRepairCount':
-                    FieldValue.arrayUnion([jobcardData]),
+              // await oldData.docs[0].reference.update({
+              //   'jobcard1': FieldValue.arrayUnion([jobcardData]),
+
+              await oldRef.update({
+                'jobcard1': jobcardOldList,
               });
 
               context
                   .read<ProcessJobcardBloc>()
                   .add(SubmitJobcardEvent(jobcard: jobcardData));
-
-              // await oldData.docs[0].reference.update({
-              //   'jobcard': FieldValue.arrayUnion([
-              //     {
-              //       'name': existingJob,
-              //       'fulldate': DateTime.now().toIso8601String(),
-              //       'date': DateFormat('dd-MM-yyyy').format(DateTime.now()),
-              //       'material': selectedMaterials,
-              //       'qty': qtyController.text,
-              //       'hours': hoursController.text,
-              //       'minutes': minutesController.text,
-              //       'bywhom': repairmanController.text,
-              //       'remarks': injuriesController.text,
-              //       'dimensi':
-              //           '${LController.text},${WController.text},${PController.text}, ${TController.text}'
-              //     }
-              //   ])
-              // });
             })
       ]),
     );

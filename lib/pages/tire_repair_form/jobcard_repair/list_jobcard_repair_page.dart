@@ -915,9 +915,7 @@ class ItemJob extends StatelessWidget {
                                                 'minutes': '0',
                                                 'bywhom': '',
                                                 'remarks': '',
-                                                'process_repair_count':
-                                                    oldData.docs.first[
-                                                        'process_repair_count'],
+                                                'process_repair_count': 1,
                                                 'id_wo': data['id'],
                                                 'dimensi': '',
                                                 'created_at': DateTime.now()

@@ -124,493 +124,630 @@ class _JobcardSelectedJobPageState extends State<JobcardSelectedJobPage> {
     // }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Input Jobcard Repair',
-          style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
-        ),
-        backgroundColor: const Color(0xFF359B7B),
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: SafeArea(
-          child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
+        appBar: AppBar(
+          toolbarHeight: 90,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text(
+                'Input Jobcard Repair',
+                style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+              ),
               const SizedBox(
                 height: 12,
               ),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.work,
-                  ),
-                  const SizedBox(
-                    width: 6,
-                  ),
-                  Text(
-                    'Process Repair',
-                    style: getBlackTextStyle(
-                      fontSize: 16,
-                      fontWeight: w700,
+              Text(
+                'SN : ${data['sn']}',
+                style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFF359B7B),
+          iconTheme: const IconThemeData(color: Colors.white),
+        ),
+        body: SafeArea(
+            child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              children: [
+                const SizedBox(
+                  height: 12,
+                ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.work,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 6,
-              ),
-              // Ganti seluruh Column Anda dengan ini
-              Column(
-                children: List.generate(JobcardRepair.jobName.length, (index) {
-                  final jobName = JobcardRepair.jobName[index];
+                    const SizedBox(
+                      width: 6,
+                    ),
+                    Text(
+                      'Process Repair',
+                      style: getBlackTextStyle(
+                        fontSize: 16,
+                        fontWeight: w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                  height: 6,
+                ),
+                // Ganti seluruh Column Anda dengan ini
+                Column(
+                  children:
+                      List.generate(JobcardRepair.jobName.length, (index) {
+                    final jobName = JobcardRepair.jobName[index];
 
-                  final List<dynamic> jobcardList =
-                      data['jobcard${processRepairCount}'] is List
-                          ? data['jobcard${processRepairCount}']
-                          : [];
+                    final List<dynamic> jobcardList =
+                        data['jobcard${processRepairCount}'] is List
+                            ? data['jobcard${processRepairCount}']
+                            : [];
 
-                  final Map<String, dynamic>? jobcardItem =
-                      jobcardList.firstWhere(
-                    (item) => item is Map && item['name'] == jobName['name'],
-                    orElse: () => null,
-                  );
+                    final Map<String, dynamic>? jobcardItem =
+                        jobcardList.firstWhere(
+                      (item) => item is Map && item['name'] == jobName['name'],
+                      orElse: () => null,
+                    );
 
-                  return Column(
-                    children: [
-                      InkWell(
-                        onTap: () {
-                          // Logika navigasi dan .then() Anda sudah benar, tidak perlu diubah
-                          Navigator.pushNamed(
-                            context,
-                            JobcardFormPage.routeName,
-                            arguments: {
-                              'tireDetail': data,
-                              'wo': arguments['wo'],
-                              'woDate': arguments['woDate'],
-                              'processRepairCount': processRepairCount,
-                            },
-                          ).then((value) async {
-                            if (value == true && mounted) {
-                              await Future.delayed(
-                                  const Duration(milliseconds: 300));
-                              final querySnapshot = await firestore
-                                  .collection(
-                                      FirestoreKey.tireRepairInspectionReport)
-                                  .where('id', isEqualTo: data['id'])
-                                  .limit(1)
-                                  .get();
+                    return Column(
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            // Logika navigasi dan .then() Anda sudah benar, tidak perlu diubah
+                            Navigator.pushNamed(
+                              context,
+                              JobcardFormPage.routeName,
+                              arguments: {
+                                'tireDetail': data,
+                                'wo': arguments['wo'],
+                                'woDate': arguments['woDate'],
+                                'processRepairCount': processRepairCount,
+                              },
+                            ).then((value) async {
+                              if (value == true && mounted) {
+                                await Future.delayed(
+                                    const Duration(milliseconds: 300));
+                                final querySnapshot = await firestore
+                                    .collection(
+                                        FirestoreKey.tireRepairInspectionReport)
+                                    .where('id', isEqualTo: data['id'])
+                                    .limit(1)
+                                    .get();
 
-                              if (querySnapshot.docs.isNotEmpty) {
-                                final newData = querySnapshot.docs.first.data()
-                                    as Map<String, dynamic>;
+                                if (querySnapshot.docs.isNotEmpty) {
+                                  final newData = querySnapshot.docs.first
+                                      .data() as Map<String, dynamic>;
 
-                                // CUKUP UPDATE 'data'
-                                setState(() {
-                                  data = newData;
-                                });
+                                  // CUKUP UPDATE 'data'
+                                  setState(() {
+                                    data = newData;
+                                  });
+                                }
                               }
-                            }
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: const BoxDecoration(/*...*/),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              // PENGECEKAN UI YANG DIPERBAIKI
-                              if (jobcardItem != null &&
-                                  jobcardItem['hours'] == '0' &&
-                                  jobcardItem['minutes'] == '0')
-                                Text(
-                                  jobName['name'],
-                                  style: getBlackTextStyle().copyWith(
-                                      decoration: TextDecoration.lineThrough,
-                                      decorationThickness: 3.0),
-                                )
-                              else
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        // PENGECEKAN UI YANG DIPERBAIKI
-                                        if (jobcardItem !=
-                                            null) // Cukup cek apakah itemnya ada
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: Image.asset(
-                                                '${iconPath}/accept.png'),
-                                          )
-                                        else
-                                          Container(
-                                            width: 20,
-                                            height: 20,
-                                            decoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(6),
-                                                border:
-                                                    Border.all(color: black)),
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: const BoxDecoration(/*...*/),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                // PENGECEKAN UI YANG DIPERBAIKI
+                                if (jobcardItem != null &&
+                                    jobcardItem['hours'] == '0' &&
+                                    jobcardItem['minutes'] == '0')
+                                  Text(
+                                    jobName['name'],
+                                    style: getBlackTextStyle().copyWith(
+                                        decoration: TextDecoration.lineThrough,
+                                        decorationThickness: 3.0),
+                                  )
+                                else
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          // PENGECEKAN UI YANG DIPERBAIKI
+                                          if (jobcardItem !=
+                                              null) // Cukup cek apakah itemnya ada
+                                            SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: Image.asset(
+                                                  '${iconPath}/accept.png'),
+                                            )
+                                          else
+                                            Container(
+                                              width: 20,
+                                              height: 20,
+                                              decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  border:
+                                                      Border.all(color: black)),
+                                            ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            jobName['name'],
+                                            style: getBlackTextStyle(
+                                              fontWeight: w700,
+                                            ),
                                           ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          jobName['name'],
-                                          style: getBlackTextStyle(),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(
-                                      height: 12,
-                                    ),
-                                    (index < jobcardList.length)
-                                        ? Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Repairman : ' +
-                                                    jobcardList[index]
-                                                        ['bywhom'],
-                                                style: getBlackTextStyle(),
-                                              ),
-                                              const SizedBox(
-                                                height: 6,
-                                              ),
-                                              Text(
-                                                'Date : ' +
-                                                    jobcardList[index]['date'],
-                                                style: getBlackTextStyle(),
-                                              ),
-                                              const SizedBox(
-                                                height: 6,
-                                              ),
-                                              Text(
-                                                'Duration : ' +
-                                                    '${(jobcardList[index]['hours'] == null || jobcardList[index]['hours'].isEmpty) ? '0' : jobcardList[index]['hours']} Hours  ${(jobcardList[index]['minutes'] == null || jobcardList[index]['minutes'].isEmpty) ? '0' : jobcardList[index]['minutes']} Minutes',
-                                                style: getBlackTextStyle(),
-                                              ),
-                                              const SizedBox(
-                                                height: 6,
-                                              ),
-                                              if (jobcardList[index]['name'] ==
-                                                  'Dimensi Luka')
-                                                Text(
-                                                  '${formatDataDimensi(jobcardList[index]['dimensi'])}',
-                                                  style: getBlackTextStyle(),
-                                                )
-                                              else
-                                                Container(),
-                                              const SizedBox(
-                                                height: 6,
-                                              ),
-                                              Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  if ((jobcardList[index]
-                                                              ['material'][0]
-                                                          ['name'] !=
-                                                      '' as String)) ...[
-                                                    for (final item
-                                                        in jobcardList[index]
-                                                                ['material']
-                                                            as List)
+                                        ],
+                                      ),
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+                                      (index < jobcardList.length)
+                                          ? Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    const Icon(Icons
+                                                        .account_circle_outlined),
+                                                    const SizedBox(
+                                                      width: 6,
+                                                    ),
+                                                    Text(
+                                                      'Repairman : ' +
+                                                          jobcardList[index]
+                                                              ['bywhom'],
+                                                      style:
+                                                          getBlackTextStyle(),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(
+                                                  height: 14,
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    const Icon(
+                                                        Icons.date_range),
+                                                    const SizedBox(
+                                                      width: 6,
+                                                    ),
+                                                    Text(
+                                                      'Date : ' +
+                                                          jobcardList[index]
+                                                              ['date'],
+                                                      style:
+                                                          getBlackTextStyle(),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(
+                                                  height: 14,
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    const Icon(Icons.timer),
+                                                    const SizedBox(
+                                                      width: 6,
+                                                    ),
+                                                    Text(
+                                                      'Duration : ' +
+                                                          '${(jobcardList[index]['hours'] == null || jobcardList[index]['hours'].isEmpty) ? '0' : jobcardList[index]['hours']} Hours  ${(jobcardList[index]['minutes'] == null || jobcardList[index]['minutes'].isEmpty) ? '0' : jobcardList[index]['minutes']} Minutes',
+                                                      style:
+                                                          getBlackTextStyle(),
+                                                    ),
+                                                  ],
+                                                ),
+                                                if (jobcardList[index]
+                                                        ['name'] ==
+                                                    'Dimensi Luka')
+                                                  Column(
+                                                    children: [
+                                                      const SizedBox(
+                                                        height: 14,
+                                                      ),
+                                                      Text(
+                                                        '${formatDataDimensi(jobcardList[index]['dimensi'])}',
+                                                        style:
+                                                            getBlackTextStyle(),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 14,
+                                                      ),
+                                                    ],
+                                                  )
+                                                else
+                                                  Column(
+                                                    children: [
+                                                      const SizedBox(
+                                                        height: 14,
+                                                      ),
+                                                      Container(),
+                                                    ],
+                                                  ),
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    // 1. Cek dulu apakah list 'material' ada dan tidak kosong.
+                                                    // Pengecekan ini lebih aman daripada hanya memeriksa item pertama.
+                                                    if (jobcardList[index]
+                                                                ['material'] !=
+                                                            null &&
+                                                        (jobcardList[index]
+                                                                    ['material']
+                                                                as List)
+                                                            .isNotEmpty &&
+                                                        jobcardList[index]
+                                                                    ['material']
+                                                                [0]['name'] !=
+                                                            '')
+
+                                                      // 2. Gunakan spread operator `...` untuk memasukkan beberapa widget sekaligus jika kondisi true.
+                                                      ...[
+                                                      // Widget Judul "Material"
+                                                      Row(
+                                                        children: [
+                                                          const Icon(
+                                                              Icons.settings),
+                                                          const SizedBox(
+                                                              width: 6),
+                                                          Text('Material',
+                                                              style:
+                                                                  getBlackTextStyle()),
+                                                        ],
+                                                      ),
+
+                                                      // 3. Gunakan .asMap().entries.map() untuk membuat list material dengan index.
+                                                      ...(jobcardList[index]
+                                                                  ['material']
+                                                              as List)
+                                                          .asMap()
+                                                          .entries
+                                                          .map((entry) {
+                                                        final int itemIndex = entry
+                                                            .key; // <- Ini adalah index dari item (0, 1, 2, ...)
+                                                        final dynamic item =
+                                                            entry.value;
+
+                                                        return Padding(
+                                                          padding: const EdgeInsets
+                                                              .fromLTRB(8, 8, 8,
+                                                              0), // Atur padding sesuai kebutuhan
+                                                          child: Text(
+                                                            // Gunakan itemIndex di sini, bukan index dari ListView.builder
+                                                            '${itemIndex + 1}. ${item['name'] ?? ''} (Qty: ${item['qty'] ?? ''} ${item['smu'] ?? ''})',
+                                                            style:
+                                                                getBlackTextStyle(),
+                                                          ),
+                                                        );
+                                                      }).toList(),
+                                                    ] else
+                                                      // 4. Blok `else` jika material kosong.
                                                       Padding(
                                                         padding:
                                                             const EdgeInsets
                                                                 .all(8.0),
                                                         child: Text(
-                                                          '${item['name'] ?? ''} - (Jumlah: ${item['qty'] ?? ''})',
-                                                          style:
-                                                              getBlackTextStyle(),
+                                                          'No Material.',
+                                                          style: getBlackTextStyle()
+                                                              .copyWith(
+                                                                  fontStyle:
+                                                                      FontStyle
+                                                                          .italic),
                                                         ),
                                                       ),
-                                                  ] else
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Text(
-                                                        'No Material.', // Lebih baik daripada Container() kosong
-                                                        style: getBlackTextStyle()
-                                                            .copyWith(
-                                                                fontStyle:
-                                                                    FontStyle
-                                                                        .italic),
-                                                      ),
-                                                    ),
-                                                ],
-                                              )
-                                            ],
-                                          )
-                                        : Container(),
-                                  ],
-                                ),
-                            ],
+                                                  ],
+                                                )
+                                              ],
+                                            )
+                                          : Container(),
+                                    ],
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      const Divider(
-                        thickness: 1.5,
-                      )
-                    ],
-                  );
-                }),
-              ),
-              // Column(
-              //   children: List.generate(JobcardRepair.jobName.length, (index) {
-              //     final jobName = JobcardRepair.jobName[index];
-              //     log('jobnama : $jobName');
+                        const Divider(
+                          thickness: 1.5,
+                        )
+                      ],
+                    );
+                  }),
+                ),
+                // Column(
+                //   children: List.generate(JobcardRepair.jobName.length, (index) {
+                //     final jobName = JobcardRepair.jobName[index];
+                //     log('jobnama : $jobName');
 
-              //     Map<dynamic, dynamic> jobcardItem =
-              //         data['jobcard${processRepairCount}'].firstWhere(
-              //       (item) => item['name'] == jobName['name'],
-              //       orElse: () => {},
-              //     );
-              //     log('jobitem : $jobcardItem');
-              //     return Column(
-              //       children: [
-              //         InkWell(
-              //           onTap: () async {
-              //             Navigator.pushNamed(
-              //               context,
-              //               JobcardFormPage.routeName,
-              //               arguments: {
-              //                 'tireDetail': data,
-              //                 'wo': arguments['wo'],
-              //                 'woDate': arguments['woDate'],
-              //                 'processRepairCount': processRepairCount
-              //               },
-              //             ).then((value) async {
-              //               print(
-              //                   'Kembali ke Halaman A, nilai yang diterima: $value');
+                //     Map<dynamic, dynamic> jobcardItem =
+                //         data['jobcard${processRepairCount}'].firstWhere(
+                //       (item) => item['name'] == jobName['name'],
+                //       orElse: () => {},
+                //     );
+                //     log('jobitem : $jobcardItem');
+                //     return Column(
+                //       children: [
+                //         InkWell(
+                //           onTap: () async {
+                //             Navigator.pushNamed(
+                //               context,
+                //               JobcardFormPage.routeName,
+                //               arguments: {
+                //                 'tireDetail': data,
+                //                 'wo': arguments['wo'],
+                //                 'woDate': arguments['woDate'],
+                //                 'processRepairCount': processRepairCount
+                //               },
+                //             ).then((value) async {
+                //               print(
+                //                   'Kembali ke Halaman A, nilai yang diterima: $value');
 
-              //               if (value == true && mounted) {
-              //                 // --- TAMBAHKAN KODE DEBUG DI SINI ---
-              //                 print("--- DEBUG START ---");
-              //                 print(
-              //                     "DATA LAMA (SEBELUM FETCH): ${data['jobcard${processRepairCount}']}");
+                //               if (value == true && mounted) {
+                //                 // --- TAMBAHKAN KODE DEBUG DI SINI ---
+                //                 print("--- DEBUG START ---");
+                //                 print(
+                //                     "DATA LAMA (SEBELUM FETCH): ${data['jobcard${processRepairCount}']}");
 
-              //                 // Tambahkan sedikit jeda untuk memberi waktu Firestore memproses data
-              //                 await Future.delayed(
-              //                     const Duration(milliseconds: 300));
+                //                 // Tambahkan sedikit jeda untuk memberi waktu Firestore memproses data
+                //                 await Future.delayed(
+                //                     const Duration(milliseconds: 300));
 
-              //                 final querySnapshot = await firestore
-              //                     .collection(
-              //                         FirestoreKey.tireRepairInspectionReport)
-              //                     .where('id', isEqualTo: data['id'])
-              //                     .limit(1)
-              //                     .get();
+                //                 final querySnapshot = await firestore
+                //                     .collection(
+                //                         FirestoreKey.tireRepairInspectionReport)
+                //                     .where('id', isEqualTo: data['id'])
+                //                     .limit(1)
+                //                     .get();
 
-              //                 if (querySnapshot.docs.isNotEmpty) {
-              //                   final newData = querySnapshot.docs.first.data()
-              //                       as Map<String, dynamic>;
+                //                 if (querySnapshot.docs.isNotEmpty) {
+                //                   final newData = querySnapshot.docs.first.data()
+                //                       as Map<String, dynamic>;
 
-              //                   // 2. CUKUP UPDATE 'data' SAJA DI DALAM SETSTATE
-              //                   setState(() {
-              //                     data = newData;
-              //                   });
-              //                 }
-              //               }
-              //             });
-              //             // await Navigator.pushNamed(
-              //             //     context, JobcardFormPage.routeName,
-              //             //     arguments: {
-              //             //       'tireDetail': data,
-              //             //       'wo': arguments['wo'],
-              //             //       'woDate': arguments['woDate'],
-              //             //       'processRepairCount': processRepairCount
-              //             //     });
-              //             // if (context.mounted) {
-              //             //   context.read<WoJobcardBloc>().add(WoJobcardEvent());
-              //             // }
-              //           },
-              //           child: Container(
-              //               padding: const EdgeInsets.symmetric(vertical: 8),
-              //               decoration: const BoxDecoration(
-              //                 border: Border(
-              //                   bottom: BorderSide(
-              //                     color: Colors.grey,
-              //                     width: 1.0,
-              //                   ),
-              //                 ),
-              //               ),
-              //               child: Row(
-              //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //                 children: [
-              //                   if (jobcardItem != null &&
-              //                       jobcardItem['hours'] == '0' &&
-              //                       jobcardItem['minutes'] == '0')
-              //                     Text(
-              //                       jobName['name'],
-              //                       style: getBlackTextStyle().copyWith(
-              //                           decoration: TextDecoration.lineThrough,
-              //                           decorationThickness: 3.0),
-              //                     )
-              //                   else
-              //                     Row(
-              //                       children: [
-              //                         if (data['jobcard${processRepairCount}']
-              //                             .any((item) =>
-              //                                 item['name'] == jobName['name']))
-              //                           SizedBox(
-              //                             width: 20,
-              //                             height: 20,
-              //                             child: Image.asset(
-              //                                 '${iconPath}/accept.png'),
-              //                           )
-              //                         else
-              //                           Container(
-              //                             width: 20,
-              //                             height: 20,
-              //                             decoration: BoxDecoration(
-              //                                 borderRadius:
-              //                                     BorderRadius.circular(6),
-              //                                 border: Border.all(color: black)),
-              //                           ),
-              //                         const SizedBox(
-              //                           width: 6,
-              //                         ),
-              //                         Text(
-              //                           jobName['name'],
-              //                           style: getBlackTextStyle(),
-              //                         )
-              //                       ],
-              //                     ),
-              //                   if (!data['jobcard$processRepairCount'].any(
-              //                           (item) => item['name'] == jobName) &&
-              //                       existingJob == jobName)
-              //                     SizedBox(
-              //                       width: 60,
-              //                       height: 25,
-              //                       child: TextButton(
-              //                         onPressed: () {
-              //                           showDialog(
-              //                             context: context,
-              //                             builder: (BuildContext context) {
-              //                               return AlertDialog(
-              //                                 title: Text(
-              //                                   'Confirmation Skip (${jobName})',
-              //                                   style: getBlackTextStyle(),
-              //                                 ),
-              //                                 content: Text(
-              //                                   'Are you sure you want to skip this process (${jobName})?',
-              //                                   style: getBlackTextStyle(),
-              //                                 ),
-              //                                 actions: [
-              //                                   TextButton(
-              //                                     onPressed: () => Navigator.of(
-              //                                             context)
-              //                                         .pop(), // Tutup dialog
-              //                                     child: const Text('Cancel'),
-              //                                   ),
-              //                                   ElevatedButton(
-              //                                     onPressed: () async {
-              //                                       final oldData = await firestore
-              //                                           .collection(FirestoreKey
-              //                                               .tireRepairInspectionReport)
-              //                                           .where('id',
-              //                                               isEqualTo:
-              //                                                   data['id'])
-              //                                           .get();
-              //                                       final jobcardData = {
-              //                                         'name': jobName,
-              //                                         'fulldate': DateTime.now()
-              //                                             .toIso8601String(),
-              //                                         'date': DateFormat(
-              //                                                 'dd-MM-yyyy')
-              //                                             .format(
-              //                                                 DateTime.now()),
-              //                                         'material': [
-              //                                           {
-              //                                             'id_matstock': '',
-              //                                             'name': '',
-              //                                             'qty': '',
-              //                                           }
-              //                                         ],
-              //                                         'hours': '0',
-              //                                         'minutes': '0',
-              //                                         'bywhom': '',
-              //                                         'remarks': '',
-              //                                         'process_repair_count':
-              //                                             oldData.docs.first[
-              //                                                 'process_repair_count'],
-              //                                         'id_wo': data['id'],
-              //                                         'dimensi': '',
-              //                                         'created_at': DateTime
-              //                                                 .now()
-              //                                             .toIso8601String(),
-              //                                       };
+                //                   // 2. CUKUP UPDATE 'data' SAJA DI DALAM SETSTATE
+                //                   setState(() {
+                //                     data = newData;
+                //                   });
+                //                 }
+                //               }
+                //             });
+                //             // await Navigator.pushNamed(
+                //             //     context, JobcardFormPage.routeName,
+                //             //     arguments: {
+                //             //       'tireDetail': data,
+                //             //       'wo': arguments['wo'],
+                //             //       'woDate': arguments['woDate'],
+                //             //       'processRepairCount': processRepairCount
+                //             //     });
+                //             // if (context.mounted) {
+                //             //   context.read<WoJobcardBloc>().add(WoJobcardEvent());
+                //             // }
+                //           },
+                //           child: Container(
+                //               padding: const EdgeInsets.symmetric(vertical: 8),
+                //               decoration: const BoxDecoration(
+                //                 border: Border(
+                //                   bottom: BorderSide(
+                //                     color: Colors.grey,
+                //                     width: 1.0,
+                //                   ),
+                //                 ),
+                //               ),
+                //               child: Row(
+                //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //                 children: [
+                //                   if (jobcardItem != null &&
+                //                       jobcardItem['hours'] == '0' &&
+                //                       jobcardItem['minutes'] == '0')
+                //                     Text(
+                //                       jobName['name'],
+                //                       style: getBlackTextStyle().copyWith(
+                //                           decoration: TextDecoration.lineThrough,
+                //                           decorationThickness: 3.0),
+                //                     )
+                //                   else
+                //                     Row(
+                //                       children: [
+                //                         if (data['jobcard${processRepairCount}']
+                //                             .any((item) =>
+                //                                 item['name'] == jobName['name']))
+                //                           SizedBox(
+                //                             width: 20,
+                //                             height: 20,
+                //                             child: Image.asset(
+                //                                 '${iconPath}/accept.png'),
+                //                           )
+                //                         else
+                //                           Container(
+                //                             width: 20,
+                //                             height: 20,
+                //                             decoration: BoxDecoration(
+                //                                 borderRadius:
+                //                                     BorderRadius.circular(6),
+                //                                 border: Border.all(color: black)),
+                //                           ),
+                //                         const SizedBox(
+                //                           width: 6,
+                //                         ),
+                //                         Text(
+                //                           jobName['name'],
+                //                           style: getBlackTextStyle(),
+                //                         )
+                //                       ],
+                //                     ),
+                //                   if (!data['jobcard$processRepairCount'].any(
+                //                           (item) => item['name'] == jobName) &&
+                //                       existingJob == jobName)
+                //                     SizedBox(
+                //                       width: 60,
+                //                       height: 25,
+                //                       child: TextButton(
+                //                         onPressed: () {
+                //                           showDialog(
+                //                             context: context,
+                //                             builder: (BuildContext context) {
+                //                               return AlertDialog(
+                //                                 title: Text(
+                //                                   'Confirmation Skip (${jobName})',
+                //                                   style: getBlackTextStyle(),
+                //                                 ),
+                //                                 content: Text(
+                //                                   'Are you sure you want to skip this process (${jobName})?',
+                //                                   style: getBlackTextStyle(),
+                //                                 ),
+                //                                 actions: [
+                //                                   TextButton(
+                //                                     onPressed: () => Navigator.of(
+                //                                             context)
+                //                                         .pop(), // Tutup dialog
+                //                                     child: const Text('Cancel'),
+                //                                   ),
+                //                                   ElevatedButton(
+                //                                     onPressed: () async {
+                //                                       final oldData = await firestore
+                //                                           .collection(FirestoreKey
+                //                                               .tireRepairInspectionReport)
+                //                                           .where('id',
+                //                                               isEqualTo:
+                //                                                   data['id'])
+                //                                           .get();
+                //                                       final jobcardData = {
+                //                                         'name': jobName,
+                //                                         'fulldate': DateTime.now()
+                //                                             .toIso8601String(),
+                //                                         'date': DateFormat(
+                //                                                 'dd-MM-yyyy')
+                //                                             .format(
+                //                                                 DateTime.now()),
+                //                                         'material': [
+                //                                           {
+                //                                             'id_matstock': '',
+                //                                             'name': '',
+                //                                             'qty': '',
+                //                                           }
+                //                                         ],
+                //                                         'hours': '0',
+                //                                         'minutes': '0',
+                //                                         'bywhom': '',
+                //                                         'remarks': '',
+                //                                         'process_repair_count':
+                //                                             oldData.docs.first[
+                //                                                 'process_repair_count'],
+                //                                         'id_wo': data['id'],
+                //                                         'dimensi': '',
+                //                                         'created_at': DateTime
+                //                                                 .now()
+                //                                             .toIso8601String(),
+                //                                       };
 
-              //                                       await oldData
-              //                                           .docs[0].reference
-              //                                           .update({
-              //                                         'jobcard$processRepairCount':
-              //                                             FieldValue.arrayUnion(
-              //                                                 [jobcardData]),
-              //                                       });
+                //                                       await oldData
+                //                                           .docs[0].reference
+                //                                           .update({
+                //                                         'jobcard$processRepairCount':
+                //                                             FieldValue.arrayUnion(
+                //                                                 [jobcardData]),
+                //                                       });
 
-              //                                       await ApiService
-              //                                           .postJobJobcardRepair(
-              //                                               jobcardData);
-              //                                       Navigator.of(context)
-              //                                           .pop(); // Tutup dialog
-              //                                     },
-              //                                     child: const Text('Yes'),
-              //                                   ),
-              //                                 ],
-              //                               );
-              //                             },
-              //                           );
-              //                         },
-              //                         style: TextButton.styleFrom(
-              //                           backgroundColor:
-              //                               const Color(0xFF35469B),
-              //                           padding: EdgeInsets.zero,
-              //                           shape: RoundedRectangleBorder(
-              //                             borderRadius:
-              //                                 BorderRadius.circular(12),
-              //                           ),
-              //                         ),
-              //                         child: const FittedBox(
-              //                           fit: BoxFit.scaleDown,
-              //                           child: Row(
-              //                             children: [
-              //                               Icon(
-              //                                 Icons.skip_next_outlined,
-              //                                 color: Colors.white,
-              //                                 size: 14,
-              //                               ),
-              //                               SizedBox(width: 2),
-              //                               Text(
-              //                                 'Skip',
-              //                                 style: TextStyle(
-              //                                   color: Colors.white,
-              //                                   fontSize: 10,
-              //                                   fontWeight: FontWeight.bold,
-              //                                 ),
-              //                               ),
-              //                             ],
-              //                           ),
-              //                         ),
-              //                       ),
-              //                     )
-              //                   else
-              //                     Container()
-              //                 ],
-              //               )),
-              //         ),
-              //       ],
-              //     );
-              //   }),
-              // ),
-            ],
+                //                                       await ApiService
+                //                                           .postJobJobcardRepair(
+                //                                               jobcardData);
+                //                                       Navigator.of(context)
+                //                                           .pop(); // Tutup dialog
+                //                                     },
+                //                                     child: const Text('Yes'),
+                //                                   ),
+                //                                 ],
+                //                               );
+                //                             },
+                //                           );
+                //                         },
+                //                         style: TextButton.styleFrom(
+                //                           backgroundColor:
+                //                               const Color(0xFF35469B),
+                //                           padding: EdgeInsets.zero,
+                //                           shape: RoundedRectangleBorder(
+                //                             borderRadius:
+                //                                 BorderRadius.circular(12),
+                //                           ),
+                //                         ),
+                //                         child: const FittedBox(
+                //                           fit: BoxFit.scaleDown,
+                //                           child: Row(
+                //                             children: [
+                //                               Icon(
+                //                                 Icons.skip_next_outlined,
+                //                                 color: Colors.white,
+                //                                 size: 14,
+                //                               ),
+                //                               SizedBox(width: 2),
+                //                               Text(
+                //                                 'Skip',
+                //                                 style: TextStyle(
+                //                                   color: Colors.white,
+                //                                   fontSize: 10,
+                //                                   fontWeight: FontWeight.bold,
+                //                                 ),
+                //                               ),
+                //                             ],
+                //                           ),
+                //                         ),
+                //                       ),
+                //                     )
+                //                   else
+                //                     Container()
+                //                 ],
+                //               )),
+                //         ),
+                //       ],
+                //     );
+                //   }),
+                // ),
+              ],
+            ),
           ),
-        ),
-      )),
-    );
+        )),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 12.0),
+          child: FloatingActionButton.extended(
+              onPressed: () async {
+                // Logika navigasi dan .then() Anda sudah benar, tidak perlu diubah
+                Navigator.pushNamed(
+                  context,
+                  JobcardFormPage.routeName,
+                  arguments: {
+                    'tireDetail': data,
+                    'wo': arguments['wo'],
+                    'woDate': arguments['woDate'],
+                    'processRepairCount': processRepairCount,
+                  },
+                ).then((value) async {
+                  if (value == true && mounted) {
+                    await Future.delayed(const Duration(milliseconds: 300));
+                    final querySnapshot = await firestore
+                        .collection(FirestoreKey.tireRepairInspectionReport)
+                        .where('id', isEqualTo: data['id'])
+                        .limit(1)
+                        .get();
+
+                    if (querySnapshot.docs.isNotEmpty) {
+                      final newData = querySnapshot.docs.first.data()
+                          as Map<String, dynamic>;
+
+                      // CUKUP UPDATE 'data'
+                      setState(() {
+                        data = newData;
+                      });
+                    }
+                  }
+                });
+              },
+              backgroundColor: green35C2C1,
+              label: Text(
+                'Input Jobcard',
+                style: getWhiteTextStyle(),
+              ),
+              icon: const Icon(Icons.add, color: Colors.white, size: 25)),
+        ));
   }
 }
