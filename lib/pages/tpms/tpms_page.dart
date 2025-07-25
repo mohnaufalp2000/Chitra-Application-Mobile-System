@@ -52,6 +52,7 @@ class _TpmsPageState extends State<TpmsPage> {
   List<Map<String, dynamic>> pressureStatus = [];
   List<Map<String, dynamic>> temperatures = [];
   List<List<List<Map<String, dynamic>>>> allUnits = [];
+  String siteName = '';
   // List<bool> isShowMore = [];
 
   // @override
@@ -59,6 +60,33 @@ class _TpmsPageState extends State<TpmsPage> {
   //   super.initState();
   //   context.read<SpmBloc>().add(GetListSpmEvent());
   // }
+
+  void _loadAndFindSite(String idSite) async {
+    // 1. Ambil semua data dari cache (cukup sekali saat widget pertama kali dibuat)
+    final allSites = await ApiService.getCachedAllSites();
+
+    // 2. Lakukan filtering untuk menemukan site yang cocok
+    // Gunakan try-catch untuk menangani kasus jika idSite tidak ditemukan
+    try {
+      final selectedSite = allSites.firstWhere(
+        (site) => site.idSite == idSite,
+      );
+
+      // 3. Update state dengan nama site yang ditemukan
+      if (mounted) {
+        // Pastikan widget masih ada di tree
+        setState(() {
+          siteName = selectedSite.site ?? '';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          siteName = '';
+        });
+      }
+    }
+  }
 
   logoutConfirmation() {
     showDialog(
@@ -137,9 +165,9 @@ class _TpmsPageState extends State<TpmsPage> {
   Widget build(BuildContext context) {
     Map<String, dynamic> data =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    log('data before spm : ${data}');
     String idSite = data['idSite'];
-
-    log('id site spm : ${data['isCTS']}');
+    _loadAndFindSite(idSite);
 
     return Scaffold(
       // appBar: AppBar(
@@ -255,7 +283,6 @@ class _TpmsPageState extends State<TpmsPage> {
                     if (state is SpmLoadedState) {
                       List<Spm> list = state.listSpm;
                       List<bool> isShowMore = state.isShowMore;
-                      log('spm with rating di page: ${list}');
 
                       if (list.isEmpty) {
                         return Text(
@@ -368,26 +395,30 @@ class _TpmsPageState extends State<TpmsPage> {
                                               const SizedBox(
                                                 height: 4,
                                               ),
-                                              FutureBuilder(
-                                                  future: ApiService.getSite(
-                                                      idSite),
-                                                  builder: (context, snapshot) {
-                                                    final data = snapshot.data;
-                                                    log('future id site : $data');
-                                                    if (snapshot
-                                                            .connectionState ==
-                                                        ConnectionState
-                                                            .waiting) {
-                                                      return Container();
-                                                    }
-                                                    return Text(
-                                                      'Site : ${data?.site ?? ''}',
-                                                      style: getBlackTextStyle(
-                                                        fontSize: 14,
-                                                        fontWeight: w700,
-                                                      ),
-                                                    );
-                                                  }),
+                                              // FutureBuilder(
+                                              //     future: ApiService.getSite(
+                                              //         idSite),
+                                              //     builder: (context, snapshot) {
+                                              //       final data = snapshot.data;
+                                              //       log('future id site : $data');
+                                              //       if (snapshot
+                                              //               .connectionState ==
+                                              //           ConnectionState
+                                              //               .waiting) {
+                                              //         return Container();
+                                              //       }
+                                              //       return Text(
+                                              //         'Site : ${data?.site ?? ''}',
+                                              //         style: getBlackTextStyle(
+                                              //           fontSize: 14,
+                                              //           fontWeight: w700,
+                                              //         ),
+                                              //       );
+                                              //     }),
+                                              Text(
+                                                'Site : $siteName',
+                                                style: getBlackTextStyle(),
+                                              ),
                                               SizedBox(
                                                 height: 150,
                                                 width: 100,
@@ -1162,8 +1193,6 @@ class PressureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    log('status1 rating: ${rating == 'N/A'}');
-    log('status2 rating: ${rating}');
     return Card(
       elevation: 2,
       child: Container(
@@ -1206,7 +1235,7 @@ class PressureCard extends StatelessWidget {
                 ],
               )
             else
-              Container(),
+              Container()
           ],
         ),
       ),

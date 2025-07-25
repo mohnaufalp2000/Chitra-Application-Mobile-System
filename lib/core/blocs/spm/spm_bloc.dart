@@ -93,6 +93,11 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
           return;
         }
 
+        final isCts = allSites
+            .firstWhere((site) => site.idSite == event.idSite,
+                orElse: () => Site(idSite: '', idCompany: ''))
+            .cts;
+
         final responseQuery = await firestore
             .collection('url_spm')
             .where('id_company', isEqualTo: idCompany)
@@ -105,47 +110,63 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
 
         final urlSpm = responseQuery.docs.first.data()['url'];
 
-        // --- MULAI PERUBAHAN LOGIKA UTAMA ---
+        // --- LOGIKA UTAMA DENGAN PERCABANGAN ---
 
-        // 1. Panggil API ban (getTireCondition) dan API TPMS (getApiSpm) secara bersamaan
-        final results = await Future.wait([
-          ApiService.getTireCondition(event.idSite),
-          ApiService.getApiSpm(event.idSite, urlSpm),
-        ]);
+        List<Spm> enrichedList;
 
-        final List<UnitTire> dataUnits = results[0] as List<UnitTire>;
-        final List<Spm> apiListSpm = results[1] as List<Spm>;
+        if (isCts == '0') {
+          // JALUR 1: Jika isCts adalah '0', tidak perlu ambil data rating
+          log('Menjalankan proses tanpa penggabungan rating (isCts == "0")');
 
-        // 2. Buat "kamus" atau Map dengan KUNCI KOMPOSIT (contoh: "CO4202-1")
-        final ratingMap = <String, String>{};
-        for (final unit in dataUnits) {
-          // Pastikan unitNumber dan posisi tidak null sebelum membuat kunci
-          if (unit.unitNumber!.isNotEmpty && unit.posisi!.isNotEmpty) {
-            final key = '${unit.unitNumber}-${unit.posisi}';
-            ratingMap[key] = unit.rating ?? '';
+          // Hanya panggil API TPMS
+          enrichedList = await ApiService.getApiSpm(event.idSite, urlSpm);
+        } else {
+          // JALUR 2: Jika isCts bukan '0', jalankan logika penggabungan data
+          log('Menjalankan proses DENGAN penggabungan rating (isCts != "1")');
+
+          // Panggil kedua API secara bersamaan
+          final results = await Future.wait([
+            ApiService.getTireCondition(event.idSite),
+            ApiService.getApiSpm(event.idSite, urlSpm),
+          ]);
+
+          final List<UnitTire> dataUnits = results[0] as List<UnitTire>;
+          final List<Spm> apiListSpm = results[1] as List<Spm>;
+
+          log('unit spm rating bloc 1 : $dataUnits');
+
+          // Buat "kamus" rating dengan kunci komposit
+          final ratingMap = <String, String>{};
+          for (final unit in dataUnits) {
+            if (unit.unitNumber!.isNotEmpty && unit.posisi!.isNotEmpty) {
+              final key = '${unit.unitNumber}-${unit.posisi}';
+              ratingMap[key] = unit.rating ?? '';
+            }
           }
+
+          log('unit spm rating bloc 2 : $ratingMap');
+
+          // Gabungkan data
+          enrichedList = apiListSpm.map((spm) {
+            final deviceName = spm.devicename;
+            return spm.copyWith(
+              rating1: ratingMap['$deviceName-1'],
+              rating2: ratingMap['$deviceName-2'],
+              rating3: ratingMap['$deviceName-3'],
+              rating4: ratingMap['$deviceName-4'],
+              rating5: ratingMap['$deviceName-5'],
+              rating6: ratingMap['$deviceName-6'],
+            );
+          }).toList();
+
+          log('unit spm rating bloc 3 : $enrichedList');
         }
 
-        // 3. Gabungkan data: Tambahkan 'rating' ke setiap item SPM sesuai posisinya
-        final List<Spm> enrichedList = apiListSpm.map((spm) {
-          final deviceName = spm.devicename;
+        // --- Bagian Akhir Tetap Sama ---
 
-          // Buat objek Spm baru dengan tambahan data rating untuk setiap posisi
-          return spm.copyWith(
-            rating1: ratingMap['$deviceName-1'],
-            rating2: ratingMap['$deviceName-2'],
-            rating3: ratingMap['$deviceName-3'],
-            rating4: ratingMap['$deviceName-4'],
-            rating5: ratingMap['$deviceName-5'],
-            rating6: ratingMap['$deviceName-6'],
-          );
-        }).toList();
-
-        // Filter akhir jika diperlukan (logika ini sudah ada sebelumnya)
+        // Filter akhir berdasarkan idSite
         List<Spm> list =
             enrichedList.where((spm) => spm.idSite == event.idSite).toList();
-
-        log('Unit SPM with 6 ratings: $list');
 
         List<bool> isShowMore = List.generate(list.length, (index) => false);
         emit(SpmLoadedState(listSpm: list, isShowMore: isShowMore));
