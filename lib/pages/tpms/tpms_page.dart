@@ -255,7 +255,7 @@ class _TpmsPageState extends State<TpmsPage> {
                     if (state is SpmLoadedState) {
                       List<Spm> list = state.listSpm;
                       List<bool> isShowMore = state.isShowMore;
-                      log('jumlah spm: ${list.length}');
+                      log('spm with rating di page: ${list}');
 
                       if (list.isEmpty) {
                         return Text(
@@ -324,6 +324,14 @@ class _TpmsPageState extends State<TpmsPage> {
                               {'temperature4': element.temperature4},
                               {'temperature5': element.temperature5},
                               {'temperature6': element.temperature6},
+                            ],
+                            [
+                              {'rating1': element.rating1},
+                              {'rating2': element.rating2},
+                              {'rating3': element.rating3},
+                              {'rating4': element.rating4},
+                              {'rating5': element.rating5},
+                              {'rating6': element.rating6},
                             ],
                           ],
                         );
@@ -406,30 +414,37 @@ class _TpmsPageState extends State<TpmsPage> {
                                                           ? 84
                                                           : 0),
                                                   child: PressureCard(
-                                                      position: '${index + 1}',
-                                                      // temperature: temperatures[index]
-                                                      //         [
-                                                      //         'temperature${index + 1}'] ??
-                                                      //     '',
-                                                      temperature: allUnits[indexUnit]
-                                                                  [2][index][
-                                                              'temperature${index + 1}'] ??
-                                                          '',
-                                                      // pressureStatus: pressureStatus[
-                                                      //             index]
-                                                      //         ['press${index + 1}'] ??
-                                                      //     '',
-                                                      pressureStatus: allUnits[
-                                                                      indexUnit]
-                                                                  [1][index][
-                                                              'press${index + 1}'] ??
-                                                          '',
-                                                      // pressure:
-                                                      //     e['pressure${index + 1}'],
-                                                      pressure: allUnits[indexUnit]
-                                                                  [0][index]
-                                                              ['pressure${index + 1}'] ??
-                                                          ''),
+                                                    position: '${index + 1}',
+                                                    // temperature: temperatures[index]
+                                                    //         [
+                                                    //         'temperature${index + 1}'] ??
+                                                    //     '',
+                                                    temperature: allUnits[
+                                                                    indexUnit]
+                                                                [2][index][
+                                                            'temperature${index + 1}'] ??
+                                                        '',
+                                                    // pressureStatus: pressureStatus[
+                                                    //             index]
+                                                    //         ['press${index + 1}'] ??
+                                                    //     '',
+                                                    pressureStatus: allUnits[
+                                                                    indexUnit]
+                                                                [1][index][
+                                                            'press${index + 1}'] ??
+                                                        '',
+                                                    // pressure:
+                                                    //     e['pressure${index + 1}'],
+                                                    pressure: allUnits[
+                                                                    indexUnit]
+                                                                [0][index][
+                                                            'pressure${index + 1}'] ??
+                                                        '',
+                                                    rating: allUnits[indexUnit]
+                                                                [3][index][
+                                                            'rating${index + 1}'] ??
+                                                        '',
+                                                  ),
                                                 ),
                                               );
                                             }
@@ -469,6 +484,10 @@ class _TpmsPageState extends State<TpmsPage> {
                                             pressure: allUnits[indexUnit][0]
                                                         [dataIndex][
                                                     'pressure${dataIndex + 1}'] ??
+                                                '',
+                                            rating: allUnits[indexUnit][3]
+                                                        [index]
+                                                    ['rating${index + 1}'] ??
                                                 '',
                                           ),
                                         );
@@ -938,7 +957,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                           MainAxisAlignment
                                                                               .center,
                                                                       children: [
-                                                                        Icon(
+                                                                        const Icon(
                                                                             Icons
                                                                                 .photo,
                                                                             color:
@@ -958,10 +977,9 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                 ),
                                                               )
                                                             : Container(),
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .symmetric(
+                                                        const Padding(
+                                                          padding: EdgeInsets
+                                                              .symmetric(
                                                                   vertical:
                                                                       8.0),
                                                           child: Divider(),
@@ -990,7 +1008,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                               color: blue344BEF,
                                               name: Row(
                                                 children: [
-                                                  Icon(
+                                                  const Icon(
                                                     Icons.copy,
                                                     color: white,
                                                   ),
@@ -1125,23 +1143,27 @@ class _TpmsPageState extends State<TpmsPage> {
 }
 
 class PressureCard extends StatelessWidget {
-  const PressureCard(
-      {super.key,
-      required this.position,
-      this.index = -1,
-      required this.pressure,
-      required this.pressureStatus,
-      required this.temperature});
+  const PressureCard({
+    super.key,
+    required this.position,
+    this.index = -1,
+    required this.pressure,
+    required this.pressureStatus,
+    required this.temperature,
+    required this.rating,
+  });
 
   final String position;
   final int index;
   final String pressure;
   final String temperature;
   final String pressureStatus;
+  final String rating;
 
   @override
   Widget build(BuildContext context) {
-    log('status angin : $pressureStatus');
+    log('status1 rating: ${rating == 'N/A'}');
+    log('status2 rating: ${rating}');
     return Card(
       elevation: 2,
       child: Container(
@@ -1174,8 +1196,17 @@ class PressureCard extends StatelessWidget {
                 Text('Psi', style: getBlackTextStyle(fontSize: 24)),
               ],
             ),
-            Divider(),
-            Text('$temperature °C', style: getBlackTextStyle(fontSize: 24))
+            const Divider(),
+            Text('$temperature °C', style: getBlackTextStyle(fontSize: 24)),
+            if (rating != 'N/A' || rating == null || rating == '')
+              Column(
+                children: [
+                  const Divider(),
+                  Text('Rat. $rating', style: getBlackTextStyle(fontSize: 24))
+                ],
+              )
+            else
+              Container(),
           ],
         ),
       ),
