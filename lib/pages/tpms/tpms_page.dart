@@ -148,6 +148,8 @@ class _TpmsPageState extends State<TpmsPage> {
     if (data != null) {
       // Pastikan data tidak null
       final idSite = data['idSite'];
+      _loadAndFindSite(idSite);
+
       if (data['isCTS'] != true && data['isCTS'] != null) {
         final userDocs = await firestore
             .collection('users')
@@ -167,7 +169,6 @@ class _TpmsPageState extends State<TpmsPage> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
     log('data before spm : ${data}');
     String idSite = data['idSite'];
-    _loadAndFindSite(idSite);
 
     return Scaffold(
       // appBar: AppBar(
@@ -224,948 +225,987 @@ class _TpmsPageState extends State<TpmsPage> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  onChanged: (value) {
-                    setState(() {
-                      searchQuery = value;
-                    });
-                  },
-                  decoration: InputDecoration(
-                      hintText: 'Search... (Unit ID)',
-                      hintStyle: getGreyTextStyle(grey8391A1),
-                      prefixIcon: Icon(Icons.search)),
-                ),
-                const SizedBox(
-                  height: 12,
-                ),
-                SizedBox(
-                  height: 12,
-                ),
-                ButtonWidget(
-                    name: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.refresh,
-                          color: white,
-                        ),
-                        SizedBox(
-                          width: 12,
-                        ),
-                        Text(
-                          'Refresh',
-                          style: getWhiteTextStyle(),
-                        ),
-                      ],
-                    ),
-                    function: () {
-                      pressures.clear();
-                      temperatures.clear();
-                      pressureStatus.clear();
-                      context
-                          .read<SpmBloc>()
-                          .add(GetListSpmEvent(idSite: idSite));
-                    }),
-                SizedBox(
-                  height: 12,
-                ),
-                // Unit
-                BlocConsumer<SpmBloc, SpmState>(
-                  listener: (context, state) {},
-                  builder: (context, state) {
-                    if (state is SpmLoadingState) {
-                      return CircularProgressIndicator();
-                    }
-
-                    if (state is SpmLoadedState) {
-                      List<Spm> list = state.listSpm;
-                      List<bool> isShowMore = state.isShowMore;
-
-                      if (list.isEmpty) {
-                        return Text(
-                          'No Unit Found!',
-                          style: getBlackTextStyle(),
-                        );
-                      }
-
-                      if (searchQuery.length > 0) {
-                        list = list.where((element) {
-                          return element.devicename
-                              .toString()
-                              .toLowerCase()
-                              .contains(searchQuery.toLowerCase());
-                        }).toList();
-                      }
-
-                      allUnits.clear();
-                      list.forEach((element) {
-                        allUnits.add(
-                          [
-                            [
-                              {
-                                'pressure1': element.pressure1,
-                              },
-                              {
-                                'pressure2': element.pressure2,
-                              },
-                              {
-                                'pressure3': element.pressure3,
-                              },
-                              {
-                                'pressure4': element.pressure4,
-                              },
-                              {
-                                'pressure5': element.pressure5,
-                              },
-                              {
-                                'pressure6': element.pressure6,
-                              },
+          child: Column(
+            children: [
+              TextField(
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                    hintText: 'Search... (Unit ID)',
+                    hintStyle: getGreyTextStyle(grey8391A1),
+                    prefixIcon: Icon(Icons.search)),
+              ),
+              const SizedBox(
+                height: 12,
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 12,
+                      ),
+                      ButtonWidget(
+                          name: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.refresh,
+                                color: white,
+                              ),
+                              SizedBox(
+                                width: 12,
+                              ),
+                              Text(
+                                'Refresh',
+                                style: getWhiteTextStyle(),
+                              ),
                             ],
-                            [
-                              {
-                                'press1': element.press1,
-                              },
-                              {
-                                'press2': element.press2,
-                              },
-                              {
-                                'press3': element.press3,
-                              },
-                              {
-                                'press4': element.press4,
-                              },
-                              {
-                                'press5': element.press5,
-                              },
-                              {
-                                'press6': element.press6,
-                              },
-                            ],
-                            [
-                              {'temperature1': element.temperature1},
-                              {'temperature2': element.temperature2},
-                              {'temperature3': element.temperature3},
-                              {'temperature4': element.temperature4},
-                              {'temperature5': element.temperature5},
-                              {'temperature6': element.temperature6},
-                            ],
-                            [
-                              {'rating1': element.rating1},
-                              {'rating2': element.rating2},
-                              {'rating3': element.rating3},
-                              {'rating4': element.rating4},
-                              {'rating5': element.rating5},
-                              {'rating6': element.rating6},
-                            ],
-                          ],
-                        );
-                      });
+                          ),
+                          function: () {
+                            pressures.clear();
+                            temperatures.clear();
+                            pressureStatus.clear();
+                            context
+                                .read<SpmBloc>()
+                                .add(GetListSpmEvent(idSite: idSite));
+                          }),
+                      SizedBox(
+                        height: 12,
+                      ),
+                      // Unit
+                      BlocConsumer<SpmBloc, SpmState>(
+                        listener: (context, state) {},
+                        builder: (context, state) {
+                          if (state is SpmLoadingState) {
+                            return CircularProgressIndicator();
+                          }
 
-                      return Column(
-                        children: list.map((e) {
-                          final unit = list[list.indexOf(e)];
-                          final indexUnit = list.indexOf(e);
+                          if (state is SpmLoadedState) {
+                            List<Spm> list = state.listSpm;
+                            List<bool> isShowMore = state.isShowMore;
 
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 24.0),
-                            child: Stack(
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Pos 1, 2
-                                    Stack(
-                                      children: [
-                                        Positioned(
-                                          top: 20,
-                                          left: 0,
-                                          right: 0,
-                                          child: Column(
+                            if (list.isEmpty) {
+                              return Text(
+                                'No Unit Found!',
+                                style: getBlackTextStyle(),
+                              );
+                            }
+
+                            if (searchQuery.length > 0) {
+                              list = list.where((element) {
+                                return element.devicename
+                                    .toString()
+                                    .toLowerCase()
+                                    .contains(searchQuery.toLowerCase());
+                              }).toList();
+                            }
+
+                            allUnits.clear();
+                            list.forEach((element) {
+                              allUnits.add(
+                                [
+                                  [
+                                    {
+                                      'pressure1': element.pressure1,
+                                    },
+                                    {
+                                      'pressure2': element.pressure2,
+                                    },
+                                    {
+                                      'pressure3': element.pressure3,
+                                    },
+                                    {
+                                      'pressure4': element.pressure4,
+                                    },
+                                    {
+                                      'pressure5': element.pressure5,
+                                    },
+                                    {
+                                      'pressure6': element.pressure6,
+                                    },
+                                  ],
+                                  [
+                                    {
+                                      'press1': element.press1,
+                                    },
+                                    {
+                                      'press2': element.press2,
+                                    },
+                                    {
+                                      'press3': element.press3,
+                                    },
+                                    {
+                                      'press4': element.press4,
+                                    },
+                                    {
+                                      'press5': element.press5,
+                                    },
+                                    {
+                                      'press6': element.press6,
+                                    },
+                                  ],
+                                  [
+                                    {'temperature1': element.temperature1},
+                                    {'temperature2': element.temperature2},
+                                    {'temperature3': element.temperature3},
+                                    {'temperature4': element.temperature4},
+                                    {'temperature5': element.temperature5},
+                                    {'temperature6': element.temperature6},
+                                  ],
+                                  [
+                                    {'rating1': element.rating1},
+                                    {'rating2': element.rating2},
+                                    {'rating3': element.rating3},
+                                    {'rating4': element.rating4},
+                                    {'rating5': element.rating5},
+                                    {'rating6': element.rating6},
+                                  ],
+                                ],
+                              );
+                            });
+
+                            return Column(
+                              children: list.map((e) {
+                                final unit = list[list.indexOf(e)];
+                                final indexUnit = list.indexOf(e);
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 24.0),
+                                  child: Stack(
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // Pos 1, 2
+                                          Stack(
                                             children: [
-                                              Text(
-                                                unit.devicename,
-                                                style: getBlackTextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: w700,
+                                              Positioned(
+                                                top: 20,
+                                                left: 0,
+                                                right: 0,
+                                                child: Column(
+                                                  children: [
+                                                    Text(
+                                                      unit.devicename,
+                                                      style: getBlackTextStyle(
+                                                        fontSize: 18,
+                                                        fontWeight: w700,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(
+                                                      height: 4,
+                                                    ),
+                                                    // FutureBuilder(
+                                                    //     future: ApiService.getSite(
+                                                    //         idSite),
+                                                    //     builder: (context, snapshot) {
+                                                    //       final data = snapshot.data;
+                                                    //       log('future id site : $data');
+                                                    //       if (snapshot
+                                                    //               .connectionState ==
+                                                    //           ConnectionState
+                                                    //               .waiting) {
+                                                    //         return Container();
+                                                    //       }
+                                                    //       return Text(
+                                                    //         'Site : ${data?.site ?? ''}',
+                                                    //         style: getBlackTextStyle(
+                                                    //           fontSize: 14,
+                                                    //           fontWeight: w700,
+                                                    //         ),
+                                                    //       );
+                                                    //     }),
+                                                    Text(
+                                                      'Site : $siteName',
+                                                      style:
+                                                          getBlackTextStyle(),
+                                                    ),
+                                                    SizedBox(
+                                                      height: 150,
+                                                      width: 100,
+                                                      child: Image.asset(
+                                                          '${imagePath}/dump_truck.png'),
+                                                    ),
+                                                  ],
                                                 ),
                                               ),
-                                              const SizedBox(
-                                                height: 4,
-                                              ),
-                                              // FutureBuilder(
-                                              //     future: ApiService.getSite(
-                                              //         idSite),
-                                              //     builder: (context, snapshot) {
-                                              //       final data = snapshot.data;
-                                              //       log('future id site : $data');
-                                              //       if (snapshot
-                                              //               .connectionState ==
-                                              //           ConnectionState
-                                              //               .waiting) {
-                                              //         return Container();
-                                              //       }
-                                              //       return Text(
-                                              //         'Site : ${data?.site ?? ''}',
-                                              //         style: getBlackTextStyle(
-                                              //           fontSize: 14,
-                                              //           fontWeight: w700,
-                                              //         ),
-                                              //       );
-                                              //     }),
-                                              Text(
-                                                'Site : $siteName',
-                                                style: getBlackTextStyle(),
-                                              ),
-                                              SizedBox(
-                                                height: 150,
-                                                width: 100,
-                                                child: Image.asset(
-                                                    '${imagePath}/dump_truck.png'),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: allUnits[indexUnit][0]
+                                                    .map((e) {
+                                                  final index =
+                                                      allUnits[indexUnit][0]
+                                                          .indexOf(e);
+                                                  if (index < 2) {
+                                                    return Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                                right:
+                                                                    (index == 0)
+                                                                        ? 84
+                                                                        : 0,
+                                                                left:
+                                                                    (index == 1)
+                                                                        ? 84
+                                                                        : 0),
+                                                        child: PressureCard(
+                                                          position:
+                                                              '${index + 1}',
+                                                          // temperature: temperatures[index]
+                                                          //         [
+                                                          //         'temperature${index + 1}'] ??
+                                                          //     '',
+                                                          temperature: allUnits[
+                                                                          indexUnit]
+                                                                      [2][index]
+                                                                  [
+                                                                  'temperature${index + 1}'] ??
+                                                              '',
+                                                          // pressureStatus: pressureStatus[
+                                                          //             index]
+                                                          //         ['press${index + 1}'] ??
+                                                          //     '',
+                                                          pressureStatus:
+                                                              allUnits[indexUnit]
+                                                                              [
+                                                                              1]
+                                                                          [
+                                                                          index]
+                                                                      [
+                                                                      'press${index + 1}'] ??
+                                                                  '',
+                                                          // pressure:
+                                                          //     e['pressure${index + 1}'],
+                                                          pressure: allUnits[
+                                                                          indexUnit]
+                                                                      [0][index]
+                                                                  [
+                                                                  'pressure${index + 1}'] ??
+                                                              '',
+                                                          rating: allUnits[
+                                                                          indexUnit]
+                                                                      [3][index]
+                                                                  [
+                                                                  'rating${index + 1}'] ??
+                                                              '',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                  return Container();
+                                                }).toList(),
                                               ),
                                             ],
                                           ),
-                                        ),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children:
-                                              allUnits[indexUnit][0].map((e) {
-                                            final index = allUnits[indexUnit][0]
-                                                .indexOf(e);
-                                            if (index < 2) {
+                                          // Pos 3, 4, 5, 6
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: List.generate(
+                                                allUnits[indexUnit][0].length -
+                                                    2, (index) {
+                                              final dataIndex = index + 2;
                                               return Expanded(
-                                                child: Padding(
-                                                  padding: EdgeInsets.only(
-                                                      right:
-                                                          (index == 0) ? 84 : 0,
-                                                      left: (index == 1)
-                                                          ? 84
-                                                          : 0),
-                                                  child: PressureCard(
-                                                    position: '${index + 1}',
-                                                    // temperature: temperatures[index]
-                                                    //         [
-                                                    //         'temperature${index + 1}'] ??
-                                                    //     '',
-                                                    temperature: allUnits[
-                                                                    indexUnit]
-                                                                [2][index][
-                                                            'temperature${index + 1}'] ??
-                                                        '',
-                                                    // pressureStatus: pressureStatus[
-                                                    //             index]
-                                                    //         ['press${index + 1}'] ??
-                                                    //     '',
-                                                    pressureStatus: allUnits[
-                                                                    indexUnit]
-                                                                [1][index][
-                                                            'press${index + 1}'] ??
-                                                        '',
-                                                    // pressure:
-                                                    //     e['pressure${index + 1}'],
-                                                    pressure: allUnits[
-                                                                    indexUnit]
-                                                                [0][index][
-                                                            'pressure${index + 1}'] ??
-                                                        '',
-                                                    rating: allUnits[indexUnit]
-                                                                [3][index][
-                                                            'rating${index + 1}'] ??
-                                                        '',
-                                                  ),
+                                                child: PressureCard(
+                                                  position: '${dataIndex + 1}',
+                                                  index: index,
+                                                  // temperature: temperatures[dataIndex]
+                                                  //         ['temperature${dataIndex + 1}'] ??
+                                                  //     '',
+                                                  temperature: allUnits[
+                                                                  indexUnit][2]
+                                                              [dataIndex][
+                                                          'temperature${dataIndex + 1}'] ??
+                                                      '',
+                                                  // pressureStatus: pressureStatus[dataIndex]
+                                                  //         ['press${dataIndex + 1}'] ??
+                                                  //     '',
+                                                  pressureStatus: allUnits[
+                                                                  indexUnit][1]
+                                                              [dataIndex][
+                                                          'press${dataIndex + 1}'] ??
+                                                      '',
+                                                  // pressure: pressures[dataIndex]
+                                                  //     ['pressure${dataIndex + 1}'],
+                                                  pressure: allUnits[indexUnit]
+                                                              [0][dataIndex][
+                                                          'pressure${dataIndex + 1}'] ??
+                                                      '',
+                                                  rating: allUnits[indexUnit][3]
+                                                              [index][
+                                                          'rating${index + 1}'] ??
+                                                      '',
                                                 ),
                                               );
-                                            }
-                                            return Container();
-                                          }).toList(),
-                                        ),
-                                      ],
-                                    ),
-                                    // Pos 3, 4, 5, 6
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: List.generate(
-                                          allUnits[indexUnit][0].length - 2,
-                                          (index) {
-                                        final dataIndex = index + 2;
-                                        return Expanded(
-                                          child: PressureCard(
-                                            position: '${dataIndex + 1}',
-                                            index: index,
-                                            // temperature: temperatures[dataIndex]
-                                            //         ['temperature${dataIndex + 1}'] ??
-                                            //     '',
-                                            temperature: allUnits[indexUnit][2]
-                                                        [dataIndex][
-                                                    'temperature${dataIndex + 1}'] ??
-                                                '',
-                                            // pressureStatus: pressureStatus[dataIndex]
-                                            //         ['press${dataIndex + 1}'] ??
-                                            //     '',
-                                            pressureStatus: allUnits[indexUnit]
-                                                        [1][dataIndex]
-                                                    ['press${dataIndex + 1}'] ??
-                                                '',
-                                            // pressure: pressures[dataIndex]
-                                            //     ['pressure${dataIndex + 1}'],
-                                            pressure: allUnits[indexUnit][0]
-                                                        [dataIndex][
-                                                    'pressure${dataIndex + 1}'] ??
-                                                '',
-                                            rating: allUnits[indexUnit][3]
-                                                        [index]
-                                                    ['rating${index + 1}'] ??
-                                                '',
+                                            }),
                                           ),
-                                        );
-                                      }),
-                                    ),
-                                    // GridView.builder(
-                                    //   itemCount: allUnits[indexUnit][0].length -
-                                    //       2, // Mengurangi 2 untuk menghilangkan index pertama dan kedua
-                                    //   shrinkWrap: true,
-                                    //   physics: NeverScrollableScrollPhysics(),
-                                    //   gridDelegate:
-                                    //       SliverGridDelegateWithFixedCrossAxisCount(
-                                    //     crossAxisCount: 4,
-                                    //     childAspectRatio: 0.4,
-                                    //     mainAxisSpacing: 3,
-                                    //   ),
-                                    //   itemBuilder: (context, index) {
-                                    //     // Memperhitungkan offset karena index pertama dan kedua diabaikan
-                                    //     final dataIndex = index + 2;
+                                          // GridView.builder(
+                                          //   itemCount: allUnits[indexUnit][0].length -
+                                          //       2, // Mengurangi 2 untuk menghilangkan index pertama dan kedua
+                                          //   shrinkWrap: true,
+                                          //   physics: NeverScrollableScrollPhysics(),
+                                          //   gridDelegate:
+                                          //       SliverGridDelegateWithFixedCrossAxisCount(
+                                          //     crossAxisCount: 4,
+                                          //     childAspectRatio: 0.4,
+                                          //     mainAxisSpacing: 3,
+                                          //   ),
+                                          //   itemBuilder: (context, index) {
+                                          //     // Memperhitungkan offset karena index pertama dan kedua diabaikan
+                                          //     final dataIndex = index + 2;
 
-                                    //     return PressureCard(
-                                    //       position: '${dataIndex + 1}',
-                                    //       index: index,
-                                    //       // temperature: temperatures[dataIndex]
-                                    //       //         ['temperature${dataIndex + 1}'] ??
-                                    //       //     '',
-                                    //       temperature: allUnits[indexUnit][2]
-                                    //                   [dataIndex]
-                                    //               ['temperature${dataIndex + 1}'] ??
-                                    //           '',
-                                    //       // pressureStatus: pressureStatus[dataIndex]
-                                    //       //         ['press${dataIndex + 1}'] ??
-                                    //       //     '',
-                                    //       pressureStatus: allUnits[indexUnit][1]
-                                    //                   [dataIndex]
-                                    //               ['press${dataIndex + 1}'] ??
-                                    //           '',
-                                    //       // pressure: pressures[dataIndex]
-                                    //       //     ['pressure${dataIndex + 1}'],
-                                    //       pressure: allUnits[indexUnit][0]
-                                    //                   [dataIndex]
-                                    //               ['pressure${dataIndex + 1}'] ??
-                                    //           '',
-                                    //     );
-                                    //   },
-                                    // ),
-                                    const SizedBox(
-                                      height: 12,
-                                    ),
+                                          //     return PressureCard(
+                                          //       position: '${dataIndex + 1}',
+                                          //       index: index,
+                                          //       // temperature: temperatures[dataIndex]
+                                          //       //         ['temperature${dataIndex + 1}'] ??
+                                          //       //     '',
+                                          //       temperature: allUnits[indexUnit][2]
+                                          //                   [dataIndex]
+                                          //               ['temperature${dataIndex + 1}'] ??
+                                          //           '',
+                                          //       // pressureStatus: pressureStatus[dataIndex]
+                                          //       //         ['press${dataIndex + 1}'] ??
+                                          //       //     '',
+                                          //       pressureStatus: allUnits[indexUnit][1]
+                                          //                   [dataIndex]
+                                          //               ['press${dataIndex + 1}'] ??
+                                          //           '',
+                                          //       // pressure: pressures[dataIndex]
+                                          //       //     ['pressure${dataIndex + 1}'],
+                                          //       pressure: allUnits[indexUnit][0]
+                                          //                   [dataIndex]
+                                          //               ['pressure${dataIndex + 1}'] ??
+                                          //           '',
+                                          //     );
+                                          //   },
+                                          // ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
 
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Column(
-                                          children: [
-                                            Row(
-                                              children: [
-                                                Icon(Icons.schedule),
-                                                const SizedBox(
-                                                  width: 12,
-                                                ),
-                                                Text(
-                                                  DateFormat(
-                                                          'dd MMMM yyyy  HH:mm:ss',
-                                                          'id_ID')
-                                                      .format(DateTime.parse(
-                                                          unit.timestamp)),
-                                                  style: getBlackTextStyle(),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(
-                                              height: 12,
-                                            ),
-                                            Row(
-                                              children: [
-                                                Icon(Icons.location_on),
-                                                const SizedBox(
-                                                  width: 12,
-                                                ),
-                                                Text(
-                                                  '${unit.lat},${unit.lon} | ${unit.alt}',
-                                                  style: getBlackTextStyle(),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        Column(
-                                          children: [
-                                            Text(
-                                              'Designed By: ',
-                                              style: getBlackTextStyle(
-                                                fontWeight: w700,
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Column(
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Icon(Icons.schedule),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      Text(
+                                                        DateFormat(
+                                                                'dd MMMM yyyy  HH:mm:ss',
+                                                                'id_ID')
+                                                            .format(DateTime
+                                                                .parse(unit
+                                                                    .timestamp)),
+                                                        style:
+                                                            getBlackTextStyle(),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Icon(Icons.location_on),
+                                                      const SizedBox(
+                                                        width: 12,
+                                                      ),
+                                                      Text(
+                                                        '${unit.lat},${unit.lon} | ${unit.alt}',
+                                                        style:
+                                                            getBlackTextStyle(),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
                                               ),
-                                            ),
-                                            SizedBox(
-                                              height: 50,
-                                              width: 100,
-                                              child: Image.asset(
-                                                  '${imagePath}/cp_logo_image.png'),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-
-                                    const SizedBox(
-                                      height: 12,
-                                    ),
-                                    SizedBox(
-                                      height: 80,
-                                      child: ButtonWidget(
-                                        color: Colors.orange,
-                                        name: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.adjust,
-                                              color: white,
-                                            ),
-                                            const SizedBox(
-                                              width: 6,
-                                            ),
-                                            Text(
-                                              'Adjust Pressure',
-                                              style: getWhiteTextStyle(
-                                                  fontWeight: w700),
-                                            ),
-                                          ],
-                                        ),
-                                        function: () {
-                                          List<Position> position = [
-                                            Position(
-                                              pos: '1',
-                                              pressure:
-                                                  '${allUnits[indexUnit][0][0]['pressure1']}',
-                                              rating: '',
-                                              adjusmentPressure: '',
-                                              luka: [],
-                                              image: '',
-                                              size: '',
-                                              idUnit: '',
-                                              idInventory: '',
-                                              idDaily: '',
-                                              kondisi: '',
-                                            ),
-                                            Position(
-                                              pos: '2',
-                                              pressure:
-                                                  '${allUnits[indexUnit][0][1]['pressure2']}',
-                                              rating: '',
-                                              adjusmentPressure: '',
-                                              luka: [],
-                                              image: '',
-                                              size: '',
-                                              idUnit: '',
-                                              idInventory: '',
-                                              idDaily: '',
-                                              kondisi: '',
-                                            ),
-                                            Position(
-                                              pos: '3',
-                                              pressure:
-                                                  '${allUnits[indexUnit][0][2]['pressure3']}',
-                                              rating: '',
-                                              adjusmentPressure: '',
-                                              luka: [],
-                                              image: '',
-                                              size: '',
-                                              idUnit: '',
-                                              idInventory: '',
-                                              idDaily: '',
-                                              kondisi: '',
-                                            ),
-                                            Position(
-                                              pos: '4',
-                                              pressure:
-                                                  '${allUnits[indexUnit][0][3]['pressure4']}',
-                                              rating: '',
-                                              adjusmentPressure: '',
-                                              luka: [],
-                                              image: '',
-                                              size: '',
-                                              idUnit: '',
-                                              idInventory: '',
-                                              idDaily: '',
-                                              kondisi: '',
-                                            ),
-                                            Position(
-                                              pos: '5',
-                                              pressure:
-                                                  '${allUnits[indexUnit][0][4]['pressure5']}',
-                                              rating: '',
-                                              adjusmentPressure: '',
-                                              luka: [],
-                                              image: '',
-                                              size: '',
-                                              idUnit: '',
-                                              idInventory: '',
-                                              idDaily: '',
-                                              kondisi: '',
-                                            ),
-                                            Position(
-                                              pos: '6',
-                                              pressure:
-                                                  '${allUnits[indexUnit][0][5]['pressure6']}',
-                                              rating: '',
-                                              adjusmentPressure: '',
-                                              luka: [],
-                                              image: '',
-                                              size: '',
-                                              idUnit: '',
-                                              idInventory: '',
-                                              idDaily: '',
-                                              kondisi: '',
-                                            ),
-                                          ];
-
-                                          Navigator.pushNamed(context,
-                                              DailyCheckFormPage.routeName,
-                                              arguments: {
-                                                'unitNumber': unit.devicename,
-                                                'type': 'spm',
-                                                'position': position,
-                                                'isCTS': data['isCTS']
-                                              });
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(
-                                      height: 12,
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.adjust),
-                                            const SizedBox(
-                                              width: 6,
-                                            ),
-                                            Text(
-                                              'Last Adjustment',
-                                              style: getBlackTextStyle(
-                                                  fontWeight: w700),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            TextButtonWidget(
-                                              name: (!isShowMore[indexUnit])
-                                                  ? 'Show More'
-                                                  : 'Show Less',
-                                              style: getGreenTextStyle(
-                                                  fontWeight: w700),
-                                              function: () {
-                                                setState(() {
-                                                  isShowMore[indexUnit] =
-                                                      !isShowMore[indexUnit];
-                                                });
-                                              },
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-
-                                    const SizedBox(
-                                      height: 12,
-                                    ),
-
-                                    Builder(builder: (context) {
-                                      if (isShowMore[indexUnit]) {
-                                        return StreamBuilder<QuerySnapshot>(
-                                          stream: firestore
-                                              .collection('adjusment_spm')
-                                              .where('idSite',
-                                                  isEqualTo: idSite)
-                                              .where('unit',
-                                                  isEqualTo: unit.devicename)
-                                              .orderBy('tanggal',
-                                                  descending:
-                                                      true) // Mengurutkan berdasarkan tanggal terbaru
-                                              .limit(
-                                                  1) // Hanya mengambil 1 data terbaru
-                                              .snapshots(),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return Center(
-                                                  child:
-                                                      CircularProgressIndicator());
-                                            }
-                                            if (!snapshot.hasData ||
-                                                snapshot.data!.docs.isEmpty) {
-                                              return Container(
-                                                margin:
-                                                    EdgeInsets.only(bottom: 12),
-                                                child: Center(
-                                                    child: Text(
-                                                        'No data available')),
-                                              );
-                                            }
-
-                                            final latestDoc =
-                                                snapshot.data!.docs.first;
-                                            final Map<String, dynamic>
-                                                latestAdjustMap =
-                                                latestDoc.data()
-                                                    as Map<String, dynamic>;
-                                            final positionList =
-                                                latestAdjustMap['posisi']
-                                                    as List<dynamic>;
-
-                                            bool adjustmentEmpty =
-                                                positionList.any((item) =>
-                                                    item['adjusmentPressure'] !=
-                                                        null &&
-                                                    item['adjusmentPressure']
-                                                        .toString()
-                                                        .trim()
-                                                        .isNotEmpty);
-
-                                            if (!adjustmentEmpty) {
-                                              print('data adjust kosong');
-                                              return Center(
-                                                child: Container(
-                                                  margin: EdgeInsets.only(
-                                                      bottom: 12),
-                                                  child: Text(
-                                                    'No data available',
-                                                    style: getBlackTextStyle(),
-                                                  ),
-                                                ),
-                                              );
-                                            }
-
-                                            return Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  'Tireman : ${latestAdjustMap['user']}',
-                                                  style: getBlackTextStyle(
-                                                    fontSize: 18,
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                // timelowpressure BIKIN ERROR
-                                                if (latestAdjustMap[
-                                                        'timeLowPressureSPM'] !=
-                                                    null)
+                                              Column(
+                                                children: [
                                                   Text(
-                                                    'Last Event Low Pressure : ${DateFormat('dd MMMM yyyy  HH:mm:ss', 'id_ID').format(DateTime.parse(latestAdjustMap['timeLowPressureSPM']))}',
-                                                  )
-                                                else
-                                                  SizedBox.shrink(),
+                                                    'Designed By: ',
+                                                    style: getBlackTextStyle(
+                                                      fontWeight: w700,
+                                                    ),
+                                                  ),
+                                                  SizedBox(
+                                                    height: 50,
+                                                    width: 100,
+                                                    child: Image.asset(
+                                                        '${imagePath}/cp_logo_image.png'),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
 
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Column(
-                                                  children:
-                                                      positionList.map((pl) {
-                                                    if (pl['adjusmentPressure'] ==
-                                                            '' ||
-                                                        pl['adjusmentPressure'] ==
-                                                            null) {
-                                                      return Container();
-                                                    }
-
-                                                    return Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            Text(
-                                                              'Pos. ${pl['pos']} : ${pl['adjusmentPressure']} Psi',
-                                                              style:
-                                                                  getBlackTextStyle(
-                                                                      fontSize:
-                                                                          16),
-                                                            ),
-                                                            const SizedBox(
-                                                                width: 6),
-                                                            Text(
-                                                              DateFormat(
-                                                                      'dd MMMM yyyy  HH:mm:ss',
-                                                                      'id_ID')
-                                                                  .format(DateTime.parse(
-                                                                      latestAdjustMap[
-                                                                          'tanggal'])),
-                                                              style:
-                                                                  getBlackTextStyle(
-                                                                      fontSize:
-                                                                          16),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        (pl['image'] != '' &&
-                                                                pl['image'] !=
-                                                                    null)
-                                                            ? Container(
-                                                                padding: EdgeInsets
-                                                                    .only(
-                                                                        top: 8),
-                                                                width: double
-                                                                    .infinity,
-                                                                child:
-                                                                    ElevatedButton(
-                                                                  onPressed:
-                                                                      () {
-                                                                    showDialog(
-                                                                      context:
-                                                                          context,
-                                                                      builder:
-                                                                          (context) =>
-                                                                              Dialog(
-                                                                        child:
-                                                                            Stack(
-                                                                          children: [
-                                                                            InteractiveViewer(
-                                                                              child: Image.network(
-                                                                                pl['image'],
-                                                                                fit: BoxFit.contain,
-                                                                              ),
-                                                                            ),
-                                                                            Positioned(
-                                                                              top: 8.0,
-                                                                              right: 8.0,
-                                                                              child: IconButton(
-                                                                                icon: Icon(Icons.close, color: Colors.black),
-                                                                                onPressed: () {
-                                                                                  Navigator.of(context).pop();
-                                                                                },
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                    );
-                                                                  },
-                                                                  style: ElevatedButton
-                                                                      .styleFrom(
-                                                                    backgroundColor:
-                                                                        Colors
-                                                                            .orange,
-                                                                  ),
-                                                                  child:
-                                                                      Padding(
-                                                                    padding:
-                                                                        const EdgeInsets
-                                                                            .all(
-                                                                            8.0),
-                                                                    child: Row(
-                                                                      mainAxisAlignment:
-                                                                          MainAxisAlignment
-                                                                              .center,
-                                                                      children: [
-                                                                        const Icon(
-                                                                            Icons
-                                                                                .photo,
-                                                                            color:
-                                                                                white),
-                                                                        const SizedBox(
-                                                                            width:
-                                                                                8),
-                                                                        Text(
-                                                                          'Show Image',
-                                                                          style: getWhiteTextStyle(
-                                                                              fontWeight: w700,
-                                                                              fontSize: 18),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                              )
-                                                            : Container(),
-                                                        const Padding(
-                                                          padding: EdgeInsets
-                                                              .symmetric(
-                                                                  vertical:
-                                                                      8.0),
-                                                          child: Divider(),
-                                                        )
-                                                      ],
-                                                    );
-                                                  }).toList(),
-                                                ),
-                                              ],
-                                            );
-                                          },
-                                        );
-                                      }
-                                      return Container();
-                                    }),
-
-                                    // const SizedBox(
-                                    //   height: 12,
-                                    // ),
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                            child: SizedBox(
-                                          height: 80,
-                                          child: ButtonWidget(
-                                              color: blue344BEF,
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          SizedBox(
+                                            height: 80,
+                                            child: ButtonWidget(
+                                              color: Colors.orange,
                                               name: Row(
                                                 children: [
-                                                  const Icon(
-                                                    Icons.copy,
+                                                  Icon(
+                                                    Icons.adjust,
                                                     color: white,
                                                   ),
                                                   const SizedBox(
                                                     width: 6,
                                                   ),
                                                   Text(
-                                                    'Copy Location',
+                                                    'Adjust Pressure',
                                                     style: getWhiteTextStyle(
                                                         fontWeight: w700),
                                                   ),
                                                 ],
                                               ),
                                               function: () {
-                                                Clipboard.setData(ClipboardData(
-                                                    text:
-                                                        '${unit.lat},${unit.lon}'));
-                                                ScaffoldMessenger.of(context)
-                                                    .hideCurrentSnackBar();
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(SnackBar(
-                                                        content: Text(
-                                                  'Location copied! You can now paste it anywhere.',
-                                                  style: getWhiteTextStyle(),
-                                                )));
-                                              }),
-                                        )),
-                                        const SizedBox(
-                                          width: 6,
-                                        ),
-                                        Expanded(
-                                            child: SizedBox(
-                                          height: 80,
-                                          child: ButtonWidget(
-                                              color: Colors.red,
-                                              name: Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.map,
-                                                    color: white,
+                                                List<Position> position = [
+                                                  Position(
+                                                    pos: '1',
+                                                    pressure:
+                                                        '${allUnits[indexUnit][0][0]['pressure1']}',
+                                                    rating: '',
+                                                    adjusmentPressure: '',
+                                                    luka: [],
+                                                    image: '',
+                                                    size: '',
+                                                    idUnit: '',
+                                                    idInventory: '',
+                                                    idDaily: '',
+                                                    kondisi: '',
                                                   ),
+                                                  Position(
+                                                    pos: '2',
+                                                    pressure:
+                                                        '${allUnits[indexUnit][0][1]['pressure2']}',
+                                                    rating: '',
+                                                    adjusmentPressure: '',
+                                                    luka: [],
+                                                    image: '',
+                                                    size: '',
+                                                    idUnit: '',
+                                                    idInventory: '',
+                                                    idDaily: '',
+                                                    kondisi: '',
+                                                  ),
+                                                  Position(
+                                                    pos: '3',
+                                                    pressure:
+                                                        '${allUnits[indexUnit][0][2]['pressure3']}',
+                                                    rating: '',
+                                                    adjusmentPressure: '',
+                                                    luka: [],
+                                                    image: '',
+                                                    size: '',
+                                                    idUnit: '',
+                                                    idInventory: '',
+                                                    idDaily: '',
+                                                    kondisi: '',
+                                                  ),
+                                                  Position(
+                                                    pos: '4',
+                                                    pressure:
+                                                        '${allUnits[indexUnit][0][3]['pressure4']}',
+                                                    rating: '',
+                                                    adjusmentPressure: '',
+                                                    luka: [],
+                                                    image: '',
+                                                    size: '',
+                                                    idUnit: '',
+                                                    idInventory: '',
+                                                    idDaily: '',
+                                                    kondisi: '',
+                                                  ),
+                                                  Position(
+                                                    pos: '5',
+                                                    pressure:
+                                                        '${allUnits[indexUnit][0][4]['pressure5']}',
+                                                    rating: '',
+                                                    adjusmentPressure: '',
+                                                    luka: [],
+                                                    image: '',
+                                                    size: '',
+                                                    idUnit: '',
+                                                    idInventory: '',
+                                                    idDaily: '',
+                                                    kondisi: '',
+                                                  ),
+                                                  Position(
+                                                    pos: '6',
+                                                    pressure:
+                                                        '${allUnits[indexUnit][0][5]['pressure6']}',
+                                                    rating: '',
+                                                    adjusmentPressure: '',
+                                                    luka: [],
+                                                    image: '',
+                                                    size: '',
+                                                    idUnit: '',
+                                                    idInventory: '',
+                                                    idDaily: '',
+                                                    kondisi: '',
+                                                  ),
+                                                ];
+
+                                                Navigator.pushNamed(
+                                                    context,
+                                                    DailyCheckFormPage
+                                                        .routeName,
+                                                    arguments: {
+                                                      'unitNumber':
+                                                          unit.devicename,
+                                                      'type': 'spm',
+                                                      'position': position,
+                                                      'isCTS': data['isCTS']
+                                                    });
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+                                          Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Icon(Icons.adjust),
                                                   const SizedBox(
                                                     width: 6,
                                                   ),
-                                                  SizedBox(
-                                                    width: 90,
-                                                    child: Text(
-                                                      'Open with Google Maps',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 12,
-                                                          fontWeight: w700),
-                                                    ),
+                                                  Text(
+                                                    'Last Adjustment',
+                                                    style: getBlackTextStyle(
+                                                        fontWeight: w700),
                                                   ),
                                                 ],
                                               ),
-                                              function: () async {
-                                                await launchUrl(Uri.parse(
-                                                    'https://www.google.com/maps?q=${unit.lat},${unit.lon}'));
-                                              }),
-                                        )),
-                                      ],
-                                    ),
-                                    const SizedBox(
-                                      height: 24,
-                                    ),
-                                    Divider(
-                                      thickness: 2,
-                                      color: black,
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(
-                                  height:
-                                      MediaQuery.of(context).size.height * 0.6,
-                                  width:
-                                      MediaQuery.of(context).size.height * 0.9,
-                                  child: Opacity(
-                                    opacity:
-                                        0.06, // Nilai dari 0.0 (transparan) sampai 1.0 (penuh)
-                                    child: Image.asset(
-                                        '${imagePath}/cp_logo_vertical_image.png'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      );
-                    }
+                                              Row(
+                                                children: [
+                                                  TextButtonWidget(
+                                                    name:
+                                                        (!isShowMore[indexUnit])
+                                                            ? 'Show More'
+                                                            : 'Show Less',
+                                                    style: getGreenTextStyle(
+                                                        fontWeight: w700),
+                                                    function: () {
+                                                      setState(() {
+                                                        isShowMore[indexUnit] =
+                                                            !isShowMore[
+                                                                indexUnit];
+                                                      });
+                                                    },
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
 
-                    return Container();
-                  },
+                                          const SizedBox(
+                                            height: 12,
+                                          ),
+
+                                          Builder(builder: (context) {
+                                            if (isShowMore[indexUnit]) {
+                                              return StreamBuilder<
+                                                  QuerySnapshot>(
+                                                stream: firestore
+                                                    .collection('adjusment_spm')
+                                                    .where('idSite',
+                                                        isEqualTo: idSite)
+                                                    .where('unit',
+                                                        isEqualTo:
+                                                            unit.devicename)
+                                                    .orderBy('tanggal',
+                                                        descending:
+                                                            true) // Mengurutkan berdasarkan tanggal terbaru
+                                                    .limit(
+                                                        1) // Hanya mengambil 1 data terbaru
+                                                    .snapshots(),
+                                                builder: (context, snapshot) {
+                                                  if (snapshot
+                                                          .connectionState ==
+                                                      ConnectionState.waiting) {
+                                                    return Center(
+                                                        child:
+                                                            CircularProgressIndicator());
+                                                  }
+                                                  if (!snapshot.hasData ||
+                                                      snapshot
+                                                          .data!.docs.isEmpty) {
+                                                    return Container(
+                                                      margin: EdgeInsets.only(
+                                                          bottom: 12),
+                                                      child: Center(
+                                                          child: Text(
+                                                              'No data available')),
+                                                    );
+                                                  }
+
+                                                  final latestDoc =
+                                                      snapshot.data!.docs.first;
+                                                  final Map<String, dynamic>
+                                                      latestAdjustMap =
+                                                      latestDoc.data() as Map<
+                                                          String, dynamic>;
+                                                  final positionList =
+                                                      latestAdjustMap['posisi']
+                                                          as List<dynamic>;
+
+                                                  bool adjustmentEmpty =
+                                                      positionList.any((item) =>
+                                                          item['adjusmentPressure'] !=
+                                                              null &&
+                                                          item['adjusmentPressure']
+                                                              .toString()
+                                                              .trim()
+                                                              .isNotEmpty);
+
+                                                  if (!adjustmentEmpty) {
+                                                    print('data adjust kosong');
+                                                    return Center(
+                                                      child: Container(
+                                                        margin: EdgeInsets.only(
+                                                            bottom: 12),
+                                                        child: Text(
+                                                          'No data available',
+                                                          style:
+                                                              getBlackTextStyle(),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+
+                                                  return Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        'Tireman : ${latestAdjustMap['user']}',
+                                                        style:
+                                                            getBlackTextStyle(
+                                                          fontSize: 18,
+                                                        ),
+                                                      ),
+                                                      const SizedBox(
+                                                        height: 12,
+                                                      ),
+                                                      // timelowpressure BIKIN ERROR
+                                                      if (latestAdjustMap[
+                                                              'timeLowPressureSPM'] !=
+                                                          null)
+                                                        Text(
+                                                          'Last Event Low Pressure : ${DateFormat('dd MMMM yyyy  HH:mm:ss', 'id_ID').format(DateTime.parse(latestAdjustMap['timeLowPressureSPM']))}',
+                                                        )
+                                                      else
+                                                        SizedBox.shrink(),
+
+                                                      const SizedBox(
+                                                        height: 12,
+                                                      ),
+                                                      Column(
+                                                        children: positionList
+                                                            .map((pl) {
+                                                          if (pl['adjusmentPressure'] ==
+                                                                  '' ||
+                                                              pl['adjusmentPressure'] ==
+                                                                  null) {
+                                                            return Container();
+                                                          }
+
+                                                          return Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  Text(
+                                                                    'Pos. ${pl['pos']} : ${pl['adjusmentPressure']} Psi',
+                                                                    style: getBlackTextStyle(
+                                                                        fontSize:
+                                                                            16),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                      width: 6),
+                                                                  Text(
+                                                                    DateFormat(
+                                                                            'dd MMMM yyyy  HH:mm:ss',
+                                                                            'id_ID')
+                                                                        .format(
+                                                                            DateTime.parse(latestAdjustMap['tanggal'])),
+                                                                    style: getBlackTextStyle(
+                                                                        fontSize:
+                                                                            16),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                              (pl['image'] !=
+                                                                          '' &&
+                                                                      pl['image'] !=
+                                                                          null)
+                                                                  ? Container(
+                                                                      padding: EdgeInsets
+                                                                          .only(
+                                                                              top: 8),
+                                                                      width: double
+                                                                          .infinity,
+                                                                      child:
+                                                                          ElevatedButton(
+                                                                        onPressed:
+                                                                            () {
+                                                                          showDialog(
+                                                                            context:
+                                                                                context,
+                                                                            builder: (context) =>
+                                                                                Dialog(
+                                                                              child: Stack(
+                                                                                children: [
+                                                                                  InteractiveViewer(
+                                                                                    child: Image.network(
+                                                                                      pl['image'],
+                                                                                      fit: BoxFit.contain,
+                                                                                    ),
+                                                                                  ),
+                                                                                  Positioned(
+                                                                                    top: 8.0,
+                                                                                    right: 8.0,
+                                                                                    child: IconButton(
+                                                                                      icon: Icon(Icons.close, color: Colors.black),
+                                                                                      onPressed: () {
+                                                                                        Navigator.of(context).pop();
+                                                                                      },
+                                                                                    ),
+                                                                                  ),
+                                                                                ],
+                                                                              ),
+                                                                            ),
+                                                                          );
+                                                                        },
+                                                                        style: ElevatedButton
+                                                                            .styleFrom(
+                                                                          backgroundColor:
+                                                                              Colors.orange,
+                                                                        ),
+                                                                        child:
+                                                                            Padding(
+                                                                          padding: const EdgeInsets
+                                                                              .all(
+                                                                              8.0),
+                                                                          child:
+                                                                              Row(
+                                                                            mainAxisAlignment:
+                                                                                MainAxisAlignment.center,
+                                                                            children: [
+                                                                              const Icon(Icons.photo, color: white),
+                                                                              const SizedBox(width: 8),
+                                                                              Text(
+                                                                                'Show Image',
+                                                                                style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    )
+                                                                  : Container(),
+                                                              const Padding(
+                                                                padding: EdgeInsets
+                                                                    .symmetric(
+                                                                        vertical:
+                                                                            8.0),
+                                                                child:
+                                                                    Divider(),
+                                                              )
+                                                            ],
+                                                          );
+                                                        }).toList(),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              );
+                                            }
+                                            return Container();
+                                          }),
+
+                                          // const SizedBox(
+                                          //   height: 12,
+                                          // ),
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                  child: SizedBox(
+                                                height: 80,
+                                                child: ButtonWidget(
+                                                    color: blue344BEF,
+                                                    name: Row(
+                                                      children: [
+                                                        const Icon(
+                                                          Icons.copy,
+                                                          color: white,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        Text(
+                                                          'Copy Location',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontWeight:
+                                                                      w700),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    function: () {
+                                                      Clipboard.setData(
+                                                          ClipboardData(
+                                                              text:
+                                                                  '${unit.lat},${unit.lon}'));
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .hideCurrentSnackBar();
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                              SnackBar(
+                                                                  content: Text(
+                                                        'Location copied! You can now paste it anywhere.',
+                                                        style:
+                                                            getWhiteTextStyle(),
+                                                      )));
+                                                    }),
+                                              )),
+                                              const SizedBox(
+                                                width: 6,
+                                              ),
+                                              Expanded(
+                                                  child: SizedBox(
+                                                height: 80,
+                                                child: ButtonWidget(
+                                                    color: Colors.red,
+                                                    name: Row(
+                                                      children: [
+                                                        Icon(
+                                                          Icons.map,
+                                                          color: white,
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 6,
+                                                        ),
+                                                        SizedBox(
+                                                          width: 90,
+                                                          child: Text(
+                                                            'Open with Google Maps',
+                                                            style:
+                                                                getWhiteTextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    fontWeight:
+                                                                        w700),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    function: () async {
+                                                      await launchUrl(Uri.parse(
+                                                          'https://www.google.com/maps?q=${unit.lat},${unit.lon}'));
+                                                    }),
+                                              )),
+                                            ],
+                                          ),
+                                          const SizedBox(
+                                            height: 24,
+                                          ),
+                                          Divider(
+                                            thickness: 2,
+                                            color: black,
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(
+                                        height:
+                                            MediaQuery.of(context).size.height *
+                                                0.6,
+                                        width:
+                                            MediaQuery.of(context).size.height *
+                                                0.9,
+                                        child: Opacity(
+                                          opacity:
+                                              0.06, // Nilai dari 0.0 (transparan) sampai 1.0 (penuh)
+                                          child: Image.asset(
+                                              '${imagePath}/cp_logo_vertical_image.png'),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            );
+                          }
+
+                          return Container();
+                        },
+                      ),
+                      // event
+                      // Card(
+                      //   shape: RoundedRectangleBorder(
+                      //     borderRadius: BorderRadius.circular(4),
+                      //   ),
+                      //   color: Colors.red,
+                      //   child: Column(
+                      //     crossAxisAlignment: CrossAxisAlignment.start,
+                      //     children: <Widget>[
+                      //       Container(
+                      //         padding: const EdgeInsets.all(15),
+                      //         child: Column(
+                      //           crossAxisAlignment: CrossAxisAlignment.start,
+                      //           children: <Widget>[
+                      //             const Text(
+                      //               "- Position 3 Low Tire Pressure",
+                      //               style:
+                      //                   TextStyle(fontSize: 16, color: Colors.white),
+                      //             ),
+                      //             Container(height: 10),
+                      //             const Text(
+                      //               "- Position 4 Low Tire Pressure",
+                      //               style:
+                      //                   TextStyle(fontSize: 16, color: Colors.white),
+                      //             ),
+                      //           ],
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   ),
+                      // ),
+                    ],
+                  ),
                 ),
-                // event
-                // Card(
-                //   shape: RoundedRectangleBorder(
-                //     borderRadius: BorderRadius.circular(4),
-                //   ),
-                //   color: Colors.red,
-                //   child: Column(
-                //     crossAxisAlignment: CrossAxisAlignment.start,
-                //     children: <Widget>[
-                //       Container(
-                //         padding: const EdgeInsets.all(15),
-                //         child: Column(
-                //           crossAxisAlignment: CrossAxisAlignment.start,
-                //           children: <Widget>[
-                //             const Text(
-                //               "- Position 3 Low Tire Pressure",
-                //               style:
-                //                   TextStyle(fontSize: 16, color: Colors.white),
-                //             ),
-                //             Container(height: 10),
-                //             const Text(
-                //               "- Position 4 Low Tire Pressure",
-                //               style:
-                //                   TextStyle(fontSize: 16, color: Colors.white),
-                //             ),
-                //           ],
-                //         ),
-                //       ),
-                //     ],
-                //   ),
-                // ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

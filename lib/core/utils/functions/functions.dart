@@ -807,13 +807,40 @@ Future<List<int>> createExcel(String type,
               (posisi[j]['adjusmentPressure'] == '')
                   ? '0'
                   : posisi[j]['adjusmentPressure']);
-          if (posisi[j]['luka'] != null && posisi[j]['luka'] is! String) {
-            sheet.getRangeByName('F${i * posisi.length + j + 2}').setText(
-                (posisi[j]['luka'] as List<dynamic>)
-                    .where((element) => element.isNotEmpty)
-                    .join('\n'));
-            sheet.getRangeByName('F${i * posisi.length + j + 2}').columnWidth =
-                25;
+          // if (posisi[j]['luka'] != null && posisi[j]['luka'] is! String) {
+          //   sheet.getRangeByName('F${i * posisi.length + j + 2}').setText(
+          //       (posisi[j]['luka'] as List<dynamic>)
+          //           .where((element) => element.isNotEmpty)
+          //           .join('\n'));
+          //   sheet.getRangeByName('F${i * posisi.length + j + 2}').columnWidth =
+          //       25;
+          // }
+
+          // Ambil data 'luka' ke dalam variabel agar lebih mudah dibaca
+          var lukaData = posisi[j]['luka'];
+          String textToSet = ''; // Siapkan variabel untuk menampung hasil teks
+
+          // 1. Cek jika datanya adalah List
+          if (lukaData is List) {
+            // Proses sebagai List, filter elemen kosong, lalu gabungkan dengan newline
+            textToSet = lukaData
+                .where((element) =>
+                    element != null && element.toString().isNotEmpty)
+                .join('\n');
+          }
+          // 2. Cek jika datanya adalah String
+          else if (lukaData is String) {
+            // Langsung gunakan nilai String tersebut
+            textToSet = lukaData;
+          }
+          // 3. Jika bukan keduanya (misal null atau tipe lain), textToSet akan tetap kosong.
+
+          // Set teks ke dalam sel Excel hanya jika ada isinya
+          // Ini mencegah penulisan string kosong ke sel
+          if (textToSet.isNotEmpty) {
+            sheet
+                .getRangeByName('F${i * posisi.length + j + 2}')
+                .setText(textToSet);
           }
           sheet
               .getRangeByName('G${i * posisi.length + j + 2}')

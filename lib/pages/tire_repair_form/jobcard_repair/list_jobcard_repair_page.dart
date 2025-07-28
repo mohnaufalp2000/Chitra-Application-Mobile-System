@@ -77,7 +77,7 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
               },
               builder: (context, state) {
                 if (state is WoJobcardLoadingState) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 } else if (state is WoJobcardLoadedState) {
                   final widgetOptions = [
                     WaitingWO(woList: WOlist),
@@ -197,6 +197,7 @@ class _WaitingWOState extends State<WaitingWO> {
 
 class OnProgress extends StatefulWidget {
   const OnProgress({super.key, required this.woList});
+  // woList adalah data dari API yang statusnya sudah "On Progress"
   final List<Map<String, dynamic>> woList;
 
   @override
@@ -204,21 +205,114 @@ class OnProgress extends StatefulWidget {
 }
 
 class _OnProgressState extends State<OnProgress> {
-  FirebaseFirestore firestore = FirebaseFirestore.instance;
-  String searchQuery = '';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  String _searchQuery = '';
+
+  // State untuk menyimpan hasil data gabungan dan status loading
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _onProgressDocuments = [];
+
+  // Map untuk lookup data dari API agar lebih cepat (Optimalisasi)
+  late Map<String, Map<String, dynamic>> _apiDataMap;
+
+  @override
+  void initState() {
+    super.initState();
+    // Proses hanya jika ada data dari API
+    if (widget.woList.isNotEmpty) {
+      // 1. Buat Map dari data API untuk pencarian yg efisien (O(1) lookup)
+      _apiDataMap = {for (var item in widget.woList) item['id_wo']: item};
+      // 2. Mulai proses pengambilan data dari Firestore dan gabungkan
+      _fetchAndProcessData();
+    } else {
+      // Jika tidak ada list dari API, langsung set status tidak loading
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Mengambil data dari Firestore berdasarkan ID dari API, lalu menggabungkannya.
+  Future<void> _fetchAndProcessData() async {
+    final List<String> idWoList =
+        widget.woList.map((item) => item['id_wo'] as String).toList();
+    const int chunkSize = 30; // Batas maksimal 'whereIn' dari Firestore
+
+    List<Map<String, dynamic>> fetchedAndMergedDocs = [];
+
+    // Loop untuk setiap 'chunk' dari list ID untuk menghindari limit
+    for (var i = 0; i < idWoList.length; i += chunkSize) {
+      final chunk = idWoList.sublist(
+        i,
+        i + chunkSize > idWoList.length ? idWoList.length : i + chunkSize,
+      );
+
+      if (chunk.isNotEmpty) {
+        final querySnapshot = await _firestore
+            .collection(FirestoreKey.tireRepairInspectionReport)
+            .where('id', whereIn: chunk)
+            .get();
+
+        // Proses dan gabungkan data untuk chunk ini
+        for (var doc in querySnapshot.docs) {
+          final firestoreData = doc.data() as Map<String, dynamic>;
+          final String firestoreId = firestoreData['id'];
+
+          // Ambil data terkait dari API via Map yang sudah dibuat
+          final apiData = _apiDataMap[firestoreId];
+
+          if (apiData != null) {
+            // Gabungkan data: field dari API akan menimpa field dari Firestore jika namanya sama
+            final mergedData = {
+              ...firestoreData,
+              ...apiData,
+            };
+            fetchedAndMergedDocs.add(mergedData);
+          }
+        }
+      }
+    }
+
+    // Urutkan hasil gabungan berdasarkan 'wo_date' dari API (atau field lain yg relevan)
+    fetchedAndMergedDocs.sort((a, b) {
+      // Pastikan 'wo_date' ada dan valid sebelum diurutkan
+      final aDate = DateTime.tryParse(a['wo_date'] ?? '');
+      final bDate = DateTime.tryParse(b['wo_date'] ?? '');
+      if (aDate == null || bDate == null) return 0;
+      return bDate.compareTo(aDate); // Urutkan dari terbaru ke terlama
+    });
+
+    // Update state dengan data yang sudah digabung dan diurutkan
+    if (mounted) {
+      setState(() {
+        _onProgressDocuments = fetchedAndMergedDocs;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<String> idWoList =
-        widget.woList.map((item) => item['id_wo'] as String).toList();
-
-    if (idWoList.isEmpty) {
-      return Center(
-          child: Text(
-        'No data available',
-        style: getBlackTextStyle(),
-      ));
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator.adaptive());
     }
+
+    if (_onProgressDocuments.isEmpty) {
+      return Center(
+        child: Text(
+          'No data available',
+          style: getBlackTextStyle(), // Aktifkan style Anda
+        ),
+      );
+    }
+
+    // Terapkan filter pencarian secara lokal pada data yang sudah digabung
+    final List<Map<String, dynamic>> filteredDocs =
+        _onProgressDocuments.where((doc) {
+      // Mencari berdasarkan 'sn' atau 'tire_sn'
+      final sn = (doc['sn'] ?? doc['tire_sn'])?.toString().toLowerCase() ?? '';
+      return _searchQuery.isEmpty || sn.contains(_searchQuery.toLowerCase());
+    }).toList();
 
     return Column(
       children: [
@@ -227,66 +321,133 @@ class _OnProgressState extends State<OnProgress> {
           child: TextField(
             onChanged: (value) {
               setState(() {
-                searchQuery = value;
+                _searchQuery = value;
               });
             },
-            decoration: InputDecoration(
-                hintText: 'Search... (SN)',
-                hintStyle: getGreyTextStyle(grey8391A1),
-                prefixIcon: Icon(Icons.search)),
+            decoration: const InputDecoration(
+              hintText: 'Search... (SN)',
+              // hintStyle: getGreyTextStyle(grey8391A1), // Aktifkan style Anda
+              prefixIcon: Icon(Icons.search),
+            ),
           ),
         ),
-        const SizedBox(
-          height: 12,
+        const SizedBox(height: 12),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: filteredDocs.length,
+          itemBuilder: (context, index) {
+            final item = filteredDocs[index];
+
+            // Data WO dan WODate sekarang sudah ada di dalam 'item'
+            // Tidak perlu lagi `firstWhere` yang lambat
+            final String woNumber = item['wo'] ?? '';
+            final String woDate = item['wo_date'] ?? '';
+
+            return JobcardCard(
+              wo: woNumber,
+              woDate: woDate,
+              data: item, // Kirim semua data gabungan ke card
+            );
+          },
         ),
-        PaginateFirestore(
-            query: firestore
-                .collection(FirestoreKey.tireRepairInspectionReport)
-                // .collection('tire_repair_ins_report')
-                .orderBy('created_at', descending: true)
-                .where('id', whereIn: idWoList),
-            itemBuilderType: PaginateBuilderType.listView,
-            shrinkWrap: true,
-            key: const Key('on_progress'),
-            physics: NeverScrollableScrollPhysics(),
-            itemsPerPage: 5,
-            isLive: true,
-            initialLoader:
-                const Center(child: CircularProgressIndicator.adaptive()),
-            bottomLoader:
-                const Center(child: CircularProgressIndicator.adaptive()),
-            itemBuilder: (context, snapshot, index) {
-              final Map<String, dynamic> data =
-                  snapshot[index].data() as Map<String, dynamic>;
-              // mendapatkan nomor WO
-              final WO = widget.woList.firstWhere(
-                  (element) => element['id_wo'] == data['id'],
-                  orElse: () => {'wo': ''})['wo'];
-              // mendapatkan WO date
-              final WODate = widget.woList.firstWhere(
-                  (element) => element['id_wo'] == data['id'],
-                  orElse: () => {'wo': ''})['wo_date'];
-
-              if (searchQuery.isNotEmpty &&
-                  !data['sn']!.toLowerCase().contains(searchQuery) &&
-                  !data['sn']!.toUpperCase().contains(searchQuery)) {
-                return Container();
-              }
-
-              print('WO : $WO');
-              if (WO == '') {
-                return Container();
-              }
-              return JobcardCard(
-                wo: WO,
-                woDate: WODate,
-                data: data,
-              );
-            }),
       ],
     );
   }
 }
+
+// class OnProgress extends StatefulWidget {
+//   const OnProgress({super.key, required this.woList});
+//   final List<Map<String, dynamic>> woList;
+
+//   @override
+//   State<OnProgress> createState() => _OnProgressState();
+// }
+
+// class _OnProgressState extends State<OnProgress> {
+//   FirebaseFirestore firestore = FirebaseFirestore.instance;
+//   String searchQuery = '';
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final List<String> idWoList =
+//         widget.woList.map((item) => item['id_wo'] as String).toList();
+
+//     if (idWoList.isEmpty) {
+//       return Center(
+//           child: Text(
+//         'No data available',
+//         style: getBlackTextStyle(),
+//       ));
+//     }
+
+//     return Column(
+//       children: [
+//         Padding(
+//           padding: const EdgeInsets.symmetric(horizontal: 24.0),
+//           child: TextField(
+//             onChanged: (value) {
+//               setState(() {
+//                 searchQuery = value;
+//               });
+//             },
+//             decoration: InputDecoration(
+//                 hintText: 'Search... (SN)',
+//                 hintStyle: getGreyTextStyle(grey8391A1),
+//                 prefixIcon: Icon(Icons.search)),
+//           ),
+//         ),
+//         const SizedBox(
+//           height: 12,
+//         ),
+//         PaginateFirestore(
+//             query: firestore
+//                 .collection(FirestoreKey.tireRepairInspectionReport)
+//                 // .collection('tire_repair_ins_report')
+//                 .orderBy('created_at', descending: true)
+//                 .where('id', whereIn: idWoList),
+//             itemBuilderType: PaginateBuilderType.listView,
+//             shrinkWrap: true,
+//             key: const Key('on_progress'),
+//             physics: NeverScrollableScrollPhysics(),
+//             itemsPerPage: 5,
+//             isLive: true,
+//             initialLoader:
+//                 const Center(child: CircularProgressIndicator.adaptive()),
+//             bottomLoader:
+//                 const Center(child: CircularProgressIndicator.adaptive()),
+//             itemBuilder: (context, snapshot, index) {
+//               final Map<String, dynamic> data =
+//                   snapshot[index].data() as Map<String, dynamic>;
+//               // mendapatkan nomor WO
+//               final WO = widget.woList.firstWhere(
+//                   (element) => element['id_wo'] == data['id'],
+//                   orElse: () => {'wo': ''})['wo'];
+//               // mendapatkan WO date
+//               final WODate = widget.woList.firstWhere(
+//                   (element) => element['id_wo'] == data['id'],
+//                   orElse: () => {'wo': ''})['wo_date'];
+
+//               if (searchQuery.isNotEmpty &&
+//                   !data['sn']!.toLowerCase().contains(searchQuery) &&
+//                   !data['sn']!.toUpperCase().contains(searchQuery)) {
+//                 return Container();
+//               }
+
+//               print('WO : $WO');
+//               if (WO == '') {
+//                 return Container();
+//               }
+//               return JobcardCard(
+//                 wo: WO,
+//                 woDate: WODate,
+//                 data: data,
+//               );
+//             }),
+//       ],
+//     );
+//   }
+// }
 
 class WaitingQC extends StatelessWidget {
   const WaitingQC({super.key});
