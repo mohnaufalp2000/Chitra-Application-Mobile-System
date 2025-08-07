@@ -66,6 +66,35 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
     return ['All (Select Customer)', ...dataList[0]['customer']];
   }
 
+  // FUNGSI BARU UNTUK MEMBANGUN QUERY SECARA DINAMIS
+  Query buildFirestoreQuery() {
+    Query query = firestore.collection(FirestoreKey.tireRepairInspectionReport);
+
+    query = query.where('is_inspected', isEqualTo: selectedIndex);
+
+    if (selectedCustomer != null &&
+        selectedCustomer != 'All (Select Customer)') {
+      query = query.where('customer', isEqualTo: selectedCustomer);
+    }
+
+    query = query.where('status', isEqualTo: selectedStatus);
+
+    if (searchQuery.isNotEmpty) {
+      String searchKey = searchQuery.toUpperCase();
+      query = query
+          .where('sn', isGreaterThanOrEqualTo: searchKey)
+          .where('sn', isLessThanOrEqualTo: '$searchKey\uf8ff');
+    }
+
+    if (searchQuery.isNotEmpty) {
+      query = query.orderBy('sn');
+    } else {
+      query = query.orderBy('created_at', descending: true);
+    }
+
+    return query;
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -163,18 +192,21 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                       ),
                       const SizedBox(height: 12),
                       PaginateFirestore(
-                        key: ValueKey(selectedIndex),
-                        query: selectedIndex == 1
-                            ? firestore
-                                .collection(
-                                    FirestoreKey.tireRepairInspectionReport)
-                                .where('is_inspected', isEqualTo: selectedIndex)
-                                .orderBy('created_at', descending: true)
-                            : firestore
-                                .collection(
-                                    FirestoreKey.tireRepairInspectionReport)
-                                .where('is_inspected',
-                                    isEqualTo: selectedIndex),
+                        // key: ValueKey(selectedIndex),
+                        key: ValueKey(
+                            '$selectedIndex-$selectedCustomer-$selectedStatus-$searchQuery'),
+                        // query: selectedIndex == 1
+                        //     ? firestore
+                        //         .collection(
+                        //             FirestoreKey.tireRepairInspectionReport)
+                        //         .where('is_inspected', isEqualTo: selectedIndex)
+                        //         .orderBy('created_at', descending: true)
+                        //     : firestore
+                        //         .collection(
+                        //             FirestoreKey.tireRepairInspectionReport)
+                        //         .where('is_inspected',
+                        //             isEqualTo: selectedIndex),
+                        query: buildFirestoreQuery(),
                         itemBuilderType: PaginateBuilderType.listView,
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
@@ -189,27 +221,27 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                               snapshot[index].data() as Map<String, dynamic>;
                           DateFormat date = DateFormat('dd-MM-yy');
 
-                          // filter sn
-                          if (searchQuery.isNotEmpty &&
-                              !data['sn']!
-                                  .toLowerCase()
-                                  .contains(searchQuery) &&
-                              !data['sn']!
-                                  .toUpperCase()
-                                  .contains(searchQuery)) {
-                            return Container();
-                          }
+                          // // filter sn
+                          // if (searchQuery.isNotEmpty &&
+                          //     !data['sn']!
+                          //         .toLowerCase()
+                          //         .contains(searchQuery) &&
+                          //     !data['sn']!
+                          //         .toUpperCase()
+                          //         .contains(searchQuery)) {
+                          //   return Container();
+                          // }
 
-                          // filter status tire
-                          if (!data['status'].contains(selectedStatus)) {
-                            return Container();
-                          }
+                          // // filter status tire
+                          // if (!data['status'].contains(selectedStatus)) {
+                          //   return Container();
+                          // }
 
-                          // filter customer
-                          if (selectedCustomer != 'All (Select Customer)' &&
-                              !data['customer']!.contains(selectedCustomer)) {
-                            return Container();
-                          }
+                          // // filter customer
+                          // if (selectedCustomer != 'All (Select Customer)' &&
+                          //     !data['customer']!.contains(selectedCustomer)) {
+                          //   return Container();
+                          // }
 
                           switch (selectedIndex) {
                             case 0:
