@@ -133,7 +133,14 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
           final List<UnitTire> dataUnits = results[0] as List<UnitTire>;
           final List<Spm> apiListSpm = results[1] as List<Spm>;
 
-          log('unit spm rating bloc 1 : $dataUnits');
+          /// melihat data rating dari cts
+          List<UnitTire> unitsss = dataUnits
+              .where((element) => element.unitNumber == 'CO4202')
+              .toList();
+          log('unit spm rating bloc 1 : $unitsss'); // aman
+          // [UnitTire(unitNumber: CO4202, posisi: 1, model: CAT 777, status: Active, hm: 17021, brand: Goodyear, size: 27.00R49, pattern: RT-4A+, otd: 75, rtd: 63, lifetime: 3188, hmOnJob: 13833, lifeOnJob: 0, date: 2024-11-02 12:00:00, rating: A, site: CK-BMB Sitarum, sn: 0923JCL78, kunciUnit: 42852428, kunciTire: 2051522051, idInventory: 2051, idUnit: 428), UnitTire(unitNumber: CO4202, posisi: 2, model: CAT 777, status: Active, hm: 17021, brand: Goodyear, size: 27.00R49, pattern: RT-4A+, otd: 75, rtd: 66, lifetime: 3188, hmOnJob: 13833, lifeOnJob: 0, date: 2024-11-02 13:30:00, rating: A, site: CK-BMB Sitarum, sn: 1123JCM11, kunciUnit: 42852428, kunciTire: 2052522052, idInventory: 2052, idUnit: 428), UnitTire(unitNumber: CO4202, posisi: 3, model: CAT 777, status: Active, hm: 17021, brand: Michelin, size: 27.00R49, pattern: XD-Grip, otd: 80, rtd: 50, lifetime: 9842, hmOnJob: 14375, lifeOnJob: 7196, date: 2024-12-29 13:30:00, rating: B, site: CK-BMB Sitarum, sn: ICO1059S3A, kunciUnit: 42852428, kunciTire: 1243521243, idInventory: 1243, idUnit: 428), UnitTire(unitNumber: CO4202, posisi: 4, model: CAT 777, status: Active, hm: 17021, brand: Michelin, size: 27.00R49, pattern: XD-Grip, otd: 80, rtd: 44, lifetime: 8726, hmOnJob: 14375, lifeOnJob: 6080, date: 2024-12-29 13:00:00, rating: X, site: CK-BMB Sitarum, sn: FPY0750M0B, kunciUnit: 42852428, kunciTire: 1331521331, idInventory: 1331, idUnit: 428), UnitTire(unitNumber: CO4202, posisi: 5, model: CAT 777, status: Active, hm: 17021, brand: Bridgestone, size: 27.00R49, pattern: VMTP(X), otd: 76, rtd: 38, lifetime: 8388, hmOnJob: 17021, lifeOnJob: 8388, date: 2025-07-22 10:00:00, rating: X, site: CK-BMB Sitarum, sn: A2U000823, kunciUnit: 42852428, kunciTire: 1499521499, idInventory: 1499, idUnit: 428), UnitTire(unitNumber: CO4202, posisi: 6, model: CAT 777, status: Active, hm: 17021, brand: Bridgestone, size: 27.00R49, pattern: VMTP, otd: 76, rtd: 37, lifetime: 8388, hmOnJob: 17021, lifeOnJob: 8388, date: 2025-07-22 10:30:00, rating: C, site: CK-BMB Sitarum, sn: B2M000957, kunciUnit: 42852428, kunciTire: 1500521500, idInventory: 1500, idUnit: 428)
+
+          /// melihat data rating dari cts
 
           // Buat "kamus" rating dengan kunci komposit
           final ratingMap = <String, String>{};
@@ -144,7 +151,13 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
             }
           }
 
-          log('unit spm rating bloc 2 : $ratingMap');
+          log('unit spm rating bloc 2 : $ratingMap'); // aman
+          // CO4202-1: A
+          // CO4202-2: A
+          // CO4202-3: B
+          // CO4202-4: X
+          // CO4202-5: X
+          // CO4202-6: C
 
           // Gabungkan data
           enrichedList = apiListSpm.map((spm) {
@@ -160,6 +173,7 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
           }).toList();
 
           log('unit spm rating bloc 3 : $enrichedList');
+          // Spm(5464854, 2025-08-22 16:13:24, CO4202, 0, 0, 0, 128, 124, 122, 112, 120, 118, 46, 40, 45, 43, 41, 38, 1, 1, 1, 1, 1, 1, 724.3747177124023, 6, 52, A, A, B, X, X, C),
         }
 
         // --- Bagian Akhir Tetap Sama ---

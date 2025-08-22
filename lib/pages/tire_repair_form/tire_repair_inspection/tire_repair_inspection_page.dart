@@ -28,6 +28,7 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
   late Stream<QuerySnapshot> customerStream;
   String searchQuery = '';
   String? selectedCustomer;
+  String? selectedRepairLocation;
   int selectedIndex = 1;
   List<String> status = ['REPAIR', 'RETREAD', 'REJECT'];
   List<String> statusTire = ['Inspected', 'Not Inspected'];
@@ -59,11 +60,24 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
   }
 
   Future<List<String>> getCustomerList() async {
-    final snapshot =
-        await FirebaseFirestore.instance.collection('list_customer').get();
+    final snapshot = await firestore.collection('list_customer').get();
     final dataList =
         snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
     return ['All (Select Customer)', ...dataList[0]['customer']];
+  }
+
+  Future<List<String>> getRepairLocationList() async {
+    final snapshot = await firestore.collection('list_repair_area').get();
+    final dataList =
+        snapshot.docs.map((doc) => doc.data()['site'] as String).toList();
+    return ['All', ...dataList];
+  }
+
+  Future<List<dynamic>> loadCustomerListandRepairLocationData() async {
+    return Future.wait([
+      getCustomerList(),
+      getRepairLocationList(),
+    ]);
   }
 
   // FUNGSI BARU UNTUK MEMBANGUN QUERY SECARA DINAMIS
@@ -75,6 +89,10 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
     if (selectedCustomer != null &&
         selectedCustomer != 'All (Select Customer)') {
       query = query.where('customer', isEqualTo: selectedCustomer);
+    }
+
+    if (selectedRepairLocation != null && selectedRepairLocation != 'All') {
+      query = query.where('repair_location', isEqualTo: selectedRepairLocation);
     }
 
     query = query.where('status', isEqualTo: selectedStatus);
@@ -132,12 +150,15 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
               height: 12,
             ),
             FutureBuilder(
-                future: getCustomerList(),
+                future: loadCustomerListandRepairLocationData(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) return CircularProgressIndicator();
 
-                  List<String> customers = snapshot.data!;
+                  final List<String> customers = snapshot.data![0];
+                  final List<String> repairLocationList = snapshot.data![1];
+
                   selectedCustomer ??= customers[0];
+                  selectedRepairLocation ??= repairLocationList[0];
                   return Column(
                     children: [
                       Padding(
@@ -160,35 +181,77 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Select Status',
-                              style: getBlackTextStyle(
-                                fontSize: 12,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.only(left: 24.0, right: 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Select Status',
+                                    style: getBlackTextStyle(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  DropdownButton<String>(
+                                    value: selectedStatus,
+                                    isExpanded: true,
+                                    items: status.map((stat) {
+                                      return DropdownMenuItem<String>(
+                                        value: stat,
+                                        child: Text(stat),
+                                      );
+                                    }).toList(),
+                                    onChanged: (newValue) {
+                                      setState(() {
+                                        selectedStatus = newValue!;
+                                        print(
+                                            'select status : $selectedStatus');
+                                      });
+                                    },
+                                  ),
+                                ],
                               ),
                             ),
-                            DropdownButton<String>(
-                              value: selectedStatus,
-                              isExpanded: true,
-                              items: status.map((stat) {
-                                return DropdownMenuItem<String>(
-                                  value: stat,
-                                  child: Text(stat),
-                                );
-                              }).toList(),
-                              onChanged: (newValue) {
-                                setState(() {
-                                  selectedStatus = newValue!;
-                                  print('select status : $selectedStatus');
-                                });
-                              },
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.only(right: 24.0, left: 12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Select Repair Location',
+                                    style: getBlackTextStyle(
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  DropdownButton<String>(
+                                    value: selectedRepairLocation,
+                                    isExpanded: true,
+                                    items: repairLocationList.map((loc) {
+                                      return DropdownMenuItem<String>(
+                                        value: loc,
+                                        child: Text(loc),
+                                      );
+                                    }).toList(),
+                                    onChanged: (newValue) {
+                                      setState(() {
+                                        selectedRepairLocation = newValue!;
+                                        print(
+                                            'select repair location : $selectedRepairLocation');
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       PaginateFirestore(

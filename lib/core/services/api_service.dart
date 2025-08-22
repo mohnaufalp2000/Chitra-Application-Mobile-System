@@ -126,8 +126,6 @@ class ApiService {
       List<Map<String, dynamic>> data1,
       List<Map<String, dynamic>> data2,
       List<Map<String, dynamic>> data3) async {
-    log('daily check api service : ${data3}');
-
     try {
       final response = await http.post(
         Uri.parse('${postUrl}post_daily'),
@@ -139,12 +137,6 @@ class ApiService {
         }),
       );
       if (response.statusCode == 201 || response.statusCode == 200) {
-        // Berhasil
-        // final body = jsonDecode(response.body);
-        print('Raw response: ${response.body}');
-
-        // print(
-        //     'Raw response: ${body['status']}'); // Tambahkan ini untuk cek response asliS
       } else {
         // Gagal
         print('Gagal mengirim data. Status: ${response.statusCode}');

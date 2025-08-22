@@ -367,6 +367,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                 ],
                               );
                             });
+                            log('unit 4202 : ${allUnits}');
 
                             return Column(
                               children: list.map((e) {
@@ -540,8 +541,8 @@ class _TpmsPageState extends State<TpmsPage> {
                                                           'pressure${dataIndex + 1}'] ??
                                                       '',
                                                   rating: allUnits[indexUnit][3]
-                                                              [index][
-                                                          'rating${index + 1}'] ??
+                                                              [dataIndex][
+                                                          'rating${dataIndex + 1}'] ??
                                                       '',
                                                 ),
                                               );

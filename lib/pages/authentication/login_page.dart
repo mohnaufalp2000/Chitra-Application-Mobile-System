@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
 import 'package:camos/core/navigator/navigation_route.dart';
@@ -22,12 +23,16 @@ import 'package:camos/pages/home/trial/home_page_trial.dart';
 import 'package:camos/pages/tpms/qr_tpms_page.dart';
 import 'package:camos/pages/tpms/tpms_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:open_file/open_file.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:translator/translator.dart';
+import 'package:path_provider/path_provider.dart';
 
 class LoginPage extends StatefulWidget {
   static const routeName = '/login_page';
@@ -252,10 +257,13 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Image.asset(
-                      '${iconPath}/logo_camos_icon.png',
-                      width: 120,
-                      height: 120,
+                    InkWell(
+                      onTap: () async {},
+                      child: Image.asset(
+                        'assets/icons/logo_camos_icon.png', // GANTI DENGAN PATH GAMBAR ANDA
+                        width: 120,
+                        height: 120,
+                      ),
                     ),
 
                     const SizedBox(

@@ -95,6 +95,7 @@ dependencies:
   googleapis: ^8.1.0
   collection: ^1.18.0
   photo_view: ^0.15.0
+  dio: ^5.9.0
   # flutter_blue: ^0.8.0
 
 dev_dependencies:
