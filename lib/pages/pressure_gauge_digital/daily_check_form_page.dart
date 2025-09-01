@@ -3347,7 +3347,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
               if (idSite == bmbsitarum.idSite ||
                   idSite == bmbhauling.idSite ||
                   idSite == bmbtabuhan.idSite ||
-                  idSite == bibkgb.idSite) {
+                  idSite == bibkgb.idSite ||
+                  idSite == bibgh.idSite) {
                 if (selectedPit == -1) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -3424,78 +3425,82 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         : '',
                   });
                 } else {
-                  final queryYesterdaySnapshot = await FirebaseFirestore
-                      .instance
-                      .collection(dataUnit['type'] == 'spm'
-                          ? 'adjusment_spm'
-                          : 'daily_pressure')
-                      .where('unit', isEqualTo: dataUnit['unitNumber'])
-                      .where('tanggal',
-                          isGreaterThanOrEqualTo: DateTime(
-                                  today.year,
-                                  today.month,
-                                  today.subtract(Duration(days: 1)).day)
-                              .toIso8601String())
-                      .where('tanggal',
-                          isLessThanOrEqualTo: endOfDay.toIso8601String())
-                      .get();
-
-                  if (queryYesterdaySnapshot.docs.isEmpty) {
-                    // tambah data kemarin
-                    await firestore
+                  // tambah data kemarin (khusus site CK-BIB)
+                  if (idSite == bibkgb.idSite || idSite == bibgh.idSite) {
+                    final queryYesterdaySnapshot = await FirebaseFirestore
+                        .instance
                         .collection(dataUnit['type'] == 'spm'
                             ? 'adjusment_spm'
                             : 'daily_pressure')
-                        .add({
-                      // 'nama': (user),
-                      'idSite': idSite,
-                      'user': user['username'] ?? auth.currentUser!.email,
-                      'tanggal': DateTime.now()
-                          .subtract(Duration(days: 1))
-                          .toIso8601String(),
-                      'hari': DateTime.now()
-                          .subtract(Duration(days: 1))
-                          .toIso8601String()
-                          .substring(0, 10),
-                      'jam': DateTime.now()
-                          .subtract(Duration(days: 1))
-                          .toIso8601String()
-                          .substring(11, 19),
-                      'unit': dataUnit['unitNumber'],
-                      'hm': hmCtrl.text,
-                      'posisi': position.map((p) {
-                        final pIndex = position.indexOf(p);
-                        // return {
-                        //   'pos': '${pIndex + 1}',
-                        //   'pressure': (p['pressure']) ?? '0',
-                        //   'rating': (p['rating']) ?? '',
-                        //   'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                        //   'luka': (selectedType == 0) ? '' : p['damage'],
-                        //   'image': (listImage[pIndex] != '')
-                        //       ? listImage[pIndex]
-                        //       : '',
-                        // };
-                        return {
-                          'pos': '${pIndex + 1}',
-                          'pressure': (p.pressure) ?? '0',
-                          'rating': (p.rating) ?? '',
-                          'adjusmentPressure': (p.adjusmentPressure) ?? '0',
-                          'luka': (selectedType == 0) ? '' : p.luka,
-                          'image': (listImage[pIndex] != '')
-                              ? listImage[pIndex]
-                              : '',
-                          'tireSize': (p.size ?? ''),
-                          'idInventory': (p.idInventory ?? ''),
-                          'idUnit': (p.idUnit ?? ''),
-                          'idDaily': '${p.idDaily}',
-                          'kondisi': '${p.kondisi}',
-                        };
-                      }),
-                      'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
-                      'timeLowPressureSPM': (dataUnit['type'] == 'spm')
-                          ? selectedDateTimeSPM?.toIso8601String()
-                          : '',
-                    });
+                        .where('unit', isEqualTo: dataUnit['unitNumber'])
+                        .where('tanggal',
+                            isGreaterThanOrEqualTo: DateTime(
+                                    today.year,
+                                    today.month,
+                                    today.subtract(Duration(days: 1)).day)
+                                .toIso8601String())
+                        .where('tanggal',
+                            isLessThanOrEqualTo: endOfDay.toIso8601String())
+                        .get();
+
+                    if (queryYesterdaySnapshot.docs.isEmpty) {
+                      // tambah data kemarin
+                      await firestore
+                          .collection(dataUnit['type'] == 'spm'
+                              ? 'adjusment_spm'
+                              : 'daily_pressure')
+                          .add({
+                        // 'nama': (user),
+                        'idSite': idSite,
+                        'user': user['username'] ?? auth.currentUser!.email,
+                        'tanggal': DateTime.now()
+                            .subtract(Duration(days: 1))
+                            .toIso8601String(),
+                        'hari': DateTime.now()
+                            .subtract(Duration(days: 1))
+                            .toIso8601String()
+                            .substring(0, 10),
+                        'jam': DateTime.now()
+                            .subtract(Duration(days: 1))
+                            .toIso8601String()
+                            .substring(11, 19),
+                        'unit': dataUnit['unitNumber'],
+                        'hm': hmCtrl.text,
+                        'posisi': position.map((p) {
+                          final pIndex = position.indexOf(p);
+                          // return {
+                          //   'pos': '${pIndex + 1}',
+                          //   'pressure': (p['pressure']) ?? '0',
+                          //   'rating': (p['rating']) ?? '',
+                          //   'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
+                          //   'luka': (selectedType == 0) ? '' : p['damage'],
+                          //   'image': (listImage[pIndex] != '')
+                          //       ? listImage[pIndex]
+                          //       : '',
+                          // };
+                          return {
+                            'pos': '${pIndex + 1}',
+                            'pressure': (p.pressure) ?? '0',
+                            'rating': (p.rating) ?? '',
+                            'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                            'luka': (selectedType == 0) ? '' : p.luka,
+                            'image': (listImage[pIndex] != '')
+                                ? listImage[pIndex]
+                                : '',
+                            'tireSize': (p.size ?? ''),
+                            'idInventory': (p.idInventory ?? ''),
+                            'idUnit': (p.idUnit ?? ''),
+                            'idDaily': '${p.idDaily}',
+                            'kondisi': '${p.kondisi}',
+                          };
+                        }),
+                        'pit':
+                            (selectedPit == -1) ? 'Default' : pit[selectedPit],
+                        'timeLowPressureSPM': (dataUnit['type'] == 'spm')
+                            ? selectedDateTimeSPM?.toIso8601String()
+                            : '',
+                      });
+                    }
                   }
 
                   // tambah data

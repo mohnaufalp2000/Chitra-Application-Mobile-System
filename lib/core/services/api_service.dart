@@ -9,6 +9,7 @@ import 'package:camos/core/services/model/tire_spec.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/core/utils/data/spm.dart';
+import 'package:camos/core/utils/data/spm_jam7.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -534,6 +535,29 @@ class ApiService {
       List<Spm> listSpm = List<Spm>.from(result['data'].map((pressure) {
         return Spm.fromJson(pressure);
       }));
+
+      return listSpm;
+    } catch (e) {
+      log('error spm : $e');
+
+      throw Exception(e.toString());
+    }
+  }
+
+  static Future<List<SpmJam7>> getJam7SPM(String idSite) async {
+    final response = await http.get(Uri.parse(
+        'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=get_tpms_jam7&idsite=$idSite'));
+
+    try {
+      final body = response.body;
+
+      final result = jsonDecode(body);
+
+      List<SpmJam7> listSpm = List<SpmJam7>.from(result['data'].map((pressure) {
+        return SpmJam7.fromJson(pressure);
+      }));
+
+      log('spm kim : $listSpm');
 
       return listSpm;
     } catch (e) {
