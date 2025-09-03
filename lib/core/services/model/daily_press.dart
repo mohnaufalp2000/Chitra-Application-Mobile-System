@@ -254,6 +254,10 @@ class Position extends Equatable {
   final String idUnit;
   final String idDaily;
   final String kondisi;
+  final String minPress;
+  final String maxPress;
+  final String avgPress;
+  final String temp;
 
   Position({
     required this.pos,
@@ -267,24 +271,24 @@ class Position extends Equatable {
     required this.idUnit,
     required this.idDaily,
     required this.kondisi,
+    this.minPress = '',
+    this.maxPress = '',
+    this.avgPress = '',
+    this.temp = '',
   });
 
   @override
   String toString() {
-    return 'Position(pos: $pos, pressure: $pressure, rating: $rating, adjusmentPressure: $adjusmentPressure, luka: ${luka.join(", ")}, image: $image, size: $size, idInventory: $idInventory, idUnit: $idUnit, idDaily: $idDaily, kondisi: $kondisi)';
+    return 'Position(pos: $pos, pressure: $pressure, rating: $rating, adjusmentPressure: $adjusmentPressure, luka: ${luka.join(", ")}, image: $image, size: $size, idInventory: $idInventory, idUnit: $idUnit, idDaily: $idDaily, kondisi: $kondisi, minPress: $minPress, maxPress: $maxPress, avgPress: $avgPress, temp: $temp)';
   }
 
-  /// ✅ INI SOLUSINYA: Helper function yang aman untuk parsing data 'luka'
   static List<String> _parseLuka(dynamic data) {
-    // Jika data adalah List, pastikan semua elemennya adalah String.
     if (data is List) {
       return data.map((item) => item.toString()).toList();
     }
-    // Jika data adalah String (dan tidak kosong), ubah menjadi List berisi satu String itu.
     if (data is String && data.isNotEmpty) {
       return [data];
     }
-    // Jika data null, kosong, atau tipe lain, kembalikan list kosong.
     return [];
   }
 
@@ -301,6 +305,16 @@ class Position extends Equatable {
       idUnit: map['idUnit'] ?? '',
       idDaily: map['idDaily'] ?? '',
       kondisi: map['kondisi'] ?? '',
+      // minPress: map['min_press']?.toString() ?? '',
+      minPress: (double.tryParse(map['min_press'].toString()) ?? 0)
+          .toStringAsFixed(0),
+      // maxPress: map['max_press']?.toString() ?? '',
+      maxPress: (double.tryParse(map['max_press'].toString()) ?? 0)
+          .toStringAsFixed(0),
+      // avgPress: map['avg_press']?.toString() ?? '',
+      avgPress: (double.tryParse(map['avg_press'].toString()) ?? 0)
+          .toStringAsFixed(0),
+      temp: map['temp']?.toString() ?? '',
     );
   }
 
@@ -329,6 +343,10 @@ class Position extends Equatable {
       idUnit: idUnit ?? this.idUnit,
       idDaily: idDaily ?? this.idDaily,
       kondisi: kondisi ?? this.kondisi,
+      minPress: minPress ?? this.minPress,
+      maxPress: maxPress ?? this.maxPress,
+      avgPress: avgPress ?? this.avgPress,
+      temp: temp ?? this.temp,
     );
   }
 
@@ -345,6 +363,10 @@ class Position extends Equatable {
       'idUnit': idUnit,
       'idDaily': idDaily,
       'kondisi': kondisi,
+      'min_press': minPress,
+      'max_press': maxPress,
+      'avg_press': avgPress,
+      'temp': temp,
     };
   }
 

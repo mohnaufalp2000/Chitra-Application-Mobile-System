@@ -660,14 +660,16 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                     filteredItemTask.clear();
                                     filteredItemTask.clear();
                                     dailyData.forEach((item) {
+                                      log('perulangan item: $item');
                                       Map<String, dynamic> cast =
                                           item.toFirestore();
+                                      log('for each item cast: $cast');
 
                                       filteredItemTask.add(cast);
                                     });
 
                                     log('list selected 1 = ${tmpDailyData.length}');
-                                    log('list selected 2 = ${dailyData.length}');
+                                    log('list selected 2 = ${filteredItemTask}');
 
                                     return Column(
                                       children: [

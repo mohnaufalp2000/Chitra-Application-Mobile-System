@@ -541,7 +541,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                   });
 
                                   log('list selected 1 = ${tmpDailyData.length}');
-                                  log('list selected 2 = ${dailyData.length}');
+                                  log('list selected xxx = ${dailyData}');
 
                                   return Column(
                                     children: [
@@ -1559,129 +1559,244 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                               width: double.infinity,
                               child: ElevatedButton(
                                   onPressed: () async {
-                                    // log('data formatted today : $formattedToday');
-                                    //  090125
-                                    final dataSPMJam7 =
-                                        await ApiService.getJam7SPM(idSite);
+                                    showDialog<bool>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text("Konfirmasi"),
+                                            content: const Text(
+                                                "Apakah Anda yakin?"),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(false), // pilih No
+                                                child: const Text("No"),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () async {
+                                                  showDialog(
+                                                    context: context,
+                                                    barrierDismissible: false,
+                                                    builder: (context) {
+                                                      return const AlertDialog(
+                                                        content: Row(
+                                                          children: [
+                                                            CircularProgressIndicator(),
+                                                            SizedBox(width: 20),
+                                                            Text(
+                                                                "Submitting data, please wait..."),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  );
+                                                  final dataSPMJam7 =
+                                                      await ApiService
+                                                          .getJam7SPM(idSite);
 
-                                    final List<UnitTire> dataTireCondition =
-                                        await ApiService.getTireCondition(
-                                            idSite);
+                                                  final List<UnitTire>
+                                                      dataTireCondition =
+                                                      await ApiService
+                                                          .getTireCondition(
+                                                              idSite);
 
-                                    final ratingMap = <String, String>{};
-                                    final tireSizeMap = <String, String>{};
-                                    final hmMap = <String, String>{};
-                                    final idInventoryMap = <String, String>{};
-                                    final idUnitMap = <String, String>{};
-                                    final idDailyMap = <String, String>{};
-                                    final today = DateTime.now();
-                                    final startOfDay = DateTime(
-                                        today.year, today.month, today.day);
-                                    final endOfDay = DateTime(today.year,
-                                        today.month, today.day, 23, 59, 59);
-                                    final formattedToday =
-                                        '${today.month.toString().padLeft(2, '0')}' // MM
-                                        '${today.day.toString().padLeft(2, '0')}' // DD
-                                        '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
+                                                  final ratingMap =
+                                                      <String, String>{};
+                                                  final tireSizeMap =
+                                                      <String, String>{};
+                                                  final hmMap =
+                                                      <String, String>{};
+                                                  final idInventoryMap =
+                                                      <String, String>{};
+                                                  final idUnitMap =
+                                                      <String, String>{};
+                                                  final idDailyMap =
+                                                      <String, String>{};
+                                                  final today = DateTime.now();
+                                                  final startOfDay = DateTime(
+                                                      today.year,
+                                                      today.month,
+                                                      today.day);
+                                                  final endOfDay = DateTime(
+                                                      today.year,
+                                                      today.month,
+                                                      today.day,
+                                                      23,
+                                                      59,
+                                                      59);
+                                                  final formattedToday =
+                                                      '${today.month.toString().padLeft(2, '0')}' // MM
+                                                      '${today.day.toString().padLeft(2, '0')}' // DD
+                                                      '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
 
-                                    for (final unit in dataTireCondition) {
-                                      if (unit.unitNumber!.isNotEmpty &&
-                                          unit.posisi!.isNotEmpty) {
-                                        final key =
-                                            '${unit.unitNumber}-${unit.posisi}';
-                                        ratingMap[key] = unit.rating ?? '';
-                                        tireSizeMap[key] = unit.size ?? '';
-                                        hmMap[key] = unit.hm ?? '';
-                                        idInventoryMap[key] =
-                                            unit.idinventory ?? '';
-                                        idUnitMap[key] = unit.idUnit ?? '';
-                                        idDailyMap[key] =
-                                            '${unit.unitNumber}${unit.posisi}$formattedToday$idSite';
-                                      }
-                                    }
+                                                  for (final unit
+                                                      in dataTireCondition) {
+                                                    if (unit.unitNumber!
+                                                            .isNotEmpty &&
+                                                        unit.posisi!
+                                                            .isNotEmpty) {
+                                                      final key =
+                                                          '${unit.unitNumber}-${unit.posisi}';
+                                                      ratingMap[key] =
+                                                          unit.rating ?? '';
+                                                      tireSizeMap[key] =
+                                                          unit.size ?? '';
+                                                      hmMap[key] =
+                                                          unit.hm ?? '';
+                                                      idInventoryMap[key] =
+                                                          unit.idinventory ??
+                                                              '';
+                                                      idUnitMap[key] =
+                                                          unit.idUnit ?? '';
+                                                      idDailyMap[key] =
+                                                          '${unit.unitNumber}${unit.posisi}$formattedToday$idSite';
+                                                    }
+                                                  }
 
-                                    final batch = firestore.batch();
-                                    final collection =
-                                        firestore.collection('daily_pressure');
+                                                  final batch =
+                                                      firestore.batch();
+                                                  final collection =
+                                                      firestore.collection(
+                                                          'daily_pressure');
 
-                                    final snapshot = await collection
-                                        .where('tanggal',
-                                            isGreaterThanOrEqualTo:
-                                                startOfDay.toIso8601String())
-                                        .where('tanggal',
-                                            isLessThanOrEqualTo:
-                                                endOfDay.toIso8601String())
-                                        .get();
+                                                  for (int i = 0;
+                                                      i < dataSPMJam7.length;
+                                                      i++) {
+                                                    final dataUnit =
+                                                        dataSPMJam7[i];
 
-                                    for (int i = 0;
-                                        i < dataSPMJam7.length;
-                                        i++) {
-                                      final dataUnit = dataSPMJam7[i];
+                                                    // tire count
+                                                    final tireCount = dataUnit
+                                                        .toJson()
+                                                        .keys
+                                                        .where((k) =>
+                                                            k.startsWith(
+                                                                'max_p'))
+                                                        .length;
 
-                                      // tire count
-                                      final tireCount = dataUnit
-                                          .toJson()
-                                          .keys
-                                          .where((k) => k.startsWith('max_p'))
-                                          .length;
+                                                    final snapshot = await collection
+                                                        .where('unit',
+                                                            isEqualTo: dataUnit
+                                                                .devicename)
+                                                        .where('tanggal',
+                                                            isGreaterThanOrEqualTo:
+                                                                startOfDay
+                                                                    .toIso8601String())
+                                                        .where('tanggal',
+                                                            isLessThanOrEqualTo:
+                                                                endOfDay
+                                                                    .toIso8601String())
+                                                        .get();
 
-                                      // Kalau ada snapshot → pakai doc lama, kalau tidak → bikin baru
-                                      final docRef = snapshot.docs.isNotEmpty
-                                          ? collection.doc(snapshot.docs.first
-                                              .id) // overwrite dok lama
-                                          : collection.doc(); // bikin dok baru
+                                                    // Kalau ada snapshot → pakai doc lama, kalau tidak → bikin baru
+                                                    final docRef = snapshot
+                                                            .docs.isNotEmpty
+                                                        ? collection.doc(snapshot
+                                                            .docs
+                                                            .first
+                                                            .id) // overwrite dok lama
+                                                        : collection
+                                                            .doc(); // bikin dok baru
 
-                                      batch.set(docRef, {
-                                        'idSite': idSite,
-                                        'user': user['username'],
-                                        'tanggal':
-                                            DateTime.now().toIso8601String(),
-                                        'hari': DateTime.now()
-                                            .toIso8601String()
-                                            .substring(0, 10),
-                                        'jam': DateTime.now()
-                                            .toIso8601String()
-                                            .substring(11, 19),
-                                        'unit': dataUnit.devicename,
-                                        'hm': hmMap[
-                                            '${dataUnit.devicename}-${i + 1}'],
-                                        'posisi':
-                                            List.generate(tireCount, (pIndex) {
-                                          final pos = pIndex + 1;
-                                          return {
-                                            'pos': '$pos',
-                                            // 'pressure': dataUnit
-                                            //         .toJson()['avg_p$pos'] ??
-                                            //     '0',
-                                            'pressure': (double.tryParse(
-                                                        dataUnit
-                                                            .toJson()[
-                                                                'avg_p$pos']
-                                                            .toString()) ??
-                                                    0)
-                                                .toStringAsFixed(0),
-                                            'rating': ratingMap[
-                                                '${dataUnit.devicename}-$pos'],
-                                            'adjusmentPressure': '0',
-                                            'luka': '',
-                                            'image': '',
-                                            'tireSize': tireSizeMap[
-                                                '${dataUnit.devicename}-$pos'],
-                                            'idInventory': idInventoryMap[
-                                                '${dataUnit.devicename}-$pos'],
-                                            'idUnit': idUnitMap[
-                                                '${dataUnit.devicename}-$pos'],
-                                            'idDaily': idDailyMap[
-                                                '${dataUnit.devicename}-$pos'],
-                                            'kondisi': '',
-                                          };
-                                        }),
-                                        'pit': 'Default',
-                                        'timeLowPressureSPM': '',
-                                      });
-                                    }
+                                                    batch.set(docRef, {
+                                                      'idSite': idSite,
+                                                      'user': user['username'],
+                                                      'tanggal': DateTime.now()
+                                                          .toIso8601String(),
+                                                      'hari': DateTime.now()
+                                                          .toIso8601String()
+                                                          .substring(0, 10),
+                                                      'jam': DateTime.now()
+                                                          .toIso8601String()
+                                                          .substring(11, 19),
+                                                      'unit':
+                                                          dataUnit.devicename,
+                                                      'hm': hmMap[
+                                                          '${dataUnit.devicename}-${i + 1}'],
+                                                      'posisi': List.generate(
+                                                          tireCount, (pIndex) {
+                                                        final pos = pIndex + 1;
+                                                        return {
+                                                          'pos': '$pos',
+                                                          // 'pressure': dataUnit
+                                                          //         .toJson()['avg_p$pos'] ??
+                                                          //     '0',
+                                                          'pressure': (double.tryParse(dataUnit
+                                                                      .toJson()[
+                                                                          'avg_p$pos']
+                                                                      .toString()) ??
+                                                                  0)
+                                                              .toStringAsFixed(
+                                                                  0),
+                                                          'rating': ratingMap[
+                                                              '${dataUnit.devicename}-$pos'],
+                                                          'adjusmentPressure':
+                                                              '0',
+                                                          'luka': '',
+                                                          'image': '',
+                                                          'tireSize': tireSizeMap[
+                                                              '${dataUnit.devicename}-$pos'],
+                                                          'idInventory':
+                                                              idInventoryMap[
+                                                                  '${dataUnit.devicename}-$pos'],
+                                                          'idUnit': idUnitMap[
+                                                              '${dataUnit.devicename}-$pos'],
+                                                          'idDaily': idDailyMap[
+                                                              '${dataUnit.devicename}-$pos'],
+                                                          'kondisi': '',
+                                                          'min_press': (double.tryParse(dataUnit
+                                                                      .toJson()[
+                                                                          'min_p$pos']
+                                                                      .toString()) ??
+                                                                  0)
+                                                              .toStringAsFixed(
+                                                                  0),
+                                                          'max_press': (double.tryParse(dataUnit
+                                                                      .toJson()[
+                                                                          'max_p$pos']
+                                                                      .toString()) ??
+                                                                  0)
+                                                              .toStringAsFixed(
+                                                                  0),
+                                                          'avg_press': (double.tryParse(dataUnit
+                                                                      .toJson()[
+                                                                          'avg_p$pos']
+                                                                      .toString()) ??
+                                                                  0)
+                                                              .toStringAsFixed(
+                                                                  0),
+                                                          'temp': (double.tryParse(dataUnit
+                                                                  .toJson()[
+                                                                      'avg_t$pos']
+                                                                  .toString()) ??
+                                                              0),
+                                                        };
+                                                      }),
+                                                      'pit': 'Default',
+                                                      'timeLowPressureSPM': '',
+                                                    });
+                                                  }
 
-                                    await batch.commit();
+                                                  await batch.commit();
+
+                                                  Navigator.pop(context);
+                                                  Navigator.pop(context);
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                          const SnackBar(
+                                                    content: Text(
+                                                        "Success! Please open menu 'Checked'"),
+                                                    backgroundColor:
+                                                        Colors.green,
+                                                  ));
+                                                },
+                                                child: const Text("Yes"),
+                                              ),
+                                            ],
+                                          );
+                                        });
                                   },
                                   style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.red),

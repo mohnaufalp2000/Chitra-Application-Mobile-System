@@ -91,6 +91,8 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
                       : '',
                   date: widget.date);
 
+              log('data spm daily terbaru : ${widget.filteredItemTask}');
+
               final bytes = await createExcel('daily-check',
                   daily: widget.filteredItemTask);
               final saved = await file.writeAsBytes(bytes, flush: true);

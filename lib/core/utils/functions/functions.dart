@@ -777,6 +777,11 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('H1').setText('Rating');
       sheet.getRangeByName('I1').setText('Condition');
       sheet.getRangeByName('J1').setText('Size');
+      sheet.getRangeByName('K1').setText('Tire Pressure Condition');
+      sheet.getRangeByName('L1').setText('min_press');
+      sheet.getRangeByName('M1').setText('max_press');
+      sheet.getRangeByName('N1').setText('avg_press');
+      sheet.getRangeByName('O1').setText('temp');
 
       log('daily excel : $daily');
 
@@ -816,27 +821,18 @@ Future<List<int>> createExcel(String type,
           //       25;
           // }
 
-          // Ambil data 'luka' ke dalam variabel agar lebih mudah dibaca
           var lukaData = posisi[j]['luka'];
           String textToSet = ''; // Siapkan variabel untuk menampung hasil teks
 
-          // 1. Cek jika datanya adalah List
           if (lukaData is List) {
-            // Proses sebagai List, filter elemen kosong, lalu gabungkan dengan newline
             textToSet = lukaData
                 .where((element) =>
                     element != null && element.toString().isNotEmpty)
                 .join('\n');
-          }
-          // 2. Cek jika datanya adalah String
-          else if (lukaData is String) {
-            // Langsung gunakan nilai String tersebut
+          } else if (lukaData is String) {
             textToSet = lukaData;
           }
-          // 3. Jika bukan keduanya (misal null atau tipe lain), textToSet akan tetap kosong.
 
-          // Set teks ke dalam sel Excel hanya jika ada isinya
-          // Ini mencegah penulisan string kosong ke sel
           if (textToSet.isNotEmpty) {
             sheet
                 .getRangeByName('F${i * posisi.length + j + 2}')
@@ -858,6 +854,18 @@ Future<List<int>> createExcel(String type,
           // sheet
           //     .getRangeByName('K${i * posisi.length + j + 2}')
           //     .setText(posisi[j]['kondisi'] ?? '');
+          sheet
+              .getRangeByName('L${i * posisi.length + j + 2}')
+              .setText(posisi[j]['min_press'] ?? '');
+          sheet
+              .getRangeByName('M${i * posisi.length + j + 2}')
+              .setText(posisi[j]['max_press'] ?? '');
+          sheet
+              .getRangeByName('N${i * posisi.length + j + 2}')
+              .setText(posisi[j]['avg_press'] ?? '');
+          sheet
+              .getRangeByName('O${i * posisi.length + j + 2}')
+              .setText(posisi[j]['temp'] ?? '');
         }
       }
 
