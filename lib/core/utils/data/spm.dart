@@ -39,6 +39,13 @@ class Spm extends Equatable {
   final String rating5;
   final String rating6;
 
+  final String temp1;
+  final String temp2;
+  final String temp3;
+  final String temp4;
+  final String temp5;
+  final String temp6;
+
   const Spm({
     required this.idtpms,
     required this.devicename,
@@ -73,6 +80,12 @@ class Spm extends Equatable {
     this.rating4 = 'N/A',
     this.rating5 = 'N/A',
     this.rating6 = 'N/A',
+    required this.temp1,
+    required this.temp2,
+    required this.temp3,
+    required this.temp4,
+    required this.temp5,
+    required this.temp6,
   });
 
   Spm copyWith({
@@ -82,6 +95,12 @@ class Spm extends Equatable {
     String? rating4,
     String? rating5,
     String? rating6,
+    String? temp1,
+    String? temp2,
+    String? temp3,
+    String? temp4,
+    String? temp5,
+    String? temp6,
   }) {
     return Spm(
       idtpms: idtpms,
@@ -117,6 +136,12 @@ class Spm extends Equatable {
       rating4: rating4 ?? this.rating4,
       rating5: rating5 ?? this.rating5,
       rating6: rating6 ?? this.rating6,
+      temp1: temp1 ?? this.temp1,
+      temp2: temp2 ?? this.temp2,
+      temp3: temp3 ?? this.temp3,
+      temp4: temp4 ?? this.temp4,
+      temp5: temp5 ?? this.temp5,
+      temp6: temp6 ?? this.temp6,
     );
   }
 
@@ -148,6 +173,18 @@ class Spm extends Equatable {
         totalpress: json["totalpress"] ?? '',
         sumPress: json["sum_press"] ?? '',
         idSite: json["id_site"] ?? '',
+        rating1: json["rating1"] ?? 'N/A',
+        rating2: json["rating2"] ?? 'N/A',
+        rating3: json["rating3"] ?? 'N/A',
+        rating4: json["rating4"] ?? 'N/A',
+        rating5: json["rating5"] ?? 'N/A',
+        rating6: json["rating6"] ?? 'N/A',
+        temp1: json["temp1"] ?? '',
+        temp2: json["temp2"] ?? '',
+        temp3: json["temp3"] ?? '',
+        temp4: json["temp4"] ?? '',
+        temp5: json["temp5"] ?? '',
+        temp6: json["temp6"] ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -184,6 +221,12 @@ class Spm extends Equatable {
         "rating4": rating4,
         "rating5": rating5,
         "rating6": rating6,
+        "temp1": temp1,
+        "temp2": temp2,
+        "temp3": temp3,
+        "temp4": temp4,
+        "temp5": temp5,
+        "temp6": temp6,
       };
 
   @override
@@ -221,20 +264,26 @@ class Spm extends Equatable {
         rating4,
         rating5,
         rating6,
+        temp1,
+        temp2,
+        temp3,
+        temp4,
+        temp5,
+        temp6,
       ];
 }
+
 
 // import 'dart:convert';
 // import 'package:equatable/equatable.dart';
 
 // Spm spmFromJson(String str) => Spm.fromJson(json.decode(str));
-
 // String spmToJson(Spm data) => json.encode(data.toJson());
 
 // class Spm extends Equatable {
 //   final String idtpms;
-//   final String timestamp;
 //   final String devicename;
+//   final String timestamp;
 //   final String lat;
 //   final String alt;
 //   final String lon;
@@ -259,11 +308,17 @@ class Spm extends Equatable {
 //   final String totalpress;
 //   final String sumPress;
 //   final String idSite;
+//   final String rating1;
+//   final String rating2;
+//   final String rating3;
+//   final String rating4;
+//   final String rating5;
+//   final String rating6;
 
 //   const Spm({
 //     required this.idtpms,
-//     required this.timestamp,
 //     required this.devicename,
+//     required this.timestamp,
 //     required this.lat,
 //     required this.alt,
 //     required this.lon,
@@ -288,7 +343,58 @@ class Spm extends Equatable {
 //     required this.totalpress,
 //     required this.sumPress,
 //     required this.idSite,
+//     this.rating1 = 'N/A',
+//     this.rating2 = 'N/A',
+//     this.rating3 = 'N/A',
+//     this.rating4 = 'N/A',
+//     this.rating5 = 'N/A',
+//     this.rating6 = 'N/A',
 //   });
+
+//   Spm copyWith({
+//     String? rating1,
+//     String? rating2,
+//     String? rating3,
+//     String? rating4,
+//     String? rating5,
+//     String? rating6,
+//   }) {
+//     return Spm(
+//       idtpms: idtpms,
+//       devicename: devicename,
+//       timestamp: timestamp,
+//       lat: lat,
+//       alt: alt,
+//       lon: lon,
+//       pressure1: pressure1,
+//       pressure2: pressure2,
+//       pressure3: pressure3,
+//       pressure4: pressure4,
+//       pressure5: pressure5,
+//       pressure6: pressure6,
+//       temperature1: temperature1,
+//       temperature2: temperature2,
+//       temperature3: temperature3,
+//       temperature4: temperature4,
+//       temperature5: temperature5,
+//       temperature6: temperature6,
+//       press1: press1,
+//       press2: press2,
+//       press3: press3,
+//       press4: press4,
+//       press5: press5,
+//       press6: press6,
+//       totalpress: totalpress,
+//       sumPress: sumPress,
+//       idSite: idSite,
+//       rating1: rating1 ?? this.rating1,
+//       rating2: rating2 ?? this.rating2,
+//       rating3: rating3 ?? this.rating3,
+//       rating4: rating4 ?? this.rating4,
+//       rating5: rating5 ?? this.rating5,
+//       rating6: rating6 ?? this.rating6,
+//     );
+//   }
 
 //   factory Spm.fromJson(Map<String, dynamic> json) => Spm(
 //         idtpms: json["idtpms"] ?? '',
@@ -348,6 +454,12 @@ class Spm extends Equatable {
 //         "totalpress": totalpress,
 //         "sum_press": sumPress,
 //         "id_site": idSite,
+//         "rating1": rating1,
+//         "rating2": rating2,
+//         "rating3": rating3,
+//         "rating4": rating4,
+//         "rating5": rating5,
+//         "rating6": rating6,
 //       };
 
 //   @override
@@ -379,10 +491,12 @@ class Spm extends Equatable {
 //         totalpress,
 //         sumPress,
 //         idSite,
+//         rating1,
+//         rating2,
+//         rating3,
+//         rating4,
+//         rating5,
+//         rating6,
 //       ];
-
-//   @override
-//   String toString() {
-//     return 'Spm{idtpms: $idtpms, timestamp: $timestamp, devicename: $devicename, lat: $lat, alt: $alt, lon: $lon, pressure1: $pressure1, pressure2: $pressure2, pressure3: $pressure3, pressure4: $pressure4, pressure5: $pressure5, pressure6: $pressure6, temperature1: $temperature1, temperature2: $temperature2, temperature3: $temperature3, temperature4: $temperature4, temperature5: $temperature5, temperature6: $temperature6, press1: $press1, press2: $press2, press3: $press3, press4: $press4, press5: $press5, press6: $press6, totalpress: $totalpress, sumPress: $sumPress, idSite: $idSite}';
-//   }
 // }
+

@@ -88,27 +88,31 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
                 orElse: () => Site(idSite: '', idCompany: ''))
             .idCompany;
 
-        // khusus ck tia dikecualikan
-        if (idCompany!.isEmpty && event.idSite != '15') {
+        if (idCompany!.isEmpty) {
           emit(SpmLoadedState(listSpm: [], isShowMore: []));
           return;
         }
+        // khusus ck tia dikecualikan
+        // if (idCompany!.isEmpty && event.idSite != '15') {
+        //   emit(SpmLoadedState(listSpm: [], isShowMore: []));
+        //   return;
+        // }
 
-        final isCts = '1';
+        // final isCts = '1';
 
-        // final isCts = allSites
-        //     .firstWhere((site) => site.idSite == event.idSite,
-        //         orElse: () => Site(idSite: '', idCompany: ''))
-        //     .cts;
+        final isCts = allSites
+            .firstWhere((site) => site.idSite == event.idSite,
+                orElse: () => Site(idSite: '', idCompany: ''))
+            .cts;
 
-        final responseQuery = await firestore
-            .collection('url_spm')
-            .where('id_company', isEqualTo: '2')
-            .get();
         // final responseQuery = await firestore
         //     .collection('url_spm')
-        //     .where('id_company', isEqualTo: idCompany)
+        //     .where('id_company', isEqualTo: '2')
         //     .get();
+        final responseQuery = await firestore
+            .collection('url_spm')
+            .where('id_company', isEqualTo: idCompany)
+            .get();
 
         if (responseQuery.docs.isEmpty) {
           emit(SpmLoadedState(listSpm: [], isShowMore: []));

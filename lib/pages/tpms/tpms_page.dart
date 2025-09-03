@@ -314,6 +314,26 @@ class _TpmsPageState extends State<TpmsPage> {
                                     {'rating5': element.rating5},
                                     {'rating6': element.rating6},
                                   ],
+                                  [
+                                    {
+                                      'temp1': element.temp1,
+                                    },
+                                    {
+                                      'temp2': element.temp2,
+                                    },
+                                    {
+                                      'temp3': element.temp3,
+                                    },
+                                    {
+                                      'temp4': element.temp4,
+                                    },
+                                    {
+                                      'temp5': element.temp5,
+                                    },
+                                    {
+                                      'temp6': element.temp6,
+                                    },
+                                  ],
                                 ],
                               );
                             });
@@ -447,6 +467,15 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                   [
                                                                   'rating${index + 1}'] ??
                                                               '',
+                                                          temperatureStatus:
+                                                              allUnits[indexUnit]
+                                                                              [
+                                                                              4]
+                                                                          [
+                                                                          index]
+                                                                      [
+                                                                      'temp${index + 1}'] ??
+                                                                  '',
                                                         ),
                                                       ),
                                                     );
@@ -493,6 +522,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                                   rating: allUnits[indexUnit][3]
                                                               [dataIndex][
                                                           'rating${dataIndex + 1}'] ??
+                                                      '',
+                                                  temperatureStatus: allUnits[
+                                                                  indexUnit][4]
+                                                              [dataIndex][
+                                                          'temp${dataIndex + 1}'] ??
                                                       '',
                                                 ),
                                               );
@@ -1173,6 +1207,7 @@ class PressureCard extends StatelessWidget {
     required this.pressureStatus,
     required this.temperature,
     required this.rating,
+    required this.temperatureStatus,
   });
 
   final String position;
@@ -1181,9 +1216,15 @@ class PressureCard extends StatelessWidget {
   final String temperature;
   final String pressureStatus;
   final String rating;
+  final String temperatureStatus;
 
   @override
   Widget build(BuildContext context) {
+    final bool isCold = temperatureStatus == '0';
+    final Color thermalColor = isCold ? Colors.blue : Colors.red;
+    final IconData thermalIcon =
+        isCold ? Icons.ac_unit : Icons.local_fire_department;
+
     return Card(
       elevation: 2,
       child: Container(
@@ -1191,33 +1232,80 @@ class PressureCard extends StatelessWidget {
           children: [
             Container(
                 padding: EdgeInsets.all(12),
+                height: MediaQuery.of(context).size.height * 0.12,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                    color: (pressureStatus == '1')
-                        ? green00968A
-                        : (pressureStatus == '0' && pressure != '0')
-                            ? Colors.red
-                            : black,
+                    color: (pressureStatus == '2')
+                        ? Colors.red
+                        : (pressureStatus == '1')
+                            ? green00968A
+                            : (pressureStatus == '0' && pressure != '0')
+                                ? Colors.red
+                                : black,
                     borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12))),
                 child: Center(
-                  child: Text(
-                    position,
-                    style: getWhiteTextStyle(fontSize: 36, fontWeight: w700),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        position,
+                        style:
+                            getWhiteTextStyle(fontSize: 36, fontWeight: w700),
+                      ),
+                      (pressureStatus == '2')
+                          ? Text(
+                              'Over',
+                              style: getWhiteTextStyle(
+                                  fontSize: 14, fontWeight: w700),
+                            )
+                          : (pressureStatus == '0')
+                              ? Text(
+                                  'Low',
+                                  style: getWhiteTextStyle(
+                                      fontSize: 14, fontWeight: w700),
+                                )
+                              : Container(),
+                    ],
                   ),
                 )),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(vertical: 4.0),
+            //   child: Text(
+            //     pressure + ' Psi',
+            //     style: getBlackTextStyle(fontSize: 24),
+            //   ),
+            // ),
             Column(
               children: [
                 Text(
                   pressure,
-                  style: getBlackTextStyle(fontSize: 24),
+                  style: getBlackTextStyle(fontSize: 22),
                 ),
-                Text('Psi', style: getBlackTextStyle(fontSize: 24)),
+                Text(
+                  'Psi',
+                  style: getBlackTextStyle(fontSize: 22),
+                ),
               ],
             ),
             const Divider(),
-            Text('$temperature °C', style: getBlackTextStyle(fontSize: 24)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('$temperature °C',
+                    style: getBlackTextStyle(fontSize: 16)
+                        .copyWith(color: thermalColor)),
+                const SizedBox(
+                  width: 6,
+                ),
+                Icon(
+                  thermalIcon,
+                  color: thermalColor,
+                  size: 24,
+                ),
+              ],
+            ),
             if (rating != 'N/A' || rating == null || rating == '')
               Column(
                 children: [
@@ -1233,3 +1321,73 @@ class PressureCard extends StatelessWidget {
     );
   }
 }
+
+// class PressureCard extends StatelessWidget {
+//   const PressureCard({
+//     super.key,
+//     required this.position,
+//     this.index = -1,
+//     required this.pressure,
+//     required this.pressureStatus,
+//     required this.temperature,
+//     required this.rating,
+//   });
+
+//   final String position;
+//   final int index;
+//   final String pressure;
+//   final String temperature;
+//   final String pressureStatus;
+//   final String rating;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Card(
+//       elevation: 2,
+//       child: Container(
+//         child: Column(
+//           children: [
+//             Container(
+//                 padding: EdgeInsets.all(12),
+//                 width: double.infinity,
+//                 decoration: BoxDecoration(
+//                     color: (pressureStatus == '1')
+//                         ? green00968A
+//                         : (pressureStatus == '0' && pressure != '0')
+//                             ? Colors.red
+//                             : black,
+//                     borderRadius: BorderRadius.only(
+//                         topLeft: Radius.circular(12),
+//                         topRight: Radius.circular(12))),
+//                 child: Center(
+//                   child: Text(
+//                     position,
+//                     style: getWhiteTextStyle(fontSize: 36, fontWeight: w700),
+//                   ),
+//                 )),
+//             Column(
+//               children: [
+//                 Text(
+//                   pressure,
+//                   style: getBlackTextStyle(fontSize: 24),
+//                 ),
+//                 Text('Psi', style: getBlackTextStyle(fontSize: 24)),
+//               ],
+//             ),
+//             const Divider(),
+//             Text('$temperature °C', style: getBlackTextStyle(fontSize: 24)),
+//             if (rating != 'N/A' || rating == null || rating == '')
+//               Column(
+//                 children: [
+//                   const Divider(),
+//                   Text('Rat. $rating', style: getBlackTextStyle(fontSize: 24))
+//                 ],
+//               )
+//             else
+//               Container()
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
