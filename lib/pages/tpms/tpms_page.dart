@@ -419,14 +419,22 @@ class _TpmsPageState extends State<TpmsPage> {
                                                       child: Padding(
                                                         padding:
                                                             EdgeInsets.only(
-                                                                right:
-                                                                    (index == 0)
-                                                                        ? 84
-                                                                        : 0,
-                                                                left:
-                                                                    (index == 1)
-                                                                        ? 84
-                                                                        : 0),
+                                                                right: (index ==
+                                                                        0)
+                                                                    // ? 84
+                                                                    ? MediaQuery.of(context)
+                                                                            .size
+                                                                            .width *
+                                                                        0.23
+                                                                    : 0,
+                                                                left: (index ==
+                                                                        1)
+                                                                    // ? 84
+                                                                    ? MediaQuery.of(context)
+                                                                            .size
+                                                                            .width *
+                                                                        0.23
+                                                                    : 0),
                                                         child: PressureCard(
                                                           position:
                                                               '${index + 1}',
@@ -1261,12 +1269,14 @@ class PressureCard extends StatelessWidget {
                                   fontSize: 14, fontWeight: w700),
                             )
                           : (pressureStatus == '0')
-                              ? Text(
-                                  'Low',
-                                  style: getWhiteTextStyle(
-                                      fontSize: 14, fontWeight: w700),
-                                )
-                              : Container(),
+                              ? (pressure != '0')
+                                  ? Text(
+                                      'Low',
+                                      style: getWhiteTextStyle(
+                                          fontSize: 14, fontWeight: w700),
+                                    )
+                                  : Container()
+                              : Container()
                     ],
                   ),
                 )),
@@ -1290,21 +1300,24 @@ class PressureCard extends StatelessWidget {
               ],
             ),
             const Divider(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('$temperature °C',
-                    style: getBlackTextStyle(fontSize: 16)
-                        .copyWith(color: thermalColor)),
-                const SizedBox(
-                  width: 6,
-                ),
-                Icon(
-                  thermalIcon,
-                  color: thermalColor,
-                  size: 24,
-                ),
-              ],
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('$temperature °C',
+                      style: getBlackTextStyle(fontSize: 16)
+                          .copyWith(color: thermalColor)),
+                  const SizedBox(
+                    width: 6,
+                  ),
+                  Icon(
+                    thermalIcon,
+                    color: thermalColor,
+                    size: 24,
+                  ),
+                ],
+              ),
             ),
             if (rating != 'N/A' || rating == null || rating == '')
               Column(
