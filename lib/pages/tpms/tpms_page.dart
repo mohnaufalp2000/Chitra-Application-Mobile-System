@@ -1240,7 +1240,7 @@ class PressureCard extends StatelessWidget {
           children: [
             Container(
                 padding: EdgeInsets.all(12),
-                height: MediaQuery.of(context).size.height * 0.12,
+                height: MediaQuery.of(context).size.height * 0.103,
                 width: double.infinity,
                 decoration: BoxDecoration(
                     color: (pressureStatus == '2')
@@ -1254,26 +1254,49 @@ class PressureCard extends StatelessWidget {
                         topLeft: Radius.circular(12),
                         topRight: Radius.circular(12))),
                 child: Center(
+                  // child: Column(
+                  //   children: [
+                  //     Text(
+                  //       position,
+                  //       style:
+                  //           getWhiteTextStyle(fontSize: 24, fontWeight: w700),
+                  //     ),
+                  //     Text(
+                  //       (pressureStatus == '2')
+                  //           ? 'Over'
+                  //           : (pressureStatus == '0')
+                  //               ? (pressure != '0')
+                  //                   ? 'Low'
+                  //                   : ''
+                  //               : '',
+                  //       style:
+                  //           getWhiteTextStyle(fontSize: 10, fontWeight: w700),
+                  //     ),
+                  //   ],
+                  // ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         position,
-                        style:
-                            getWhiteTextStyle(fontSize: 36, fontWeight: w700),
+                        style: getWhiteTextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       (pressureStatus == '2')
                           ? Text(
                               'Over',
                               style: getWhiteTextStyle(
-                                  fontSize: 14, fontWeight: w700),
+                                  fontSize: 10, fontWeight: w700),
                             )
                           : (pressureStatus == '0')
                               ? (pressure != '0')
                                   ? Text(
                                       'Low',
                                       style: getWhiteTextStyle(
-                                          fontSize: 14, fontWeight: w700),
+                                        fontSize: 10,
+                                      ),
                                     )
                                   : Container()
                               : Container()
