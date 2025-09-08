@@ -744,28 +744,6 @@ Future<List<int>> createExcel(String type,
       final Workbook workbook = Workbook();
       final Worksheet sheet = workbook.worksheets[0];
 
-      // sheet.getRangeByName('A1').setText('Date');
-      // sheet.getRangeByName('B1').setText('Unit');
-      // sheet.getRangeByName('C1').setText('Pos');
-      // sheet.getRangeByName('D1').setText('Pressure');
-
-      // log('funcdailyexcel: $daily');
-      // for(int i = 0; i < daily!.length; i++){
-      //   // merubah tanggal jadi dd/MM/yyyy
-      //   DateTime parse = DateTime.parse(daily[i]['tanggal']);
-      //   String formattedDate = DateFormat('dd/MM/yyyy').format(parse);
-
-      //   final unit = daily[i]['unit'];
-      //   final posisi = daily[i]['posisi'] as List<dynamic>;
-
-      //   for(int j = 0; j < posisi.length; j++){
-      //     sheet.getRangeByName('A${j+2}').setText(formattedDate);
-      //     sheet.getRangeByName('B${j+2}').setText(unit);
-      //     sheet.getRangeByName('C${j+2}').setText(posisi[j]['pos']);
-      //     sheet.getRangeByName('D${j+2}').setText(posisi[j]['pressure']);
-      //   }
-
-      // }
       sheet.getRangeByName('A1').setText('Date');
       sheet.getRangeByName('B1').setText('Unit');
       sheet.getRangeByName('C1').setText('Pos');
@@ -783,41 +761,35 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('N1').setText('avg_press');
       sheet.getRangeByName('O1').setText('temp');
 
-      log('daily excel : $daily');
+      // log('daily excel daily excel : $daily');
+      log('json hauling : ${jsonEncode(daily)}');
 
+      int rowIndex = 2;
       for (int i = 0; i < daily!.length; i++) {
         final unit = daily[i]['unit'];
         final posisi = daily[i]['posisi'] as List<dynamic>;
-
-        if (i == 4) {
-          log('unit4: ${daily[i]['unit']}');
-          log('posisi4: ${daily[i]['posisi']}');
-        }
 
         for (int j = 0; j < posisi.length; j++) {
           // Merubah tanggal menjadi dd/MM/yyyy
           DateTime parse = DateTime.parse(daily[i]['tanggal']);
           String formattedDate = DateFormat('MM/dd/yyyy').format(parse);
-          sheet
-              .getRangeByName('A${i * posisi.length + j + 2}')
-              .setText(formattedDate);
-          sheet.getRangeByName('B${i * posisi.length + j + 2}').setText(unit);
 
-          sheet
-              .getRangeByName('C${i * posisi.length + j + 2}')
-              .setText(posisi[j]['pos']);
-          sheet.getRangeByName('D${i * posisi.length + j + 2}').setText(
+          sheet.getRangeByName('A${rowIndex}').setText(formattedDate);
+          sheet.getRangeByName('B${rowIndex}').setText(unit);
+
+          sheet.getRangeByName('C${rowIndex}').setText(posisi[j]['pos']);
+          sheet.getRangeByName('D${rowIndex}').setText(
               (posisi[j]['pressure'] == '') ? '0' : posisi[j]['pressure']);
-          sheet.getRangeByName('E${i * posisi.length + j + 2}').setText(
+          sheet.getRangeByName('E${rowIndex}').setText(
               (posisi[j]['adjusmentPressure'] == '')
                   ? '0'
                   : posisi[j]['adjusmentPressure']);
           // if (posisi[j]['luka'] != null && posisi[j]['luka'] is! String) {
-          //   sheet.getRangeByName('F${i * posisi.length + j + 2}').setText(
+          //   sheet.getRangeByName('F${rowIndex}').setText(
           //       (posisi[j]['luka'] as List<dynamic>)
           //           .where((element) => element.isNotEmpty)
           //           .join('\n'));
-          //   sheet.getRangeByName('F${i * posisi.length + j + 2}').columnWidth =
+          //   sheet.getRangeByName('F${rowIndex}').columnWidth =
           //       25;
           // }
 
@@ -834,40 +806,113 @@ Future<List<int>> createExcel(String type,
           }
 
           if (textToSet.isNotEmpty) {
-            sheet
-                .getRangeByName('F${i * posisi.length + j + 2}')
-                .setText(textToSet);
+            sheet.getRangeByName('F${rowIndex}').setText(textToSet);
           }
-          sheet
-              .getRangeByName('G${i * posisi.length + j + 2}')
-              .setText(daily[i]['pit']);
-          sheet
-              .getRangeByName('H${i * posisi.length + j + 2}')
-              .setText(posisi[j]['rating']);
+          sheet.getRangeByName('G${rowIndex}').setText(daily[i]['pit']);
+          sheet.getRangeByName('H${rowIndex}').setText(posisi[j]['rating']);
 
           sheet
-              .getRangeByName('I${i * posisi.length + j + 2}')
+              .getRangeByName('I${rowIndex}')
               .setText(daily[i]['unit_condition'] ?? '');
           // sheet
-          //     .getRangeByName('J${i * posisi.length + j + 2}')
+          //     .getRangeByName('J${rowIndex}')
           //     .setText(posisi[j]['tireSize'] ?? '');
           // sheet
-          //     .getRangeByName('K${i * posisi.length + j + 2}')
+          //     .getRangeByName('K${rowIndex}')
           //     .setText(posisi[j]['kondisi'] ?? '');
           sheet
-              .getRangeByName('L${i * posisi.length + j + 2}')
+              .getRangeByName('L${rowIndex}')
               .setText(posisi[j]['min_press'] ?? '');
           sheet
-              .getRangeByName('M${i * posisi.length + j + 2}')
+              .getRangeByName('M${rowIndex}')
               .setText(posisi[j]['max_press'] ?? '');
           sheet
-              .getRangeByName('N${i * posisi.length + j + 2}')
+              .getRangeByName('N${rowIndex}')
               .setText(posisi[j]['avg_press'] ?? '');
-          sheet
-              .getRangeByName('O${i * posisi.length + j + 2}')
-              .setText(posisi[j]['temp'] ?? '');
+          sheet.getRangeByName('O${rowIndex}').setText(posisi[j]['temp'] ?? '');
+
+          rowIndex++;
         }
       }
+      // for (int i = 0; i < daily!.length; i++) {
+      //   final unit = daily[i]['unit'];
+      //   final posisi = daily[i]['posisi'] as List<dynamic>;
+
+      //   for (int j = 0; j < posisi.length; j++) {
+      //     // Merubah tanggal menjadi dd/MM/yyyy
+      //     DateTime parse = DateTime.parse(daily[i]['tanggal']);
+      //     String formattedDate = DateFormat('MM/dd/yyyy').format(parse);
+
+      //     sheet
+      //         .getRangeByName('A${i * posisi.length + j + 2}')
+      //         .setText(formattedDate);
+      //     sheet.getRangeByName('B${i * posisi.length + j + 2}').setText(unit);
+
+      //     sheet
+      //         .getRangeByName('C${i * posisi.length + j + 2}')
+      //         .setText(posisi[j]['pos']);
+      //     sheet.getRangeByName('D${i * posisi.length + j + 2}').setText(
+      //         (posisi[j]['pressure'] == '') ? '0' : posisi[j]['pressure']);
+      //     sheet.getRangeByName('E${i * posisi.length + j + 2}').setText(
+      //         (posisi[j]['adjusmentPressure'] == '')
+      //             ? '0'
+      //             : posisi[j]['adjusmentPressure']);
+      //     // if (posisi[j]['luka'] != null && posisi[j]['luka'] is! String) {
+      //     //   sheet.getRangeByName('F${i * posisi.length + j + 2}').setText(
+      //     //       (posisi[j]['luka'] as List<dynamic>)
+      //     //           .where((element) => element.isNotEmpty)
+      //     //           .join('\n'));
+      //     //   sheet.getRangeByName('F${i * posisi.length + j + 2}').columnWidth =
+      //     //       25;
+      //     // }
+
+      //     var lukaData = posisi[j]['luka'];
+      //     String textToSet = ''; // Siapkan variabel untuk menampung hasil teks
+
+      //     if (lukaData is List) {
+      //       textToSet = lukaData
+      //           .where((element) =>
+      //               element != null && element.toString().isNotEmpty)
+      //           .join('\n');
+      //     } else if (lukaData is String) {
+      //       textToSet = lukaData;
+      //     }
+
+      //     if (textToSet.isNotEmpty) {
+      //       sheet
+      //           .getRangeByName('F${i * posisi.length + j + 2}')
+      //           .setText(textToSet);
+      //     }
+      //     sheet
+      //         .getRangeByName('G${i * posisi.length + j + 2}')
+      //         .setText(daily[i]['pit']);
+      //     sheet
+      //         .getRangeByName('H${i * posisi.length + j + 2}')
+      //         .setText(posisi[j]['rating']);
+
+      //     sheet
+      //         .getRangeByName('I${i * posisi.length + j + 2}')
+      //         .setText(daily[i]['unit_condition'] ?? '');
+      //     // sheet
+      //     //     .getRangeByName('J${i * posisi.length + j + 2}')
+      //     //     .setText(posisi[j]['tireSize'] ?? '');
+      //     // sheet
+      //     //     .getRangeByName('K${i * posisi.length + j + 2}')
+      //     //     .setText(posisi[j]['kondisi'] ?? '');
+      //     sheet
+      //         .getRangeByName('L${i * posisi.length + j + 2}')
+      //         .setText(posisi[j]['min_press'] ?? '');
+      //     sheet
+      //         .getRangeByName('M${i * posisi.length + j + 2}')
+      //         .setText(posisi[j]['max_press'] ?? '');
+      //     sheet
+      //         .getRangeByName('N${i * posisi.length + j + 2}')
+      //         .setText(posisi[j]['avg_press'] ?? '');
+      //     sheet
+      //         .getRangeByName('O${i * posisi.length + j + 2}')
+      //         .setText(posisi[j]['temp'] ?? '');
+      //   }
+      // }
 
       final List<int> bytes = workbook.saveAsStream();
       workbook.dispose();
