@@ -1332,7 +1332,7 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
   }
 
   Future<void> showInputDialog(String type,
-      {String image: '', SiteConditionEntity? condition}) async {
+      {String image = '', SiteConditionEntity? condition}) async {
     return showDialog(
         context: context,
         builder: (BuildContext context) {

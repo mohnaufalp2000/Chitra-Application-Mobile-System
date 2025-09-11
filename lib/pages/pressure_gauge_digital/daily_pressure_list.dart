@@ -1690,6 +1690,30 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                       'max_p'))
                                                               .length;
 
+                                                          bool hasZeroPressure =
+                                                              false;
+                                                          for (int pos = 1;
+                                                              pos <= tireCount;
+                                                              pos++) {
+                                                            final pressure =
+                                                                double.tryParse(
+                                                                      dataUnit
+                                                                          .toJson()[
+                                                                              'avg_p$pos']
+                                                                          .toString(),
+                                                                    ) ??
+                                                                    0;
+                                                            if (pressure == 0) {
+                                                              hasZeroPressure =
+                                                                  true;
+                                                              break; // stop pengecekan
+                                                            }
+                                                          }
+
+                                                          if (hasZeroPressure) {
+                                                            continue;
+                                                          }
+
                                                           final snapshot = await collection
                                                               .where('unit',
                                                                   isEqualTo:

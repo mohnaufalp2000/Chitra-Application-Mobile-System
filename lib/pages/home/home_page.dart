@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:appcheck/appcheck.dart';
 import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
 import 'package:camos/core/blocs/network/network_bloc.dart';
 import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
@@ -507,6 +508,35 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         // .where('is_done', isEqualTo: false)
         .snapshots();
     _streamController2.addStream(stream2);
+  }
+
+  Future<void> openOrInstallApp({
+    required String targetPackageName,
+    required String downloadUrl,
+  }) async {
+    final appCheck = AppCheck();
+
+    try {
+      // cek apakah aplikasi tersedia
+      final app = await appCheck.checkAvailability(targetPackageName);
+
+      if (app != null) {
+        debugPrint("✅ App ditemukan → buka $targetPackageName");
+        await appCheck.launchApp(targetPackageName);
+      } else {
+        debugPrint("❌ App tidak ditemukan → buka link download");
+        final Uri url = Uri.parse(downloadUrl);
+
+        if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+          throw Exception('Could not launch $url');
+        }
+      }
+    } catch (e) {
+      debugPrint("⚠️ Error saat cek app: $e");
+      // fallback ke link install
+      final Uri url = Uri.parse(downloadUrl);
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -1156,7 +1186,54 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   ),
                                 ),
                                 const SizedBox(
-                                  height: 24,
+                                  height: 12,
+                                ),
+                                // Tire Damage AI
+                                ButtonWidget(
+                                    name: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.linked_camera_rounded,
+                                          color: Colors.white,
+                                        ),
+                                        const SizedBox(
+                                          width: 6,
+                                        ),
+                                        Text(
+                                          'Tire Damage Analyzer',
+                                          style: getWhiteTextStyle(),
+                                        ),
+                                      ],
+                                    ),
+                                    color: Colors.green,
+                                    function: () async {
+                                      final doc = await firestore
+                                          .collection("url_tire_damage_ai")
+                                          .doc("url")
+                                          .get();
+
+                                      if (doc.exists) {
+                                        final data = doc.data();
+                                        final String downloadUrl =
+                                            data?["url"] ?? "";
+                                        final String targetPackageName =
+                                            data?["targetName"] ?? "";
+
+                                        print('url tire ai : ${data}');
+
+                                        await openOrInstallApp(
+                                            targetPackageName:
+                                                // "com.example.tyre_damage_detection_application",
+                                                targetPackageName,
+                                            downloadUrl:
+                                                // "https://drive.google.com/file/d/1ldNpEYI5hCoOxzNEzGUAQIaa_ZrP_jFV/view?usp=drive_link",
+                                                downloadUrl);
+                                      }
+                                    }),
+                                const SizedBox(
+                                  height: 12,
                                 ),
                                 GridView.builder(
                                     shrinkWrap: true,
