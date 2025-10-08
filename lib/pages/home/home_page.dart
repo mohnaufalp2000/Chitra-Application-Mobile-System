@@ -1189,26 +1189,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                   height: 12,
                                 ),
                                 // Tire Damage AI
-                                ButtonWidget(
-                                    name: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.linked_camera_rounded,
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(
-                                          width: 6,
-                                        ),
-                                        Text(
-                                          'Tire Damage Analyzer',
-                                          style: getWhiteTextStyle(),
-                                        ),
-                                      ],
-                                    ),
-                                    color: Colors.green,
-                                    function: () async {
+                                Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  color: Colors.green,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: () async {
                                       final doc = await firestore
                                           .collection("url_tire_damage_ai")
                                           .doc("url")
@@ -1221,17 +1209,39 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                         final String targetPackageName =
                                             data?["targetName"] ?? "";
 
-                                        print('url tire ai : ${data}');
+                                        print('url tire ai : $data');
 
                                         await openOrInstallApp(
-                                            targetPackageName:
-                                                // "com.example.tyre_damage_detection_application",
-                                                targetPackageName,
-                                            downloadUrl:
-                                                // "https://drive.google.com/file/d/1ldNpEYI5hCoOxzNEzGUAQIaa_ZrP_jFV/view?usp=drive_link",
-                                                downloadUrl);
+                                          targetPackageName: targetPackageName,
+                                          downloadUrl: downloadUrl,
+                                        );
                                       }
-                                    }),
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12, horizontal: 16),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Image.asset(
+                                            '${imagePath}/camera_ai.png',
+                                            width: 24,
+                                            height: 24,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Tire Damage Analyzer',
+                                            style: getWhiteTextStyle(
+                                              fontWeight: w700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
                                 const SizedBox(
                                   height: 12,
                                 ),

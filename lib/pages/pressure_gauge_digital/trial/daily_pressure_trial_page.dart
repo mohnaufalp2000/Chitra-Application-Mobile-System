@@ -70,61 +70,73 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
     {
       'position': '1',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '2',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '3',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '4',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '5',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '6',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '7',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '8',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '9',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '10',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '11',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
     {
       'position': '12',
       'pressure': '',
+      'temperature': '',
       'injury': '',
     },
   ];
@@ -137,6 +149,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   TextEditingController userCtrl = TextEditingController(text: '');
 
   String pressure = '';
+  String temperature = '';
 
   @override
   void initState() {
@@ -361,19 +374,38 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
 
                                           debugPrint(
                                               "notifhohoho: stringNotif: $notifInString");
-                                          debugPrint(
-                                              "notifhahaha: jsonNotif: ${jsonDecode(notifInString)}");
+                                          // debugPrint(
+                                          //     "notifhahaha: jsonNotif: ${jsonDecode(notifInString)}");
 
                                           setState(() {
                                             // pressure = notifInString;
-                                            int floorPressure =
-                                                double.parse(notifInString)
-                                                    .floor();
-                                            pressure = floorPressure.toString();
+                                            if (notifInString.contains('|')) {
+                                              int floorPressure = double.parse(
+                                                      notifInString
+                                                          .split('|')[0])
+                                                  .floor();
+                                              pressure =
+                                                  floorPressure.toString();
+
+                                              int floorTemperature =
+                                                  double.parse(notifInString
+                                                          .split('|')[1])
+                                                      .floor();
+                                              temperature =
+                                                  floorTemperature.toString();
+                                            } else {
+                                              int floorPressure =
+                                                  double.parse(notifInString)
+                                                      .floor();
+                                              pressure =
+                                                  floorPressure.toString();
+                                            }
 
                                             if (selectedTire != -1) {
                                               tires[selectedTire]['pressure'] =
                                                   pressure;
+                                              tires[selectedTire]
+                                                  ['temperature'] = temperature;
                                             } else {
                                               switch (selectedRoute) {
                                                 case 0:
@@ -383,6 +415,10 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                                                   [checkAmount]]
                                                               ['pressure'] =
                                                           pressure;
+                                                    tires[inspectRoute[0]
+                                                                [checkAmount]]
+                                                            ['temperature'] =
+                                                        temperature;
                                                     checkAmount++;
                                                   });
                                                   break;
@@ -393,6 +429,10 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                                                   [checkAmount]]
                                                               ['pressure'] =
                                                           pressure;
+                                                    tires[inspectRoute[1]
+                                                                [checkAmount]]
+                                                            ['temperature'] =
+                                                        temperature;
                                                     checkAmount++;
                                                   });
                                                   break;
@@ -403,6 +443,10 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                                                   [checkAmount]]
                                                               ['pressure'] =
                                                           pressure;
+                                                    tires[inspectRoute[2]
+                                                                [checkAmount]]
+                                                            ['temperature'] =
+                                                        temperature;
                                                     checkAmount++;
                                                   });
                                                   break;
@@ -510,61 +554,73 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                     {
                                       'position': '1',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '2',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '3',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '4',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '5',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '6',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '7',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '8',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '9',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '10',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '11',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                     {
                                       'position': '12',
                                       'pressure': '',
+                                      'temperature': '',
                                       'injury': '',
                                     },
                                   ];
@@ -823,7 +879,7 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                             Text(
                                               'Pressure (Psi)',
                                               style: getBlackTextStyle(
-                                                fontSize: 18,
+                                                fontSize: 14,
                                               ),
                                             ),
                                           ],
@@ -845,11 +901,55 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                         //       type: TextInputType.number,
                                         //       hint: '',
                                         //     )),
-                                        Text(
-                                          '${(tires[index]['pressure'] == '') ? 'Empty' : '${tires[index]['pressure']} Psi'}',
-                                          style: getGreenTextStyle(
-                                              fontSize: 24, fontWeight: w700),
+                                        (tires[index]['pressure'] == '')
+                                            ? Text(
+                                                '-',
+                                                style: getBlackTextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: w700),
+                                              )
+                                            : Text(
+                                                '${'${tires[index]['pressure']} Psi'}',
+                                                style: getGreenTextStyle(
+                                                    fontSize: 24,
+                                                    fontWeight: w700),
+                                              ),
+                                        const SizedBox(
+                                          height: 6,
                                         ),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.thermostat,
+                                              size: 28,
+                                            ),
+                                            const SizedBox(
+                                              width: 6,
+                                            ),
+                                            Text(
+                                              'Temperature (°C)',
+                                              style: getBlackTextStyle(
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(
+                                          height: 6,
+                                        ),
+                                        (tires[index]['temperature'] == '')
+                                            ? Text(
+                                                '-',
+                                                style: getBlackTextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: w700),
+                                              )
+                                            : Text(
+                                                '${'${tires[index]['temperature']} °C'}',
+                                                style: getGreenTextStyle(
+                                                    fontSize: 24,
+                                                    fontWeight: w700),
+                                              ),
                                       ],
                                     ),
                                   ),
@@ -1025,6 +1125,11 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                               : existingData['posisi']?[entry.key]
                                       ['pressure'] ??
                                   '0',
+                          'temperature': tire['temperature'] != ''
+                              ? tire['temperature']
+                              : existingData['posisi']?[entry.key]
+                                      ['temperature'] ??
+                                  '0',
                           'luka': tire['injury'] != ''
                               ? [tire['injury']]
                               : existingData['posisi']?[entry.key]['luka']
@@ -1057,6 +1162,9 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                           'pos': '$pIndex',
                           'pressure': (tire['pressure'] != '')
                               ? tire['pressure']
+                              : 'N/A',
+                          'temperature': (tire['temperature'] != '')
+                              ? tire['temperature']
                               : 'N/A',
                           'luka':
                               (tire['injury'] == '') ? null : [tire['injury']]
