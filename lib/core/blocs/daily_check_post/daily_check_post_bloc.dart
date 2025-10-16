@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/model/daily_press.dart';
-import 'package:camos/core/services/model/unit_tire.dart';
+import '../../services/api_service.dart';
+import '../../services/model/daily_press.dart';
+import '../../services/model/unit_tire.dart';
 import 'package:equatable/equatable.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';

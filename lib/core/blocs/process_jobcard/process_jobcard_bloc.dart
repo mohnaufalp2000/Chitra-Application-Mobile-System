@@ -1,8 +1,8 @@
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/model/material_repair_model.dart';
+import '../../services/api_service.dart';
+import '../../services/model/material_repair_model.dart';
 import 'package:equatable/equatable.dart';
 
 part 'process_jobcard_event.dart';

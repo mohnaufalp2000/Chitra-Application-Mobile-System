@@ -1,5 +1,5 @@
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
+import '../styles/color.dart';
+import '../styles/text_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 

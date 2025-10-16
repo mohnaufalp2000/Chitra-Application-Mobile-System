@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
-import 'package:camos/main.dart';
+import '../../main.dart';
 import 'package:flutter/material.dart';
 
 class OpenCamera extends StatefulWidget {

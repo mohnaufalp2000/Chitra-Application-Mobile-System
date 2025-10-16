@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:camos/core/utils/bluetooth/extensions/bluetoothcharacteristic_extension.dart';
-import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
+import '../../../utils/bluetooth/extensions/bluetoothcharacteristic_extension.dart';
+import '../../../utils/bluetooth/utils/bluetooth_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';

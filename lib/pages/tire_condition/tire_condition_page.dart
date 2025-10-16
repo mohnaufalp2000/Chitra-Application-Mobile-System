@@ -1,15 +1,15 @@
 import 'dart:developer';
 
-import 'package:camos/core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
-import 'package:camos/core/blocs/site/site_bloc.dart';
-import 'package:camos/core/blocs/tire_condition/tire_condition_bloc.dart';
-import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/core/widgets/button_widget.dart';
-import 'package:camos/core/widgets/text_button_widget.dart';
-import 'package:camos/pages/tire_condition/detail_tire_condition_page.dart';
+import '../../core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
+import '../../core/blocs/site/site_bloc.dart';
+import '../../core/blocs/tire_condition/tire_condition_bloc.dart';
+import '../../core/services/shared_preferences/shared_preferences.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/appbar_widget.dart';
+import '../../core/widgets/button_widget.dart';
+import '../../core/widgets/text_button_widget.dart';
+import 'detail_tire_condition_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

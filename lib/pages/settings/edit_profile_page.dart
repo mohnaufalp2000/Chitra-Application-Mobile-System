@@ -1,14 +1,14 @@
 import 'dart:io';
 
-import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
-import 'package:camos/core/styles/asset_path.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/core/widgets/button_widget.dart';
-import 'package:camos/core/widgets/image_selection_widget.dart';
-import 'package:camos/core/widgets/input_form_widget.dart';
-import 'package:camos/core/widgets/upload_photo_widget.dart';
+import '../../core/blocs/authentication/authentication_bloc.dart';
+import '../../core/styles/asset_path.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/appbar_widget.dart';
+import '../../core/widgets/button_widget.dart';
+import '../../core/widgets/image_selection_widget.dart';
+import '../../core/widgets/input_form_widget.dart';
+import '../../core/widgets/upload_photo_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';

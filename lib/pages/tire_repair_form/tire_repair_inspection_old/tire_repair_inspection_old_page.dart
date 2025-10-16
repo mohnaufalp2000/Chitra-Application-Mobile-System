@@ -1,9 +1,9 @@
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/pages/home/home_page.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection/detail_tire_repair_inspection_page.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_form_page.dart';
+import '../../../core/styles/color.dart';
+import '../../../core/styles/text_manager.dart';
+import '../../../core/widgets/appbar_widget.dart';
+import '../../home/home_page.dart';
+import '../tire_repair_inspection/detail_tire_repair_inspection_page.dart';
+import '../tire_repair_inspection/tire_repair_inspection_form_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

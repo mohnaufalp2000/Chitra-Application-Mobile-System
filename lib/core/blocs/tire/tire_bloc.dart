@@ -1,9 +1,9 @@
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/model/tire_spec.dart';
-import 'package:camos/core/services/model/unit_tire.dart';
+import '../../services/api_service.dart';
+import '../../services/model/tire_spec.dart';
+import '../../services/model/unit_tire.dart';
 import 'package:meta/meta.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

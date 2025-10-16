@@ -1,8 +1,8 @@
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
+import '../../services/api_service.dart';
+import '../../services/shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';

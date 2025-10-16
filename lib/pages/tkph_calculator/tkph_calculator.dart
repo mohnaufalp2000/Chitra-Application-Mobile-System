@@ -1,15 +1,15 @@
 import 'dart:io';
 
-import 'package:camos/core/navigator/navigation_route.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/data/tire.dart';
-import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/core/widgets/button_widget.dart';
-import 'package:camos/core/widgets/tire_axle_widget.dart';
-import 'package:camos/core/widgets/input_form_widget.dart';
-import 'package:camos/core/widgets/tire_widget.dart';
-import 'package:camos/pages/tkph_calculator/result_tkph_page.dart';
+import '../../core/navigator/navigation_route.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/utils/data/tire.dart';
+import '../../core/utils/functions/functions.dart';
+import '../../core/widgets/button_widget.dart';
+import '../../core/widgets/tire_axle_widget.dart';
+import '../../core/widgets/input_form_widget.dart';
+import '../../core/widgets/tire_widget.dart';
+import 'result_tkph_page.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:screenshot/screenshot.dart';

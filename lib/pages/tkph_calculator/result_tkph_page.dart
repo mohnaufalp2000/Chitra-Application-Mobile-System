@@ -3,10 +3,10 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:camos/core/styles/asset_path.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/functions/functions.dart';
+import '../../core/styles/asset_path.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/utils/functions/functions.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';

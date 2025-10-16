@@ -1,9 +1,9 @@
 import 'dart:developer';
 
-import 'package:camos/core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
+import '../../core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/appbar_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

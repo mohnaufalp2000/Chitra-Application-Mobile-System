@@ -1,18 +1,18 @@
 import 'dart:developer';
 
-import 'package:camos/core/blocs/daily_check_post/daily_check_post_bloc.dart';
-import 'package:camos/core/blocs/unit/unit_bloc.dart';
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/model/daily_press.dart';
-import 'package:camos/core/services/model/unit_tire.dart';
-import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/enum_export_type.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/export_excel_button.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart';
+import '../../core/blocs/daily_check_post/daily_check_post_bloc.dart';
+import '../../core/blocs/unit/unit_bloc.dart';
+import '../../core/services/api_service.dart';
+import '../../core/services/model/daily_press.dart';
+import '../../core/services/model/unit_tire.dart';
+import '../../core/services/shared_preferences/shared_preferences.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/utils/functions/functions.dart';
+import '../../core/widgets/appbar_widget.dart';
+import 'widget/enum_export_type.dart';
+import 'widget/export_excel_button.dart';
+import 'widget/select_pit_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';
@@ -726,331 +726,329 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12.0),
                               child: PaginateFirestore(
-                                  query: selectedPit == 0
-                                      ? firestore
-                                          .collection('daily_pressure')
-                                          .where('tanggal',
-                                              isGreaterThanOrEqualTo: DateTime(
-                                                      selectedDate.year,
-                                                      selectedDate.month,
-                                                      selectedDate.day)
-                                                  .toIso8601String())
-                                          .where('tanggal',
-                                              isLessThanOrEqualTo: DateTime(
-                                                      selectedDate.year,
-                                                      selectedDate.month,
-                                                      selectedDate.day,
-                                                      23,
-                                                      59,
-                                                      59)
-                                                  .toIso8601String())
-                                          .where('idSite', isEqualTo: idSite)
-                                          .orderBy('tanggal', descending: true)
-                                      : firestore
-                                          .collection('daily_pressure')
-                                          .where('tanggal',
-                                              isGreaterThanOrEqualTo:
-                                                  DateTime(selectedDate.year, selectedDate.month, selectedDate.day).toIso8601String())
-                                          .where('tanggal', isLessThanOrEqualTo: DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59).toIso8601String())
-                                          .where('idSite', isEqualTo: idSite)
-                                          .where('pit', isEqualTo: pit[selectedPit])
-                                          .orderBy('tanggal', descending: true),
-                                  key: ValueKey(selectedDate),
-                                  itemBuilderType: PaginateBuilderType.listView,
-                                  shrinkWrap: true,
-                                  physics: NeverScrollableScrollPhysics(),
-                                  itemsPerPage: 10,
-                                  isLive: true,
-                                  initialLoader: const Center(child: CircularProgressIndicator.adaptive()),
-                                  bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
-                                  itemBuilder: (context, snapshot, firebaseIndex) {
-                                    final Map<String, dynamic> dailyMap =
-                                        snapshot[firebaseIndex].data()
-                                            as Map<String, dynamic>;
-                                    final positionList =
-                                        dailyMap['posisi'] as List<dynamic>;
+                                query: selectedPit == 0
+                                    ? firestore
+                                        .collection('daily_pressure')
+                                        .where('tanggal',
+                                            isGreaterThanOrEqualTo:
+                                                DateTime(selectedDate.year, selectedDate.month, selectedDate.day)
+                                                    .toIso8601String())
+                                        .where('tanggal',
+                                            isLessThanOrEqualTo: DateTime(
+                                                    selectedDate.year,
+                                                    selectedDate.month,
+                                                    selectedDate.day,
+                                                    23,
+                                                    59,
+                                                    59)
+                                                .toIso8601String())
+                                        .where('idSite', isEqualTo: idSite)
+                                        .orderBy('tanggal', descending: true)
+                                    : firestore
+                                        .collection('daily_pressure')
+                                        .where('tanggal',
+                                            isGreaterThanOrEqualTo:
+                                                DateTime(selectedDate.year, selectedDate.month, selectedDate.day)
+                                                    .toIso8601String())
+                                        .where('tanggal',
+                                            isLessThanOrEqualTo:
+                                                DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59)
+                                                    .toIso8601String())
+                                        .where('idSite', isEqualTo: idSite)
+                                        .where('pit', isEqualTo: pit[selectedPit])
+                                        .orderBy('tanggal', descending: true),
+                                key: ValueKey(selectedDate),
+                                itemBuilderType: PaginateBuilderType.listView,
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemsPerPage: 10,
+                                isLive: true,
+                                initialLoader: const Center(
+                                    child:
+                                        CircularProgressIndicator.adaptive()),
+                                bottomLoader: const Center(
+                                    child:
+                                        CircularProgressIndicator.adaptive()),
+                                itemBuilder:
+                                    (context, snapshot, firebaseIndex) {
+                                  final Map<String, dynamic> dailyMap =
+                                      snapshot[firebaseIndex].data()
+                                          as Map<String, dynamic>;
 
-                                    if (selectedPit != 0) {
-                                      if (dailyMap['pit'] != pit[selectedPit]) {
-                                        return Container();
-                                      }
-                                    }
+                                  final String unit =
+                                      dailyMap['unit'] ?? 'No Unit';
+                                  final String pit =
+                                      dailyMap['pit'] ?? 'Default';
+                                  final String user =
+                                      dailyMap['user'] ?? 'No Name';
+                                  final String tanggal =
+                                      dailyMap['tanggal'] ?? '';
+                                  final String hm = dailyMap['hm'] ?? '0';
+                                  final positionList =
+                                      dailyMap['posisi'] as List<dynamic>? ??
+                                          [];
 
-                                    if (searchQuery.isNotEmpty &&
-                                        !dailyMap['unit']!
-                                            .toLowerCase()
-                                            .contains(searchQuery)) {
+                                  if (selectedPit != 0) {
+                                    if (pit != this.pit[selectedPit]) {
                                       return Container();
                                     }
+                                  }
 
-                                    return Card(
-                                        elevation: 2,
-                                        shape: RoundedRectangleBorder(
+                                  if (searchQuery.isNotEmpty &&
+                                      !unit.toLowerCase().contains(
+                                          searchQuery.toLowerCase())) {
+                                    return Container();
+                                  }
+
+                                  return Card(
+                                      elevation: 2,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      color: green00968A,
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 24),
+                                        decoration: BoxDecoration(
+                                          color: green00968A,
                                           borderRadius:
                                               BorderRadius.circular(12),
                                         ),
-                                        color: green00968A,
-                                        child: Container(
-                                          width: double.infinity,
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 12, vertical: 24),
-                                          decoration: BoxDecoration(
-                                            color: green00968A,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: ExpansionTile(
-                                            tilePadding: EdgeInsets.zero,
-                                            childrenPadding: EdgeInsets.all(0),
-                                            title: Row(
-                                              children: [
-                                                Icon(
-                                                  Icons.task,
-                                                  color: white,
-                                                  size: 36,
-                                                ),
-                                                const SizedBox(
-                                                  width: 12,
-                                                ),
-                                                Text(
-                                                  dailyMap['unit'] +
-                                                      '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
-                                                  style: getWhiteTextStyle(
-                                                      fontWeight: w700,
-                                                      fontSize: 18),
-                                                )
-                                              ],
-                                            ),
-                                            trailing: SizedBox(
-                                              width: 90,
-                                              child:
-                                                  Icon(Icons.arrow_drop_down),
-                                            ),
+                                        child: ExpansionTile(
+                                          tilePadding: EdgeInsets.zero,
+                                          childrenPadding: EdgeInsets.all(0),
+                                          title: Row(
                                             children: [
-                                              const SizedBox(
-                                                height: 12,
+                                              Icon(
+                                                Icons.task,
+                                                color: white,
+                                                size: 36,
                                               ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Name',
+                                              const SizedBox(
+                                                width: 12,
+                                              ),
+                                              Text(
+                                                unit +
+                                                    '${((pit != 'Default') ? '\n' + pit : '')}',
+                                                style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18),
+                                              )
+                                            ],
+                                          ),
+                                          trailing: SizedBox(
+                                            width: 90,
+                                            child: Icon(Icons.arrow_drop_down),
+                                          ),
+                                          children: [
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text('Name',
                                                     style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Container(
-                                                    width: 250,
-                                                    child: Text(
-                                                      dailyMap['user'] ??
-                                                          'No Name',
+                                                        fontSize: 18)),
+                                                Container(
+                                                  width: 250,
+                                                  child: Text(user,
                                                       textAlign: TextAlign.end,
                                                       style: getWhiteTextStyle(
                                                           fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(
-                                                height: 12,
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Tanggal',
+                                                          fontSize: 18)),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text('Tanggal',
                                                     style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Text(
-                                                    dailyMap['tanggal']
-                                                        .split('T')[0],
+                                                        fontSize: 18)),
+                                                Text(
+                                                    tanggal.isNotEmpty
+                                                        ? tanggal.split('T')[0]
+                                                        : 'No Date',
                                                     style: getWhiteTextStyle(
                                                         fontWeight: w700,
-                                                        fontSize: 18),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(
-                                                height: 12,
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Waktu',
+                                                        fontSize: 18)),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text('Waktu',
                                                     style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Text(
-                                                    dailyMap['tanggal']
-                                                        .split('T')[1]
-                                                        .substring(0, 5),
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(
-                                                height: 12,
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'HM Unit',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Text(
-                                                    dailyMap['hm'],
+                                                        fontSize: 18)),
+                                                Text(
+                                                    (tanggal.isNotEmpty &&
+                                                            tanggal
+                                                                .contains('T'))
+                                                        ? tanggal
+                                                            .split('T')[1]
+                                                            .substring(0, 5)
+                                                        : 'No Time',
                                                     style: getWhiteTextStyle(
                                                         fontWeight: w700,
-                                                        fontSize: 18),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(
-                                                height: 12,
-                                              ),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Text(
-                                                    'Pit',
+                                                        fontSize: 18)),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text('HM Unit',
                                                     style: getWhiteTextStyle(
-                                                        fontSize: 18),
-                                                  ),
-                                                  Text(
-                                                    dailyMap['pit'],
+                                                        fontSize: 18)),
+                                                Text(hm,
                                                     style: getWhiteTextStyle(
                                                         fontWeight: w700,
-                                                        fontSize: 18),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(
-                                                height: 12,
-                                              ),
-                                              Column(
-                                                children:
-                                                    positionList.map((pl) {
-                                                  final plIndex =
-                                                      positionList.indexOf(pl);
-                                                  List<dynamic> luka = [];
+                                                        fontSize: 18)),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text('Pit',
+                                                    style: getWhiteTextStyle(
+                                                        fontSize: 18)),
+                                                Text(pit,
+                                                    style: getWhiteTextStyle(
+                                                        fontWeight: w700,
+                                                        fontSize: 18)),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Column(
+                                              children: positionList.map((pl) {
+                                                final Map<String, dynamic>
+                                                    posData =
+                                                    pl as Map<String, dynamic>;
 
-                                                  if (pl['luka'] != null &&
-                                                      pl['luka'] is! String) {
-                                                    luka = pl['luka']
-                                                        as List<dynamic>;
-                                                  }
+                                                List<dynamic> luka = [];
+                                                final dynamic rawLuka =
+                                                    posData['luka'];
 
-                                                  return Column(
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Text(
-                                                            'Pos. ${pl['pos']}',
-                                                            style:
-                                                                getWhiteTextStyle(
+                                                if (rawLuka is List) {
+                                                  luka = rawLuka;
+                                                } else if (rawLuka is String) {
+                                                  luka.add(rawLuka);
+                                                }
+
+                                                final String pos =
+                                                    posData['pos']
+                                                            ?.toString() ??
+                                                        '-';
+                                                final String pressure =
+                                                    posData['pressure']
+                                                            ?.toString() ??
+                                                        '0';
+                                                final String adjPressure =
+                                                    posData['adjusmentPressure']
+                                                            ?.toString() ??
+                                                        '';
+                                                final String rating =
+                                                    posData['rating']
+                                                            ?.toString() ??
+                                                        '';
+
+                                                return Column(
+                                                  children: [
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Text(
+                                                          'Pos. $pos',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontSize: 18),
+                                                        ),
+                                                        Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .end,
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .center,
+                                                          children: [
+                                                            Text(
+                                                              '$pressure Psi',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                      fontWeight:
+                                                                          w700,
+                                                                      fontSize:
+                                                                          18),
+                                                            ),
+                                                            if (adjPressure
+                                                                    .isNotEmpty &&
+                                                                adjPressure !=
+                                                                    '0')
+                                                              Text(
+                                                                '$adjPressure Psi (Adj. Pressure)',
+                                                                style: getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
                                                                     fontSize:
                                                                         18),
-                                                          ),
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .end,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Column(
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .end,
-                                                                children: [
-                                                                  Text(
-                                                                    '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
-                                                                    style: getWhiteTextStyle(
-                                                                        fontWeight:
-                                                                            w700,
-                                                                        fontSize:
-                                                                            18),
-                                                                  ),
-                                                                  (pl['adjusmentPressure'] != null &&
-                                                                          pl['adjusmentPressure'] !=
-                                                                              '0' &&
-                                                                          pl['adjusmentPressure'] !=
-                                                                              '')
-                                                                      ? Text(
-                                                                          '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
-                                                                          style: getWhiteTextStyle(
-                                                                              fontWeight: w700,
-                                                                              fontSize: 18),
-                                                                        )
-                                                                      : Container(),
-                                                                ],
                                                               ),
-                                                              (luka.isEmpty ||
-                                                                      luka ==
-                                                                          null)
-                                                                  ? Container()
-                                                                  : Text(
-                                                                      pl['luka']
-                                                                          .join(
-                                                                              '\n'),
-                                                                      textAlign:
-                                                                          TextAlign
-                                                                              .end,
-                                                                      style: getWhiteTextStyle(
-                                                                          fontWeight:
-                                                                              w700,
-                                                                          fontSize:
-                                                                              18),
-                                                                    ),
+                                                            if (luka.isNotEmpty)
                                                               Text(
-                                                                  '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
+                                                                luka.join('\n'),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .end,
+                                                                style: getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
+                                                                    fontSize:
+                                                                        18),
+                                                              ),
+                                                            if (rating
+                                                                .isNotEmpty)
+                                                              Text(
+                                                                  'Rating $rating',
                                                                   style: getWhiteTextStyle(
                                                                       fontWeight:
                                                                           w700,
                                                                       fontSize:
                                                                           18)),
-                                                              const SizedBox(
-                                                                height: 12,
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      Divider(
-                                                        color: white,
-                                                        thickness: 1.5,
-                                                      ),
-                                                    ],
-                                                  );
-                                                }).toList(),
-                                              ),
-                                            ],
-                                          ),
-                                        ));
-                                  }),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Divider(
+                                                      color: white,
+                                                      thickness: 1.5,
+                                                    ),
+                                                  ],
+                                                );
+                                              }).toList(),
+                                            ),
+                                          ],
+                                        ),
+                                      ));
+                                },
+                              ),
                             ),
                           ],
                         );

@@ -1,6 +1,6 @@
-import 'package:camos/core/blocs/network/network_bloc.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
+import '../blocs/network/network_bloc.dart';
+import '../styles/color.dart';
+import '../styles/text_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

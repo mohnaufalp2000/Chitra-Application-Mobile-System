@@ -1,15 +1,15 @@
 import 'dart:convert';
 import 'dart:developer';
 
-import 'package:camos/core/services/model/daily_press.dart';
-import 'package:camos/core/services/model/material_repair_model.dart';
-import 'package:camos/core/services/model/recc_press.dart';
-import 'package:camos/core/services/model/site.dart';
-import 'package:camos/core/services/model/tire_spec.dart';
-import 'package:camos/core/services/model/unit_tire.dart';
-import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
-import 'package:camos/core/utils/data/spm.dart';
-import 'package:camos/core/utils/data/spm_jam7.dart';
+import 'model/daily_press.dart';
+import 'model/material_repair_model.dart';
+import 'model/recc_press.dart';
+import 'model/site.dart';
+import 'model/tire_spec.dart';
+import 'model/unit_tire.dart';
+import 'shared_preferences/shared_preferences.dart';
+import '../utils/data/spm.dart';
+import '../utils/data/spm_jam7.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';

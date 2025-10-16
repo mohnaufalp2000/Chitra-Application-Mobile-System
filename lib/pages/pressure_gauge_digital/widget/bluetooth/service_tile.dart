@@ -1,5 +1,5 @@
-import 'package:camos/core/utils/bluetooth/extensions/bluetoothservice_extension.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/bluetooth/char_detail_widget.dart';
+import '../../../../core/utils/bluetooth/extensions/bluetoothservice_extension.dart';
+import 'char_detail_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 

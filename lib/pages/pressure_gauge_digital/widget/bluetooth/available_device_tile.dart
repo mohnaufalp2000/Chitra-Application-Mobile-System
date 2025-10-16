@@ -1,9 +1,9 @@
-import 'package:camos/core/blocs/bluetooth/pair_device_cubit/pair_device_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/pair_device_cubit/pair_device_state.dart';
-import 'package:camos/core/services/model/color_range_model.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/bluetooth/extensions/scanresult_extension.dart';
-import 'package:camos/core/utils/bluetooth/utils/interpolation_utils.dart';
+import '../../../../core/blocs/bluetooth/pair_device_cubit/pair_device_cubit.dart';
+import '../../../../core/blocs/bluetooth/pair_device_cubit/pair_device_state.dart';
+import '../../../../core/services/model/color_range_model.dart';
+import '../../../../core/styles/text_manager.dart';
+import '../../../../core/utils/bluetooth/extensions/scanresult_extension.dart';
+import '../../../../core/utils/bluetooth/utils/interpolation_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';

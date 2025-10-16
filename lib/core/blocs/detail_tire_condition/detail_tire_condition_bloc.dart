@@ -1,8 +1,8 @@
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/model/unit_tire.dart';
+import '../../services/api_service.dart';
+import '../../services/model/unit_tire.dart';
 import 'package:equatable/equatable.dart';
 
 part 'detail_tire_condition_event.dart';

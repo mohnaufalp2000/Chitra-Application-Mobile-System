@@ -1,4 +1,4 @@
-import 'package:camos/core/styles/text_manager.dart';
+import '../styles/text_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 

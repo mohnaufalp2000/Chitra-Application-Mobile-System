@@ -1,9 +1,9 @@
-import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_state.dart';
-import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
-import 'package:camos/pages/pressure_gauge_digital/trial/daily_pressure_trial_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/bluetooth/bluetooth_on_off_toggle_widget.dart';
+import '../../../core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
+import '../../../core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_state.dart';
+import '../../../core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
+import 'daily_pressure_trial_page.dart';
+import 'scan_device_page.dart';
+import '../widget/bluetooth/bluetooth_on_off_toggle_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

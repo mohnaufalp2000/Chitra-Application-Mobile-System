@@ -1,10 +1,10 @@
-import 'package:camos/core/styles/asset_path.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
-import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
-import 'package:camos/pages/tire_repair_form/jobcard_repair/list_jobcard_repair_page.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
+import '../../core/styles/asset_path.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/appbar_widget.dart';
+import '../pressure_gauge_digital/daily_pressure_list.dart';
+import '../pressure_gauge_digital/select_unit_page.dart';
+import 'jobcard_repair/list_jobcard_repair_page.dart';
+import 'tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:flutter/material.dart';
 
 class SelectTireRepairPage extends StatelessWidget {

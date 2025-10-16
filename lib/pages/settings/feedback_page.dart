@@ -1,9 +1,9 @@
-import 'package:camos/core/styles/asset_path.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/core/widgets/button_widget.dart';
-import 'package:camos/core/widgets/input_form_widget.dart';
+import '../../core/styles/asset_path.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/appbar_widget.dart';
+import '../../core/widgets/button_widget.dart';
+import '../../core/widgets/input_form_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';

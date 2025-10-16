@@ -1,37 +1,39 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
-import 'package:camos/core/blocs/attendance/attendance_bloc.dart';
-import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
-import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/pair_device_cubit/pair_device_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
-import 'package:camos/core/blocs/daily_check_post/daily_check_post_bloc.dart';
-import 'package:camos/core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
-import 'package:camos/core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart';
-import 'package:camos/core/blocs/network/network_bloc.dart';
-import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
-import 'package:camos/core/blocs/process_jobcard/process_jobcard_bloc.dart';
-import 'package:camos/core/blocs/site/site_bloc.dart';
-import 'package:camos/core/blocs/spm/spm_bloc.dart';
-import 'package:camos/core/blocs/tire/tire_bloc.dart';
-import 'package:camos/core/blocs/tire_condition/tire_condition_bloc.dart';
-import 'package:camos/core/blocs/tire_invent/tire_invent_bloc.dart';
-import 'package:camos/core/blocs/unit/unit_bloc.dart';
-import 'package:camos/core/blocs/wo_jobcard/wo_jobcard_bloc.dart';
-import 'package:camos/core/navigator/routes.dart';
-import 'package:camos/core/services/local_database/outstanding_task/objectbox.dart';
-import 'package:camos/core/services/sheets/attendance_sheets.dart';
-import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/objectbox.g.dart';
-import 'package:camos/pages/opening/splash_screen.dart';
+import 'package:camos/pages/network/network_state.dart';
+import 'core/blocs/attendance/attendance_bloc.dart';
+import 'core/blocs/authentication/authentication_bloc.dart';
+import 'core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
+import 'core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
+import 'core/blocs/bluetooth/discover_services_cubit/discover_services_cubit.dart';
+import 'core/blocs/bluetooth/pair_device_cubit/pair_device_cubit.dart';
+import 'core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
+import 'core/blocs/daily_check_post/daily_check_post_bloc.dart';
+import 'core/blocs/detail_tire_condition/detail_tire_condition_bloc.dart';
+import 'core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart';
+import 'core/blocs/network/network_bloc.dart';
+import 'core/blocs/outstanding_task/outstanding_task_bloc.dart';
+import 'core/blocs/process_jobcard/process_jobcard_bloc.dart';
+import 'core/blocs/site/site_bloc.dart';
+import 'core/blocs/spm/spm_bloc.dart';
+import 'core/blocs/tire/tire_bloc.dart';
+import 'core/blocs/tire_condition/tire_condition_bloc.dart';
+import 'core/blocs/tire_invent/tire_invent_bloc.dart';
+import 'core/blocs/unit/unit_bloc.dart';
+import 'core/blocs/wo_jobcard/wo_jobcard_bloc.dart';
+import 'core/navigator/routes.dart';
+import 'core/services/local_database/outstanding_task/objectbox.dart';
+import 'core/services/sheets/attendance_sheets.dart';
+import 'core/utils/functions/functions.dart';
+import 'objectbox.g.dart';
+import 'pages/opening/splash_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -41,6 +43,7 @@ late List<CameraDescription> camerasTireInspection;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Get.put(InternetState());
   cameras = await availableCameras();
   cameras = [cameras[0], cameras[1]];
   store = (await ObjectBox.create()).store;
@@ -126,7 +129,7 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: ((context) => PairDeviceCubit())),
         BlocProvider(create: ((context) => DiscoverServicesCubit())),
       ],
-      child: MaterialApp(
+      child: GetMaterialApp(
         title: 'Material App',
         debugShowCheckedModeBanner: false,
         initialRoute: SplashScreen.routeName,

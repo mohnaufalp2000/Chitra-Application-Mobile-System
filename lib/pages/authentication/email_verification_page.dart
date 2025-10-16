@@ -1,14 +1,14 @@
 import 'dart:async';
 
-import 'package:camos/core/blocs/authentication/authentication_bloc.dart';
-import 'package:camos/core/navigator/navigation_route.dart';
-import 'package:camos/core/styles/asset_path.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/button_widget.dart';
-import 'package:camos/pages/authentication/image_profile_page.dart';
-import 'package:camos/pages/authentication/login_page.dart';
-import 'package:camos/pages/home/home_page.dart';
+import '../../core/blocs/authentication/authentication_bloc.dart';
+import '../../core/navigator/navigation_route.dart';
+import '../../core/styles/asset_path.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/button_widget.dart';
+import 'image_profile_page.dart';
+import 'login_page.dart';
+import '../home/home_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

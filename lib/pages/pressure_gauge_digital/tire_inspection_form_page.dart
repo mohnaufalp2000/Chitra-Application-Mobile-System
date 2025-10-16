@@ -787,6 +787,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
 
+  bool _isInit = true;
   int selectedMenu = 1;
   var map = {};
   String idSite = '';
@@ -867,7 +868,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     'Shoulder Cut',
     'Shoulder Separation',
     'Tread Chipping',
-    'Tread Chungking',
+    'Tread Chunking',
     'Tread Lifting',
     'Tread Cut',
     'Tread Cut Separation',
@@ -902,7 +903,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     super.initState();
     requestPlacePermission();
 
-    callTires();
+    // callTires();
     WidgetsBinding.instance.addObserver(this);
     getUser();
   }
@@ -916,6 +917,25 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isInit) {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null) {
+        dataUnit = args as Map<String, dynamic>;
+        log('TireInspectionPage: dataUnit berhasil diambil -> $dataUnit');
+
+        // Panggil callTires() setelah dataUnit pasti terisi
+        callTires();
+      } else {
+        log('TireInspectionPage: ERROR! Argumen navigasi null.');
+      }
+
+      _isInit = false; // Set flag agar tidak dijalankan lagi
+    }
   }
 
   FlutterBluetoothSerial bluetoothSerial = FlutterBluetoothSerial.instance;

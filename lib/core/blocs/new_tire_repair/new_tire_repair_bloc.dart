@@ -1,5 +1,5 @@
 import 'package:bloc/bloc.dart';
-import 'package:camos/core/services/api_service.dart';
+import '../../services/api_service.dart';
 import 'package:equatable/equatable.dart';
 
 part 'new_tire_repair_event.dart';

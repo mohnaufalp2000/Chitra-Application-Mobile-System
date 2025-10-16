@@ -1,4 +1,4 @@
-import 'package:camos/core/utils/bluetooth/utils/bluetooth_companies.dart';
+import 'bluetooth_companies.dart';
 import 'package:flutter/material.dart';
 
 import 'bluetooth_characteristics_uuids.dart';

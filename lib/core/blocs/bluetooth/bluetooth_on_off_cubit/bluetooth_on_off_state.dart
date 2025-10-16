@@ -1,4 +1,4 @@
-import 'package:camos/core/services/model/failure_model.dart';
+import '../../../services/model/failure_model.dart';
 
 abstract class BluetoothOnOffState {}
 

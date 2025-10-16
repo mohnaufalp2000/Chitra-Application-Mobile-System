@@ -3,16 +3,16 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
-import 'package:camos/core/blocs/tire/tire_bloc.dart';
-import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/data/id_site.dart';
-import 'package:camos/core/services/model/daily_press.dart';
-import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/core/widgets/button_widget.dart';
-import 'package:camos/core/widgets/input_form_widget.dart';
+import '../../core/blocs/tire/tire_bloc.dart';
+import '../../core/services/shared_preferences/shared_preferences.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/utils/data/id_site.dart';
+import '../../core/services/model/daily_press.dart';
+import '../../core/utils/functions/functions.dart';
+import '../../core/widgets/appbar_widget.dart';
+import '../../core/widgets/button_widget.dart';
+import '../../core/widgets/input_form_widget.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -35,6 +35,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
+  bool _isInit = true;
 
   // List<Map<String, dynamic>> position = [];
   List<String> tireCondition = ['Normal', 'Low Pressure'];
@@ -82,7 +83,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     'Shoulder Cut',
     'Shoulder Separation',
     'Tread Chipping',
-    'Tread Chungking',
+    'Tread Chunking',
     'Tread Lifting',
     'Tread Cut',
     'Tread Cut Separation',
@@ -527,7 +528,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   void initState() {
     // addPositionVariable();
     super.initState();
-    callTires();
+    // callTires();
     getUser();
   }
 
@@ -542,9 +543,21 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   }
 
   @override
+  void didChangeDependencies() {
+    if (_isInit) {
+      dataUnit =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+      // Setelah dataUnit didapat, panggil fungsi yang membutuhkannya
+      callTires();
+    }
+    _isInit = false;
+    super.didChangeDependencies();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    dataUnit =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    // dataUnit =
+    //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
     log('data ban : ${dataUnit}');
 

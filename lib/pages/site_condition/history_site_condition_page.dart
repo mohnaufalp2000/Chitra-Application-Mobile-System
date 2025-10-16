@@ -1,5 +1,5 @@
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
+import '../../core/styles/color.dart';
+import '../../core/widgets/appbar_widget.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';
 

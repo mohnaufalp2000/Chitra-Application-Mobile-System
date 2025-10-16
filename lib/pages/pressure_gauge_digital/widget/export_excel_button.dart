@@ -1,10 +1,10 @@
 import 'dart:developer';
 
-import 'package:camos/core/services/model/daily_press.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/enum_export_type.dart';
+import '../../../core/services/model/daily_press.dart';
+import '../../../core/styles/color.dart';
+import '../../../core/styles/text_manager.dart';
+import '../../../core/utils/functions/functions.dart';
+import 'enum_export_type.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

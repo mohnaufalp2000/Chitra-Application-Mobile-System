@@ -1,11 +1,11 @@
 import 'dart:developer';
 
-import 'package:camos/core/blocs/site/site_bloc.dart';
-import 'package:camos/core/services/model/site.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/pages/home/home_page.dart';
+import '../../core/blocs/site/site_bloc.dart';
+import '../../core/services/model/site.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/appbar_widget.dart';
+import 'home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';

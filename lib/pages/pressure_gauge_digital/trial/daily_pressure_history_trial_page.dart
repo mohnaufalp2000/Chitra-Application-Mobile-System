@@ -1,15 +1,15 @@
 import 'dart:developer';
 
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/model/unit_tire.dart';
-import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/enum_export_type.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/export_excel_button.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart';
+import '../../../core/services/api_service.dart';
+import '../../../core/services/model/unit_tire.dart';
+import '../../../core/services/shared_preferences/shared_preferences.dart';
+import '../../../core/styles/color.dart';
+import '../../../core/styles/text_manager.dart';
+import '../../../core/utils/functions/functions.dart';
+import '../../../core/widgets/appbar_widget.dart';
+import '../widget/enum_export_type.dart';
+import '../widget/export_excel_button.dart';
+import '../widget/select_pit_button.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:date_picker_timeline/date_picker_timeline.dart';
 import 'package:flutter/material.dart';

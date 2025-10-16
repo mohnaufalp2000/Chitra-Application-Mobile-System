@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:camos/core/services/sheets/model_sheets/attendance.dart';
+import 'model_sheets/attendance.dart';
 import 'package:gsheets/gsheets.dart';
 import 'package:intl/intl.dart';
 

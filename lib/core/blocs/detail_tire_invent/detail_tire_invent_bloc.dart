@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/model/site.dart';
-import 'package:camos/core/services/model/tire_spec.dart';
-import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
+import '../../services/api_service.dart';
+import '../../services/model/site.dart';
+import '../../services/model/tire_spec.dart';
+import '../../services/shared_preferences/shared_preferences.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';

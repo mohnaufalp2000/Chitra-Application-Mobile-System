@@ -1,5 +1,5 @@
-import 'package:camos/core/navigator/navigation_route.dart';
-import 'package:camos/core/styles/text_manager.dart';
+import '../../core/navigator/navigation_route.dart';
+import '../../core/styles/text_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 

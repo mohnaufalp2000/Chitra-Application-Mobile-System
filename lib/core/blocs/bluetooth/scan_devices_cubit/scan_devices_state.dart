@@ -1,4 +1,4 @@
-import 'package:camos/core/services/model/failure_model.dart';
+import '../../../services/model/failure_model.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 abstract class ScanDevicesState {}

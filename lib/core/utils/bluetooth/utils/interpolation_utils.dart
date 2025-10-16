@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:camos/core/services/model/color_range_model.dart';
+import '../../../services/model/color_range_model.dart';
 
 class InterpolationUtils {
   static Color getInterpolatedColor(

@@ -1,4 +1,4 @@
-import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
+import '../utils/bluetooth_utils.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 extension ScanResultExtension on ScanResult {

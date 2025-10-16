@@ -1,5 +1,5 @@
-import 'package:camos/core/blocs/bluetooth/pair_device_cubit/pair_device_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/pair_device_cubit/pair_device_state.dart';
+import '../../../core/blocs/bluetooth/pair_device_cubit/pair_device_cubit.dart';
+import '../../../core/blocs/bluetooth/pair_device_cubit/pair_device_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';

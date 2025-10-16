@@ -2,12 +2,12 @@ import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:camos/core/navigator/navigation_route.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/pages/attendance/presence_camera_page.dart';
-import 'package:camos/pages/attendance/presence_page.dart';
+import '../../core/navigator/navigation_route.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/utils/functions/functions.dart';
+import 'presence_camera_page.dart';
+import 'presence_page.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';

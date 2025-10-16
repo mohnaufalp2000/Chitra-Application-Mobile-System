@@ -1,10 +1,10 @@
 import 'dart:developer';
 
 import 'package:camera/camera.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/main.dart';
-import 'package:camos/pages/site_condition/image_preview.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../main.dart';
+import 'image_preview.dart';
 import 'package:flutter/material.dart';
 
 class TestCamera extends StatefulWidget {

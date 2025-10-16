@@ -1,14 +1,14 @@
 import 'dart:developer';
 
-import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_state.dart';
-import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
-import 'package:camos/core/blocs/bluetooth/scan_devices_cubit/scan_devices_state.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/bluetooth/list_of_scanned_devices_widget.dart';
+import '../../../core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
+import '../../../core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_state.dart';
+import '../../../core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
+import '../../../core/blocs/bluetooth/scan_devices_cubit/scan_devices_cubit.dart';
+import '../../../core/blocs/bluetooth/scan_devices_cubit/scan_devices_state.dart';
+import '../../../core/styles/color.dart';
+import '../../../core/styles/text_manager.dart';
+import '../../../core/widgets/appbar_widget.dart';
+import '../widget/bluetooth/list_of_scanned_devices_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

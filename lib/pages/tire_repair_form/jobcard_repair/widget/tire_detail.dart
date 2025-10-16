@@ -1,6 +1,6 @@
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/input_form_widget.dart';
+import '../../../../core/styles/color.dart';
+import '../../../../core/styles/text_manager.dart';
+import '../../../../core/widgets/input_form_widget.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter/material.dart';

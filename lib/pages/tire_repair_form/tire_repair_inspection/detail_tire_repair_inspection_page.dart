@@ -1,12 +1,12 @@
 import 'dart:developer';
 
-import 'package:camos/core/styles/asset_path.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/firebase_key/firebase_key.dart';
-import 'package:camos/core/utils/functions/functions.dart';
-import 'package:camos/core/widgets/button_widget.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_form_page.dart';
+import '../../../core/styles/asset_path.dart';
+import '../../../core/styles/color.dart';
+import '../../../core/styles/text_manager.dart';
+import '../../../core/utils/firebase_key/firebase_key.dart';
+import '../../../core/utils/functions/functions.dart';
+import '../../../core/widgets/button_widget.dart';
+import 'tire_repair_inspection_form_page.dart';
 // import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_pdf_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

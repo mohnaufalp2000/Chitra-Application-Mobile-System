@@ -1,4 +1,4 @@
-import 'package:camos/core/styles/asset_path.dart';
+import '../styles/asset_path.dart';
 import 'package:flutter/material.dart';
 
 class TireWidget extends StatelessWidget {

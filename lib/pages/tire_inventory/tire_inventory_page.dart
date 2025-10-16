@@ -1,13 +1,13 @@
 import 'dart:developer';
 
-import 'package:camos/core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart';
-import 'package:camos/core/blocs/tire_invent/tire_invent_bloc.dart';
-import 'package:camos/core/services/api_service.dart';
-import 'package:camos/core/services/model/site.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/core/widgets/custom_error_widget.dart';
+import '../../core/blocs/detail_tire_invent/detail_tire_invent_bloc.dart';
+import '../../core/blocs/tire_invent/tire_invent_bloc.dart';
+import '../../core/services/api_service.dart';
+import '../../core/services/model/site.dart';
+import '../../core/styles/color.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/appbar_widget.dart';
+import '../../core/widgets/custom_error_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

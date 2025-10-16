@@ -1,12 +1,12 @@
 import 'dart:convert';
 
-import 'package:camos/core/blocs/process_jobcard/process_jobcard_bloc.dart';
-import 'package:camos/core/styles/color.dart';
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/utils/data/jobcard_repair.dart';
-import 'package:camos/core/utils/firebase_key/firebase_key.dart';
-import 'package:camos/core/widgets/button_widget.dart';
-import 'package:camos/pages/tire_repair_form/jobcard_repair/widget/tire_detail.dart';
+import '../../../core/blocs/process_jobcard/process_jobcard_bloc.dart';
+import '../../../core/styles/color.dart';
+import '../../../core/styles/text_manager.dart';
+import '../../../core/utils/data/jobcard_repair.dart';
+import '../../../core/utils/firebase_key/firebase_key.dart';
+import '../../../core/widgets/button_widget.dart';
+import 'widget/tire_detail.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

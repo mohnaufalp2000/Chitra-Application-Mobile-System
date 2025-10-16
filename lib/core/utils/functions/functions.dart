@@ -2,11 +2,11 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:camos/core/services/local_database/attendance/attendance_entity.dart';
+import '../../services/local_database/attendance/attendance_entity.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image/image.dart' as img;
-import 'package:camos/core/blocs/network/network_bloc.dart';
-import 'package:camos/core/services/api_service.dart';
+import '../../blocs/network/network_bloc.dart';
+import '../../services/api_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:file_picker/file_picker.dart';

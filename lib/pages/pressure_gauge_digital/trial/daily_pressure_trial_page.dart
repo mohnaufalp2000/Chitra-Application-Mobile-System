@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'dart:io' show Platform;
-import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_state.dart';
-import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
+import '../../../core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_state.dart';
+import '../../../core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
 import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_state.dart'
     as connectedDevicesState;
 import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_cubit.dart';

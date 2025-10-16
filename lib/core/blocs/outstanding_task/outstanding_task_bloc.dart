@@ -1,14 +1,14 @@
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
-import 'package:camos/core/services/local_database/outstanding_task/outstanding_task_entity.dart';
-import 'package:camos/main.dart';
-import 'package:camos/objectbox.g.dart';
+import '../../services/local_database/outstanding_task/outstanding_task_entity.dart';
+import '../../../main.dart';
+import '../../../objectbox.g.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:equatable/equatable.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:camos/core/services/model/outstanding_task.dart';
+import '../../services/model/outstanding_task.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 

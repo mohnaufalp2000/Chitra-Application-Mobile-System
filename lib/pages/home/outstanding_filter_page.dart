@@ -1,8 +1,8 @@
 import 'dart:developer';
 
-import 'package:camos/core/styles/text_manager.dart';
-import 'package:camos/core/widgets/appbar_widget.dart';
-import 'package:camos/core/widgets/check_box_modal_widget.dart';
+import '../../core/styles/text_manager.dart';
+import '../../core/widgets/appbar_widget.dart';
+import '../../core/widgets/check_box_modal_widget.dart';
 import 'package:flutter/material.dart';
 
 class OutstandingFilterPage extends StatefulWidget {
