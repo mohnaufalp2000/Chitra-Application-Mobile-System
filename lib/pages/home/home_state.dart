@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -22,14 +23,18 @@ class HomeState extends GetxController {
   // === STATE INVENTORY BAN (TireInventBloc) ===
   final RxBool isInventLoading = false.obs;
   final RxString inventErrorMessage = ''.obs;
+  final RxBool hasInventError = false.obs;
+  final inventLoadingPercent = 0.0.obs;
   final RxList<Map<String, dynamic>> tireInventData =
       <Map<String, dynamic>>[].obs;
   final List<String> statusList = ['New', 'Repair', 'Spare', 'Scrap'];
 
   // === STATE KONDISI BAN ===
   final RxBool isConditionLoading = false.obs;
+  final RxBool hasConditionError = false.obs;
   final RxMap<String, int> mapRating = <String, int>{}.obs;
   final RxString conditionErrorMessage = ''.obs;
+  final conditionLoadingPercent = 0.0.obs;
 
   String get currentSiteId => currentSiteIdRx.value;
   Site? get selectedSite =>
@@ -42,6 +47,13 @@ class HomeState extends GetxController {
     fetchSites().then((_) async {
       await _loadInitialDataAfterSitesReady();
     });
+  }
+
+  bool get shouldShowSiteWarning {
+    // Jika user access adalah 1 atau 2 (Office / All-CK)
+    // dan site yang aktif belum dipilih (masih kosong atau sama dengan idSite awal)
+    return (userAccessId.value == '1' || userAccessId.value == '2') &&
+        (currentSiteIdRx.value == '1' || currentSiteIdRx.value == '2');
   }
 
   // 🚀 Metode baru untuk memuat ID awal dan data ban setelah sites siap
@@ -64,6 +76,7 @@ class HomeState extends GetxController {
   Future<void> fetchAllHomeData({required String idSite}) async {
     // 1. Set ID Site sebagai sumber kebenaran utama. Ini memicu Obx.
     currentSiteIdRx.value = idSite;
+    // inventLoadingPercent.value = 0;
 
     // 2. Ambil Site object yang sedang aktif (melalui getter)
     String idToFetch = selectedSite?.idSite ?? idSite;
@@ -90,6 +103,7 @@ class HomeState extends GetxController {
   Future<void> fetchTireInventory(String idSite) async {
     isInventLoading.value = true;
     inventErrorMessage.value = '';
+    inventLoadingPercent.value = 0;
 
     // Penanganan Koneksi dan Cache Awal
     if (networkController.isConnected.isFalse) {
@@ -109,9 +123,19 @@ class HomeState extends GetxController {
         await Permission.phone.request();
       }
 
+      final totalStatus = statusList.length;
+      int processed = 0;
+
       // Mengambil total ban dari setiap status (future.wait untuk efisiensi)
       final count = await Future.wait(statusList.map((status) async {
         final total = await ApiService.getTireSpecCount(idSite, status);
+        //     .timeout(const Duration(seconds: 1), onTimeout: () {
+        //   throw TimeoutException("Request for $status timed out after 10s");
+        // });
+        processed++;
+        double targetPercent = (processed / totalStatus) * 100;
+        await _animateProgressTo(targetPercent);
+
         return {'status': status, 'total': total};
       }));
 
@@ -123,9 +147,18 @@ class HomeState extends GetxController {
     } catch (e) {
       log('Error fetching tire inventory: $e');
       inventErrorMessage.value = 'Failed to load inventory: ${e.toString()}';
+      hasInventError.value = true;
       // await _loadCachedInventData(); // Coba muat cache sebagai fallback
     } finally {
       isInventLoading.value = false;
+    }
+  }
+
+  Future<void> _animateProgressTo(double target) async {
+    while (inventLoadingPercent.value < target) {
+      inventLoadingPercent.value += 1;
+      await Future.delayed(
+          const Duration(milliseconds: 20)); // kecepatan animasi
     }
   }
 
@@ -167,6 +200,7 @@ class HomeState extends GetxController {
   Future<void> fetchTireCondition(String idSite) async {
     isConditionLoading.value = true;
     conditionErrorMessage.value = '';
+    conditionLoadingPercent.value = 0;
 
     if (networkController.isConnected.isFalse) {
       // await _loadCachedConditionData();
@@ -176,6 +210,14 @@ class HomeState extends GetxController {
 
     try {
       final listSize = await ApiService.getTireCondition(idSite);
+      int total = listSize.length;
+      int processed = 0;
+
+      for (var unit in listSize) {
+        processed++;
+        conditionLoadingPercent.value = processed / total;
+        await Future.delayed(const Duration(milliseconds: 5)); // animasi halus
+      }
 
       // Logika Pemrosesan Data Rating
       List<String> allRating =
@@ -197,9 +239,21 @@ class HomeState extends GetxController {
     } catch (e) {
       log('Error fetching tire condition: $e');
       conditionErrorMessage.value = 'Failed to load condition data.';
+      hasConditionError.value = true;
       // await _loadCachedConditionData();
     } finally {
       isConditionLoading.value = false;
+    }
+  }
+
+  Future<void> retryFetch(
+      {required String type, required String idSite}) async {
+    if (type == 'inventory') {
+      await fetchTireInventory(idSite);
+    } else if (type == 'condition') {
+      await fetchTireCondition(idSite);
+    } else if (type == 'sites') {
+      await fetchSites();
     }
   }
 }

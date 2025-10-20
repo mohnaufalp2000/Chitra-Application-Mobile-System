@@ -1861,12 +1861,19 @@
 //   }
 // }
 
+// -- NEW HOME PAGE -- //
+
 import 'dart:developer';
 
 import 'package:camos/core/services/model/site.dart';
+import 'package:camos/core/styles/asset_path.dart';
+import 'package:camos/core/utils/data/menu.dart';
 import 'package:camos/pages/home/home_state.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/services/shared_preferences/shared_preferences.dart';
 import '../../core/styles/color.dart';
@@ -1886,8 +1893,88 @@ class HomePage extends GetView<HomeState> {
   Widget build(BuildContext context) {
     final HomeState controller = Get.put(HomeState());
 
+    List<Color> _getGradientColors(String status) {
+      switch (status.toLowerCase()) {
+        case 'new':
+          return [const Color(0xFF03C078), const Color(0xFF6EE7B7)];
+        case 'repair':
+          return [const Color(0xFF4ADE80), const Color(0xFF22C55E)];
+        case 'spare':
+          return [const Color(0xFF38BDF8), const Color(0xFF3B82F6)];
+        case 'scrap':
+          return [const Color(0xFFFBBF24), const Color(0xFFF59E0B)];
+        default:
+          return [const Color(0xFFCBD5E1), const Color(0xFFE2E8F0)];
+      }
+    }
+
+    IconData _getIconByStatus(String status) {
+      switch (status.toLowerCase()) {
+        case 'new':
+          return LucideIcons.circle; // lingkaran baru
+        case 'repair':
+          return LucideIcons.wrench; // alat perbaikan
+        case 'spare':
+          return LucideIcons.repeat; // rotasi / cadangan
+        case 'scrap':
+          return LucideIcons.trash2; // buangan
+        default:
+          return LucideIcons.helpCircle; // default icon
+      }
+    }
+
+    Widget buildMenuItem(Menu item) {
+      return Material(
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          color: Colors.transparent,
+          child: InkWell(
+            splashColor: item.color.withOpacity(0.4),
+            highlightColor: item.color.withOpacity(0.2),
+            onTap: () {},
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 60,
+                    width: 60,
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.topLeft,
+                          child: Container(
+                            height: 50,
+                            width: 50,
+                            decoration: BoxDecoration(
+                              color: item.color.withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Image.asset(
+                            '${iconPath}/${item.image}',
+                            height: 50,
+                            width: 50,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    item.name,
+                    style: getBlackTextStyle(fontWeight: w500, fontSize: 12),
+                  )
+                ],
+              ),
+            ),
+          ));
+    }
+
     return Scaffold(
-      backgroundColor: white,
+      // backgroundColor: Color.fromARGB(255, 39, 194, 135),
       // Karena ini StatelessWidget, WillPopScope harus di luar.
       body: SafeArea(
         child: SingleChildScrollView(
@@ -1898,335 +1985,620 @@ class HomePage extends GetView<HomeState> {
               final String activeId = controller.currentSiteId;
               final bool isUserOffice = controller.userAccessId.value == '1' ||
                   controller.userAccessId.value == '2';
-
               // 🚀 Menentukan apakah ID aktif adalah ID Site reguler (BUKAN '1' atau '2')
               final bool isActiveSiteRegular =
                   activeId != '1' && activeId != '2';
 
               return Column(
                 children: [
-                  // --- PENGGANTIAN SITE DROPDOWN ---
-                  if (isUserOffice)
-                    Obx(() {
-                      if (controller.siteError.isNotEmpty) {
-                        return CustomErrorWidget(
-                            errorMessage: controller.siteError.value,
-                            onRefresh: controller.fetchSites);
-                      }
-                      if (controller.isSiteLoading.isTrue) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (controller.listSite.isNotEmpty && isUserOffice) {
-                        final List<Site> displayList = controller.listSite.sublist(
-                            4); // Menghilangkan Office/All-CK/lainnya yang tidak dapat dipilih
-                        final selectedSite = displayList
-                            .firstWhereOrNull((s) => s.idSite == activeId);
-
-                        return DropdownButton<String>(
-                          isExpanded: true,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          value: selectedSite?.idSite,
-                          hint: const Text('Choose Site'),
-                          items: displayList.map((site) {
-                            return DropdownMenuItem<String>(
-                              value: site.idSite,
-                              child: Text(site.site ?? ''),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              // Panggil Controller untuk update state global
-                              controller.fetchAllHomeData(idSite: newValue);
-                              // saveSelectedIdSitePreferences(newValue);
-                            }
-                          },
-                        );
-                      }
-                      return Container();
-                    })
-                  else
-                    Container(),
-
-                  // --- LOGIKA CLUSTER LAMA (Menggunakan ID Site dari Controller) ---
-
-                  if (!isUserOffice)
-                    Obx(() {
-                      // Logika Cluster BMB
-                      if (activeId == bmbsitarum.idSite ||
-                          activeId == bmbtabuhan.idSite ||
-                          activeId == bmbhauling.idSite) {
-                        final listBmbSite = [
-                          bmbsitarum,
-                          bmbtabuhan,
-                          bmbhauling
-                        ];
-
-                        // Ambil site yang sedang aktif (activeId)
-                        final selectedSite = listBmbSite
-                            .firstWhereOrNull((s) => s.idSite == activeId);
-
-                        return DropdownButton<String>(
-                          isExpanded: true,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          // 🚀 Gunakan activeId dari Controller
-                          value: selectedSite?.idSite,
-                          hint: const Text('Choose Site'),
-                          items: listBmbSite.map((site) {
-                            return DropdownMenuItem<String>(
-                              value: site.idSite,
-                              child: Text(site.nameSite),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              // 🚀 Panggil fungsi global untuk update state
-                              // Ini akan memperbarui currentSiteIdRx di controller dan memicu fetch data ban.
-                              controller.fetchAllHomeData(idSite: newValue);
-                              saveIdSitePreferences(
-                                  newValue); // Pertahankan penyimpanan lokal
-                            }
-                          },
-                        );
-                      }
-
-                      // Logika Cluster BIB
-                      if (activeId == bibkgb.idSite ||
-                          activeId == bibgh.idSite ||
-                          activeId == bibghhauling.idSite) {
-                        final listBIBSite = [
-                          bibkgb,
-                          bibgh,
-                          bibkgbhauling,
-                          bibghhauling
-                        ];
-
-                        final selectedSite = listBIBSite
-                            .firstWhereOrNull((s) => s.idSite == activeId);
-
-                        return DropdownButton<String>(
-                          isExpanded: true,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          // 🚀 Gunakan currentId dari Controller
-                          value: selectedSite?.idSite,
-                          hint: const Text('Choose Site'),
-                          items: listBIBSite.map((site) {
-                            return DropdownMenuItem<String>(
-                              value: site.idSite,
-                              child: Text(site.nameSite),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              // 🚀 Panggil fungsi global untuk update state
-                              controller.fetchAllHomeData(idSite: newValue);
-                              saveIdSitePreferences(
-                                  newValue); // Pertahankan penyimpanan lokal
-                            }
-                          },
-                        );
-                      }
-
-                      // Logika Cluster MHU
-                      if (activeId == mhumining.idSite ||
-                          activeId == mhuhauling.idSite) {
-                        final listMHUSite = [
-                          mhumining,
-                          mhuhauling,
-                        ];
-
-                        final selectedSite = listMHUSite
-                            .firstWhereOrNull((s) => s.idSite == activeId);
-
-                        return DropdownButton<String>(
-                          isExpanded: true,
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          // 🚀 Gunakan currentId dari Controller
-                          value: selectedSite?.idSite,
-                          hint: const Text('Choose Site'),
-                          items: listMHUSite.map((site) {
-                            return DropdownMenuItem<String>(
-                              value: site.idSite,
-                              child: Text(site.nameSite),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              // 🚀 Panggil fungsi global untuk update state
-                              controller.fetchAllHomeData(idSite: newValue);
-                              saveIdSitePreferences(
-                                  newValue); // Pertahankan penyimpanan lokal
-                            }
-                          },
-                        );
-                      }
-
-                      // Default jika bukan Office/All-CK dan bukan Cluster yang diketahui.
-                      return Container();
-                    }),
-
-                  // 🚀 BAGIAN 1: TIRE INVENTORY CARD
-                  Obx(() {
-                    if (controller.inventErrorMessage.isNotEmpty) {
-                      return CustomErrorWidget(
-                          errorMessage: controller.inventErrorMessage.value,
-                          onRefresh: () =>
-                              controller.fetchTireInventory(activeId));
-                    }
-
-                    if (controller.isInventLoading.isTrue) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (controller.tireInventData.isNotEmpty &&
-                        isActiveSiteRegular) {
-                      final siteNameDisplay =
-                          controller.siteName; // 🚀 Gunakan getter siteName
-
-                      return Column(
-                        children: [
-                          // Header Site Name
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            color: Colors.grey.withOpacity(0.1),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text('Site',
-                                        style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.w700)),
-                                    Text(siteNameDisplay,
-                                        style: getGreenTextStyle(
-                                            fontSize: 16, fontWeight: w700)),
-                                  ],
-                                ),
-                              ],
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: Row(
+                      children: [
+                        CircleAvatar(),
+                        const SizedBox(
+                          width: 8,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Good Evening',
+                              style: getBlackTextStyle(fontSize: 12),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Card Tire Inventory Content
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                    colors: [green00968A, blue344BEF]),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: controller.tireInventData.map((tire) {
-                                  final index =
-                                      controller.tireInventData.indexOf(tire);
-                                  return InkWell(
-                                    onTap: () {
-                                      final statusList = controller.statusList;
-                                      Navigator.pushNamed(
-                                        context,
-                                        TireInventoryPage.routeName,
-                                        arguments: {
-                                          'idSite': activeId,
-                                          'status': statusList[index],
-                                          'total': (tire['status'] == 'Scrap')
-                                              ? tire['total'].split('|')[1]
-                                              : tire['total'],
-                                        },
-                                      );
-                                    },
-                                    child: BoxTireWidget(tire: tire),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    }
-                    return Container();
-                  }),
-
+                            Text('Mohammad Naufal Pratama',
+                                style: getBlackTextStyle(
+                                    fontSize: 14, fontWeight: w700)),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 12),
+                  // --- PENGGANTIAN SITE DROPDOWN ---
 
-                  // 🚀 BAGIAN 2: TIRE CONDITION CARD
-                  Obx(() {
-                    if (controller.isConditionLoading.isTrue) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                  Container(
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFE3F2FD), Color(0xFFFFFFFF)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue.withOpacity(0.1),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          // tambahkan Expanded agar aman dari overflow
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Site',
+                                style: getBlackTextStyle(
+                                  fontSize: 14,
+                                  fontWeight: w700,
+                                ),
+                              ),
 
-                    if (controller.conditionErrorMessage.isNotEmpty) {
-                      return CustomErrorWidget(
-                          errorMessage: controller.conditionErrorMessage.value,
-                          onRefresh: () =>
-                              controller.fetchTireCondition(activeId));
-                    }
+                              // Ganti text lama dengan Obx dropdown kamu
+                              if (isUserOffice)
+                                Obx(() {
+                                  if (controller.siteError.isNotEmpty) {
+                                    return CustomErrorWidget(
+                                      errorMessage: controller.siteError.value,
+                                      onRefresh: controller.fetchSites,
+                                    );
+                                  }
 
-                    if (controller.mapRating.isNotEmpty &&
-                        isActiveSiteRegular) {
-                      final mapRating = controller.mapRating;
-
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                        child: Card(
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            width: double.infinity,
-                            decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                    colors: [green00968A, blue344BEF]),
-                                borderRadius: BorderRadius.circular(12)),
-                            child: Column(
-                              children: [
-                                Text('Tire Running Condition',
-                                    style: getWhiteTextStyle(fontWeight: w700)),
-                                const SizedBox(height: 12),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: mapRating.entries.map((rating) {
-                                    return Card(
-                                      // ... (UI Rating A, B, C, X)
-                                      child: Container(
-                                        // ...
-                                        child: Column(
-                                          children: [
-                                            Text('Rating ${rating.key}'),
-                                            Text(rating.value.toString()),
-                                          ],
+                                  if (controller.isSiteLoading.isTrue) {
+                                    return const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 8),
+                                      child: Center(
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
                                         ),
                                       ),
                                     );
-                                  }).toList(),
+                                  }
+
+                                  if (controller.listSite.isNotEmpty &&
+                                      isUserOffice) {
+                                    final List<Site> displayList =
+                                        controller.listSite.sublist(4);
+                                    final selectedSite =
+                                        displayList.firstWhereOrNull(
+                                            (s) => s.idSite == activeId);
+
+                                    return DropdownButton<String>(
+                                      isExpanded: true,
+                                      isDense: true,
+                                      value: selectedSite?.idSite,
+                                      hint: Text(
+                                        'Choose Site',
+                                        style: getGreenTextStyle(
+                                          fontWeight: w700,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      style: getGreenTextStyle(
+                                        fontWeight: w700,
+                                        fontSize: 16,
+                                      ),
+                                      underline: Container(),
+                                      items: displayList.map((site) {
+                                        return DropdownMenuItem<String>(
+                                          value: site.idSite,
+                                          child: Text(site.site ?? ''),
+                                        );
+                                      }).toList(),
+                                      onChanged: (newValue) {
+                                        if (newValue != null) {
+                                          controller.fetchAllHomeData(
+                                              idSite: newValue);
+                                        }
+                                      },
+                                    );
+                                  }
+
+                                  return const SizedBox.shrink();
+                                })
+                              else
+                                Text(
+                                  '',
+                                  style: getGreenTextStyle(
+                                    fontSize: 16,
+                                    fontWeight: w700,
+                                  ),
                                 ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ButtonWidget(
-                                      name: Text('Detail',
-                                          style: getWhiteTextStyle(
-                                              fontWeight: w700)),
-                                      function: () {
-                                        Navigator.pushNamed(context,
-                                            TireConditionPage.routeName);
-                                      }),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // -- Tire Inventory -- //
+                  (controller.shouldShowSiteWarning)
+                      ? Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.warning_amber_rounded,
+                                    color: Colors.orange, size: 60),
+                                SizedBox(height: 12),
+                                Text(
+                                  'Site has not been selected.\nPlease select a site first.',
+                                  textAlign: TextAlign.center,
+                                  style: getBlackTextStyle(
+                                    fontSize: 16,
+                                    fontWeight: w600,
+                                  ),
                                 ),
                               ],
                             ),
                           ),
+                        )
+                      : Column(
+                          children: [
+                            Obx(() {
+                              if (controller.isInventLoading.value) {
+                                return SizedBox(
+                                  height: 150,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // 🔥 Loading animation modern
+                                        LoadingAnimationWidget
+                                            .staggeredDotsWave(
+                                          color: Colors.redAccent,
+                                          size: 50,
+                                        ),
+                                        const SizedBox(height: 10),
+                                        // 🧮 Persentase loading
+                                        Obx(() => Text(
+                                              '${controller.inventLoadingPercent.value.toStringAsFixed(0)}%',
+                                              style: const TextStyle(
+                                                color: Colors.redAccent,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            )),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              if (controller.hasInventError.value) {
+                                return buildInlineError(
+                                  message: controller.inventErrorMessage.value,
+                                  onRetry: () => controller.retryFetch(
+                                    type: 'inventory',
+                                    idSite: controller.currentSiteId,
+                                  ),
+                                );
+                              }
+
+                              if (controller.tireInventData.isEmpty) {
+                                return const SizedBox(
+                                  height: 150,
+                                  child: Center(
+                                    child: Text(
+                                      'No data available.',
+                                      style: TextStyle(color: Colors.grey),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              return SizedBox(
+                                height: 150,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12),
+                                  itemCount: controller.tireInventData.length,
+                                  separatorBuilder: (_, __) => const SizedBox(),
+                                  itemBuilder: (context, index) {
+                                    final item =
+                                        controller.tireInventData[index];
+                                    final status = item['status'] ?? '';
+                                    final total =
+                                        item['total']?.toString() ?? '0';
+
+                                    // Tentukan warna berdasarkan status ban
+                                    final gradientColors =
+                                        _getGradientColors(status);
+
+                                    // Tentukan icon sesuai status
+                                    final icon = _getIconByStatus(status);
+
+                                    if (status == 'Scrap') {
+                                      return TireCard(
+                                        title: 'Lifetime Scrap',
+                                        value: total.split('|')[0],
+                                        icon: icon,
+                                        gradientColors: gradientColors,
+                                      );
+                                    }
+
+                                    return TireCard(
+                                      title: '$status Tire',
+                                      value: '$total Pcs',
+                                      icon: icon,
+                                      gradientColors: gradientColors,
+                                    );
+                                  },
+                                ),
+                              );
+                            }),
+
+                            // -- TIRE CONDITION -- /
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(
+                                  height: 6,
+                                ),
+                                TireConditionCard(),
+                              ],
+                            ),
+                          ],
                         ),
-                      );
-                    }
-                    return Container();
-                  }),
+
+                  // -- QUICK ACTION -- //
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(
+                          0xFFF3F5F9), // background lembut seperti Gojek
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 8,
+                          offset: const Offset(2, 4),
+                        ),
+                        const BoxShadow(
+                          color: Colors.white,
+                          offset: Offset(-2, -2),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+
+                        // Baris pertama
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            buildMenuItem(menus[0]),
+                            buildMenuItem(menus[1]),
+                            buildMenuItem(menus[2]),
+                          ],
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        // Baris kedua
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            buildMenuItem(menus[3]),
+                            buildMenuItem(menus[4]),
+                            buildMenuItem(menus[5]),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // // --- LOGIKA CLUSTER LAMA (Menggunakan ID Site dari Controller) ---
+
+                  // if (!isUserOffice)
+                  //   Obx(() {
+                  //     // Logika Cluster BMB
+                  //     if (activeId == bmbsitarum.idSite ||
+                  //         activeId == bmbtabuhan.idSite ||
+                  //         activeId == bmbhauling.idSite) {
+                  //       final listBmbSite = [
+                  //         bmbsitarum,
+                  //         bmbtabuhan,
+                  //         bmbhauling
+                  //       ];
+
+                  //       // Ambil site yang sedang aktif (activeId)
+                  //       final selectedSite = listBmbSite
+                  //           .firstWhereOrNull((s) => s.idSite == activeId);
+
+                  //       return DropdownButton<String>(
+                  //         isExpanded: true,
+                  //         padding: const EdgeInsets.symmetric(horizontal: 24),
+                  //         // 🚀 Gunakan activeId dari Controller
+                  //         value: selectedSite?.idSite,
+                  //         hint: const Text('Choose Site'),
+                  //         items: listBmbSite.map((site) {
+                  //           return DropdownMenuItem<String>(
+                  //             value: site.idSite,
+                  //             child: Text(site.nameSite),
+                  //           );
+                  //         }).toList(),
+                  //         onChanged: (newValue) {
+                  //           if (newValue != null) {
+                  //             // 🚀 Panggil fungsi global untuk update state
+                  //             // Ini akan memperbarui currentSiteIdRx di controller dan memicu fetch data ban.
+                  //             controller.fetchAllHomeData(idSite: newValue);
+                  //             saveIdSitePreferences(
+                  //                 newValue); // Pertahankan penyimpanan lokal
+                  //           }
+                  //         },
+                  //       );
+                  //     }
+
+                  //     // Logika Cluster BIB
+                  //     if (activeId == bibkgb.idSite ||
+                  //         activeId == bibgh.idSite ||
+                  //         activeId == bibghhauling.idSite) {
+                  //       final listBIBSite = [
+                  //         bibkgb,
+                  //         bibgh,
+                  //         bibkgbhauling,
+                  //         bibghhauling
+                  //       ];
+
+                  //       final selectedSite = listBIBSite
+                  //           .firstWhereOrNull((s) => s.idSite == activeId);
+
+                  //       return DropdownButton<String>(
+                  //         isExpanded: true,
+                  //         padding: const EdgeInsets.symmetric(horizontal: 24),
+                  //         // 🚀 Gunakan currentId dari Controller
+                  //         value: selectedSite?.idSite,
+                  //         hint: const Text('Choose Site'),
+                  //         items: listBIBSite.map((site) {
+                  //           return DropdownMenuItem<String>(
+                  //             value: site.idSite,
+                  //             child: Text(site.nameSite),
+                  //           );
+                  //         }).toList(),
+                  //         onChanged: (newValue) {
+                  //           if (newValue != null) {
+                  //             // 🚀 Panggil fungsi global untuk update state
+                  //             controller.fetchAllHomeData(idSite: newValue);
+                  //             saveIdSitePreferences(
+                  //                 newValue); // Pertahankan penyimpanan lokal
+                  //           }
+                  //         },
+                  //       );
+                  //     }
+
+                  //     // Logika Cluster MHU
+                  //     if (activeId == mhumining.idSite ||
+                  //         activeId == mhuhauling.idSite) {
+                  //       final listMHUSite = [
+                  //         mhumining,
+                  //         mhuhauling,
+                  //       ];
+
+                  //       final selectedSite = listMHUSite
+                  //           .firstWhereOrNull((s) => s.idSite == activeId);
+
+                  //       return DropdownButton<String>(
+                  //         isExpanded: true,
+                  //         padding: const EdgeInsets.symmetric(horizontal: 24),
+                  //         // 🚀 Gunakan currentId dari Controller
+                  //         value: selectedSite?.idSite,
+                  //         hint: const Text('Choose Site'),
+                  //         items: listMHUSite.map((site) {
+                  //           return DropdownMenuItem<String>(
+                  //             value: site.idSite,
+                  //             child: Text(site.nameSite),
+                  //           );
+                  //         }).toList(),
+                  //         onChanged: (newValue) {
+                  //           if (newValue != null) {
+                  //             // 🚀 Panggil fungsi global untuk update state
+                  //             controller.fetchAllHomeData(idSite: newValue);
+                  //             saveIdSitePreferences(
+                  //                 newValue); // Pertahankan penyimpanan lokal
+                  //           }
+                  //         },
+                  //       );
+                  //     }
+
+                  //     // Default jika bukan Office/All-CK dan bukan Cluster yang diketahui.
+                  //     return Container();
+                  //   }),
+
+                  // // 🚀 BAGIAN 1: TIRE INVENTORY CARD
+                  // Obx(() {
+                  //   if (controller.inventErrorMessage.isNotEmpty) {
+                  //     return CustomErrorWidget(
+                  //         errorMessage: controller.inventErrorMessage.value,
+                  //         onRefresh: () =>
+                  //             controller.fetchTireInventory(activeId));
+                  //   }
+
+                  //   if (controller.isInventLoading.isTrue) {
+                  //     return const Center(child: CircularProgressIndicator());
+                  //   }
+
+                  //   if (controller.tireInventData.isNotEmpty &&
+                  //       isActiveSiteRegular) {
+                  //     final siteNameDisplay =
+                  //         controller.siteName; // 🚀 Gunakan getter siteName
+
+                  //     return Column(
+                  //       children: [
+                  //         // Header Site Name
+                  //         Container(
+                  //           width: double.infinity,
+                  //           padding: const EdgeInsets.all(12),
+                  //           color: Colors.grey.withOpacity(0.1),
+                  //           child: Row(
+                  //             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //             children: [
+                  //               Column(
+                  //                 crossAxisAlignment: CrossAxisAlignment.start,
+                  //                 children: [
+                  //                   const Text('Site',
+                  //                       style: TextStyle(
+                  //                           fontSize: 20,
+                  //                           fontWeight: FontWeight.w700)),
+                  //                   Text(siteNameDisplay,
+                  //                       style: getGreenTextStyle(
+                  //                           fontSize: 16, fontWeight: w700)),
+                  //                 ],
+                  //               ),
+                  //             ],
+                  //           ),
+                  //         ),
+                  //         const SizedBox(height: 12),
+                  //         // Card Tire Inventory Content
+                  //         Padding(
+                  //           padding: const EdgeInsets.symmetric(horizontal: 12),
+                  //           child: Container(
+                  //             padding: const EdgeInsets.all(12),
+                  //             decoration: BoxDecoration(
+                  //               gradient: const LinearGradient(
+                  //                   colors: [green00968A, blue344BEF]),
+                  //               borderRadius: BorderRadius.circular(12),
+                  //             ),
+                  //             child: Row(
+                  //               mainAxisAlignment:
+                  //                   MainAxisAlignment.spaceBetween,
+                  //               children: controller.tireInventData.map((tire) {
+                  //                 final index =
+                  //                     controller.tireInventData.indexOf(tire);
+                  //                 return InkWell(
+                  //                   onTap: () {
+                  //                     final statusList = controller.statusList;
+                  //                     Navigator.pushNamed(
+                  //                       context,
+                  //                       TireInventoryPage.routeName,
+                  //                       arguments: {
+                  //                         'idSite': activeId,
+                  //                         'status': statusList[index],
+                  //                         'total': (tire['status'] == 'Scrap')
+                  //                             ? tire['total'].split('|')[1]
+                  //                             : tire['total'],
+                  //                       },
+                  //                     );
+                  //                   },
+                  //                   child: BoxTireWidget(tire: tire),
+                  //                 );
+                  //               }).toList(),
+                  //             ),
+                  //           ),
+                  //         ),
+                  //       ],
+                  //     );
+                  //   }
+                  //   return Container();
+                  // }),
+
+                  // const SizedBox(height: 12),
+
+                  // // 🚀 BAGIAN 2: TIRE CONDITION CARD
+                  // Obx(() {
+                  //   if (controller.isConditionLoading.isTrue) {
+                  //     return const Center(child: CircularProgressIndicator());
+                  //   }
+
+                  //   if (controller.conditionErrorMessage.isNotEmpty) {
+                  //     return CustomErrorWidget(
+                  //         errorMessage: controller.conditionErrorMessage.value,
+                  //         onRefresh: () =>
+                  //             controller.fetchTireCondition(activeId));
+                  //   }
+
+                  //   if (controller.mapRating.isNotEmpty &&
+                  //       isActiveSiteRegular) {
+                  //     final mapRating = controller.mapRating;
+
+                  //     return Padding(
+                  //       padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                  //       child: Card(
+                  //         elevation: 2,
+                  //         shape: RoundedRectangleBorder(
+                  //             borderRadius: BorderRadius.circular(12)),
+                  //         child: Container(
+                  //           padding: const EdgeInsets.all(12),
+                  //           width: double.infinity,
+                  //           decoration: BoxDecoration(
+                  //               gradient: const LinearGradient(
+                  //                   colors: [green00968A, blue344BEF]),
+                  //               borderRadius: BorderRadius.circular(12)),
+                  //           child: Column(
+                  //             children: [
+                  //               Text('Tire Running Condition',
+                  //                   style: getWhiteTextStyle(fontWeight: w700)),
+                  //               const SizedBox(height: 12),
+                  //               Row(
+                  //                 mainAxisAlignment:
+                  //                     MainAxisAlignment.spaceBetween,
+                  //                 children: mapRating.entries.map((rating) {
+                  //                   return Card(
+                  //                     // ... (UI Rating A, B, C, X)
+                  //                     child: Container(
+                  //                       // ...
+                  //                       child: Column(
+                  //                         children: [
+                  //                           Text('Rating ${rating.key}'),
+                  //                           Text(rating.value.toString()),
+                  //                         ],
+                  //                       ),
+                  //                     ),
+                  //                   );
+                  //                 }).toList(),
+                  //               ),
+                  //               const SizedBox(height: 12),
+                  //               SizedBox(
+                  //                 width: double.infinity,
+                  //                 child: ButtonWidget(
+                  //                     name: Text('Detail',
+                  //                         style: getWhiteTextStyle(
+                  //                             fontWeight: w700)),
+                  //                     function: () {
+                  //                       Navigator.pushNamed(context,
+                  //                           TireConditionPage.routeName);
+                  //                     }),
+                  //               ),
+                  //             ],
+                  //           ),
+                  //         ),
+                  //       ),
+                  //     );
+                  //   }
+                  //   return Container();
+                  // }),
 
                   const SizedBox(height: 24),
                 ],
@@ -2240,4 +2612,350 @@ class HomePage extends GetView<HomeState> {
       // dan tidak memiliki _selectedIndex.
     );
   }
+}
+
+class TireCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final List<Color> gradientColors;
+
+  const TireCard({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.gradientColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 150,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors.last.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(2, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: Colors.white.withOpacity(0.2),
+            child: Icon(icon, color: Colors.white, size: 22),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TireConditionCard extends StatelessWidget {
+  final HomeState controller = Get.find<HomeState>();
+
+  TireConditionCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (controller.isConditionLoading.value) {
+        return SizedBox(
+          height: 150,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                LoadingAnimationWidget.staggeredDotsWave(
+                  color: Colors.blueAccent,
+                  size: 45,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "${(controller.conditionLoadingPercent.value * 100).toStringAsFixed(0)}%",
+                  style: const TextStyle(
+                    color: Colors.blueAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      if (controller.hasConditionError.value) {
+        return buildInlineError(
+          message: controller.conditionErrorMessage.value,
+          onRetry: () => controller.retryFetch(
+            type: 'condition',
+            idSite: controller.currentSiteId,
+          ),
+        );
+      }
+
+      if (controller.mapRating.isEmpty) {
+        // tampilkan pesan kosong
+        return const SizedBox(
+          height: 140,
+          child: Center(
+            child: Text(
+              'No tire condition data.',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+        );
+      }
+
+      // kalau sudah ada data
+      final tireRatings = controller.mapRating;
+      int maxValue = tireRatings.values.isNotEmpty
+          ? tireRatings.values.reduce((a, b) => a > b ? a : b)
+          : 0;
+
+      Color getBarColor(String rating) {
+        switch (rating) {
+          case 'A':
+            return Colors.greenAccent.shade400;
+          case 'B':
+            return Colors.blueAccent.shade400;
+          case 'C':
+            return Colors.orangeAccent.shade400;
+          case 'X':
+            return Colors.redAccent.shade400;
+          default:
+            return Colors.grey.shade400;
+        }
+      }
+
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0072FF), Color(0xFF00C6FF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blueAccent.withOpacity(0.15),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double availableBarWidth = constraints.maxWidth - 20 - 8 - 8 - 30;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Tire Running Condition",
+                  style: TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...tireRatings.entries.map((entry) {
+                  double barWidth = maxValue > 0
+                      ? (entry.value / maxValue) * availableBarWidth
+                      : 0;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          child: Text(
+                            entry.key,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Container(
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.35),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              Container(
+                                height: 10,
+                                width: barWidth,
+                                decoration: BoxDecoration(
+                                  color: getBarColor(entry.key),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 30,
+                          child: Text(
+                            entry.value.toString(),
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 10),
+                Center(
+                  child: SizedBox(
+                    width: 90,
+                    height: 32,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.blueAccent,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () {
+                        // bisa tambahkan navigasi ke detail
+                      },
+                      child: const Text(
+                        "Detail",
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+    });
+  }
+}
+
+Widget buildInlineError({
+  required String message,
+  required VoidCallback onRetry,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        border: Border.all(color: Colors.red.shade200, width: 1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 🔴 Ikon Error
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.red.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.error_outline, color: Colors.red, size: 32),
+          ),
+          const SizedBox(height: 12),
+
+          // 📝 Pesan Error
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 🔁 Tombol Retry
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: Text(
+                'Try Again',
+                style: getWhiteTextStyle(fontWeight: w700),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade400,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

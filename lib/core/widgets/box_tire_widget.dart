@@ -26,7 +26,7 @@ class BoxTireWidget extends StatelessWidget {
       ),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.17,
-        height: MediaQuery.of(context).size.height * 0.12,
+        height: MediaQuery.of(context).size.height * 0.11,
         padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
