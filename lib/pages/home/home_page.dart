@@ -1869,6 +1869,8 @@ import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/utils/data/menu.dart';
 import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/pages/home/widget/home_function.dart';
+import 'package:camos/pages/home/widget/tire_condition_card_widget.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -1892,86 +1894,6 @@ class HomePage extends GetView<HomeState> {
   @override
   Widget build(BuildContext context) {
     final HomeState controller = Get.put(HomeState());
-
-    List<Color> _getGradientColors(String status) {
-      switch (status.toLowerCase()) {
-        case 'new':
-          return [const Color(0xFF03C078), const Color(0xFF6EE7B7)];
-        case 'repair':
-          return [const Color(0xFF4ADE80), const Color(0xFF22C55E)];
-        case 'spare':
-          return [const Color(0xFF38BDF8), const Color(0xFF3B82F6)];
-        case 'scrap':
-          return [const Color(0xFFFBBF24), const Color(0xFFF59E0B)];
-        default:
-          return [const Color(0xFFCBD5E1), const Color(0xFFE2E8F0)];
-      }
-    }
-
-    IconData _getIconByStatus(String status) {
-      switch (status.toLowerCase()) {
-        case 'new':
-          return LucideIcons.circle; // lingkaran baru
-        case 'repair':
-          return LucideIcons.wrench; // alat perbaikan
-        case 'spare':
-          return LucideIcons.repeat; // rotasi / cadangan
-        case 'scrap':
-          return LucideIcons.trash2; // buangan
-        default:
-          return LucideIcons.helpCircle; // default icon
-      }
-    }
-
-    Widget buildMenuItem(Menu item) {
-      return Material(
-          borderRadius: BorderRadius.circular(16),
-          clipBehavior: Clip.antiAliasWithSaveLayer,
-          color: Colors.transparent,
-          child: InkWell(
-            splashColor: item.color.withOpacity(0.4),
-            highlightColor: item.color.withOpacity(0.2),
-            onTap: () {},
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 60,
-                    width: 60,
-                    child: Stack(
-                      children: [
-                        Align(
-                          alignment: Alignment.topLeft,
-                          child: Container(
-                            height: 50,
-                            width: 50,
-                            decoration: BoxDecoration(
-                              color: item.color.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: Image.asset(
-                            '${iconPath}/${item.image}',
-                            height: 50,
-                            width: 50,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    item.name,
-                    style: getBlackTextStyle(fontWeight: w500, fontSize: 12),
-                  )
-                ],
-              ),
-            ),
-          ));
-    }
 
     return Scaffold(
       // backgroundColor: Color.fromARGB(255, 39, 194, 135),
@@ -2192,7 +2114,7 @@ class HomePage extends GetView<HomeState> {
                               }
 
                               if (controller.hasInventError.value) {
-                                return buildInlineError(
+                                return HomeFunction.buildInlineError(
                                   message: controller.inventErrorMessage.value,
                                   onRetry: () => controller.retryFetch(
                                     type: 'inventory',
@@ -2214,13 +2136,14 @@ class HomePage extends GetView<HomeState> {
                               }
 
                               return SizedBox(
-                                height: 150,
+                                height: 90, // 🔹 diperkecil dari 150 ke 90
                                 child: ListView.separated(
                                   scrollDirection: Axis.horizontal,
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12),
                                   itemCount: controller.tireInventData.length,
-                                  separatorBuilder: (_, __) => const SizedBox(),
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(width: 10),
                                   itemBuilder: (context, index) {
                                     final item =
                                         controller.tireInventData[index];
@@ -2228,27 +2151,85 @@ class HomePage extends GetView<HomeState> {
                                     final total =
                                         item['total']?.toString() ?? '0';
 
-                                    // Tentukan warna berdasarkan status ban
+                                    // Warna & ikon
                                     final gradientColors =
-                                        _getGradientColors(status);
+                                        HomeFunction.getGradientColors(status);
+                                    final icon =
+                                        HomeFunction.getIconByStatus(status);
 
-                                    // Tentukan icon sesuai status
-                                    final icon = _getIconByStatus(status);
+                                    // Judul
+                                    final title = (status == 'Scrap')
+                                        ? 'Lifetime Scrap'
+                                        : '$status Tire';
+                                    final value = (status == 'Scrap')
+                                        ? total.split('|')[0]
+                                        : '$total Pcs';
 
-                                    if (status == 'Scrap') {
-                                      return TireCard(
-                                        title: 'Lifetime Scrap',
-                                        value: total.split('|')[0],
-                                        icon: icon,
-                                        gradientColors: gradientColors,
-                                      );
-                                    }
+                                    return Container(
+                                      width: 160,
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(16),
+                                        gradient: LinearGradient(
+                                          colors: gradientColors,
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.black12,
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          // 🔹 Icon di kiri
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Colors.white.withOpacity(0.2),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(icon,
+                                                color: Colors.white, size: 24),
+                                          ),
+                                          const SizedBox(width: 10),
 
-                                    return TireCard(
-                                      title: '$status Tire',
-                                      value: '$total Pcs',
-                                      icon: icon,
-                                      gradientColors: gradientColors,
+                                          // 🔹 Text di kanan
+                                          Expanded(
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  title,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  value,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     );
                                   },
                                 ),
@@ -2262,7 +2243,7 @@ class HomePage extends GetView<HomeState> {
                                 const SizedBox(
                                   height: 6,
                                 ),
-                                TireConditionCard(),
+                                TireConditionCardWidget(),
                               ],
                             ),
                           ],
@@ -2270,7 +2251,8 @@ class HomePage extends GetView<HomeState> {
 
                   // -- QUICK ACTION -- //
                   Container(
-                    margin: const EdgeInsets.all(16),
+                    margin:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     padding: const EdgeInsets.symmetric(
                         vertical: 16, horizontal: 12),
                     decoration: BoxDecoration(
@@ -2299,9 +2281,9 @@ class HomePage extends GetView<HomeState> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            buildMenuItem(menus[0]),
-                            buildMenuItem(menus[1]),
-                            buildMenuItem(menus[2]),
+                            HomeFunction.buildMenuItem(menus[0]),
+                            HomeFunction.buildMenuItem(menus[1]),
+                            HomeFunction.buildMenuItem(menus[2]),
                           ],
                         ),
 
@@ -2311,9 +2293,9 @@ class HomePage extends GetView<HomeState> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            buildMenuItem(menus[3]),
-                            buildMenuItem(menus[4]),
-                            buildMenuItem(menus[5]),
+                            HomeFunction.buildMenuItem(menus[3]),
+                            HomeFunction.buildMenuItem(menus[4]),
+                            HomeFunction.buildMenuItem(menus[5]),
                           ],
                         ),
                       ],
@@ -2612,350 +2594,4 @@ class HomePage extends GetView<HomeState> {
       // dan tidak memiliki _selectedIndex.
     );
   }
-}
-
-class TireCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final List<Color> gradientColors;
-
-  const TireCard({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.gradientColors,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.last.withOpacity(0.4),
-            blurRadius: 8,
-            offset: const Offset(2, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            child: Icon(icon, color: Colors.white, size: 22),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              height: 1.1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class TireConditionCard extends StatelessWidget {
-  final HomeState controller = Get.find<HomeState>();
-
-  TireConditionCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      if (controller.isConditionLoading.value) {
-        return SizedBox(
-          height: 150,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                LoadingAnimationWidget.staggeredDotsWave(
-                  color: Colors.blueAccent,
-                  size: 45,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  "${(controller.conditionLoadingPercent.value * 100).toStringAsFixed(0)}%",
-                  style: const TextStyle(
-                    color: Colors.blueAccent,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-
-      if (controller.hasConditionError.value) {
-        return buildInlineError(
-          message: controller.conditionErrorMessage.value,
-          onRetry: () => controller.retryFetch(
-            type: 'condition',
-            idSite: controller.currentSiteId,
-          ),
-        );
-      }
-
-      if (controller.mapRating.isEmpty) {
-        // tampilkan pesan kosong
-        return const SizedBox(
-          height: 140,
-          child: Center(
-            child: Text(
-              'No tire condition data.',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-        );
-      }
-
-      // kalau sudah ada data
-      final tireRatings = controller.mapRating;
-      int maxValue = tireRatings.values.isNotEmpty
-          ? tireRatings.values.reduce((a, b) => a > b ? a : b)
-          : 0;
-
-      Color getBarColor(String rating) {
-        switch (rating) {
-          case 'A':
-            return Colors.greenAccent.shade400;
-          case 'B':
-            return Colors.blueAccent.shade400;
-          case 'C':
-            return Colors.orangeAccent.shade400;
-          case 'X':
-            return Colors.redAccent.shade400;
-          default:
-            return Colors.grey.shade400;
-        }
-      }
-
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF0072FF), Color(0xFF00C6FF)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blueAccent.withOpacity(0.15),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            double availableBarWidth = constraints.maxWidth - 20 - 8 - 8 - 30;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Tire Running Condition",
-                  style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ...tireRatings.entries.map((entry) {
-                  double barWidth = maxValue > 0
-                      ? (entry.value / maxValue) * availableBarWidth
-                      : 0;
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          child: Text(
-                            entry.key,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              Container(
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.35),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              Container(
-                                height: 10,
-                                width: barWidth,
-                                decoration: BoxDecoration(
-                                  color: getBarColor(entry.key),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 1.5,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 30,
-                          child: Text(
-                            entry.value.toString(),
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                const SizedBox(height: 10),
-                Center(
-                  child: SizedBox(
-                    width: 90,
-                    height: 32,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.blueAccent,
-                        padding: EdgeInsets.zero,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onPressed: () {
-                        // bisa tambahkan navigasi ke detail
-                      },
-                      child: const Text(
-                        "Detail",
-                        style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      );
-    });
-  }
-}
-
-Widget buildInlineError({
-  required String message,
-  required VoidCallback onRetry,
-}) {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    child: Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.red.shade50,
-        border: Border.all(color: Colors.red.shade200, width: 1),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // 🔴 Ikon Error
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.red.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.error_outline, color: Colors.red, size: 32),
-          ),
-          const SizedBox(height: 12),
-
-          // 📝 Pesan Error
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.red,
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // 🔁 Tombol Retry
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: Text(
-                'Try Again',
-                style: getWhiteTextStyle(fontWeight: w700),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade400,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }

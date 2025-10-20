@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:camos/pages/network/network_state.dart';
+import 'package:camos/pages/dashboard/dashboard_page.dart';
 import 'core/blocs/attendance/attendance_bloc.dart';
 import 'core/blocs/authentication/authentication_bloc.dart';
 import 'core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
@@ -132,7 +133,8 @@ class MyApp extends StatelessWidget {
       child: GetMaterialApp(
         title: 'Material App',
         debugShowCheckedModeBanner: false,
-        initialRoute: SplashScreen.routeName,
+        // initialRoute: SplashScreen.routeName,
+        initialRoute: DashboardPage.routeName,
         routes: routes,
       ),
     );

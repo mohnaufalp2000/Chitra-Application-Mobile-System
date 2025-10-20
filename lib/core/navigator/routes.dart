@@ -1,3 +1,5 @@
+import 'package:camos/pages/dashboard/dashboard_page.dart';
+
 import '../../pages/attendance/absence_page.dart';
 import '../../pages/attendance/all_presence_page.dart';
 import '../../pages/attendance/attendance_page.dart';
@@ -121,4 +123,5 @@ var routes = {
   TireRepairInspectionOldPage.routeName: (context) =>
       const TireRepairInspectionOldPage(),
   JobcardSelectedJobPage.routeName: (context) => const JobcardSelectedJobPage(),
+  DashboardPage.routeName: (context) => DashboardPage(),
 };
