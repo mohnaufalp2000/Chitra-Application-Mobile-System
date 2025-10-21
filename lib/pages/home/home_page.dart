@@ -1868,14 +1868,18 @@ import 'dart:developer';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/utils/data/menu.dart';
+import 'package:camos/objectbox.g.dart';
+import 'package:camos/pages/authentication/login_page.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/home/widget/home_function.dart';
 import 'package:camos/pages/home/widget/tire_condition_card_widget.dart';
+import 'package:camos/pages/network/network_state.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/services/shared_preferences/shared_preferences.dart';
 import '../../core/styles/color.dart';
@@ -1893,7 +1897,7 @@ class HomePage extends GetView<HomeState> {
 
   @override
   Widget build(BuildContext context) {
-    final HomeState controller = Get.put(HomeState());
+    final HomeState controller = Get.find<HomeState>();
 
     return Scaffold(
       // backgroundColor: Color.fromARGB(255, 39, 194, 135),
@@ -1910,7 +1914,6 @@ class HomePage extends GetView<HomeState> {
               // 🚀 Menentukan apakah ID aktif adalah ID Site reguler (BUKAN '1' atau '2')
               final bool isActiveSiteRegular =
                   activeId != '1' && activeId != '2';
-
               return Column(
                 children: [
                   Padding(
@@ -1932,6 +1935,28 @@ class HomePage extends GetView<HomeState> {
                                 style: getBlackTextStyle(
                                     fontSize: 14, fontWeight: w700)),
                           ],
+                        ),
+                        Spacer(),
+                        InkWell(
+                          onTap: () {
+                            HomeFunction.showLogoutConfirmation(
+                              context: context,
+                              onLogout: () async {
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.clear();
+                                Get.deleteAll(force: true);
+                                Get.put(InternetState());
+                                Get.offAllNamed(LoginPage.routeName);
+                              },
+                            );
+                          },
+                          child: Container(
+                              margin: EdgeInsets.only(right: 12),
+                              child: const Icon(
+                                LucideIcons.logOut,
+                                color: Colors.red,
+                              )),
                         ),
                       ],
                     ),
@@ -1963,7 +1988,6 @@ class HomePage extends GetView<HomeState> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
-                          // tambahkan Expanded agar aman dari overflow
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1974,88 +1998,139 @@ class HomePage extends GetView<HomeState> {
                                   fontWeight: w700,
                                 ),
                               ),
+                              Obx(() {
+                                if (controller.siteError.isNotEmpty) {
+                                  return CustomErrorWidget(
+                                    errorMessage: controller.siteError.value,
+                                    onRefresh: controller.fetchSites,
+                                  );
+                                }
 
-                              // Ganti text lama dengan Obx dropdown kamu
-                              if (isUserOffice)
-                                Obx(() {
-                                  if (controller.siteError.isNotEmpty) {
-                                    return CustomErrorWidget(
-                                      errorMessage: controller.siteError.value,
-                                      onRefresh: controller.fetchSites,
-                                    );
-                                  }
-
-                                  if (controller.isSiteLoading.isTrue) {
-                                    return const Padding(
-                                      padding:
-                                          EdgeInsets.symmetric(vertical: 8),
-                                      child: Center(
-                                        child: SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                              strokeWidth: 2),
-                                        ),
+                                if (controller.isSiteLoading.isTrue) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 8),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
                                       ),
-                                    );
-                                  }
+                                    ),
+                                  );
+                                }
 
-                                  if (controller.listSite.isNotEmpty &&
-                                      isUserOffice) {
-                                    final List<Site> displayList =
-                                        controller.listSite.sublist(4);
-                                    final selectedSite =
-                                        displayList.firstWhereOrNull(
-                                            (s) => s.idSite == activeId);
+                                // === USER OFFICE ===
+                                if (controller.isUserOffice) {
+                                  final List<Site> displayList =
+                                      controller.listSite.length > 4
+                                          ? controller.listSite.sublist(4)
+                                          : controller.listSite;
+                                  final selectedSite =
+                                      displayList.firstWhereOrNull(
+                                    (s) => s.idSite == controller.currentSiteId,
+                                  );
 
-                                    return DropdownButton<String>(
-                                      isExpanded: true,
-                                      isDense: true,
-                                      value: selectedSite?.idSite,
-                                      hint: Text(
-                                        'Choose Site',
-                                        style: getGreenTextStyle(
-                                          fontWeight: w700,
-                                          fontSize: 16,
-                                        ),
-                                      ),
+                                  return DropdownButton<String>(
+                                    isExpanded: true,
+                                    isDense: true,
+                                    value: selectedSite?.idSite,
+                                    hint: Text(
+                                      'Choose Site',
                                       style: getGreenTextStyle(
-                                        fontWeight: w700,
-                                        fontSize: 16,
-                                      ),
-                                      underline: Container(),
-                                      items: displayList.map((site) {
-                                        return DropdownMenuItem<String>(
-                                          value: site.idSite,
-                                          child: Text(site.site ?? ''),
-                                        );
-                                      }).toList(),
-                                      onChanged: (newValue) {
-                                        if (newValue != null) {
-                                          controller.fetchAllHomeData(
-                                              idSite: newValue);
-                                        }
-                                      },
-                                    );
-                                  }
+                                          fontWeight: w700, fontSize: 16),
+                                    ),
+                                    style: getGreenTextStyle(
+                                        fontWeight: w700, fontSize: 16),
+                                    underline: Container(),
+                                    items: displayList.map((site) {
+                                      return DropdownMenuItem<String>(
+                                        value: site.idSite,
+                                        child: Text(site.site ?? ''),
+                                      );
+                                    }).toList(),
+                                    onChanged: (newValue) {
+                                      if (newValue != null) {
+                                        controller.fetchAllHomeData(
+                                            idSite: newValue);
+                                      }
+                                    },
+                                  );
+                                }
 
-                                  return const SizedBox.shrink();
-                                })
-                              else
-                                Text(
-                                  '',
-                                  style: getGreenTextStyle(
-                                    fontSize: 16,
-                                    fontWeight: w700,
+                                // === USER NON-OFFICE DENGAN CLUSTER ===
+                                final clusterSites = controller.clusterSites;
+
+                                if (clusterSites.isEmpty) {
+                                  // fallback jika user di luar cluster
+                                  final onlySite = controller.listSite
+                                      .firstWhereOrNull((s) =>
+                                          s.idSite ==
+                                          controller.userAccessId.value);
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      onlySite?.site ?? '-',
+                                      style: getGreenTextStyle(
+                                          fontWeight: w700, fontSize: 16),
+                                    ),
+                                  );
+                                }
+
+                                // Kalau hanya 1 site di cluster → tampilkan text
+                                if (clusterSites.length == 1) {
+                                  final site = clusterSites.first;
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      site.nameSite ?? '',
+                                      style: getGreenTextStyle(
+                                          fontWeight: w700, fontSize: 16),
+                                    ),
+                                  );
+                                }
+
+                                // Kalau lebih dari 1 site → tampilkan dropdown cluster
+                                final selectedClusterSite =
+                                    clusterSites.firstWhereOrNull(
+                                  (s) => s.idSite == controller.currentSiteId,
+                                );
+
+                                return DropdownButton<String>(
+                                  isExpanded: true,
+                                  isDense: true,
+                                  value: selectedClusterSite?.idSite ??
+                                      controller.userAccessId.value,
+                                  hint: Text(
+                                    'Choose Site (${controller.clusterName})',
+                                    style: getGreenTextStyle(
+                                        fontWeight: w700, fontSize: 16),
                                   ),
-                                ),
+                                  style: getGreenTextStyle(
+                                      fontWeight: w700, fontSize: 16),
+                                  underline: Container(),
+                                  items: clusterSites.map((site) {
+                                    return DropdownMenuItem<String>(
+                                      value: site.idSite,
+                                      child: Text(site.nameSite),
+                                    );
+                                  }).toList(),
+                                  onChanged: (newValue) {
+                                    if (newValue != null) {
+                                      controller.fetchAllHomeData(
+                                          idSite: newValue);
+                                    }
+                                  },
+                                );
+                              })
                             ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 6),
 
                   // -- Tire Inventory -- //
                   (controller.shouldShowSiteWarning)
@@ -2135,104 +2210,138 @@ class HomePage extends GetView<HomeState> {
                                 );
                               }
 
-                              return SizedBox(
-                                height: 90, // 🔹 diperkecil dari 150 ke 90
-                                child: ListView.separated(
-                                  scrollDirection: Axis.horizontal,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
-                                  itemCount: controller.tireInventData.length,
-                                  separatorBuilder: (_, __) =>
-                                      const SizedBox(width: 10),
-                                  itemBuilder: (context, index) {
-                                    final item =
-                                        controller.tireInventData[index];
-                                    final status = item['status'] ?? '';
-                                    final total =
-                                        item['total']?.toString() ?? '0';
-
-                                    // Warna & ikon
-                                    final gradientColors =
-                                        HomeFunction.getGradientColors(status);
-                                    final icon =
-                                        HomeFunction.getIconByStatus(status);
-
-                                    // Judul
-                                    final title = (status == 'Scrap')
-                                        ? 'Lifetime Scrap'
-                                        : '$status Tire';
-                                    final value = (status == 'Scrap')
-                                        ? total.split('|')[0]
-                                        : '$total Pcs';
-
-                                    return Container(
-                                      width: 160,
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(16),
-                                        gradient: LinearGradient(
-                                          colors: gradientColors,
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black12,
-                                            blurRadius: 4,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          // 🔹 Icon di kiri
-                                          Container(
-                                            padding: const EdgeInsets.all(8),
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  Colors.white.withOpacity(0.2),
-                                              shape: BoxShape.circle,
+                              return Column(
+                                children: [
+                                  (controller.lastSyncInvent.value != '' ||
+                                          controller
+                                              .lastSyncInvent.value.isNotEmpty)
+                                      ? Container(
+                                          margin: EdgeInsets.only(
+                                              right: 12, bottom: 6),
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            controller.lastSyncInvent.value,
+                                            style: TextStyle(
+                                              fontSize: 9,
+                                              color: controller
+                                                      .lastSyncInvent.value
+                                                      .contains('Offline')
+                                                  ? Colors.orange
+                                                  : Colors.green,
+                                              fontStyle: FontStyle.italic,
                                             ),
-                                            child: Icon(icon,
-                                                color: Colors.white, size: 24),
                                           ),
+                                        )
+                                      : Container(),
+                                  SizedBox(
+                                    height: 90, // 🔹 diperkecil dari 150 ke 90
+                                    child: ListView.separated(
+                                      scrollDirection: Axis.horizontal,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12),
+                                      itemCount:
+                                          controller.tireInventData.length,
+                                      separatorBuilder: (_, __) =>
                                           const SizedBox(width: 10),
+                                      itemBuilder: (context, index) {
+                                        final item =
+                                            controller.tireInventData[index];
+                                        final status = item['status'] ?? '';
+                                        final total =
+                                            item['total']?.toString() ?? '0';
 
-                                          // 🔹 Text di kanan
-                                          Expanded(
-                                            child: Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  title,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  value,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 15,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ],
+                                        // Warna & ikon
+                                        final gradientColors =
+                                            HomeFunction.getGradientColors(
+                                                status);
+                                        final icon =
+                                            HomeFunction.getIconByStatus(
+                                                status);
+
+                                        // Judul
+                                        final title = (status == 'Scrap')
+                                            ? 'Lifetime Scrap'
+                                            : '$status Tire'
+                                                '${status == 'Repair' ? '\nProgress' : '\nStock'}';
+                                        final value = (status == 'Scrap')
+                                            ? total.split('|')[0]
+                                            : '$total Pcs';
+
+                                        return Container(
+                                          width: 160,
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            gradient: LinearGradient(
+                                              colors: gradientColors,
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
                                             ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black12,
+                                                blurRadius: 4,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
                                           ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.center,
+                                            children: [
+                                              // 🔹 Icon di kiri
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.all(8),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withOpacity(0.2),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Icon(icon,
+                                                    color: Colors.white,
+                                                    size: 24),
+                                              ),
+                                              const SizedBox(width: 10),
+
+                                              // 🔹 Text di kanan
+                                              Expanded(
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      title,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 10,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    Text(
+                                                      value,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 15,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
                               );
                             }),
 
@@ -2240,7 +2349,7 @@ class HomePage extends GetView<HomeState> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const SizedBox(
+                                SizedBox(
                                   height: 6,
                                 ),
                                 TireConditionCardWidget(),

@@ -1,6 +1,8 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:camos/pages/dashboard/dashboard_page.dart';
+
 import '../../core/blocs/authentication/authentication_bloc.dart';
 import '../../core/navigator/navigation_route.dart';
 import '../../core/services/api_service.dart';
@@ -378,11 +380,11 @@ class _LoginPageState extends State<LoginPage> {
                             if (isCTS == '0' || isCTS == null) {
                               if (userIdSite == '15') {
                                 Navigator.pushReplacementNamed(
-                                    context, HomePage.routeName);
+                                    context, DashboardPage.routeName);
                                 return;
                               }
                               String targetRoute = (userIdSite == '1')
-                                  ? HomePage.routeName
+                                  ? DashboardPage.routeName
                                   : HomePageTrial.routeName;
 
                               Map<String, dynamic>? arguments =
@@ -400,7 +402,7 @@ class _LoginPageState extends State<LoginPage> {
                                   arguments: arguments);
                             } else {
                               Navigator.pushReplacementNamed(
-                                  context, HomePage.routeName);
+                                  context, DashboardPage.routeName);
                             }
 
                             // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial

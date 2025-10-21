@@ -1,3 +1,4 @@
+import 'package:camos/pages/home/home_state.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -11,6 +12,7 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final DashboardState controller = Get.put(DashboardState());
+    final HomeState homeController = Get.put(HomeState());
 
     return Scaffold(
       extendBody: true, // 🔹 biar FAB overlap dengan nav bar transparan

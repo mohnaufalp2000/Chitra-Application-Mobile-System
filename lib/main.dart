@@ -133,8 +133,7 @@ class MyApp extends StatelessWidget {
       child: GetMaterialApp(
         title: 'Material App',
         debugShowCheckedModeBanner: false,
-        // initialRoute: SplashScreen.routeName,
-        initialRoute: DashboardPage.routeName,
+        initialRoute: SplashScreen.routeName,
         routes: routes,
       ),
     );

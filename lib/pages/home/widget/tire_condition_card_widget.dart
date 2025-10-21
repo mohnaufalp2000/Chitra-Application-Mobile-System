@@ -109,12 +109,28 @@ class TireConditionCardWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min, // 🔹 biar menyesuaikan isi
               children: [
-                Text(
-                  "Tire Running Condition",
-                  style: getWhiteTextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Tire Running Condition",
+                      style: getWhiteTextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      controller.lastSyncCondition.value,
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: controller.lastSyncCondition.value
+                                .contains('Offline')
+                            ? Colors.orange.shade100
+                            : Colors.green.shade100,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 ...tireRatings.entries.map((entry) {

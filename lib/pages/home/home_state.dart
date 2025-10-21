@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
@@ -7,7 +8,11 @@ import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/pages/network/network_state.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../core/utils/data/id_site.dart';
 
 class HomeState extends GetxController {
   final InternetState networkController = Get.find<InternetState>();
@@ -28,6 +33,7 @@ class HomeState extends GetxController {
   final RxList<Map<String, dynamic>> tireInventData =
       <Map<String, dynamic>>[].obs;
   final List<String> statusList = ['New', 'Repair', 'Spare', 'Scrap'];
+  final lastSyncInvent = ''.obs;
 
   // === STATE KONDISI BAN ===
   final RxBool isConditionLoading = false.obs;
@@ -35,11 +41,23 @@ class HomeState extends GetxController {
   final RxMap<String, int> mapRating = <String, int>{}.obs;
   final RxString conditionErrorMessage = ''.obs;
   final conditionLoadingPercent = 0.0.obs;
+  final lastSyncCondition = ''.obs;
 
   String get currentSiteId => currentSiteIdRx.value;
   Site? get selectedSite =>
       listSite.firstWhereOrNull((site) => site.idSite == currentSiteId);
   String get siteName => selectedSite?.site ?? 'Loading Site...';
+
+  bool get isUserOffice =>
+      userAccessId.value == '1' || userAccessId.value == '2';
+
+  bool get isSingleSiteUser =>
+      !isUserOffice &&
+      userAccessId.value.isNotEmpty &&
+      userAccessId.value != '1' &&
+      userAccessId.value != '2';
+
+  bool get hasSingleClusterSite => clusterSites.length == 1;
 
   @override
   void onInit() {
@@ -47,6 +65,24 @@ class HomeState extends GetxController {
     fetchSites().then((_) async {
       await _loadInitialDataAfterSitesReady();
     });
+  }
+
+  List<IdSite> get clusterSites {
+    final id = userAccessId.value;
+
+    if (['52', '35', '137'].contains(id)) return bmbSites;
+    if (['65', '166', '174', '172'].contains(id)) return bibSites;
+    if (['32', '130'].contains(id)) return mhuSites;
+
+    return []; // fallback: no cluster
+  }
+
+  String get clusterName {
+    final id = userAccessId.value;
+    if (['52', '35', '137'].contains(id)) return 'BMB';
+    if (['65', '166', '174', '172'].contains(id)) return 'BIB';
+    if (['32', '130'].contains(id)) return 'MHU';
+    return 'Unknown';
   }
 
   bool get shouldShowSiteWarning {
@@ -71,6 +107,9 @@ class HomeState extends GetxController {
       // 3. Jika ID adalah Site biasa (misal: '52'), fetch data ban.
       fetchAllHomeData(idSite: initialId);
     }
+    log('print userAccessId : $userAccessId');
+    log('print currentId : $currentSiteId');
+    log('print selectedId : $selectedSite');
   }
 
   Future<void> fetchAllHomeData({required String idSite}) async {
@@ -101,21 +140,63 @@ class HomeState extends GetxController {
 
   // --- LOGIKA TIRE INVENTORY (Ganti TireInventBloc) ---
   Future<void> fetchTireInventory(String idSite) async {
+    log('print userAccessId Invent: $userAccessId');
+    log('print currentId Invent : $currentSiteId');
+    log('print selectedId Invent : $selectedSite');
     isInventLoading.value = true;
     inventErrorMessage.value = '';
     inventLoadingPercent.value = 0;
 
-    // Penanganan Koneksi dan Cache Awal
-    if (networkController.isConnected.isFalse) {
-      // await _loadCachedInventData();
-      isInventLoading.value = false;
-      return;
-    }
+    // Jika userAccessId adalah 1 atau 2, skip cache total
+    if (userAccessId.value == '1' || userAccessId.value == '2') {
+      log('⚡ User $userAccessId → skip cache, ambil langsung dari API');
+      try {
+        if (Platform.isAndroid) {
+          await Permission.phone.request();
+        }
 
-    if (await networkController.isNetworkReliable() == false) {
-      //  await _loadCachedInventData();
-      isInventLoading.value = false;
-      return;
+        final totalStatus = statusList.length;
+        int processed = 0;
+
+        final count = await Future.wait(statusList.map((status) async {
+          final total = await ApiService.getTireSpecCount(idSite, status);
+          processed++;
+          double targetPercent = (processed / totalStatus) * 100;
+          await _animateProgressTo(targetPercent);
+          return {'status': status, 'total': total};
+        }));
+
+        tireInventData.value = count;
+      } catch (e) {
+        log('Error fetching inventory (no cache mode): $e');
+        inventErrorMessage.value = 'Failed to load inventory: ${e.toString()}';
+        hasInventError.value = true;
+      } finally {
+        isInventLoading.value = false;
+      }
+      return; // stop di sini
+    }
+    // if (networkController.isConnected.isFalse) {
+    //   // await _loadCachedInventData();
+    //   isInventLoading.value = false;
+    //   return;
+    // }
+
+    // --- MODE NORMAL (DENGAN CACHE) ---
+    if (networkController.isConnected.isFalse ||
+        await networkController.isNetworkReliable() == false) {
+      final cached = await _loadCachedInventData(idSite);
+      if (cached.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        final savedTime =
+            prefs.getString('last_sync_invent_$idSite') ?? 'Unknown';
+        lastSyncInvent.value = '📦 Offline mode (Last synced: $savedTime)';
+        tireInventData.value = cached;
+
+        log('📴 Loaded inventory from cache (offline mode)');
+        isInventLoading.value = false;
+        return;
+      }
     }
 
     try {
@@ -126,32 +207,51 @@ class HomeState extends GetxController {
       final totalStatus = statusList.length;
       int processed = 0;
 
-      // Mengambil total ban dari setiap status (future.wait untuk efisiensi)
       final count = await Future.wait(statusList.map((status) async {
         final total = await ApiService.getTireSpecCount(idSite, status);
-        //     .timeout(const Duration(seconds: 1), onTimeout: () {
-        //   throw TimeoutException("Request for $status timed out after 10s");
-        // });
         processed++;
         double targetPercent = (processed / totalStatus) * 100;
         await _animateProgressTo(targetPercent);
-
         return {'status': status, 'total': total};
       }));
 
-      // Update state data utama
       tireInventData.value = count;
 
-      // Logika caching data detail ban
-      // await _cacheInventData(idSite, count, siteData['siteName'] ?? '');
+      // Simpan cache hanya untuk user selain 1 & 2
+      await _cacheInventData(idSite, count);
+
+      // Simpan waktu sync (saat ini)
+      final now = DateTime.now();
+      final formatted = DateFormat("dd MMM yyyy HH:mm").format(now);
+      lastSyncInvent.value = 'Last synced: $formatted';
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_sync_invent_$idSite', formatted);
     } catch (e) {
       log('Error fetching tire inventory: $e');
       inventErrorMessage.value = 'Failed to load inventory: ${e.toString()}';
       hasInventError.value = true;
-      // await _loadCachedInventData(); // Coba muat cache sebagai fallback
     } finally {
       isInventLoading.value = false;
     }
+  }
+
+  Future<void> _cacheInventData(
+      String idSite, List<Map<String, dynamic>> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('invent_$idSite', jsonEncode(data));
+    log('✅ Cached tire inventory for site $idSite');
+  }
+
+  Future<List<Map<String, dynamic>>> _loadCachedInventData(
+      String idSite) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('invent_$idSite');
+    if (jsonString != null) {
+      log('📦 Loaded cached tire inventory for $idSite');
+      return List<Map<String, dynamic>>.from(jsonDecode(jsonString));
+    }
+    return [];
   }
 
   Future<void> _animateProgressTo(double target) async {
@@ -202,10 +302,52 @@ class HomeState extends GetxController {
     conditionErrorMessage.value = '';
     conditionLoadingPercent.value = 0;
 
-    if (networkController.isConnected.isFalse) {
-      // await _loadCachedConditionData();
-      isConditionLoading.value = false;
-      return;
+    if (userAccessId.value == '1' || userAccessId.value == '2') {
+      log('⚡ User $userAccessId → skip cache, ambil langsung dari API');
+      try {
+        final listSize = await ApiService.getTireCondition(idSite);
+        int total = listSize.length;
+        int processed = 0;
+
+        for (var unit in listSize) {
+          processed++;
+          conditionLoadingPercent.value = processed / total;
+          await Future.delayed(const Duration(milliseconds: 5));
+        }
+
+        final allRating = listSize.map((u) => u.rating ?? '').toList();
+        final result = {
+          "A": allRating.where((r) => r == "A").length,
+          "B": allRating.where((r) => r == "B").length,
+          "C": allRating.where((r) => r == "C").length,
+          "X": allRating.where((r) => r == "X").length,
+        };
+
+        mapRating.value = result;
+      } catch (e) {
+        log('Error fetching tire condition (no cache mode): $e');
+        conditionErrorMessage.value = 'Failed to load condition data.';
+        hasConditionError.value = true;
+      } finally {
+        isConditionLoading.value = false;
+      }
+      return; // stop di sini
+    }
+
+    // --- MODE NORMAL (DENGAN CACHE) ---
+    if (networkController.isConnected.isFalse ||
+        await networkController.isNetworkReliable() == false) {
+      final cached = await _loadCachedConditionData(idSite);
+      if (cached.isNotEmpty) {
+        final prefs = await SharedPreferences.getInstance();
+        final savedTime =
+            prefs.getString('last_sync_condition_$idSite') ?? 'Unknown';
+        lastSyncCondition.value = '📦 Offline mode \n(Last synced: $savedTime)';
+        mapRating.value = cached;
+        log('📴 Loaded condition from cache (offline mode)');
+        isConditionLoading.value = false;
+        return;
+      }
     }
 
     try {
@@ -216,13 +358,10 @@ class HomeState extends GetxController {
       for (var unit in listSize) {
         processed++;
         conditionLoadingPercent.value = processed / total;
-        await Future.delayed(const Duration(milliseconds: 5)); // animasi halus
+        await Future.delayed(const Duration(milliseconds: 5));
       }
 
-      // Logika Pemrosesan Data Rating
-      List<String> allRating =
-          listSize.map((unit) => unit.rating ?? '').toList();
-
+      final allRating = listSize.map((u) => u.rating ?? '').toList();
       final result = {
         "A": allRating.where((r) => r == "A").length,
         "B": allRating.where((r) => r == "B").length,
@@ -232,18 +371,39 @@ class HomeState extends GetxController {
 
       mapRating.value = result;
 
-      // Save to local
-      // final prefs = await SharedPreferences.getInstance();
-      // final jsonData = jsonEncode({'allRatingResult': result});
-      // await prefs.setString('tire_condition', jsonData);
+      // Simpan cache hanya untuk user selain 1 & 2
+      await _cacheConditionData(idSite, result);
+
+      // Simpan waktu sync (saat ini)
+      final now = DateTime.now();
+      final formatted = DateFormat("dd MMM yyyy HH:mm").format(now);
+      lastSyncCondition.value = 'Last synced: $formatted';
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_sync_condition_$idSite', formatted);
     } catch (e) {
       log('Error fetching tire condition: $e');
       conditionErrorMessage.value = 'Failed to load condition data.';
       hasConditionError.value = true;
-      // await _loadCachedConditionData();
     } finally {
       isConditionLoading.value = false;
     }
+  }
+
+  Future<void> _cacheConditionData(String idSite, Map<String, int> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('condition_$idSite', jsonEncode(data));
+    log('✅ Cached tire condition for site $idSite');
+  }
+
+  Future<Map<String, int>> _loadCachedConditionData(String idSite) async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('condition_$idSite');
+    if (jsonString != null) {
+      log('📦 Loaded cached tire condition for $idSite');
+      return Map<String, int>.from(jsonDecode(jsonString));
+    }
+    return {};
   }
 
   Future<void> retryFetch(

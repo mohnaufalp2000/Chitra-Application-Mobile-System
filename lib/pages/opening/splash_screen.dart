@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'package:camos/pages/dashboard/dashboard_page.dart';
+
 import '../../core/navigator/navigation_route.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/model/site.dart';
@@ -104,7 +106,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
         if (isCTS == '0' || isCTS == null) {
           if (userIdSite == '1' || userIdSite == '15') {
-            targetRoute = HomePage.routeName;
+            targetRoute = DashboardPage.routeName;
           } else {
             targetRoute = HomePageTrial.routeName;
             arguments = {
@@ -115,7 +117,7 @@ class _SplashScreenState extends State<SplashScreen> {
             };
           }
         } else {
-          targetRoute = HomePage.routeName;
+          targetRoute = DashboardPage.routeName;
         }
 
         return Timer(
