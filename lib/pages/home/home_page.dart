@@ -2390,9 +2390,12 @@ class HomePage extends GetView<HomeState> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            HomeFunction.buildMenuItem(menus[0]),
-                            HomeFunction.buildMenuItem(menus[1]),
-                            HomeFunction.buildMenuItem(menus[2]),
+                            HomeFunction.buildMenuItem(
+                                menus[0], context, controller.currentSiteId),
+                            HomeFunction.buildMenuItem(
+                                menus[1], context, controller.currentSiteId),
+                            HomeFunction.buildMenuItem(
+                                menus[2], context, controller.currentSiteId),
                           ],
                         ),
 
@@ -2402,9 +2405,12 @@ class HomePage extends GetView<HomeState> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            HomeFunction.buildMenuItem(menus[3]),
-                            HomeFunction.buildMenuItem(menus[4]),
-                            HomeFunction.buildMenuItem(menus[5]),
+                            HomeFunction.buildMenuItem(
+                                menus[3], context, controller.currentSiteId),
+                            HomeFunction.buildMenuItem(
+                                menus[4], context, controller.currentSiteId),
+                            HomeFunction.buildMenuItem(
+                                menus[5], context, controller.currentSiteId),
                           ],
                         ),
                       ],

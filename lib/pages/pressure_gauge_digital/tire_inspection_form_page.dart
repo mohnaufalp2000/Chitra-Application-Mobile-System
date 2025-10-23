@@ -736,6 +736,8 @@ import 'dart:typed_data';
 
 import 'package:app_settings/app_settings.dart';
 import 'package:camos/core/utils/data/id_site.dart';
+import 'package:camos/pages/home/home_state.dart';
+import 'package:get/get.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:camos/core/blocs/outstanding_task/outstanding_task_bloc.dart';
@@ -786,6 +788,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     with WidgetsBindingObserver {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
+  final HomeState homeState = Get.find<HomeState>();
 
   bool _isInit = true;
   int selectedMenu = 1;
@@ -1036,10 +1039,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   }
 
   void callTires() async {
-    idSite = await getIdSitePreferences();
-    if (idSite == '1') {
-      idSite = await getSelectedIdSitePreferences();
-    }
+    String idSite = homeState.currentSiteId;
+    String userAccessId = homeState.userAccessId.value;
     if (mounted) {
       if (dataUnit != {} || dataUnit != null || dataUnit.isNotEmpty) {
         idUnit.text = dataUnit['unitNumber'];

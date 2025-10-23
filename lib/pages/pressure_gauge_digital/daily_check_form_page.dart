@@ -3,6 +3,8 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:camos/pages/home/home_state.dart';
+import 'package:get/get.dart';
 import '../../core/blocs/tire/tire_bloc.dart';
 import '../../core/services/shared_preferences/shared_preferences.dart';
 import '../../core/styles/color.dart';
@@ -35,6 +37,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
+  final HomeState homeState = Get.find<HomeState>();
   bool _isInit = true;
 
   // List<Map<String, dynamic>> position = [];
@@ -339,11 +342,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   }
 
   void callTires() async {
-    idSite = await getIdSitePreferences();
-    log('id site daliy check : $idSite');
-    if (idSite == '1' || idSite == '2') {
-      idSite = await getSelectedIdSitePreferences();
-    }
+    // idSite = await getIdSitePreferences();
+    // log('id site daliy check : $idSite');
+    // if (idSite == '1' || idSite == '2') {
+    //   idSite = await getSelectedIdSitePreferences();
+    // }
+    idSite = homeState.currentSiteId;
+
     if (dataUnit['isCTS'] == null) {
       if (dataUnit != {} || dataUnit != null || dataUnit.isNotEmpty) {
         context.read<TireBloc>().add(GetUnitTiresEvent(
@@ -560,6 +565,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
     log('data ban : ${dataUnit}');
+    log('id site form daily check: ${idSite}');
 
     return Scaffold(
       appBar: AppBar(

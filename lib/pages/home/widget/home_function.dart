@@ -1,4 +1,7 @@
+import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
+import 'package:camos/pages/pressure_gauge_digital/select_inspection_page/select_inspection_page.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../../core/styles/asset_path.dart';
@@ -37,7 +40,7 @@ class HomeFunction {
     }
   }
 
-  static Widget buildMenuItem(Menu item) {
+  static Widget buildMenuItem(Menu item, BuildContext context, String idSite) {
     return Material(
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAliasWithSaveLayer,
@@ -45,7 +48,14 @@ class HomeFunction {
         child: InkWell(
           splashColor: item.color.withOpacity(0.4),
           highlightColor: item.color.withOpacity(0.2),
-          onTap: () {},
+          onTap: () {
+            switch (item.name) {
+              case 'Inspection Tire':
+                Navigator.pushNamed(context, SelectInspectionPage.routeName);
+                break;
+              default:
+            }
+          },
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(

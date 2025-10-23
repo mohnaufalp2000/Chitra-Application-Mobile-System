@@ -1,5 +1,8 @@
 import 'dart:developer';
 
+import 'package:camos/pages/home/home_state.dart';
+import 'package:get/get.dart';
+
 import '../../core/blocs/daily_check_post/daily_check_post_bloc.dart';
 import '../../core/blocs/unit/unit_bloc.dart';
 import '../../core/services/api_service.dart';
@@ -34,6 +37,7 @@ class DailyPressureHistoryPage extends StatefulWidget {
 class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   DateTime selectedDate = DateTime.now().subtract(Duration(days: 1));
   FirebaseFirestore firestore = FirebaseFirestore.instance;
+  HomeState homeState = Get.find<HomeState>();
   String searchQuery = '';
   String idSite = '';
   List<String> pit = [];
@@ -118,10 +122,11 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   }
 
   getIdSite() async {
-    idSite = await getIdSitePreferences();
-    if (idSite == '1') {
-      idSite = await getSelectedIdSitePreferences();
-    }
+    // idSite = await getIdSitePreferences();
+    // if (idSite == '1') {
+    //   idSite = await getSelectedIdSitePreferences();
+    // }
+    idSite = homeState.currentSiteId;
 
     setState(() {
       // BMB COYYY
@@ -617,6 +622,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                 59)
                                             .toIso8601String())
                                     .where('idSite', isEqualTo: idSite)
+                                    .orderBy('tanggal', descending: true)
                                     .snapshots(),
                                 builder: (context, snapshot) {
                                   if (snapshot.connectionState ==
@@ -625,14 +631,42 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                   }
                                   if (snapshot.connectionState ==
                                       ConnectionState.active) {
-                                    final allData = snapshot.data?.docs
-                                        .map((doc) => DailyPress.fromFirestore(
-                                            doc.data() as Map<String, dynamic>))
-                                        .toList();
+                                    // final allData = snapshot.data?.docs
+                                    //     .map((doc) => DailyPress.fromFirestore(
+                                    //         doc.data() as Map<String, dynamic>))
+                                    //     .toList();
 
+                                    // final distinctDaily =
+                                    //     Set<DailyPress>.from(allData ?? [])
+                                    //         .toList();
+
+                                    // ---------------------------------------- //
+                                    final allData = snapshot.data?.docs
+                                            .map((doc) =>
+                                                DailyPress.fromFirestore(doc
+                                                        .data()
+                                                    as Map<String, dynamic>))
+                                            .toList() ??
+                                        [];
+
+                                    // Buat map sementara untuk menyimpan data terbaru per unit
+                                    final Map<String, DailyPress>
+                                        latestDataByUnit = {};
+
+                                    for (var item in allData) {
+                                      final existing =
+                                          latestDataByUnit[item.unit];
+                                      if (existing == null ||
+                                          DateTime.parse(item.tanggal).isAfter(
+                                              DateTime.parse(
+                                                  existing.tanggal))) {
+                                        latestDataByUnit[item.unit] = item;
+                                      }
+                                    }
+
+                                    // Ambil hasil akhir (data unik dengan jam terbaru)
                                     final distinctDaily =
-                                        Set<DailyPress>.from(allData ?? [])
-                                            .toList();
+                                        latestDataByUnit.values.toList();
 
                                     final tmpDailyData =
                                         snapshot.data?.docs ?? [];
@@ -663,7 +697,9 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                       log('perulangan item: $item');
                                       Map<String, dynamic> cast =
                                           item.toFirestore();
-                                      log('for each item cast: $cast');
+                                      if (cast['unit'] == 'CO2386') {
+                                        log('co2386: $cast');
+                                      }
 
                                       filteredItemTask.add(cast);
                                     });

@@ -1,5 +1,9 @@
 import 'dart:developer';
 
+import 'package:camos/objectbox.g.dart';
+import 'package:camos/pages/home/home_state.dart';
+import 'package:get/get.dart';
+
 import '../../core/blocs/unit/unit_bloc.dart';
 import '../../core/services/shared_preferences/shared_preferences.dart';
 import '../../core/styles/color.dart';
@@ -22,6 +26,7 @@ class SelectUnitPage extends StatefulWidget {
 class _SelectUnitPageState extends State<SelectUnitPage> {
   String searchQuery = '';
   bool isOnline = false;
+  final HomeState homeState = Get.find<HomeState>();
 
   @override
   void initState() {
@@ -30,16 +35,14 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
   }
 
   Future<void> callUnits() async {
-    String id = await getIdSitePreferences();
-    String idOffice = await getIdSitePreferences();
-    log('message : $id');
-    if (id == '1' || id == '2') {
-      id = await getSelectedIdSitePreferences();
-    }
+    String currentSiteId = homeState.currentSiteId;
+    String userAccessId = homeState.userAccessId.value;
+
     log('test call units : $isOnline');
     context.read<UnitBloc>().add(GetUnitsEvent(
-        idSite: id,
-        isOnline: (idOffice == '1' || idOffice == '2') ? true : isOnline));
+        idSite: currentSiteId,
+        isOnline:
+            (userAccessId == '1' || userAccessId == '2') ? true : isOnline));
   }
 
   Future<String> getActualIdSite() async {

@@ -331,6 +331,7 @@ class _LoginPageState extends State<LoginPage> {
 
                                 saveIdSitePreferences(data['id_site']);
                                 saveManpowerShiftPreferences(shift: 'morning');
+                                saveUserPreferences(data);
                               }
                             }
 

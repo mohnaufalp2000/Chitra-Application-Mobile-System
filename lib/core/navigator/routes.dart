@@ -19,7 +19,7 @@ import '../../pages/opening/splash_screen.dart';
 import '../../pages/pressure_gauge_digital/daily_pressure_history_page.dart';
 import '../../pages/pressure_gauge_digital/daily_pressure_list.dart';
 import '../../pages/pressure_gauge_digital/tire_inspection_form_page.dart';
-import '../../pages/pressure_gauge_digital/select_inspection_page.dart';
+import '../../pages/pressure_gauge_digital/select_inspection_page/select_inspection_page.dart';
 import '../../pages/pressure_gauge_digital/select_unit_page.dart';
 import '../../pages/pressure_gauge_digital/daily_check_form_page.dart';
 import '../../pages/pressure_gauge_digital/trial/daily_pressure_history_trial_page.dart';
