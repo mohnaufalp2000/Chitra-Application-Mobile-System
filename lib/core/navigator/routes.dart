@@ -77,7 +77,7 @@ var routes = {
   AllPresencePage.routeName: (context) => const AllPresencePage(),
   CtsPage.routeName: (context) => const CtsPage(),
   TireConditionPage.routeName: (context) => const TireConditionPage(),
-  TireInventoryPage.routeName: (context) => const TireInventoryPage(),
+  TireInventoryPage.routeName: (context) => TireInventoryPage(),
   DetailTireConditionPage.routeName: (context) =>
       const DetailTireConditionPage(),
   OutstandingFilterPage.routeName: (context) => const OutstandingFilterPage(),

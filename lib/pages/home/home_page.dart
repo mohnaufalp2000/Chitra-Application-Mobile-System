@@ -1934,6 +1934,22 @@ class HomePage extends GetView<HomeState> {
                             Text('Mohammad Naufal Pratama',
                                 style: getBlackTextStyle(
                                     fontSize: 14, fontWeight: w700)),
+                            // -- VERSION APP NUMBER
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text('Version ' + controller.versionNumber,
+                                  style: getBlackTextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ).copyWith(
+                                      letterSpacing: 0.5,
+                                      color: Colors.black54)),
+                            ),
                           ],
                         ),
                         Spacer(),
@@ -1961,7 +1977,7 @@ class HomePage extends GetView<HomeState> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
+
                   // --- PENGGANTIAN SITE DROPDOWN ---
 
                   Container(
@@ -2267,75 +2283,90 @@ class HomePage extends GetView<HomeState> {
                                             ? total.split('|')[0]
                                             : '$total Pcs';
 
-                                        return Container(
-                                          width: 160,
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            gradient: LinearGradient(
-                                              colors: gradientColors,
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
+                                        return InkWell(
+                                          onTap: () {
+                                            controller.setInventorySelection(
+                                              status: status,
+                                              idSite: controller.currentSiteId,
+                                              total: total,
+                                            );
+                                            Navigator.pushNamed(
+                                              context,
+                                              TireInventoryPage.routeName,
+                                            );
+                                          },
+                                          child: Container(
+                                            width: 160,
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              gradient: LinearGradient(
+                                                colors: gradientColors,
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black12,
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
                                             ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.black12,
-                                                blurRadius: 4,
-                                                offset: const Offset(0, 2),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            children: [
-                                              // 🔹 Icon di kiri
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.all(8),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white
-                                                      .withOpacity(0.2),
-                                                  shape: BoxShape.circle,
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                // 🔹 Icon di kiri
+                                                Container(
+                                                  padding:
+                                                      const EdgeInsets.all(8),
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.white
+                                                        .withOpacity(0.2),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Icon(icon,
+                                                      color: Colors.white,
+                                                      size: 24),
                                                 ),
-                                                child: Icon(icon,
-                                                    color: Colors.white,
-                                                    size: 24),
-                                              ),
-                                              const SizedBox(width: 10),
+                                                const SizedBox(width: 10),
 
-                                              // 🔹 Text di kanan
-                                              Expanded(
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      title,
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 10,
-                                                        fontWeight:
-                                                            FontWeight.w500,
+                                                // 🔹 Text di kanan
+                                                Expanded(
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        title,
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      value,
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 15,
-                                                        fontWeight:
-                                                            FontWeight.bold,
+                                                      const SizedBox(height: 4),
+                                                      Text(
+                                                        value,
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 15,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ],
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                         );
                                       },

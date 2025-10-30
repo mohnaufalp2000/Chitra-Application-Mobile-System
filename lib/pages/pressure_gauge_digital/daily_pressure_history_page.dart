@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:camos/pages/home/home_state.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/blocs/daily_check_post/daily_check_post_bloc.dart';
 import '../../core/blocs/unit/unit_bloc.dart';
@@ -1067,6 +1068,140 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                                           w700,
                                                                       fontSize:
                                                                           18)),
+                                                            // Jangan lupa tambahkan IDSite 33
+                                                            if (idSite ==
+                                                                    '33' &&
+                                                                pl['tireAccessories'] !=
+                                                                    null)
+                                                              Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .end,
+                                                                children: [
+                                                                  Text(
+                                                                      'Tire Accessories',
+                                                                      style: getWhiteTextStyle(
+                                                                          fontWeight:
+                                                                              w700,
+                                                                          fontSize:
+                                                                              14)),
+                                                                  const SizedBox(
+                                                                    height: 6,
+                                                                  ),
+                                                                  Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .end,
+                                                                    children: pl[
+                                                                            'tireAccessories']
+                                                                        .map<Widget>(
+                                                                            (acc) {
+                                                                      return Column(
+                                                                        crossAxisAlignment:
+                                                                            CrossAxisAlignment.end,
+                                                                        children: [
+                                                                          Row(
+                                                                            children: [
+                                                                              Text(acc['name'] + ' (' + acc['condition'] + '${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})', textAlign: TextAlign.right, style: getWhiteTextStyle(fontWeight: w500, fontSize: 14)),
+                                                                            ],
+                                                                          ),
+                                                                          const SizedBox(
+                                                                            height:
+                                                                                6,
+                                                                          ),
+                                                                          if (acc['image'].isNotEmpty &&
+                                                                              acc['image'] != 'image.png' &&
+                                                                              acc['image'] != '')
+                                                                            InkWell(
+                                                                              onTap: () async {
+                                                                                await showDialog(
+                                                                                  context: context,
+                                                                                  barrierDismissible: true,
+                                                                                  builder: (_) {
+                                                                                    return Dialog(
+                                                                                      backgroundColor: Colors.transparent,
+                                                                                      elevation: 0,
+                                                                                      child: Center(
+                                                                                        child: Column(
+                                                                                          mainAxisSize: MainAxisSize.min,
+                                                                                          children: [
+                                                                                            // === GAMBAR + TOMBOL CLOSE ===
+                                                                                            Stack(
+                                                                                              children: [
+                                                                                                Container(
+                                                                                                  width: MediaQuery.of(context).size.width * 0.6,
+                                                                                                  height: MediaQuery.of(context).size.height * 0.6,
+                                                                                                  decoration: BoxDecoration(
+                                                                                                    borderRadius: BorderRadius.circular(12),
+                                                                                                  ),
+                                                                                                  clipBehavior: Clip.antiAlias,
+                                                                                                  child: Image.network(
+                                                                                                    acc['image'],
+                                                                                                    fit: BoxFit.contain,
+                                                                                                  ),
+                                                                                                ),
+                                                                                                Positioned(
+                                                                                                  right: 8,
+                                                                                                  top: 8,
+                                                                                                  child: InkWell(
+                                                                                                    onTap: () => Navigator.of(context).pop(),
+                                                                                                    borderRadius: BorderRadius.circular(20),
+                                                                                                    child: Container(
+                                                                                                      padding: const EdgeInsets.all(6),
+                                                                                                      decoration: BoxDecoration(
+                                                                                                        color: Colors.black45,
+                                                                                                        shape: BoxShape.circle,
+                                                                                                      ),
+                                                                                                      child: const Icon(
+                                                                                                        LucideIcons.x,
+                                                                                                        color: Colors.white,
+                                                                                                        size: 20,
+                                                                                                      ),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ],
+                                                                                            ),
+
+                                                                                            const SizedBox(height: 12),
+
+                                                                                            // === TEKS KETERANGAN ===
+                                                                                            Container(
+                                                                                              padding: const EdgeInsets.all(8),
+                                                                                              decoration: BoxDecoration(
+                                                                                                color: Colors.white,
+                                                                                                borderRadius: BorderRadius.circular(16),
+                                                                                              ),
+                                                                                              child: Text(
+                                                                                                '#$unit Pos. $pos | ${acc['name']} ${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''}',
+                                                                                                style: getBlackTextStyle(
+                                                                                                  fontWeight: w700,
+                                                                                                ),
+                                                                                                textAlign: TextAlign.center,
+                                                                                              ),
+                                                                                            ),
+                                                                                          ],
+                                                                                        ),
+                                                                                      ),
+                                                                                    );
+                                                                                  },
+                                                                                );
+                                                                              },
+                                                                              child: SizedBox(
+                                                                                width: 150,
+                                                                                height: 100,
+                                                                                child: Image.network(
+                                                                                  acc['image'],
+                                                                                  fit: BoxFit.cover,
+                                                                                ),
+                                                                              ),
+                                                                            )
+                                                                        ],
+                                                                      );
+                                                                    }).toList(),
+                                                                  ),
+                                                                ],
+                                                              ),
                                                           ],
                                                         ),
                                                       ],

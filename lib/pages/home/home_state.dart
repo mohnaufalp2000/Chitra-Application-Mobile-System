@@ -7,6 +7,7 @@ import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
 import 'package:camos/pages/network/network_state.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -16,6 +17,10 @@ import '../../core/utils/data/id_site.dart';
 
 class HomeState extends GetxController {
   final InternetState networkController = Get.find<InternetState>();
+  final firestore = FirebaseFirestore.instance;
+
+  final RxString versionNumberRx = ''.obs;
+  String get versionNumber => versionNumberRx.value;
 
   // === STATE BARU: SITE LIST (Mengganti SiteBloc) ===
   final RxBool isSiteLoading = false.obs;
@@ -34,6 +39,9 @@ class HomeState extends GetxController {
       <Map<String, dynamic>>[].obs;
   final List<String> statusList = ['New', 'Repair', 'Spare', 'Scrap'];
   final lastSyncInvent = ''.obs;
+  var selectedInventoryStatus = ''.obs;
+  var selectedInventoryIdSite = ''.obs;
+  var selectedInventoryTotal = ''.obs;
 
   // === STATE KONDISI BAN ===
   final RxBool isConditionLoading = false.obs;
@@ -62,6 +70,7 @@ class HomeState extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    retrieveVersionNumber();
     fetchSites().then((_) async {
       await _loadInitialDataAfterSitesReady();
     });
@@ -254,6 +263,16 @@ class HomeState extends GetxController {
     return [];
   }
 
+  void setInventorySelection({
+    required String status,
+    required String idSite,
+    required String total,
+  }) {
+    selectedInventoryStatus.value = status;
+    selectedInventoryIdSite.value = idSite;
+    selectedInventoryTotal.value = total;
+  }
+
   Future<void> _animateProgressTo(double target) async {
     while (inventLoadingPercent.value < target) {
       inventLoadingPercent.value += 1;
@@ -415,5 +434,14 @@ class HomeState extends GetxController {
     } else if (type == 'sites') {
       await fetchSites();
     }
+  }
+
+  void retrieveVersionNumber() async {
+    final versionCol = FirebaseFirestore.instance.collection('version');
+    final versionDoc = await versionCol.doc('version').get();
+    versionNumberRx.value = versionDoc.data()?['number'];
+    // if (_packageInfo.version != versionNumber) {
+    //   showUpdateDialog(context);
+    // }
   }
 }

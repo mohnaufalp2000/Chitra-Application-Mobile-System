@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons/lucide_icons.dart';
 import '../../core/blocs/tire/tire_bloc.dart';
 import '../../core/services/shared_preferences/shared_preferences.dart';
 import '../../core/styles/color.dart';
@@ -23,6 +25,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as path;
 
 class DailyCheckFormPage extends StatefulWidget {
   static const routeName = '/tire-inspection-page';
@@ -61,6 +64,16 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     'B',
     'C',
     'X',
+  ];
+  List<String> tireAccessories = [
+    'Reseal Oring',
+    'Rim Condition',
+    'Inflate Tire',
+    'Lock Driver',
+    'Slide Lock',
+    'Valve Cap',
+    'Valve Protector',
+    'Stud and Nut',
   ];
   List<String> damageType = [
     'Accident',
@@ -355,15 +368,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
             idSite: idSite, unitNumber: dataUnit['unitNumber']));
       }
     }
-
-    // setState(() {
-    //   if (idSite == '52') {
-    //     pit.add('Utara');
-    //     pit.add('Selatan');
-    //     pit.add('RML');
-    //     pit.add('WS');
-    //   }
-    // });
   }
 
   Future<List<String>> uploadImageFirebase(String idSite) async {
@@ -385,6 +389,62 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       }
     }
     return list;
+  }
+
+  // ADDITIONAL TIRE ACCESSORIES EDIT #4
+  Future<void> uploadAllTireAccessories() async {
+    for (int i = 0; i < position.length; i++) {
+      final pos = position[i];
+
+      // List baru untuk accessories setelah upload
+      final List<TireAccessory> updatedAccessories = [];
+
+      for (int j = 0; j < pos.tireAccessories.length; j++) {
+        final acc = pos.tireAccessories[j];
+
+        // kalau image kosong, langsung lanjut
+        if (acc.image.isEmpty) {
+          updatedAccessories.add(acc);
+          continue;
+        }
+
+        try {
+          final file = File(acc.image);
+          if (!file.existsSync()) {
+            print('⚠️ File tidak ditemukan: ${acc.image}');
+            updatedAccessories.add(acc);
+            continue;
+          }
+
+          // nama file unik (ex: ResealOring_1730201209500.jpg)
+          final timestamp = DateTime.now().millisecondsSinceEpoch;
+          final cleanName = acc.name.replaceAll(' ', '');
+          final ext = path.extension(acc.image);
+          final fileName =
+              '${cleanName}_$timestamp${ext}_${idSite}_${pos.idUnit}';
+
+          // lokasi penyimpanan: tire_acc/ResealOring_1730201209500.jpg
+          final ref = storage.ref().child('tire_acc/$fileName');
+
+          // upload ke Firebase Storage
+          final uploadTask = await ref.putFile(file);
+          final downloadUrl = await uploadTask.ref.getDownloadURL();
+
+          print('✅ Upload sukses untuk ${acc.name}: $downloadUrl');
+
+          // tambahkan versi baru yang pakai URL
+          updatedAccessories.add(acc.copyWith(image: downloadUrl));
+        } catch (e) {
+          print('❌ Error upload ${acc.name}: $e');
+          updatedAccessories.add(acc); // tetap masukkan data lamanya
+        }
+      }
+
+      // Update position dengan accessories yang sudah diganti URL
+      position[i] = pos.copyWith(tireAccessories: updatedAccessories);
+    }
+
+    print('🎯 Semua upload selesai.');
   }
 
   getUser() async {
@@ -564,9 +624,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     // dataUnit =
     //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
-    log('data ban : ${dataUnit}');
-    log('id site form daily check: ${idSite}');
-
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -583,6 +640,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           child: (dataUnit['isCTS'] != null)
               ? Builder(builder: (context) {
                   if (position.isEmpty) {
+                    log('Data Unit Daily Check Pressure : ${dataUnit['position']}');
                     position.addAll(dataUnit['position']);
                   }
                   return Column(
@@ -1682,23 +1740,25 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             '${today.month.toString().padLeft(2, '0')}' // MM
                             '${today.day.toString().padLeft(2, '0')}' // DD
                             '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
+                        // Memilih unit dari daily pressure list
+                        // ADDITIONAL ACCESSORIES EDIT #1
                         for (var i = 0; i < state.units.length; i++) {
                           if (position.length < state.units.length) {
                             position.add(
                               Position(
-                                pos: '${i + 1}',
-                                pressure: '',
-                                adjusmentPressure: '',
-                                rating: '',
-                                luka: [],
-                                image: '',
-                                size: state.units[i].size ?? '',
-                                idInventory: state.units[i].idinventory ?? '',
-                                idUnit: state.units[i].idUnit ?? '',
-                                idDaily:
-                                    '${state.units[i].idUnit}${i + 1}${formattedToday}${idSite}',
-                                kondisi: '',
-                              ),
+                                  pos: '${i + 1}',
+                                  pressure: '',
+                                  adjusmentPressure: '',
+                                  rating: '',
+                                  luka: [],
+                                  image: '',
+                                  size: state.units[i].size ?? '',
+                                  idInventory: state.units[i].idinventory ?? '',
+                                  idUnit: state.units[i].idUnit ?? '',
+                                  idDaily:
+                                      '${state.units[i].idUnit}${i + 1}${formattedToday}${idSite}',
+                                  kondisi: '',
+                                  tireAccessories: []),
                             );
                           }
                         }
@@ -2731,9 +2791,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                     .circular(
                                                                         12),
                                                           )),
-                                                  // child: (position[posIndex]
-                                                  //             ['rating'] ==
-                                                  //         '')
                                                   child: (position[posIndex]
                                                               .rating ==
                                                           '')
@@ -2742,13 +2799,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                           style:
                                                               getWhiteTextStyle(),
                                                         )
-                                                      // : Text(
-                                                      //     'Rating ${position[posIndex]['rating']}',
-                                                      //     style: getWhiteTextStyle(
-                                                      //       fontSize: 16,
-                                                      //       fontWeight: w700,
-                                                      //     ),
-                                                      //   ),
                                                       : Text(
                                                           'Rating ${position[posIndex].rating}',
                                                           style:
@@ -3002,6 +3052,109 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                     ),
                                                   )),
 
+                                              // Memilih Tire Accessories
+                                              // ADDITIONAL TIRE ACCESSORIES EDIT #2
+                                              // Jangan lupa tambahkan if id site 33 (CK-KIM)
+                                              if (idSite == '33')
+                                                Container(
+                                                  margin: const EdgeInsets.only(
+                                                      top: 8),
+                                                  width: MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      0.39,
+                                                  child: ElevatedButton(
+                                                    onPressed: () async {
+                                                      FocusScope.of(context)
+                                                          .unfocus();
+
+                                                      // Ambil data dari posisi
+                                                      List<TireAccessory>
+                                                          componentStatus =
+                                                          position[posIndex]
+                                                              .tireAccessories;
+
+                                                      final result =
+                                                          await showDialog<
+                                                              List<
+                                                                  TireAccessory>>(
+                                                        context: context,
+                                                        builder: (context) =>
+                                                            TireComponentDialog(
+                                                          initialData:
+                                                              componentStatus,
+                                                        ),
+                                                      );
+
+                                                      if (result != null) {
+                                                        // Simpan hasil (hanya yang rusak/hilang)
+                                                        // final filtered = result
+                                                        //     .where((e) =>
+                                                        //         e.condition !=
+                                                        //         'Normal')
+                                                        //     .toList();
+
+                                                        setState(() {
+                                                          position[
+                                                              posIndex] = position[
+                                                                  posIndex]
+                                                              .copyWith(
+                                                                  tireAccessories:
+                                                                      result);
+                                                        });
+                                                        log('TIRE ACCESSORIES SELECTED : $result');
+                                                        log('POSITION AFTER TIRE ACC: $position');
+                                                      }
+                                                    },
+                                                    style: ElevatedButton
+                                                        .styleFrom(
+                                                      backgroundColor:
+                                                          blue344BEF,
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12)),
+                                                    ),
+                                                    child: Builder(
+                                                      builder: (context) {
+                                                        final accs = position[
+                                                                posIndex]
+                                                            .tireAccessories;
+
+                                                        if (accs.isEmpty) {
+                                                          return Text(
+                                                            'Tire Accessories (None)',
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            style:
+                                                                getWhiteTextStyle(
+                                                                    fontSize:
+                                                                        14),
+                                                          );
+                                                        }
+
+                                                        // Gabungkan nama + kondisi
+                                                        final names = accs
+                                                            .map((e) =>
+                                                                '${e.name} (${e.condition})')
+                                                            .join('\n');
+
+                                                        return Text(
+                                                          'Tire Accessories:\n $names',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          softWrap: true,
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontSize: 10),
+                                                        );
+                                                      },
+                                                    ),
+                                                  ),
+                                                ),
+
                                               const SizedBox(
                                                 height: 12,
                                               ),
@@ -3015,16 +3168,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                               0.39,
                                                       child: ElevatedButton(
                                                           onPressed: () async {
-                                                            // final image =
-                                                            //     await showImageSourceDialog(
-                                                            //         context,
-                                                            //         position[posIndex]
-                                                            //             ['image'],
-                                                            //         posIndex);
-                                                            // if (image != '') {
-                                                            //   position[posIndex]
-                                                            //       ['image'] = image;
-                                                            // }
                                                             final image =
                                                                 await showImageSourceDialog(
                                                                     context,
@@ -3211,137 +3354,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     );
                   },
                 );
-
-                // showDialog(
-                //   context: context,
-                //   barrierDismissible: true, // bisa tap luar untuk menutup
-                //   builder: (BuildContext context) {
-                //     return StatefulBuilder(builder:
-                //         (BuildContext context, StateSetter setStateBtn) {
-                //       return AlertDialog(
-                //         contentPadding:
-                //             EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                //         shape: RoundedRectangleBorder(
-                //           borderRadius: BorderRadius.circular(12),
-                //         ),
-                //         content: Column(
-                //           crossAxisAlignment: CrossAxisAlignment.start,
-                //           mainAxisSize: MainAxisSize.min,
-                //           children: [
-                //             Row(
-                //               children: [
-                //                 const Icon(
-                //                   Icons.battery_alert,
-                //                   color: black,
-                //                 ),
-                //                 const SizedBox(
-                //                   width: 12,
-                //                 ),
-                //                 Text('Event Low Pressure Time',
-                //                     style: getBlackTextStyle(
-                //                       fontSize: 18,
-                //                       fontWeight: w700,
-                //                     )),
-                //               ],
-                //             ),
-                //             const SizedBox(height: 10),
-                //             Text(
-                //               'Choose Date and Time Event Low Tire Pressure :',
-                //               style: getBlackTextStyle(fontSize: 14),
-                //             ),
-                //             const SizedBox(height: 32),
-                //             Column(
-                //               crossAxisAlignment: CrossAxisAlignment.start,
-                //               children: [
-                //                 Text(
-                //                   'Select Date Event Notif Low Pressure',
-                //                   style: getBlackTextStyle(fontSize: 14),
-                //                 ),
-                //                 SizedBox(
-                //                   width: double.infinity,
-                //                   child: ElevatedButton(
-                //                     onPressed: () async {
-                //                       final DateTime? pickedDate =
-                //                           await showDatePicker(
-                //                         context: context,
-                //                         initialDate: selectedDateTimeSPM,
-                //                         firstDate: DateTime(2020),
-                //                         lastDate: DateTime(2100),
-                //                       );
-                //                       if (pickedDate != null) {
-                //                         selectedDateTimeSPM = DateTime(
-                //                           pickedDate.year,
-                //                           pickedDate.month,
-                //                           pickedDate.day,
-                //                           selectedDateTimeSPM.hour,
-                //                           selectedDateTimeSPM.minute,
-                //                         );
-                //                       }
-                //                       setStateBtn(() {});
-                //                     },
-                //                     child: Text(DateFormat('dd MMM yyyy')
-                //                         .format(selectedDateTimeSPM)),
-                //                   ),
-                //                 ),
-                //               ],
-                //             ),
-                //             const SizedBox(height: 24),
-                //             Column(
-                //               crossAxisAlignment: CrossAxisAlignment.start,
-                //               children: [
-                //                 Text(
-                //                   'Select Time Event Notif Low Pressure',
-                //                   style: getBlackTextStyle(fontSize: 14),
-                //                 ),
-                //                 SizedBox(
-                //                   width: double.infinity,
-                //                   child: ElevatedButton(
-                //                     onPressed: () async {
-                //                       final TimeOfDay? pickedTime =
-                //                           await showTimePicker(
-                //                         context: context,
-                //                         initialTime: TimeOfDay.fromDateTime(
-                //                             selectedDateTimeSPM),
-                //                       );
-                //                       if (pickedTime != null) {
-                //                         selectedDateTimeSPM = DateTime(
-                //                           selectedDateTimeSPM.year,
-                //                           selectedDateTimeSPM.month,
-                //                           selectedDateTimeSPM.day,
-                //                           pickedTime.hour,
-                //                           pickedTime.minute,
-                //                         );
-                //                       }
-                //                       setStateBtn(() {});
-                //                     },
-                //                     child: Text(DateFormat('HH:mm')
-                //                         .format(selectedDateTimeSPM)),
-                //                   ),
-                //                 ),
-                //               ],
-                //             ),
-                //             const SizedBox(height: 10),
-                //             SizedBox(
-                //               width: double.infinity,
-                //               child: ElevatedButton(
-                //                 onPressed: () async {
-                //                   Navigator.pop(context);
-                //                 },
-                //                 style: ElevatedButton.styleFrom(
-                //                   backgroundColor: Colors.green,
-                //                 ),
-                //                 child: Text(
-                //                   'Save',
-                //                   style: getWhiteTextStyle(),
-                //                 ),
-                //               ),
-                //             ),
-                //           ],
-                //         ),
-                //       );
-                //     });
-                //   },
-                // );
               }
 
               // jika salah satu data pressure ada yang kosong
@@ -3391,6 +3403,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     DateTime(today.year, today.month, today.day, 23, 59, 59);
 
                 final listImage = await uploadImageFirebase(idSite);
+                await uploadAllTireAccessories();
 
                 final querySnapshot = await FirebaseFirestore.instance
                     .collection(dataUnit['type'] == 'spm'
@@ -3436,6 +3449,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'idUnit': (p.idUnit ?? ''),
                         'idDaily': '${p.idDaily}',
                         'kondisi': '${p.kondisi}',
+                        'tireAccessories':
+                            p.tireAccessories.map((a) => a.toMap()).toList(),
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -3511,6 +3526,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             'idUnit': (p.idUnit ?? ''),
                             'idDaily': '${p.idDaily}',
                             'kondisi': '${p.kondisi}',
+                            'tireAccessories': p.tireAccessories
+                                .map((a) => a.toMap())
+                                .toList(),
                           };
                         }),
                         'pit':
@@ -3552,6 +3570,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'idUnit': (p.idUnit ?? ''),
                         'idDaily': '${p.idDaily}',
                         'kondisi': '${p.kondisi}',
+                        'tireAccessories':
+                            p.tireAccessories.map((a) => a.toMap()).toList(),
                       };
                     }),
                     'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -3651,5 +3671,365 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
         ],
       });
     }
+  }
+}
+
+// ADDITIONAL ACCESORIES TIRE EDIT #3
+
+class TireComponentDialog extends StatefulWidget {
+  final List<TireAccessory> initialData;
+  final String image;
+
+  const TireComponentDialog(
+      {super.key, required this.initialData, this.image = ''});
+
+  @override
+  State<TireComponentDialog> createState() => _TireComponentDialogState();
+}
+
+class _TireComponentDialogState extends State<TireComponentDialog> {
+  final List<String> components = [
+    'Reseal Oring',
+    'Rim Condition',
+    'Nut',
+  ];
+  final ImagePicker _picker = ImagePicker();
+
+  late List<TireAccessory> accessories;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Ambil data dari initialData, lalu pastikan semua komponen ada
+    final Map<String, TireAccessory> existing = {
+      for (var acc in widget.initialData) acc.name: acc,
+    };
+
+    accessories = components.map((name) {
+      return existing[name] ??
+          TireAccessory(
+            name: name,
+            condition: name == 'Reseal Oring' ? 'Tidak' : 'Normal',
+            remark: '',
+            image: '', // foto dummy
+          );
+    }).toList();
+  }
+
+  Future<String> pickImage(ImageSource source) async {
+    try {
+      final XFile? image = await _picker.pickImage(source: source);
+      if (image != null) {
+        return image.path;
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+    }
+    return '';
+  }
+
+  Future<String> showImageSourceDialog() async {
+    return await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Choose One',
+            style: getBlackTextStyle(),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text(
+                  'Gallery',
+                  style: getBlackTextStyle(),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios),
+                onTap: () async {
+                  String image = await pickImage(ImageSource.gallery);
+                  log('Image from gallery: $image');
+                  Navigator.pop(context, image); // Kembalikan nilai ke pop
+                },
+              ),
+              Divider(),
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text(
+                  'Camera',
+                  style: getBlackTextStyle(),
+                ),
+                trailing: Icon(Icons.arrow_forward_ios),
+                onTap: () async {
+                  String image = await pickImage(ImageSource.camera);
+                  log('Image from camera: $image');
+                  Navigator.pop(context, image); // Kembalikan nilai ke pop
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                    context, ''); // Kembalikan nilai kosong jika batal
+              },
+              child: Text('Batal'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Tire Component Check',
+              style:
+                  getBlackTextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: accessories.length,
+                itemBuilder: (context, index) {
+                  final acc = accessories[index];
+                  return Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            acc.name,
+                            style: getBlackTextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              if (acc.name == 'Reseal Oring') ...[
+                                ChoiceChip(
+                                  label: Text(
+                                    'Ya',
+                                    style: getBlackTextStyle(),
+                                  ),
+                                  selected: acc.condition == 'Ya',
+                                  selectedColor: Colors.green.shade300,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      accessories[index] = acc.copyWith(
+                                        condition: selected ? 'Ya' : 'Tidak',
+                                      );
+                                    });
+                                  },
+                                ),
+                                ChoiceChip(
+                                  label: Text(
+                                    'Tidak',
+                                    style: getBlackTextStyle(),
+                                  ),
+                                  selected: acc.condition == 'Tidak',
+                                  selectedColor: Colors.red.shade300,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      accessories[index] = acc.copyWith(
+                                        condition: selected ? 'Tidak' : 'Ya',
+                                      );
+                                    });
+                                  },
+                                ),
+                              ] else if (acc.name == 'Rim Condition') ...[
+                                ChoiceChip(
+                                  label: Text(
+                                    'Normal',
+                                    style: getBlackTextStyle(),
+                                  ),
+                                  selected: acc.condition == 'Normal',
+                                  selectedColor: Colors.green.shade300,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      accessories[index] = acc.copyWith(
+                                        condition: selected ? 'Normal' : '',
+                                      );
+                                    });
+                                  },
+                                ),
+                                ChoiceChip(
+                                  label: Text(
+                                    'Rusak',
+                                    style: getBlackTextStyle(),
+                                  ),
+                                  selected: acc.condition == 'Rusak',
+                                  selectedColor: Colors.orange.shade300,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      accessories[index] = acc.copyWith(
+                                        condition:
+                                            selected ? 'Rusak' : 'Normal',
+                                      );
+                                    });
+                                  },
+                                ),
+                              ] else ...[
+                                ChoiceChip(
+                                  label: Text(
+                                    'Normal',
+                                    style: getBlackTextStyle(),
+                                  ),
+                                  selected: acc.condition == 'Normal',
+                                  selectedColor: Colors.green.shade300,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      accessories[index] = acc.copyWith(
+                                        condition: selected ? 'Normal' : '',
+                                      );
+                                    });
+                                  },
+                                ),
+                                ChoiceChip(
+                                  label: Text(
+                                    'Rusak',
+                                    style: getBlackTextStyle(),
+                                  ),
+                                  selected: acc.condition == 'Rusak',
+                                  selectedColor: Colors.orange.shade300,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      accessories[index] = acc.copyWith(
+                                        condition:
+                                            selected ? 'Rusak' : 'Normal',
+                                      );
+                                    });
+                                  },
+                                ),
+                                ChoiceChip(
+                                  label: Text(
+                                    'Hilang',
+                                    style: getBlackTextStyle(),
+                                  ),
+                                  selected: acc.condition == 'Hilang',
+                                  selectedColor: Colors.red.shade300,
+                                  onSelected: (selected) {
+                                    setState(() {
+                                      accessories[index] = acc.copyWith(
+                                        condition:
+                                            selected ? 'Hilang' : 'Normal',
+                                      );
+                                    });
+                                  },
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            initialValue: acc.remark,
+                            onChanged: (val) {
+                              accessories[index] = acc.copyWith(remark: val);
+                            },
+                            decoration: const InputDecoration(
+                              labelText: 'Keterangan (opsional)',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 6,
+                          ),
+                          if (acc.image.isNotEmpty && acc.image != 'image.png')
+                            Padding(
+                              padding:
+                                  const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                              child: SizedBox(
+                                width: double.infinity,
+                                height: 150,
+                                child: Image.file(
+                                  File(acc.image),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ButtonWidget(
+                              color: Colors.orange,
+                              name: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    LucideIcons.camera,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(
+                                    width: 6,
+                                  ),
+                                  Text(
+                                    'Take Picture',
+                                    style: getWhiteTextStyle(),
+                                  ),
+                                ],
+                              ),
+                              function: () async {
+                                final imagePath = await showImageSourceDialog();
+                                if (imagePath.isNotEmpty) {
+                                  setState(() {
+                                    accessories[index] =
+                                        acc.copyWith(image: imagePath);
+                                  });
+                                }
+                              }),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.grey),
+                    child: Text(
+                      'Close',
+                      style: getWhiteTextStyle(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context, accessories);
+                    },
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    child: Text(
+                      'Submit',
+                      style: getWhiteTextStyle(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -760,6 +760,9 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('M1').setText('max_press');
       sheet.getRangeByName('N1').setText('avg_press');
       sheet.getRangeByName('O1').setText('temp');
+      if (daily?[0]['idSite'] == '33') {
+        sheet.getRangeByName('P1').setText('Tire Accessories');
+      }
 
       // log('daily excel daily excel : $daily');
       log('json hauling : ${jsonEncode(daily)}');
@@ -830,6 +833,16 @@ Future<List<int>> createExcel(String type,
               .getRangeByName('N${rowIndex}')
               .setText(posisi[j]['avg_press'] ?? '');
           sheet.getRangeByName('O${rowIndex}').setText(posisi[j]['temp'] ?? '');
+
+          if (daily[i]['idSite'] == '33') {
+            sheet.getRangeByName('P${rowIndex}').setText(
+                  posisi[j]['tireAccessories']
+                      .map((acc) =>
+                          '${acc['name']} (${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})')
+                      .join('\n'),
+                );
+          }
+          // sheet.getRangeByName('Q${rowIndex}').setText(posisi[j]['tireAccessories'].map((acc) => '${acc['name']} (${acc['condition']})\n' ));
 
           rowIndex++;
         }
