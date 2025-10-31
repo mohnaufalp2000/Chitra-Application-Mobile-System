@@ -1,5 +1,10 @@
+import 'package:camos/pages/attendance/presence_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_inspection_page/select_inspection_page.dart';
+import 'package:camos/pages/site_condition/site_condition_page.dart';
+import 'package:camos/pages/tire_repair_form/select_tire_repair_page.dart';
+import 'package:camos/pages/tkph_calculator/tkph_calculator.dart';
+import 'package:camos/pages/tpms/tpms_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -50,8 +55,29 @@ class HomeFunction {
           highlightColor: item.color.withOpacity(0.2),
           onTap: () {
             switch (item.name) {
+              /// TAMBAHKAN ARGUMENTS
               case 'Inspection Tire':
-                Navigator.pushNamed(context, SelectInspectionPage.routeName);
+                Navigator.pushNamed(context, SelectInspectionPage.routeName,
+                    arguments: {});
+                break;
+              case 'Site Condition':
+                Navigator.pushNamed(context, SiteConditionPage.routeName,
+                    arguments: {});
+                break;
+              case 'TKPH Calculator':
+                Navigator.pushNamed(context, TKHPCalculator.routeName,
+                    arguments: {});
+                break;
+              case 'Tire Repair Form':
+                Navigator.pushNamed(context, SelectTireRepairPage.routeName,
+                    arguments: {});
+                break;
+              case 'SPM':
+                Navigator.pushNamed(context, TpmsPage.routeName, arguments: {});
+                break;
+              case 'Attendance':
+                Navigator.pushNamed(context, PresencePage.routeName,
+                    arguments: {});
                 break;
               default:
             }

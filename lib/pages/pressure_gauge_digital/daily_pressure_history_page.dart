@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -944,9 +945,13 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                                                   MainAxisAlignment
                                                       .spaceBetween,
                                               children: [
-                                                Text('HM Unit',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18)),
+                                                Text(
+                                                  (idSite == bmbhauling.idSite)
+                                                      ? 'KM Unit'
+                                                      : 'HM Unit',
+                                                  style: getWhiteTextStyle(
+                                                      fontSize: 18),
+                                                ),
                                                 Text(hm,
                                                     style: getWhiteTextStyle(
                                                         fontWeight: w700,

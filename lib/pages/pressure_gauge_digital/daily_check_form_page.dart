@@ -1868,6 +1868,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             height: 24,
                           ),
                           // UNIT NUMBER DAN HM UNIT
+                          // EDIT INI AJA
                           Row(
                             children: [
                               Expanded(
@@ -1913,15 +1914,21 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                     Row(
                                       children: [
                                         Icon(
-                                          Icons.watch,
-                                          color: Colors.red,
+                                          (idSite == bmbhauling.idSite)
+                                              ? Icons.edit_road_sharp
+                                              : Icons.watch,
+                                          color: (idSite == bmbhauling.idSite)
+                                              ? Colors.black
+                                              : Colors.red,
                                           size: 38,
                                         ),
                                         const SizedBox(
                                           width: 12,
                                         ),
                                         Text(
-                                          'HM UNIT',
+                                          (idSite == bmbhauling.idSite)
+                                              ? 'KM UNIT'
+                                              : 'HM UNIT',
                                           style: getBlackTextStyle(
                                               fontWeight: w700, fontSize: 18),
                                         ),
@@ -1937,7 +1944,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                           controller: hmCtrl,
                                           isDecimalOnly: true,
                                           type: TextInputType.number,
-                                          hint: 'Fill HM'),
+                                          hint:
+                                              'Fill ${(idSite == bmbhauling.idSite) ? 'KM' : 'HM'}'),
                                     ),
                                   ],
                                 ),
@@ -2229,8 +2237,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                       height: 12,
                                     ),
 
-                                    Container(
-                                      child: Wrap(
+                                    LayoutBuilder(
+                                        builder: (context, constraints) {
+                                      // spacing antar item
+                                      const spacing = 34.0;
+                                      // jumlah kolom tetap 2
+                                      const crossAxisCount = 2;
+
+                                      // hitung lebar setiap item agar pas dua kolom + jarak antar kolom
+                                      double itemWidth = (constraints.maxWidth -
+                                              ((crossAxisCount - 1) *
+                                                  spacing)) /
+                                          crossAxisCount;
+                                      return Wrap(
                                         spacing: 34,
                                         runSpacing: 24,
                                         alignment: WrapAlignment.center,
@@ -2252,10 +2271,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                 height: 6,
                                               ),
                                               SizedBox(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.39,
+                                                width: itemWidth,
                                                 height: 45,
                                                 child: ElevatedButton(
                                                   onPressed: () async {
@@ -2479,10 +2495,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                               ),
                                               // adjusment pressure
                                               SizedBox(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.39,
+                                                width: itemWidth,
                                                 height: 45,
                                                 child: ElevatedButton(
                                                   onPressed: () async {
@@ -2669,10 +2682,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                               ),
                                               // rating tire
                                               SizedBox(
-                                                width: MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    0.39,
+                                                width: itemWidth,
                                                 height: 45,
                                                 child: ElevatedButton(
                                                   onPressed: () async {
@@ -2814,10 +2824,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                               ),
                                               // SELECT DAMAGE TIRE
                                               SizedBox(
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .width *
-                                                      0.39,
+                                                  width: itemWidth,
                                                   // height: 65,
                                                   child: ElevatedButton(
                                                     onPressed: () {
@@ -3059,10 +3066,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                 Container(
                                                   margin: const EdgeInsets.only(
                                                       top: 8),
-                                                  width: MediaQuery.of(context)
-                                                          .size
-                                                          .width *
-                                                      0.39,
+                                                  width: itemWidth,
                                                   child: ElevatedButton(
                                                     onPressed: () async {
                                                       FocusScope.of(context)
@@ -3161,11 +3165,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                               // IMAGE DAILY CHECK
                                               (dataUnit['type'] != null)
                                                   ? SizedBox(
-                                                      width:
-                                                          MediaQuery.of(context)
-                                                                  .size
-                                                                  .width *
-                                                              0.39,
+                                                      width: itemWidth,
                                                       child: ElevatedButton(
                                                           onPressed: () async {
                                                             final image =
@@ -3219,8 +3219,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                             ],
                                           );
                                         }).toList(),
-                                      ),
-                                    ),
+                                      );
+                                    }),
                                   ],
                                 )
                         ],

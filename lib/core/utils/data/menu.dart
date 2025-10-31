@@ -30,7 +30,7 @@ var menus = [
       name: 'TKPH Calculator',
       image: 'tkph_calculator_icon.png',
       color: Colors.green.shade400),
-  Menu(id: 4, name: 'TPMS/SPM', image: 'tpms_icon.png', color: Colors.orange),
+  Menu(id: 4, name: 'SPM', image: 'tpms_icon.png', color: Colors.orange),
   Menu(
       id: 5,
       name: 'Tire Repair Form',

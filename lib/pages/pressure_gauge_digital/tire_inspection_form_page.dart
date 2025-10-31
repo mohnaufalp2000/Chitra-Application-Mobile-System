@@ -903,6 +903,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
   @override
   void initState() {
+    idSite = homeState.currentSiteId;
+
     super.initState();
     requestPlacePermission();
 
@@ -1039,7 +1041,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   }
 
   void callTires() async {
-    String idSite = homeState.currentSiteId;
     String userAccessId = homeState.userAccessId.value;
     if (mounted) {
       if (dataUnit != {} || dataUnit != null || dataUnit.isNotEmpty) {
@@ -1205,6 +1206,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                     {'name': 'Valve Protector', 'checked': false},
                     {'name': 'Stud and Nut', 'checked': false},
                   ],
+                  'tireAccessories': []
                 });
               }
               log('message position tire inspect : ${position}');
@@ -1609,7 +1611,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         width: 12,
                                       ),
                                       Text(
-                                        'HM UNIT',
+                                        (idSite == bmbhauling.idSite)
+                                            ? 'KM Unit'
+                                            : 'HM Unit',
                                         style: getBlackTextStyle(
                                             fontWeight: w700, fontSize: 18),
                                       ),
@@ -1618,16 +1622,24 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   const SizedBox(
                                     height: 12,
                                   ),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: InputFormWidget(
-                                        // isReadOnly: true,
-                                        // controller: hmCtrl,
-                                        controller: hmUnit,
-                                        isDecimalOnly: true,
-                                        type: TextInputType.number,
-                                        hint: 'Fill HM'),
-                                  ),
+                                  Builder(builder: (context) {
+                                    print("id site hauling : $idSite");
+                                    hmUnit.text = (idSite != bmbhauling.idSite)
+                                        ? (units[0].hm ?? '')
+                                        : '';
+
+                                    return SizedBox(
+                                      width: double.infinity,
+                                      child: InputFormWidget(
+                                          // isReadOnly: true,
+                                          // controller: hmCtrl,
+                                          controller: hmUnit,
+                                          isDecimalOnly: true,
+                                          type: TextInputType.number,
+                                          hint:
+                                              'Fill ${idSite == bmbhauling.idSite ? 'KM' : 'HM'}'),
+                                    );
+                                  }),
                                 ],
                               ),
                             ),
@@ -3211,6 +3223,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           style: getWhiteTextStyle(),
                                         )));
                               }
+                            // PAKAI YANG INI!!!!
                             : () async {
                                 // jika data pressure kosong
                                 bool hasEmptyPressure =
@@ -3531,7 +3544,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'idInventory': p['idInventory'],
                                             'tireSize': p['tireSize'],
                                             'idDaily':
-                                                '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}'
+                                                '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
+                                            'tireAccessories': []
                                           };
                                         }),
                                         'pit': (idSite == bmbsitarum.idSite ||
@@ -3569,7 +3583,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'idInventory': p['idInventory'],
                                             'tireSize': p['tireSize'],
                                             'idDaily':
-                                                '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}'
+                                                '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
+                                            'tireAccessories': []
                                           };
                                         }),
                                         'pit': (idSite == bmbsitarum.idSite ||

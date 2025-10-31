@@ -6,10 +6,13 @@ import 'dart:io';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/shared_preferences/shared_preferences.dart';
+import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/pages/network/network_state.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,6 +54,9 @@ class HomeState extends GetxController {
   final conditionLoadingPercent = 0.0.obs;
   final lastSyncCondition = ''.obs;
 
+  final RxMap<String, dynamic> rxUser = <String, dynamic>{}.obs;
+  Map<String, dynamic> get user => rxUser.value;
+
   String get currentSiteId => currentSiteIdRx.value;
   Site? get selectedSite =>
       listSite.firstWhereOrNull((site) => site.idSite == currentSiteId);
@@ -70,10 +76,15 @@ class HomeState extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    retrieveUser();
     retrieveVersionNumber();
     fetchSites().then((_) async {
       await _loadInitialDataAfterSitesReady();
     });
+  }
+
+  Future<void> retrieveUser() async {
+    rxUser.value = await getUserPreferences();
   }
 
   List<IdSite> get clusterSites {
@@ -436,12 +447,80 @@ class HomeState extends GetxController {
     }
   }
 
-  void retrieveVersionNumber() async {
-    final versionCol = FirebaseFirestore.instance.collection('version');
-    final versionDoc = await versionCol.doc('version').get();
-    versionNumberRx.value = versionDoc.data()?['number'];
-    // if (_packageInfo.version != versionNumber) {
-    //   showUpdateDialog(context);
-    // }
+  Future<void> retrieveVersionNumber() async {
+    try {
+      // 🔹 Ambil versi aplikasi dari perangkat
+      final packageInfo = await PackageInfo.fromPlatform();
+      final currentVersion = packageInfo.version;
+
+      // 🔹 Ambil versi terbaru dari Firestore
+      final versionDoc = await FirebaseFirestore.instance
+          .collection('version')
+          .doc('version')
+          .get();
+
+      final latestVersion = versionDoc.data()?['number'];
+
+      if (latestVersion == null) {
+        print('⚠️ Field "number" di Firestore kosong.');
+        return;
+      }
+
+      versionNumberRx.value = latestVersion;
+
+      // 🔹 Cek perbedaan versi
+      if (currentVersion != latestVersion) {
+        showUpdateDialog(currentVersion, latestVersion);
+      }
+    } catch (e) {
+      print('❌ Gagal cek versi aplikasi: $e');
+    }
+  }
+
+  void showUpdateDialog(String currentVersion, String latestVersion) {
+    Get.dialog(
+      barrierDismissible: false,
+      AlertDialog(
+        title: const Text('Update Diperlukan ⚠️'),
+        content: Text(
+          'Versi aplikasi kamu sudah tidak terbaru.\n\n'
+          'Versi saat ini: $currentVersion\n'
+          'Versi terbaru: $latestVersion\n\n'
+          'Silakan update aplikasi ke versi terbaru untuk melanjutkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Get.back(); // ❌ Tutup dialog
+            },
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              // 🔹 Arahkan ke Play Store (opsional)
+              // launchUrl(Uri.parse('https://play.google.com/store/apps/details?id=com.namapackage'));
+              openPlayStore('camos');
+            },
+            child: const Text('Update Sekarang'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String greeting() {
+    var hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Morning';
+    } else if (hour < 15) {
+      return 'Afternoon';
+    } else if (hour < 18) {
+      return 'Evening';
+    } else {
+      return 'Night';
+    }
   }
 }

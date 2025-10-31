@@ -1987,10 +1987,7 @@ class _SiteConditionPageState extends State<SiteConditionPage> {
   @override
   Widget build(BuildContext context) {
     log('listgambar : $listTmpImg');
-    final data =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
-    log('dataku : $data');
     // untuk stream agar data terupdate otomatis setelah ada data yg dihapus
 
     return Scaffold(

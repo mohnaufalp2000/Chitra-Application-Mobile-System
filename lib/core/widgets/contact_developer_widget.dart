@@ -8,8 +8,9 @@ class ContactDeveloperWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+    return Container(
+      height: 20,
+      padding: const EdgeInsets.symmetric(horizontal: 12.0),
       child: ElevatedButton(
         onPressed: () async {
           String phoneNumber = "+6281252073489";
@@ -31,13 +32,14 @@ class ContactDeveloperWidget extends StatelessWidget {
             Icon(
               Icons.wechat,
               color: Colors.white,
+              size: 10,
             ),
             const SizedBox(
               width: 12,
             ),
             Text(
               "Contact Developer",
-              style: getWhiteTextStyle(),
+              style: getWhiteTextStyle(fontSize: 8),
             ),
           ],
         ),

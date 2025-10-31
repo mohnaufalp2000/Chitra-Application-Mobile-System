@@ -1868,6 +1868,7 @@ import 'dart:developer';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/utils/data/menu.dart';
+import 'package:camos/core/widgets/contact_developer_widget.dart';
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/authentication/login_page.dart';
 import 'package:camos/pages/home/home_state.dart';
@@ -1920,7 +1921,16 @@ class HomePage extends GetView<HomeState> {
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: Row(
                       children: [
-                        CircleAvatar(),
+                        CircleAvatar(
+                          backgroundImage: (controller.user['image'] == '' ||
+                                  controller.user['image'] == null ||
+                                  controller.user['image'] == 'image')
+                              ? AssetImage('$imagePath/default_user_image.png')
+                                  as ImageProvider
+                              : NetworkImage(controller.user['image']),
+                          backgroundColor: Colors.grey.withOpacity(0.4),
+                          radius: 30,
+                        ),
                         const SizedBox(
                           width: 8,
                         ),
@@ -1928,10 +1938,10 @@ class HomePage extends GetView<HomeState> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Good Evening',
+                              'Good ${controller.greeting()}',
                               style: getBlackTextStyle(fontSize: 12),
                             ),
-                            Text('Mohammad Naufal Pratama',
+                            Text(controller.user['username'],
                                 style: getBlackTextStyle(
                                     fontSize: 14, fontWeight: w700)),
                             // -- VERSION APP NUMBER
@@ -1977,6 +1987,11 @@ class HomePage extends GetView<HomeState> {
                       ],
                     ),
                   ),
+
+                  const SizedBox(
+                    height: 12,
+                  ),
+                  ContactDeveloperWidget(),
 
                   // --- PENGGANTIAN SITE DROPDOWN ---
 

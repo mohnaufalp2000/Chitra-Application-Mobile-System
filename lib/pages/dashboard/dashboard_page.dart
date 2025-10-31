@@ -12,7 +12,6 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final DashboardState controller = Get.put(DashboardState());
-    final HomeState homeController = Get.put(HomeState());
 
     return Scaffold(
       extendBody: true, // 🔹 biar FAB overlap dengan nav bar transparan

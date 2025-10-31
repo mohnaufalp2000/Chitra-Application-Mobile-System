@@ -1,21 +1,73 @@
+import 'package:appcheck/appcheck.dart';
 import 'package:camos/pages/home/home_page.dart';
+import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/pages/home/tire_inspection_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DashboardState extends GetxController {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  final HomeState homeController = Get.put(HomeState());
+
   var currentIndex = 0.obs;
 
   final pages = <Widget>[
     const Center(child: HomePage()),
-    const Center(child: Text('Tire Inspection')),
+    Center(child: TireInspectionPage()),
   ];
 
   void changePage(int index) {
     currentIndex.value = index;
   }
 
-  void onScanPressed() {
+  void onScanPressed() async {
     // Contoh: buka halaman QR Scanner
     Get.snackbar('Scan', 'Tombol scan ditekan!');
+    final doc =
+        await firestore.collection("url_tire_damage_ai").doc("url").get();
+
+    if (doc.exists) {
+      final data = doc.data();
+      final String downloadUrl = data?["url"] ?? "";
+      final String targetPackageName = data?["targetName"] ?? "";
+
+      print('url tire ai : $data');
+
+      await openOrInstallApp(
+        targetPackageName: targetPackageName,
+        downloadUrl: downloadUrl,
+      );
+    }
+  }
+
+  Future<void> openOrInstallApp({
+    required String targetPackageName,
+    required String downloadUrl,
+  }) async {
+    final appCheck = AppCheck();
+
+    try {
+      // cek apakah aplikasi tersedia
+      final app = await appCheck.checkAvailability(targetPackageName);
+
+      if (app != null) {
+        debugPrint("✅ App ditemukan → buka $targetPackageName");
+        await appCheck.launchApp(targetPackageName);
+      } else {
+        debugPrint("❌ App tidak ditemukan → buka link download");
+        final Uri url = Uri.parse(downloadUrl);
+
+        if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+          throw Exception('Could not launch $url');
+        }
+      }
+    } catch (e) {
+      debugPrint("⚠️ Error saat cek app: $e");
+      // fallback ke link install
+      final Uri url = Uri.parse(downloadUrl);
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 }

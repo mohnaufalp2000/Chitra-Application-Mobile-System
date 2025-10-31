@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:camos/core/utils/data/id_site.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -886,7 +887,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
-                                                'HM Unit',
+                                                (currentIdSite ==
+                                                        bmbhauling.idSite)
+                                                    ? 'KM Unit'
+                                                    : 'HM Unit',
                                                 style: getWhiteTextStyle(
                                                     fontSize: 18),
                                               ),

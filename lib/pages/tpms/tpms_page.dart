@@ -1,5 +1,9 @@
 import 'dart:developer';
 
+import 'package:camos/objectbox.g.dart';
+import 'package:camos/pages/home/home_state.dart';
+import 'package:get/get.dart';
+
 import '../../core/blocs/authentication/authentication_bloc.dart';
 import '../../core/blocs/spm/spm_bloc.dart';
 import '../../core/navigator/navigation_route.dart';
@@ -47,6 +51,7 @@ class _TpmsPageState extends State<TpmsPage> {
     '5',
     '6',
   ];
+  String idSite = '';
   String searchQuery = '';
   List<Map<String, dynamic>> pressures = [];
   List<Map<String, dynamic>> pressureStatus = [];
@@ -143,32 +148,212 @@ class _TpmsPageState extends State<TpmsPage> {
   void didChangeDependencies() async {
     super.didChangeDependencies();
 
-    final data =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    if (data != null) {
-      // Pastikan data tidak null
-      final idSite = data['idSite'];
-      _loadAndFindSite(idSite);
+    // final data =
+    //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    // if (data != null) {
+    //   // Pastikan data tidak null
+    //   final idSite = data['idSite'];
+    //   _loadAndFindSite(idSite);
 
-      if (data['isCTS'] != true && data['isCTS'] != null) {
-        final userDocs = await firestore
-            .collection('users')
-            .where('email', isEqualTo: auth.currentUser!.email)
-            .get();
-        final mapUser = userDocs.docs[0].data();
-        saveUserPreferences(mapUser);
-      }
-      log('id site spm : $idSite');
-      context.read<SpmBloc>().add(GetListSpmEvent(idSite: idSite));
+    //   if (data['isCTS'] != true && data['isCTS'] != null) {
+    //     final userDocs = await firestore
+    //         .collection('users')
+    //         .where('email', isEqualTo: auth.currentUser!.email)
+    //         .get();
+    //     final mapUser = userDocs.docs[0].data();
+    //     saveUserPreferences(mapUser);
+    //   }
+    //   log('id site spm : $idSite');
+
+    // Pastikan data tidak null
+    idSite = (Get.isRegistered<HomeState>())
+        ? Get.find<HomeState>().currentSiteId
+        : await getIdSitePreferences();
+    final user = await getUserPreferences();
+    _loadAndFindSite(idSite);
+
+    if (user['isCTS'] != true && user['isCTS'] != null) {
+      final userDocs = await firestore
+          .collection('users')
+          .where('email', isEqualTo: auth.currentUser!.email)
+          .get();
+      final mapUser = userDocs.docs[0].data();
+      saveUserPreferences(mapUser);
     }
+    log('id site spm : $idSite');
+    context.read<SpmBloc>().add(GetListSpmEvent(idSite: idSite));
+  }
+
+  void showWeeklyAdjustmentDialog(
+      BuildContext context, String idSite, dynamic unit) {
+    // 1. Hitung tanggal 7 hari yang lalu dan ubah ke format ISO String
+    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+    final now = DateTime.now();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Riwayat Adjustment ${unit.devicename}'),
+          content: SizedBox(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.7,
+            child: StreamBuilder<QuerySnapshot>(
+              stream: firestore
+                  .collection('adjusment_spm')
+                  .where('idSite', isEqualTo: idSite)
+                  .where('unit', isEqualTo: unit.devicename)
+                  .orderBy('tanggal',
+                      descending:
+                          true) // Mengurutkan berdasarkan tanggal terbaru
+                  .limit(14)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                      child:
+                          Text('Tidak ada data adjustment 7 hari terakhir.'));
+                }
+
+                // Semua dokumen 7 hari terakhir
+                final allDocs = snapshot.data!.docs;
+
+                return ListView.builder(
+                  itemCount: allDocs.length,
+                  itemBuilder: (context, index) {
+                    final doc = allDocs[index];
+                    final Map<String, dynamic> adjustMap =
+                        doc.data() as Map<String, dynamic>;
+
+                    // Ambil list posisi, ini diasumsikan tidak null karena sudah difilter
+                    final positionList =
+                        adjustMap['posisi'] as List<dynamic>? ?? [];
+
+                    // Filter hanya posisi yang memiliki adjusmentPressure
+                    final validAdjustments = positionList.where((pl) {
+                      return pl['adjusmentPressure'] != null &&
+                          pl['adjusmentPressure'].toString().trim().isNotEmpty;
+                    }).toList();
+
+                    if (validAdjustments.isEmpty) {
+                      // Jika dokumen tidak memiliki adjustment yang valid, lewati item ini
+                      return const SizedBox.shrink();
+                    }
+
+                    // Format tanggal
+                    String formattedDate = '';
+                    try {
+                      formattedDate =
+                          DateFormat('dd MMMM yyyy HH:mm:ss', 'id_ID')
+                              .format(DateTime.parse(adjustMap['tanggal']));
+                    } catch (_) {
+                      formattedDate = 'Tanggal tidak valid';
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header info
+                          Text(
+                            'Tanggal: $formattedDate',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          Text(
+                            'Tireman: ${adjustMap['user'] ?? 'N/A'}',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+
+                          const Divider(height: 10, thickness: 1),
+
+                          // List Adjustment Posisi
+                          ...validAdjustments.map((pl) {
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.only(left: 8.0, bottom: 4.0),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Pos. ${pl['pos'] ?? 'N/A'}: ${pl['adjusmentPressure']} Psi',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                  // Tombol Lihat Gambar
+                                  if (pl['image'] != null &&
+                                      pl['image'].toString().isNotEmpty)
+                                    TextButton(
+                                      onPressed: () {
+                                        // Fungsi untuk menampilkan gambar (gunakan kode dari query Anda)
+                                        showImageDialog(context, pl['image']);
+                                      },
+                                      child: const Text('Lihat Gambar 🖼️'),
+                                    ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+
+                          const Divider(height: 16, color: Colors.grey),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Tutup'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+// Fungsi pembantu untuk menampilkan dialog gambar
+  void showImageDialog(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              top: 8.0,
+              right: 8.0,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.black),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    Map<String, dynamic> data =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-    log('data before spm : ${data}');
-    String idSite = data['idSite'];
+    // Map<String, dynamic> data =
+    //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    // log('data before spm : ${data}');
 
     return Scaffold(
       appBar: appBarWidget('SPM Page', context),
@@ -337,7 +522,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                 ],
                               );
                             });
-                            log('unit 4202 : ${allUnits}');
 
                             return Column(
                               children: list.map((e) {
@@ -669,7 +853,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                                   ),
                                                 ],
                                               ),
-                                              function: () {
+                                              function: () async {
                                                 List<Position> position = [
                                                   Position(
                                                     pos: '1',
@@ -757,6 +941,9 @@ class _TpmsPageState extends State<TpmsPage> {
                                                   ),
                                                 ];
 
+                                                final user =
+                                                    await getUserPreferences();
+
                                                 Navigator.pushNamed(
                                                     context,
                                                     DailyCheckFormPage
@@ -766,7 +953,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                                           unit.devicename,
                                                       'type': 'spm',
                                                       'position': position,
-                                                      'isCTS': data['isCTS']
+                                                      'isCTS': user['isCTS']
                                                     });
                                               },
                                             ),
@@ -791,259 +978,266 @@ class _TpmsPageState extends State<TpmsPage> {
                                                   ),
                                                 ],
                                               ),
-                                              Row(
-                                                children: [
-                                                  TextButtonWidget(
-                                                    name:
-                                                        (!isShowMore[indexUnit])
-                                                            ? 'Show More'
-                                                            : 'Show Less',
-                                                    style: getGreenTextStyle(
-                                                        fontWeight: w700),
-                                                    function: () {
-                                                      setState(() {
-                                                        isShowMore[indexUnit] =
-                                                            !isShowMore[
-                                                                indexUnit];
-                                                      });
-                                                    },
-                                                  ),
-                                                ],
-                                              ),
                                             ],
                                           ),
-
                                           const SizedBox(
-                                            height: 12,
+                                            height: 6,
                                           ),
 
-                                          Builder(builder: (context) {
-                                            if (isShowMore[indexUnit]) {
-                                              return StreamBuilder<
-                                                  QuerySnapshot>(
-                                                stream: firestore
-                                                    .collection('adjusment_spm')
-                                                    .where('idSite',
-                                                        isEqualTo: idSite)
-                                                    .where('unit',
-                                                        isEqualTo:
-                                                            unit.devicename)
-                                                    .orderBy('tanggal',
-                                                        descending:
-                                                            true) // Mengurutkan berdasarkan tanggal terbaru
-                                                    .limit(
-                                                        1) // Hanya mengambil 1 data terbaru
-                                                    .snapshots(),
-                                                builder: (context, snapshot) {
-                                                  if (snapshot
-                                                          .connectionState ==
-                                                      ConnectionState.waiting) {
-                                                    return Center(
-                                                        child:
-                                                            CircularProgressIndicator());
-                                                  }
-                                                  if (!snapshot.hasData ||
-                                                      snapshot
-                                                          .data!.docs.isEmpty) {
-                                                    return Container(
-                                                      margin: EdgeInsets.only(
-                                                          bottom: 12),
-                                                      child: Center(
-                                                          child: Text(
-                                                              'No data available')),
-                                                    );
-                                                  }
+                                          SizedBox(
+                                            width: double.infinity,
+                                            child: ButtonWidget(
+                                              color: Colors.green,
+                                              function: () {
+                                                // Panggil fungsi dialog yang baru dibuat
+                                                showWeeklyAdjustmentDialog(
+                                                    context, idSite, unit);
+                                              },
+                                              name: Text(
+                                                'Show Last Adjustment',
+                                                style: getWhiteTextStyle(),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(
+                                            height: 6,
+                                          ),
 
-                                                  final latestDoc =
-                                                      snapshot.data!.docs.first;
-                                                  final Map<String, dynamic>
-                                                      latestAdjustMap =
-                                                      latestDoc.data() as Map<
-                                                          String, dynamic>;
-                                                  final positionList =
-                                                      latestAdjustMap['posisi']
-                                                          as List<dynamic>;
+                                          // Builder(builder: (context) {
+                                          //   if (isShowMore[indexUnit]) {
+                                          //     return StreamBuilder<
+                                          //         QuerySnapshot>(
+                                          //       stream: firestore
+                                          //           .collection('adjusment_spm')
+                                          //           .where('idSite',
+                                          //               isEqualTo: idSite)
+                                          //           .where('unit',
+                                          //               isEqualTo:
+                                          //                   unit.devicename)
+                                          //           .where('tanggal',
+                                          //               isGreaterThanOrEqualTo:
+                                          //                   DateTime.now()
+                                          //                       .subtract(
+                                          //                           const Duration(
+                                          //                               days:
+                                          //                                   7))
+                                          //                       .toIso8601String())
+                                          //           .orderBy('tanggal',
+                                          //               descending:
+                                          //                   true) // Mengurutkan berdasarkan tanggal terbaru
+                                          //           .limit(
+                                          //               1) // Hanya mengambil 1 data terbaru
+                                          //           .snapshots(),
+                                          //       builder: (context, snapshot) {
+                                          //         if (snapshot
+                                          //                 .connectionState ==
+                                          //             ConnectionState.waiting) {
+                                          //           return Center(
+                                          //               child:
+                                          //                   CircularProgressIndicator());
+                                          //         }
+                                          //         if (!snapshot.hasData ||
+                                          //             snapshot
+                                          //                 .data!.docs.isEmpty) {
+                                          //           return Container(
+                                          //             margin: EdgeInsets.only(
+                                          //                 bottom: 12),
+                                          //             child: Center(
+                                          //                 child: Text(
+                                          //                     'No data available')),
+                                          //           );
+                                          //         }
 
-                                                  bool adjustmentEmpty =
-                                                      positionList.any((item) =>
-                                                          item['adjusmentPressure'] !=
-                                                              null &&
-                                                          item['adjusmentPressure']
-                                                              .toString()
-                                                              .trim()
-                                                              .isNotEmpty);
+                                          //         final latestDoc =
+                                          //             snapshot.data!.docs.first;
+                                          //         final Map<String, dynamic>
+                                          //             latestAdjustMap =
+                                          //             latestDoc.data() as Map<
+                                          //                 String, dynamic>;
+                                          //         final positionList =
+                                          //             latestAdjustMap['posisi']
+                                          //                 as List<dynamic>;
 
-                                                  if (!adjustmentEmpty) {
-                                                    print('data adjust kosong');
-                                                    return Center(
-                                                      child: Container(
-                                                        margin: EdgeInsets.only(
-                                                            bottom: 12),
-                                                        child: Text(
-                                                          'No data available',
-                                                          style:
-                                                              getBlackTextStyle(),
-                                                        ),
-                                                      ),
-                                                    );
-                                                  }
+                                          //         bool adjustmentEmpty =
+                                          //             positionList.any((item) =>
+                                          //                 item['adjusmentPressure'] !=
+                                          //                     null &&
+                                          //                 item['adjusmentPressure']
+                                          //                     .toString()
+                                          //                     .trim()
+                                          //                     .isNotEmpty);
 
-                                                  return Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    children: [
-                                                      Text(
-                                                        'Tireman : ${latestAdjustMap['user']}',
-                                                        style:
-                                                            getBlackTextStyle(
-                                                          fontSize: 18,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      // timelowpressure BIKIN ERROR
-                                                      if (latestAdjustMap[
-                                                              'timeLowPressureSPM'] !=
-                                                          null)
-                                                        Text(
-                                                          'Last Event Low Pressure : ${DateFormat('dd MMMM yyyy  HH:mm:ss', 'id_ID').format(DateTime.parse(latestAdjustMap['timeLowPressureSPM']))}',
-                                                        )
-                                                      else
-                                                        SizedBox.shrink(),
+                                          //         if (!adjustmentEmpty) {
+                                          //           print('data adjust kosong');
+                                          //           return Center(
+                                          //             child: Container(
+                                          //               margin: EdgeInsets.only(
+                                          //                   bottom: 12),
+                                          //               child: Text(
+                                          //                 'No data available',
+                                          //                 style:
+                                          //                     getBlackTextStyle(),
+                                          //               ),
+                                          //             ),
+                                          //           );
+                                          //         }
 
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      Column(
-                                                        children: positionList
-                                                            .map((pl) {
-                                                          if (pl['adjusmentPressure'] ==
-                                                                  '' ||
-                                                              pl['adjusmentPressure'] ==
-                                                                  null) {
-                                                            return Container();
-                                                          }
+                                          //         return Column(
+                                          //           crossAxisAlignment:
+                                          //               CrossAxisAlignment
+                                          //                   .start,
+                                          //           children: [
+                                          //             Text(
+                                          //               'Tireman : ${latestAdjustMap['user']}',
+                                          //               style:
+                                          //                   getBlackTextStyle(
+                                          //                 fontSize: 18,
+                                          //               ),
+                                          //             ),
+                                          //             const SizedBox(
+                                          //               height: 12,
+                                          //             ),
+                                          //             // timelowpressure BIKIN ERROR
+                                          //             if (latestAdjustMap[
+                                          //                     'timeLowPressureSPM'] !=
+                                          //                 null)
+                                          //               Text(
+                                          //                 'Last Event Low Pressure : ${DateFormat('dd MMMM yyyy  HH:mm:ss', 'id_ID').format(DateTime.parse(latestAdjustMap['timeLowPressureSPM']))}',
+                                          //               )
+                                          //             else
+                                          //               SizedBox.shrink(),
 
-                                                          return Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            children: [
-                                                              Row(
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment
-                                                                        .spaceBetween,
-                                                                children: [
-                                                                  Text(
-                                                                    'Pos. ${pl['pos']} : ${pl['adjusmentPressure']} Psi',
-                                                                    style: getBlackTextStyle(
-                                                                        fontSize:
-                                                                            16),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                      width: 6),
-                                                                  Text(
-                                                                    DateFormat(
-                                                                            'dd MMMM yyyy  HH:mm:ss',
-                                                                            'id_ID')
-                                                                        .format(
-                                                                            DateTime.parse(latestAdjustMap['tanggal'])),
-                                                                    style: getBlackTextStyle(
-                                                                        fontSize:
-                                                                            16),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                              (pl['image'] !=
-                                                                          '' &&
-                                                                      pl['image'] !=
-                                                                          null)
-                                                                  ? Container(
-                                                                      padding: EdgeInsets
-                                                                          .only(
-                                                                              top: 8),
-                                                                      width: double
-                                                                          .infinity,
-                                                                      child:
-                                                                          ElevatedButton(
-                                                                        onPressed:
-                                                                            () {
-                                                                          showDialog(
-                                                                            context:
-                                                                                context,
-                                                                            builder: (context) =>
-                                                                                Dialog(
-                                                                              child: Stack(
-                                                                                children: [
-                                                                                  InteractiveViewer(
-                                                                                    child: Image.network(
-                                                                                      pl['image'],
-                                                                                      fit: BoxFit.contain,
-                                                                                    ),
-                                                                                  ),
-                                                                                  Positioned(
-                                                                                    top: 8.0,
-                                                                                    right: 8.0,
-                                                                                    child: IconButton(
-                                                                                      icon: Icon(Icons.close, color: Colors.black),
-                                                                                      onPressed: () {
-                                                                                        Navigator.of(context).pop();
-                                                                                      },
-                                                                                    ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            ),
-                                                                          );
-                                                                        },
-                                                                        style: ElevatedButton
-                                                                            .styleFrom(
-                                                                          backgroundColor:
-                                                                              Colors.orange,
-                                                                        ),
-                                                                        child:
-                                                                            Padding(
-                                                                          padding: const EdgeInsets
-                                                                              .all(
-                                                                              8.0),
-                                                                          child:
-                                                                              Row(
-                                                                            mainAxisAlignment:
-                                                                                MainAxisAlignment.center,
-                                                                            children: [
-                                                                              const Icon(Icons.photo, color: white),
-                                                                              const SizedBox(width: 8),
-                                                                              Text(
-                                                                                'Show Image',
-                                                                                style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                    )
-                                                                  : Container(),
-                                                              const Padding(
-                                                                padding: EdgeInsets
-                                                                    .symmetric(
-                                                                        vertical:
-                                                                            8.0),
-                                                                child:
-                                                                    Divider(),
-                                                              )
-                                                            ],
-                                                          );
-                                                        }).toList(),
-                                                      ),
-                                                    ],
-                                                  );
-                                                },
-                                              );
-                                            }
-                                            return Container();
-                                          }),
+                                          //             const SizedBox(
+                                          //               height: 12,
+                                          //             ),
+                                          //             Column(
+                                          //               children: positionList
+                                          //                   .map((pl) {
+                                          //                 if (pl['adjusmentPressure'] ==
+                                          //                         '' ||
+                                          //                     pl['adjusmentPressure'] ==
+                                          //                         null) {
+                                          //                   return Container();
+                                          //                 }
+
+                                          //                 return Column(
+                                          //                   crossAxisAlignment:
+                                          //                       CrossAxisAlignment
+                                          //                           .start,
+                                          //                   children: [
+                                          //                     Row(
+                                          //                       mainAxisAlignment:
+                                          //                           MainAxisAlignment
+                                          //                               .spaceBetween,
+                                          //                       children: [
+                                          //                         Text(
+                                          //                           'Pos. ${pl['pos']} : ${pl['adjusmentPressure']} Psi',
+                                          //                           style: getBlackTextStyle(
+                                          //                               fontSize:
+                                          //                                   16),
+                                          //                         ),
+                                          //                         const SizedBox(
+                                          //                             width: 6),
+                                          //                         Text(
+                                          //                           DateFormat(
+                                          //                                   'dd MMMM yyyy  HH:mm:ss',
+                                          //                                   'id_ID')
+                                          //                               .format(
+                                          //                                   DateTime.parse(latestAdjustMap['tanggal'])),
+                                          //                           style: getBlackTextStyle(
+                                          //                               fontSize:
+                                          //                                   16),
+                                          //                         ),
+                                          //                       ],
+                                          //                     ),
+                                          //                     (pl['image'] !=
+                                          //                                 '' &&
+                                          //                             pl['image'] !=
+                                          //                                 null)
+                                          //                         ? Container(
+                                          //                             padding: EdgeInsets
+                                          //                                 .only(
+                                          //                                     top: 8),
+                                          //                             width: double
+                                          //                                 .infinity,
+                                          //                             child:
+                                          //                                 ElevatedButton(
+                                          //                               onPressed:
+                                          //                                   () {
+                                          //                                 showDialog(
+                                          //                                   context:
+                                          //                                       context,
+                                          //                                   builder: (context) =>
+                                          //                                       Dialog(
+                                          //                                     child: Stack(
+                                          //                                       children: [
+                                          //                                         InteractiveViewer(
+                                          //                                           child: Image.network(
+                                          //                                             pl['image'],
+                                          //                                             fit: BoxFit.contain,
+                                          //                                           ),
+                                          //                                         ),
+                                          //                                         Positioned(
+                                          //                                           top: 8.0,
+                                          //                                           right: 8.0,
+                                          //                                           child: IconButton(
+                                          //                                             icon: Icon(Icons.close, color: Colors.black),
+                                          //                                             onPressed: () {
+                                          //                                               Navigator.of(context).pop();
+                                          //                                             },
+                                          //                                           ),
+                                          //                                         ),
+                                          //                                       ],
+                                          //                                     ),
+                                          //                                   ),
+                                          //                                 );
+                                          //                               },
+                                          //                               style: ElevatedButton
+                                          //                                   .styleFrom(
+                                          //                                 backgroundColor:
+                                          //                                     Colors.orange,
+                                          //                               ),
+                                          //                               child:
+                                          //                                   Padding(
+                                          //                                 padding: const EdgeInsets
+                                          //                                     .all(
+                                          //                                     8.0),
+                                          //                                 child:
+                                          //                                     Row(
+                                          //                                   mainAxisAlignment:
+                                          //                                       MainAxisAlignment.center,
+                                          //                                   children: [
+                                          //                                     const Icon(Icons.photo, color: white),
+                                          //                                     const SizedBox(width: 8),
+                                          //                                     Text(
+                                          //                                       'Show Image',
+                                          //                                       style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+                                          //                                     ),
+                                          //                                   ],
+                                          //                                 ),
+                                          //                               ),
+                                          //                             ),
+                                          //                           )
+                                          //                         : Container(),
+                                          //                     const Padding(
+                                          //                       padding: EdgeInsets
+                                          //                           .symmetric(
+                                          //                               vertical:
+                                          //                                   8.0),
+                                          //                       child:
+                                          //                           Divider(),
+                                          //                     )
+                                          //                   ],
+                                          //                 );
+                                          //               }).toList(),
+                                          //             ),
+                                          //           ],
+                                          //         );
+                                          //       },
+                                          //     );
+                                          //   }
+                                          //   return Container();
+                                          // }),
 
                                           // const SizedBox(
                                           //   height: 12,
