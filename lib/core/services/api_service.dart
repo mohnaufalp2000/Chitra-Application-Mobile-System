@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'model/daily_press.dart';
 import 'model/material_repair_model.dart';
 import 'model/recc_press.dart';
@@ -24,101 +26,140 @@ class ApiService {
   static const String jobcardUrl =
       'https://chitraparatama.co.id/ICS/product/get_api.php?function=';
 
-  // Post job jobcard repair
-  static Future<void> postJobJobcardRepair(Map<String, dynamic> jobcard) async {
+  /// 🔹 Ambil URL dari Firestore
+  static Future<String?> _getUrlFromFirestore(String docId) async {
     try {
-      final response = await http.post(Uri.parse('${tirePostUrl}new_job'),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(jobcard));
-      log('success kirim data');
-      log('Response status: ${response.statusCode}');
+      final doc = await FirebaseFirestore.instance
+          .collection('url_tire_repair')
+          .doc(docId)
+          .get();
+
+      if (!doc.exists) {
+        log('❌ Dokumen $docId tidak ditemukan di Firestore.');
+        return null;
+      }
+
+      final url = doc.data()?['url'];
+      if (url == null || url.isEmpty) {
+        log('⚠️ URL kosong di dokumen $docId.');
+        return null;
+      }
+
+      return url;
     } catch (e) {
-      print('Error saat mengirim data jobcard repair: $e');
+      log('🔥 Error ambil URL Firestore ($docId): $e');
+      return null;
     }
   }
 
-  // Get Material Repair
-  static Future<List<MaterialRepair>> getMaterialRepairList() async {
+  /// 🔹 POST: Jobcard Repair
+  static Future<void> postJobJobcardRepair(Map<String, dynamic> jobcard) async {
+    final url = await _getUrlFromFirestore('post-jobcard-repair');
+    if (url == null) return;
+
     try {
-      final response =
-          await http.get(Uri.parse('${jobcardUrl}repair_material'));
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(jobcard),
+      );
+      log('✅ Berhasil kirim Jobcard Repair');
+      log('Response status: ${response.statusCode}');
+      log('Response body: ${response.body}');
+    } catch (e) {
+      log('❌ Error kirim Jobcard Repair: $e');
+    }
+  }
+
+  /// 🔹 GET: Material Repair List
+  static Future<List<MaterialRepair>> getMaterialRepairList() async {
+    final url = await _getUrlFromFirestore('get-material-list-repair');
+    if (url == null) return [];
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
       if (response.statusCode == 200) {
-        final body = response.body;
-        final result = jsonDecode(body);
-
-        print('material data : $result');
-
+        final result = jsonDecode(response.body);
         final List<MaterialRepair> materialList = List<MaterialRepair>.from(
-            result['data']
-                .map((material) => MaterialRepair.fromJson(material)));
-
+          result['data'].map((e) => MaterialRepair.fromJson(e)),
+        );
+        log('✅ Berhasil ambil Material Repair (${materialList.length} item)');
         return materialList;
       } else {
-        throw Exception(
-            'Failed to load data, status code: ${response.statusCode}');
+        throw Exception('Gagal load data: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error Get Material Repair : $e');
+      log('❌ Error ambil Material Repair: $e');
       return [];
     }
   }
 
-  // GET data WO Jobcard
+  /// 🔹 GET: WO Jobcard List
   static Future<List<Map<String, dynamic>>> getWOJobcardList() async {
-    try {
-      final response = await http.get(Uri.parse('${jobcardUrl}wo_repair'));
+    final url = await _getUrlFromFirestore('wo-jobcard-repair');
+    if (url == null) return [];
 
-      print('status code : ${response.statusCode}');
+    try {
+      final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
-        final body = response.body;
-        final result = jsonDecode(body);
-        final List<dynamic> dataList = result['data'];
+        final result = jsonDecode(response.body);
+        final dataList = result['data'] as List<dynamic>;
 
-        final List<Map<String, dynamic>> woList = dataList.map((item) {
+        final woList = dataList.map((item) {
           return {
             'id_wo': item['id_wo'],
             'wo': item['wo'],
-            'wo_date': item['wo_date']
+            'wo_date': item['wo_date'],
           };
         }).toList();
 
+        log('✅ Berhasil ambil WO Jobcard (${woList.length} data)');
         return woList;
       } else {
-        throw Exception(
-            'Failed to load data, status code: ${response.statusCode}');
+        throw Exception('Gagal load data: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error saat mendapatkan data wo jobcard repair: $e');
+      log('❌ Error ambil WO Jobcard: $e');
       return [];
     }
   }
 
-  // POST data new tire repair
+  /// 🔹 POST: New Tire Repair
   static Future<void> postNewTireRepair(Map<String, dynamic> newTireMap) async {
+    final url = await _getUrlFromFirestore('post-new-tire-repair');
+    if (url == null) return;
+
     try {
       final response = await http.post(
-          Uri.parse('${tirePostUrl}new_tire_repair'),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(newTireMap));
-      log('success kirim data');
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(newTireMap),
+      );
+      log('✅ Berhasil kirim New Tire Repair');
       log('Response status: ${response.statusCode}');
     } catch (e) {
-      print('Error saat mengirim data new tire repair: $e');
+      log('❌ Error kirim New Tire Repair: $e');
     }
   }
 
-  // EDIT data new tire repair
+  /// 🔹 POST: Edit Tire Repair
   static Future<void> editNewTireRepair(
       Map<String, dynamic> editTireMap) async {
-    log('body edit : $editTireMap');
+    final url = await _getUrlFromFirestore('edit-new-tire-repair');
+    if (url == null) return;
+
     try {
-      final response = await http.post(Uri.parse('${tirePostUrl}inspect'),
-          headers: {"Content-Type": "application/json"},
-          body: jsonEncode(editTireMap));
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(editTireMap),
+      );
+      log('✅ Edit Tire Repair berhasil');
       log('Response status: ${response.statusCode}');
     } catch (e) {
-      print('Error saat edit data new tire repair: $e');
+      log('❌ Error edit Tire Repair: $e');
     }
   }
 

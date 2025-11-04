@@ -466,7 +466,7 @@ class HomeState extends GetxController {
         return;
       }
 
-      versionNumberRx.value = latestVersion;
+      versionNumberRx.value = currentVersion;
 
       // 🔹 Cek perbedaan versi
       if (currentVersion != latestVersion) {

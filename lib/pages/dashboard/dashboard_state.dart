@@ -49,7 +49,6 @@ class DashboardState extends GetxController {
     final appCheck = AppCheck();
 
     try {
-      // cek apakah aplikasi tersedia
       final app = await appCheck.checkAvailability(targetPackageName);
 
       if (app != null) {
@@ -57,17 +56,52 @@ class DashboardState extends GetxController {
         await appCheck.launchApp(targetPackageName);
       } else {
         debugPrint("❌ App tidak ditemukan → buka link download");
-        final Uri url = Uri.parse(downloadUrl);
-
-        if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-          throw Exception('Could not launch $url');
-        }
+        await _openDownloadLink(downloadUrl, targetPackageName);
       }
     } catch (e) {
       debugPrint("⚠️ Error saat cek app: $e");
-      // fallback ke link install
-      final Uri url = Uri.parse(downloadUrl);
-      await launchUrl(url, mode: LaunchMode.externalApplication);
+      await _openDownloadLink(downloadUrl, targetPackageName);
     }
   }
+
+  Future<void> _openDownloadLink(
+      String downloadUrl, String targetPackageName) async {
+    final Uri url = Uri.parse(
+      downloadUrl.isNotEmpty
+          ? downloadUrl
+          : "https://play.google.com/store/apps/details?id=$targetPackageName",
+    );
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  // Future<void> openOrInstallApp({
+  //   required String targetPackageName,
+  //   required String downloadUrl,
+  // }) async {
+  //   final appCheck = AppCheck();
+
+  //   try {
+  //     // cek apakah aplikasi tersedia
+  //     final app = await appCheck.checkAvailability(targetPackageName);
+
+  //     if (app != null) {
+  //       debugPrint("✅ App ditemukan → buka $targetPackageName");
+  //       await appCheck.launchApp(targetPackageName);
+  //     } else {
+  //       debugPrint("❌ App tidak ditemukan → buka link download");
+  //       final Uri url = Uri.parse(downloadUrl);
+
+  //       if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+  //         throw Exception('Could not launch $url');
+  //       }
+  //     }
+  //   } catch (e) {
+  //     debugPrint("⚠️ Error saat cek app: $e");
+  //     // fallback ke link install
+  //     final Uri url = Uri.parse(downloadUrl);
+  //     await launchUrl(url, mode: LaunchMode.externalApplication);
+  //   }
+  // }
 }
