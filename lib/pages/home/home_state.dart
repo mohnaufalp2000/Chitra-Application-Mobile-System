@@ -318,6 +318,7 @@ class HomeState extends GetxController {
       // );
 
       listSite.value = fetchedList;
+      log('list site : ${listSite.value}');
       // saveSiteToLocalPreferences(fetchedList); // Simpan ke local
     } catch (e) {
       log('Error fetching sites: $e');

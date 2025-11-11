@@ -498,6 +498,8 @@ class ApiService {
       final body = response.body;
       final result = jsonDecode(body);
 
+      log('response all site : $result');
+
       List<Site> listSite = List<Site>.from(result['data'].map(
         (site) => Site.fromJson(site),
       ));
@@ -508,6 +510,7 @@ class ApiService {
             .toList();
       }
       await cachedAllSites(listSite);
+
       return listSite;
     } catch (e) {
       throw Exception(e.toString());
