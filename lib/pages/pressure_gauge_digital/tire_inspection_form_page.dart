@@ -4,8 +4,19 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:app_settings/app_settings.dart';
+import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_state.dart';
+import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_state.dart'
+    as connectedDevicesState;
+import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_state.dart';
+import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_cubit.dart';
+import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_state.dart';
+import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
 import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:path_provider/path_provider.dart';
@@ -39,7 +50,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -99,6 +109,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   String rtd = '';
   List<String> listImg = [];
   Map<String, dynamic> user = {};
+  bool _listenerAdded = false;
+  int checkAmount = 0;
+  int selectedRoute = 0;
+  List<List<int>> inspectRoute = [
+    [0, 1, 2, 3, 4, 5],
+    [0, 2, 3, 4, 5, 1],
+    [1, 5, 4, 3, 2, 0],
+  ];
 
   List<String> pressure = [
     '0',
@@ -175,6 +193,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     super.initState();
     requestPlacePermission();
 
+    context.read<BluetoothOnOffCubit>().checkBluetoothStatus();
+    final connectedCubit = context.read<ConnectedDevicesCubit>();
+    log('connected cubit : $connectedCubit');
+    connectedCubit.fetchConnectedDevices(); // HANYA MEMULAI fetch
+
     // callTires();
     WidgetsBinding.instance.addObserver(this);
     getUser();
@@ -210,10 +233,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
   }
 
-  FlutterBluetoothSerial bluetoothSerial = FlutterBluetoothSerial.instance;
-  BluetoothConnection? connection;
-  bool get isConnected => connection != null && connection!.isConnected;
-
   List<BluetoothDevice> devices = [];
   String tmpPressure = '';
   final Box<TireInspectPictureEntity> imageBox =
@@ -228,59 +247,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       //   pit.add('WS');
       // }
     });
-  }
-
-  startScanBluetooth() async {
-    bluetoothSerial.startDiscovery().listen((device) {
-      if (!devices.contains(device.device)) {
-        log('device yg tersedia ' + device.device.toString());
-        setState(() {
-          devices.add(device.device);
-        });
-      }
-    }, onDone: () {
-      setState(() {});
-    });
-  }
-
-  stopScanBluetooth() async {
-    bluetoothSerial.cancelDiscovery();
-  }
-
-  // mendapatkan nilai pressure
-  void _listenForData() {
-    connection!.input!.listen((data) {
-      String receivedData = String.fromCharCodes(data).trim();
-      log('data json : $receivedData');
-      String onlyNumber =
-          '${double.parse(receivedData.replaceAll(RegExp(r'[^\d.-]+'), ''))}';
-      print(
-          'Received data: ${double.parse(receivedData.replaceAll(RegExp(r'[^\d.-]+'), ''))}');
-
-      setState(() {
-        pressureCtrl.text = onlyNumber;
-        print('tekananangin : ${pressureCtrl.text}');
-      });
-    });
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      // Perbarui daftar perangkat terhubung
-      updateConnectedDevices();
-    }
-  }
-
-  void updateConnectedDevices() async {
-    // Ambil daftar perangkat terhubung dan perbarui state
-    await FlutterBluetoothSerial.instance.getBondedDevices();
-    setState(() {});
-  }
-
-  Stream<List<BluetoothDevice>> getConnectedDevices() {
-    return FlutterBluetoothSerial.instance.getBondedDevices().asStream();
   }
 
   void handleDataChecked(List<bool> checkedList, int index) {
@@ -329,6 +295,23 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   void handleDataRTD(String rtd, int index) {
     this.rtd = rtd;
     print('remarks (pgd) : ${this.remarks}');
+  }
+
+  void applyPressureData(String pressureValue) {
+    setState(() {
+      final firstNumber = pressureValue;
+
+      if (checkAmount < position.length) {
+        int targetIndex = inspectRoute[selectedRoute][checkAmount];
+        log('target position : ${targetIndex}');
+        log('target pressure : ${firstNumber}');
+
+        // Update Map di index tersebut
+        position[targetIndex]["pressure"] = firstNumber;
+
+        checkAmount++;
+      }
+    });
   }
 
   @override
@@ -400,16 +383,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             child: IconButton(
                 onPressed: () {
                   if (isSaved) {
-                    if (connection != null) {
-                      connection?.close();
-                    }
-                    stopScanBluetooth();
                     pushReplace(context, HomePage.routeName);
                   } else {
-                    if (connection != null) {
-                      connection?.close();
-                    }
-                    stopScanBluetooth();
                     back(context);
                   }
                 },
@@ -618,6 +593,160 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(
+                      height: 12,
+                    ),
+                    BlocBuilder<ConnectedDevicesCubit, ConnectedDevicesState>(
+                      builder: (context, cState) {
+                        // Asumsikan perangkat TPMS adalah yang terhubung jika statusnya Success
+                        final isConnected =
+                            cState is ConnectedDevicesLoadedState &&
+                                cState.connectedDevices.isNotEmpty;
+
+                        // Cari perangkat yang terhubung yang memiliki nama yang relevan
+                        // (Anda harus menyesuaikan logika pencarian ini sesuai nama perangkat BT Anda)
+                        final BluetoothDevice? connectedDevice = isConnected
+                            ? cState.connectedDevices
+                                .firstWhereOrNull((d) => d.advName.isNotEmpty)
+                            : null;
+
+                        final String buttonText = isConnected
+                            ? 'Connected: ${connectedDevice?.advName ?? connectedDevice?.remoteId.str}'
+                            : 'Scan Devices';
+
+                        return ButtonWidget(
+                          // Warna tombol berdasarkan status koneksi
+                          color: isConnected ? green00968A : Colors.blue,
+                          name: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.bluetooth,
+                                color: white,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                buttonText,
+                                style: getWhiteTextStyle(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                          function: () async {},
+                        );
+                      },
+                    ),
+                    BlocListener<BluetoothOnOffCubit, BluetoothOnOffState>(
+                      listener: (context, onOffState) {
+                        if (onOffState is BluetoothOnState) {
+                          context
+                              .read<ConnectedDevicesCubit>()
+                              .fetchConnectedDevices();
+                        }
+                      },
+                      child: BlocConsumer<ConnectedDevicesCubit,
+                          ConnectedDevicesState>(
+                        listener: (context, state) {
+                          if (state is ConnectedDevicesLoadedState &&
+                              state.connectedDevices.isNotEmpty) {
+                            context
+                                .read<DiscoverServicesCubit>()
+                                .discoverServices(state.connectedDevices.first);
+                          }
+                        },
+                        builder: (context, state) {
+                          if (state is ConnectedDevicesLoadedState) {
+                            // return _buildConnectedDeviceUI(
+                            //     state.connectedDevices);
+                            BlocProvider.of<DiscoverServicesCubit>(
+                              context,
+                            ).discoverServices(state.connectedDevices[0]);
+                            return BlocConsumer<DiscoverServicesCubit,
+                                DiscoverServiceState>(
+                              listener: (context, discoverState) {
+                                if (discoverState is ServicesLoadedState) {
+                                  final services = discoverState.services;
+                                  log('services pgd : $services');
+
+                                  if (!_listenerAdded) {
+                                    _listenerAdded = true;
+                                    for (BluetoothService service in services) {
+                                      for (BluetoothCharacteristic characteristic
+                                          in service.characteristics) {
+                                        if (characteristic.properties.notify) {
+                                          characteristic.onValueReceived
+                                              .listen((value) {
+                                            final notifInString =
+                                                String.fromCharCodes(value);
+                                            log("angin bergejolak: $notifInString");
+
+                                            debugPrint(
+                                              "debugBluetoothNotification*************",
+                                            );
+                                            debugPrint(
+                                              "debugBluetoothNotification: charName: ${BluetoothUtils.getBluetoothChar(characteristic.characteristicUuid.str)}",
+                                            );
+
+                                            debugPrint(
+                                              "notifhohoho: stringNotif: $notifInString",
+                                            );
+                                            setState(() {
+                                              String press = '';
+
+                                              if (notifInString.contains('|')) {
+                                                int floorPressure =
+                                                    double.parse(
+                                                  notifInString.split(
+                                                    '|',
+                                                  )[0],
+                                                ).floor();
+
+                                                // int floorTemperature =
+                                                //     double.parse(
+                                                //       notifInString.split(
+                                                //         '|',
+                                                //       )[1],
+                                                //     ).floor();
+                                                // temperature = floorTemperature
+                                                //     .toString();
+                                                applyPressureData(
+                                                    floorPressure.toString());
+                                              } else {
+                                                int floorPressure =
+                                                    double.parse(
+                                                  notifInString,
+                                                ).floor();
+                                                press.toString();
+                                                applyPressureData(
+                                                    floorPressure.toString());
+                                              }
+                                            });
+
+                                            debugPrint(
+                                              "debugBluetoothNotification*************",
+                                            );
+                                          });
+
+                                          characteristic
+                                              .setNotifyValue(true); // WAJIB
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              },
+                              builder: (context, discoverState) {
+                                if (discoverState is ErrorLoadingServiceState) {
+                                  return Center(child: Text('Error'));
+                                }
+                                return Container();
+                              },
+                            );
+                          }
+                          return CircularProgressIndicator();
+                        },
+                      ),
                     ),
                     const SizedBox(
                       height: 12,
