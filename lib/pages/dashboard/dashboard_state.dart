@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:appcheck/appcheck.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/home_state.dart';
@@ -23,8 +25,25 @@ class DashboardState extends GetxController {
   }
 
   void onScanPressed() async {
-    // Contoh: buka halaman QR Scanner
+    // Cek apakah platform adalah iOS
+    if (Platform.isIOS) {
+      Get.snackbar(
+        'Coming Soon',
+        'Fitur ini belum tersedia untuk iOS.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFF2196F3),
+        colorText: const Color(0xFFFFFFFF),
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(12),
+        borderRadius: 8,
+      );
+      return; // Hentikan eksekusi agar tidak lanjut ke Firestore atau Drive
+    }
+
+    // Tampilkan snackbar ketika tombol ditekan
     Get.snackbar('Scan', 'Tombol scan ditekan!');
+
+    // Jika bukan iOS (Android), lanjutkan akses Firestore
     final doc =
         await firestore.collection("url_tire_damage_ai").doc("url").get();
 
@@ -39,6 +58,8 @@ class DashboardState extends GetxController {
         targetPackageName: targetPackageName,
         downloadUrl: downloadUrl,
       );
+    } else {
+      Get.snackbar('Error', 'Data tidak ditemukan di Firestore.');
     }
   }
 

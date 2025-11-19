@@ -53,6 +53,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   FirebaseAuth auth = FirebaseAuth.instance;
   final HomeState homeState = Get.find<HomeState>();
   bool _isInit = true;
+  bool _listenerAdded = false;
 
   // List<Map<String, dynamic>> position = [];
   List<String> tireCondition = ['Normal', 'Low Pressure'];
@@ -519,11 +520,40 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
   @override
   void initState() {
-    // addPositionVariable();
     super.initState();
-    // callTires();
+    context.read<BluetoothOnOffCubit>().checkBluetoothStatus();
+    final connectedCubit = context.read<ConnectedDevicesCubit>();
+    log('connected cubit : $connectedCubit');
+    connectedCubit.fetchConnectedDevices(); // HANYA MEMULAI fetch
     getUser();
   }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+
+  //   // Panggil fungsi-fungsi Anda yang sudah ada
+  //   context.read<BluetoothOnOffCubit>().checkBluetoothStatus();
+  //   final connectedCubit = context.read<ConnectedDevicesCubit>();
+  //   log('connected cubit : $connectedCubit');
+  //   connectedCubit.fetchConnectedDevices();
+  //   getUser();
+
+  //   // --- TAMBAHKAN KODE INI ---
+  //   // Cek state cubit SAAT INI
+  //   final currentState = connectedCubit.state;
+  //   log('connected cubit current state : $currentState');
+  //   if (currentState is connectedDevicesState.ConnectedDevicesLoadedState) {
+  //     if (currentState.connectedDevices.isNotEmpty) {
+  //       // Jika sudah ada perangkat terhubung, LANGSUNG discover services
+  //       log('initState: Perangkat sudah terhubung. Memulai discover services...');
+  //       context.read<DiscoverServicesCubit>().discoverServices(
+  //             currentState.connectedDevices[0],
+  //           );
+  //     }
+  //   }
+  //   // --- AKHIR KODE TAMBAHAN ---
+  // }
 
   @override
   void dispose() {
@@ -2080,238 +2110,306 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                     const SizedBox(
                                       height: 12,
                                     ),
-                                    BlocBuilder<BluetoothOnOffCubit,
+                                    BlocListener<BluetoothOnOffCubit,
                                         BluetoothOnOffState>(
-                                      builder: (context, onOffState) {
+                                      listener: (context, onOffState) {
                                         if (onOffState is BluetoothOnState) {
-                                          return BlocConsumer<
-                                              ConnectedDevicesCubit,
-                                              connectedDevicesState
-                                              .ConnectedDevicesState>(
-                                            listener: (context, state) {
-                                              if (state is connectedDevicesState
-                                                  .ConnectedDevicesLoadedState) {
-                                                if (state.connectedDevices
-                                                    .isNotEmpty) {
-                                                  BlocProvider.of<
-                                                      DiscoverServicesCubit>(
-                                                    context,
-                                                  ).discoverServices(state
-                                                      .connectedDevices[0]);
-                                                }
-                                              }
-                                            },
-                                            builder: (context, state) {
-                                              if (state is connectedDevicesState
-                                                  .ConnectedDevicesLoadedState) {
-                                                return Column(
-                                                  children: [
-                                                    ListOfConnectedDevicesWidget(
-                                                      connectedDevices: state
-                                                          .connectedDevices,
-                                                    ),
-                                                    BlocConsumer<
-                                                        DiscoverServicesCubit,
-                                                        DiscoverServiceState>(
-                                                      listener: (context,
-                                                          discoverState) {
-                                                        if (discoverState
-                                                            is ServicesLoadedState) {
-                                                          final services =
-                                                              discoverState
-                                                                  .services;
-                                                          log('services pgd : $services');
-
-                                                          for (BluetoothService service
-                                                              in services) {
-                                                            for (BluetoothCharacteristic characteristic
-                                                                in service
-                                                                    .characteristics) {
-                                                              characteristic
-                                                                  .lastValueStream
-                                                                  .listen((
-                                                                event,
-                                                              ) {
-                                                                String
-                                                                    notifInString =
-                                                                    String.fromCharCodes(
-                                                                        event);
-                                                                debugPrint(
-                                                                  "debugBluetoothNotification*************",
-                                                                );
-                                                                debugPrint(
-                                                                  "debugBluetoothNotification: charName: ${BluetoothUtils.getBluetoothChar(characteristic.characteristicUuid.str)}",
-                                                                );
-
-                                                                debugPrint(
-                                                                  "notifhohoho: stringNotif: $notifInString",
-                                                                );
-                                                                setState(() {
-                                                                  String press =
-                                                                      '';
-
-                                                                  if (notifInString
-                                                                      .contains(
-                                                                          '|')) {
-                                                                    int floorPressure =
-                                                                        double
-                                                                            .parse(
-                                                                      notifInString
-                                                                          .split(
-                                                                        '|',
-                                                                      )[0],
-                                                                    ).floor();
-
-                                                                    // int floorTemperature =
-                                                                    //     double.parse(
-                                                                    //       notifInString.split(
-                                                                    //         '|',
-                                                                    //       )[1],
-                                                                    //     ).floor();
-                                                                    // temperature = floorTemperature
-                                                                    //     .toString();
-                                                                    applyPressureData(
-                                                                        floorPressure
-                                                                            .toString());
-                                                                  } else {
-                                                                    int floorPressure =
-                                                                        double
-                                                                            .parse(
-                                                                      notifInString,
-                                                                    ).floor();
-                                                                    press
-                                                                        .toString();
-                                                                    applyPressureData(
-                                                                        floorPressure
-                                                                            .toString());
-                                                                  }
-                                                                });
-
-                                                                // debugPrint(
-                                                                //     "notifhahaha: jsonNotif: ${jsonDecode(notifInString)}");
-
-                                                                // setState(() {
-                                                                //   // pressure = notifInString;
-                                                                //   if (notifInString.contains('|')) {
-                                                                //     int floorPressure =
-                                                                //         double.parse(
-                                                                //           notifInString.split(
-                                                                //             '|',
-                                                                //           )[0],
-                                                                //         ).floor();
-                                                                //     pressure = floorPressure
-                                                                //         .toString();
-
-                                                                //     int floorTemperature =
-                                                                //         double.parse(
-                                                                //           notifInString.split(
-                                                                //             '|',
-                                                                //           )[1],
-                                                                //         ).floor();
-                                                                //     temperature = floorTemperature
-                                                                //         .toString();
-                                                                //   } else {
-                                                                //     int floorPressure =
-                                                                //         double.parse(
-                                                                //           notifInString,
-                                                                //         ).floor();
-                                                                //     pressure = floorPressure
-                                                                //         .toString();
-                                                                //   }
-
-                                                                //   if (selectedTire != -1) {
-                                                                //     tires[selectedTire]['pressure'] =
-                                                                //         pressure;
-                                                                //     tires[selectedTire]['temperature'] =
-                                                                //         temperature;
-                                                                //   } else {
-                                                                //     switch (selectedRoute) {
-                                                                //       case 0:
-                                                                //         setState(() {
-                                                                //           if (checkAmount < 6)
-                                                                //             tires[inspectRoute[0][checkAmount]]['pressure'] =
-                                                                //                 pressure;
-                                                                //           tires[inspectRoute[0][checkAmount]]['temperature'] =
-                                                                //               temperature;
-                                                                //           checkAmount++;
-                                                                //         });
-                                                                //         break;
-                                                                //       case 1:
-                                                                //         setState(() {
-                                                                //           if (checkAmount < 6)
-                                                                //             tires[inspectRoute[1][checkAmount]]['pressure'] =
-                                                                //                 pressure;
-                                                                //           tires[inspectRoute[1][checkAmount]]['temperature'] =
-                                                                //               temperature;
-                                                                //           checkAmount++;
-                                                                //         });
-                                                                //         break;
-                                                                //       case 2:
-                                                                //         setState(() {
-                                                                //           if (checkAmount < 6)
-                                                                //             tires[inspectRoute[2][checkAmount]]['pressure'] =
-                                                                //                 pressure;
-                                                                //           tires[inspectRoute[2][checkAmount]]['temperature'] =
-                                                                //               temperature;
-                                                                //           checkAmount++;
-                                                                //         });
-                                                                //         break;
-                                                                //     }
-                                                                //     // checkSelectionTire();
-                                                                //   }
-                                                                //   log(
-                                                                //     'pressure dibulatkan : $pressure',
-                                                                //   );
-                                                                // });
-
-                                                                debugPrint(
-                                                                  "debugBluetoothNotification*************",
-                                                                );
-                                                              });
-                                                            }
-                                                          }
-                                                        }
-                                                      },
-                                                      builder: (context,
-                                                          discoverState) {
-                                                        if (discoverState
-                                                            is ErrorLoadingServiceState) {
-                                                          return Center(
-                                                              child: Text(
-                                                                  'Error'));
-                                                        }
-                                                        return Container();
-                                                      },
-                                                    ),
-                                                  ],
-                                                );
-                                              } else if (state
-                                                  is connectedDevicesState
-                                                  .LoadingState) {
-                                                return const Center(
-                                                  child:
-                                                      CircularProgressIndicator(),
-                                                );
-                                              }
-                                              return const SizedBox();
-                                            },
-                                          );
-                                        } else if (onOffState
-                                            is BluetoothOffState) {
-                                          return const Center(
-                                            child:
-                                                Text("Bluetooth is turned off"),
-                                          );
-                                        } else if (onOffState
-                                            is BluetoothNotSupportedState) {
-                                          return Center(
-                                              child: Text(
-                                                  onOffState.failData.msg));
+                                          context
+                                              .read<ConnectedDevicesCubit>()
+                                              .fetchConnectedDevices();
                                         }
-                                        return const Center(
-                                            child: CircularProgressIndicator());
                                       },
+                                      child: BlocConsumer<ConnectedDevicesCubit,
+                                          ConnectedDevicesState>(
+                                        listener: (context, state) {
+                                          if (state
+                                                  is ConnectedDevicesLoadedState &&
+                                              state.connectedDevices
+                                                  .isNotEmpty) {
+                                            context
+                                                .read<DiscoverServicesCubit>()
+                                                .discoverServices(state
+                                                    .connectedDevices.first);
+                                          }
+                                        },
+                                        builder: (context, state) {
+                                          if (state
+                                              is ConnectedDevicesLoadedState) {
+                                            // return _buildConnectedDeviceUI(
+                                            //     state.connectedDevices);
+                                            BlocProvider.of<
+                                                DiscoverServicesCubit>(
+                                              context,
+                                            ).discoverServices(
+                                                state.connectedDevices[0]);
+                                            return BlocConsumer<
+                                                DiscoverServicesCubit,
+                                                DiscoverServiceState>(
+                                              listener:
+                                                  (context, discoverState) {
+                                                if (discoverState
+                                                    is ServicesLoadedState) {
+                                                  final services =
+                                                      discoverState.services;
+                                                  log('services pgd : $services');
+
+                                                  if (!_listenerAdded) {
+                                                    _listenerAdded = true;
+                                                    for (BluetoothService service
+                                                        in services) {
+                                                      for (BluetoothCharacteristic characteristic
+                                                          in service
+                                                              .characteristics) {
+                                                        if (characteristic
+                                                            .properties
+                                                            .notify) {
+                                                          characteristic
+                                                              .onValueReceived
+                                                              .listen((value) {
+                                                            final notifInString =
+                                                                String
+                                                                    .fromCharCodes(
+                                                                        value);
+                                                            log("pengendali angin: $notifInString");
+
+                                                            debugPrint(
+                                                              "debugBluetoothNotification*************",
+                                                            );
+                                                            debugPrint(
+                                                              "debugBluetoothNotification: charName: ${BluetoothUtils.getBluetoothChar(characteristic.characteristicUuid.str)}",
+                                                            );
+
+                                                            debugPrint(
+                                                              "notifhohoho: stringNotif: $notifInString",
+                                                            );
+                                                            setState(() {
+                                                              String press = '';
+
+                                                              if (notifInString
+                                                                  .contains(
+                                                                      '|')) {
+                                                                int floorPressure =
+                                                                    double
+                                                                        .parse(
+                                                                  notifInString
+                                                                      .split(
+                                                                    '|',
+                                                                  )[0],
+                                                                ).floor();
+
+                                                                // int floorTemperature =
+                                                                //     double.parse(
+                                                                //       notifInString.split(
+                                                                //         '|',
+                                                                //       )[1],
+                                                                //     ).floor();
+                                                                // temperature = floorTemperature
+                                                                //     .toString();
+                                                                applyPressureData(
+                                                                    floorPressure
+                                                                        .toString());
+                                                              } else {
+                                                                int floorPressure =
+                                                                    double
+                                                                        .parse(
+                                                                  notifInString,
+                                                                ).floor();
+                                                                press
+                                                                    .toString();
+                                                                applyPressureData(
+                                                                    floorPressure
+                                                                        .toString());
+                                                              }
+                                                            });
+
+                                                            debugPrint(
+                                                              "debugBluetoothNotification*************",
+                                                            );
+                                                          });
+
+                                                          characteristic
+                                                              .setNotifyValue(
+                                                                  true); // WAJIB
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              builder:
+                                                  (context, discoverState) {
+                                                if (discoverState
+                                                    is ErrorLoadingServiceState) {
+                                                  return Center(
+                                                      child: Text('Error'));
+                                                }
+                                                return Container();
+                                              },
+                                            );
+                                          }
+                                          return CircularProgressIndicator();
+                                        },
+                                      ),
                                     ),
+
+                                    // BlocBuilder<BluetoothOnOffCubit,
+                                    //     BluetoothOnOffState>(
+                                    //   builder: (context, onOffState) {
+                                    //     log('bluetooth is on state : ${onOffState is BluetoothOnState}');
+                                    //     log('bluetooth is off state : ${onOffState is BluetoothOffState}');
+
+                                    //     if (onOffState is BluetoothOnState) {
+                                    //       return BlocConsumer<
+                                    //           ConnectedDevicesCubit,
+                                    //           connectedDevicesState
+                                    //           .ConnectedDevicesState>(
+                                    //         listener: (context, state) {
+                                    //           if (state is connectedDevicesState
+                                    //               .ConnectedDevicesLoadedState) {
+                                    //             if (state.connectedDevices
+                                    //                 .isNotEmpty) {
+                                    //               BlocProvider.of<
+                                    //                   DiscoverServicesCubit>(
+                                    //                 context,
+                                    //               ).discoverServices(state
+                                    //                   .connectedDevices[0]);
+                                    //             }
+                                    //           }
+                                    //         },
+                                    //         builder: (context, state) {
+                                    //           if (state is connectedDevicesState
+                                    //               .ConnectedDevicesLoadedState) {
+                                    //             return Column(
+                                    //               children: [
+                                    //                 ListOfConnectedDevicesWidget(
+                                    //                   connectedDevices: state
+                                    //                       .connectedDevices,
+                                    //                 ),
+                                    //                 BlocConsumer<
+                                    //                     DiscoverServicesCubit,
+                                    //                     DiscoverServiceState>(
+                                    //                   listener: (context,
+                                    //                       discoverState) {
+                                    //                     if (discoverState
+                                    //                         is ServicesLoadedState) {
+                                    //                       final services =
+                                    //                           discoverState
+                                    //                               .services;
+                                    //                       log('services pgd : $services');
+
+                                    //                       for (BluetoothService service
+                                    //                           in services) {
+                                    //                         for (BluetoothCharacteristic characteristic
+                                    //                             in service
+                                    //                                 .characteristics) {
+                                    //                           characteristic
+                                    //                               .lastValueStream
+                                    //                               .listen((
+                                    //                             event,
+                                    //                           ) {
+                                    //                             String
+                                    //                                 notifInString =
+                                    //                                 String.fromCharCodes(
+                                    //                                     event);
+                                    //                             debugPrint(
+                                    //                               "debugBluetoothNotification*************",
+                                    //                             );
+                                    //                             debugPrint(
+                                    //                               "debugBluetoothNotification: charName: ${BluetoothUtils.getBluetoothChar(characteristic.characteristicUuid.str)}",
+                                    //                             );
+
+                                    //                             debugPrint(
+                                    //                               "notifhohoho: stringNotif: $notifInString",
+                                    //                             );
+                                    //                             setState(() {
+                                    //                               String press =
+                                    //                                   '';
+
+                                    //                               if (notifInString
+                                    //                                   .contains(
+                                    //                                       '|')) {
+                                    //                                 int floorPressure =
+                                    //                                     double
+                                    //                                         .parse(
+                                    //                                   notifInString
+                                    //                                       .split(
+                                    //                                     '|',
+                                    //                                   )[0],
+                                    //                                 ).floor();
+
+                                    //                                 // int floorTemperature =
+                                    //                                 //     double.parse(
+                                    //                                 //       notifInString.split(
+                                    //                                 //         '|',
+                                    //                                 //       )[1],
+                                    //                                 //     ).floor();
+                                    //                                 // temperature = floorTemperature
+                                    //                                 //     .toString();
+                                    //                                 applyPressureData(
+                                    //                                     floorPressure
+                                    //                                         .toString());
+                                    //                               } else {
+                                    //                                 int floorPressure =
+                                    //                                     double
+                                    //                                         .parse(
+                                    //                                   notifInString,
+                                    //                                 ).floor();
+                                    //                                 press
+                                    //                                     .toString();
+                                    //                                 applyPressureData(
+                                    //                                     floorPressure
+                                    //                                         .toString());
+                                    //                               }
+                                    //                             });
+
+                                    //                             debugPrint(
+                                    //                               "debugBluetoothNotification*************",
+                                    //                             );
+                                    //                           });
+                                    //                         }
+                                    //                       }
+                                    //                     }
+                                    //                   },
+                                    //                   builder: (context,
+                                    //                       discoverState) {
+                                    //                     if (discoverState
+                                    //                         is ErrorLoadingServiceState) {
+                                    //                       return Center(
+                                    //                           child: Text(
+                                    //                               'Error'));
+                                    //                     }
+                                    //                     return Container();
+                                    //                   },
+                                    //                 ),
+                                    //               ],
+                                    //             );
+                                    //           } else if (state
+                                    //               is connectedDevicesState
+                                    //               .LoadingState) {
+                                    //             return const Center(
+                                    //               child:
+                                    //                   CircularProgressIndicator(),
+                                    //             );
+                                    //           }
+                                    //           return const SizedBox();
+                                    //         },
+                                    //       );
+                                    //     } else if (onOffState
+                                    //         is BluetoothOffState) {
+                                    //       return const Center(
+                                    //         child:
+                                    //             Text("Bluetooth is turned off"),
+                                    //       );
+                                    //     } else if (onOffState
+                                    //         is BluetoothNotSupportedState) {
+                                    //       return Center(
+                                    //           child: Text(
+                                    //               onOffState.failData.msg));
+                                    //     }
+                                    //     return const Center(
+                                    //         child: CircularProgressIndicator());
+                                    //   },
+                                    // ),
                                     Column(
                                         children: position.map((pos) {
                                       final posIndex = position.indexOf(pos);

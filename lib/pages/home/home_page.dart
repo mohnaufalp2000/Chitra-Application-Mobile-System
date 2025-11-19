@@ -2030,26 +2030,26 @@ class HomePage extends GetView<HomeState> {
                                 ),
                               ),
                               Obx(() {
-                                if (controller.siteError.isNotEmpty) {
-                                  return CustomErrorWidget(
-                                    errorMessage: controller.siteError.value,
-                                    onRefresh: controller.fetchSites,
-                                  );
-                                }
+                                // if (controller.siteError.isNotEmpty) {
+                                //   return CustomErrorWidget(
+                                //     errorMessage: controller.siteError.value,
+                                //     onRefresh: controller.fetchSites,
+                                //   );
+                                // }
 
-                                if (controller.isSiteLoading.isTrue) {
-                                  return const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 8),
-                                    child: Center(
-                                      child: SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2),
-                                      ),
-                                    ),
-                                  );
-                                }
+                                // if (controller.isSiteLoading.isTrue) {
+                                //   return const Padding(
+                                //     padding: EdgeInsets.symmetric(vertical: 8),
+                                //     child: Center(
+                                //       child: SizedBox(
+                                //         width: 20,
+                                //         height: 20,
+                                //         child: CircularProgressIndicator(
+                                //             strokeWidth: 2),
+                                //       ),
+                                //     ),
+                                //   );
+                                // }
 
                                 // === USER OFFICE ===
                                 if (controller.isUserOffice) {

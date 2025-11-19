@@ -13,6 +13,22 @@ class SelectInspectionState extends GetxController {
   /// Menyimpan status apakah user sedang membuka Daily Check atau Tire Inspection
   final selectedActivity = ''.obs;
 
+  var isConnected = false.obs;
+  var deviceName = 'Device A'.obs;
+
+  void scanBluetooth(BuildContext context) {
+    // Dummy simulasi connect
+    isConnected.value = true;
+    deviceName.value = 'Device A';
+    Get.snackbar('Bluetooth', 'Connected to ${deviceName.value}');
+  }
+
+  void disconnectBluetooth() {
+    // Dummy simulasi disconnect
+    isConnected.value = false;
+    Get.snackbar('Bluetooth', 'Disconnected');
+  }
+
   /// Navigasi ke Daily Check Pressure
   Future<void> openDailyCheck(BuildContext context) async {
     selectedActivity.value = 'daily_check';

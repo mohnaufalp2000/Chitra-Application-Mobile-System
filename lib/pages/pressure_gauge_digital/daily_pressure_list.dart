@@ -665,9 +665,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                     filteredItemTask.add(cast);
                                   });
 
-                                  log('list selected 1 = ${tmpDailyData.length}');
-                                  log('list selected xxx = ${dailyData}');
-
                                   return Column(
                                     children: [
                                       Text(
@@ -850,7 +847,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                               ),
                                               Text(
                                                 dailyMap['tanggal']
-                                                    .split('T')[0],
+                                                        .split('T')[0] ??
+                                                    '',
                                                 style: getWhiteTextStyle(
                                                     fontWeight: w700,
                                                     fontSize: 18),
@@ -895,7 +893,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                     fontSize: 18),
                                               ),
                                               Text(
-                                                dailyMap['hm'],
+                                                dailyMap['hm'] ?? '',
                                                 style: getWhiteTextStyle(
                                                     fontWeight: w700,
                                                     fontSize: 18),
@@ -2014,26 +2012,35 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
 
                                                           batch.set(docRef, {
                                                             'idSite':
-                                                                currentIdSite,
+                                                                currentIdSite ??
+                                                                    '',
                                                             'user': user[
-                                                                'username'],
+                                                                    'username'] ??
+                                                                'Username',
                                                             'tanggal': DateTime
-                                                                    .now()
-                                                                .toIso8601String(),
+                                                                        .now()
+                                                                    .toIso8601String() ??
+                                                                '',
                                                             'hari': DateTime
-                                                                    .now()
-                                                                .toIso8601String()
-                                                                .substring(
-                                                                    0, 10),
+                                                                        .now()
+                                                                    .toIso8601String()
+                                                                    .substring(
+                                                                        0,
+                                                                        10) ??
+                                                                '',
                                                             'jam': DateTime
-                                                                    .now()
-                                                                .toIso8601String()
-                                                                .substring(
-                                                                    11, 19),
+                                                                        .now()
+                                                                    .toIso8601String()
+                                                                    .substring(
+                                                                        11,
+                                                                        19) ??
+                                                                '',
                                                             'unit': dataUnit
-                                                                .devicename,
+                                                                    .devicename ??
+                                                                '',
                                                             'hm': hmMap[
-                                                                '${dataUnit.devicename}-${i + 1}'],
+                                                                    '${dataUnit.devicename}-${i + 1}'] ??
+                                                                '',
                                                             'posisi':
                                                                 List.generate(
                                                                     tireCount,
