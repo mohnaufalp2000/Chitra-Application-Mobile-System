@@ -2053,10 +2053,12 @@ class HomePage extends GetView<HomeState> {
 
                                 // === USER OFFICE ===
                                 if (controller.isUserOffice) {
+                                  // final List<Site> displayList =
+                                  //     controller.listSite.length > 4
+                                  //         ? controller.listSite.sublist(4)
+                                  //         : controller.listSite;
                                   final List<Site> displayList =
-                                      controller.listSite.length > 4
-                                          ? controller.listSite.sublist(4)
-                                          : controller.listSite;
+                                      controller.listSite;
                                   final selectedSite =
                                       displayList.firstWhereOrNull(
                                     (s) => s.idSite == controller.currentSiteId,

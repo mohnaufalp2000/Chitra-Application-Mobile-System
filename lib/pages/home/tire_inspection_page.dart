@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:camos/core/services/model/outstanding_task.dart';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -326,6 +328,30 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
                     //     .values
                     //     .map((e) => e as Map<String, dynamic>)
                     //     .toList();
+
+                    // final allData = snapshot.data?.docs
+                    //     .map((doc) => OutstandingTask.fromFirestore(
+                    //         doc.data() as Map<String, dynamic>))
+                    //     .toList();
+
+                    final allData =
+                        snapshot.data?.docs.map((doc) => doc.data()).toList();
+
+                    log('tire inspection all data : ${allData![0]}');
+
+                    // final distinctDaily =
+                    //     Set<OutstandingTask>.from(allData ?? [])
+                    //         .toList();
+
+                    // final dailyData = distinctDaily;
+
+                    // filteredItemTask.clear();
+                    // filteredItemTask.clear();
+
+                    // dailyData.forEach((item) {
+                    //   Map<String, dynamic> cast = item.toFirestore();
+                    //   filteredItemTask.add(cast);
+                    // });
 
                     return Column(
                       children: [

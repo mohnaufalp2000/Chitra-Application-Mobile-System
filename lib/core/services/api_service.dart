@@ -504,6 +504,8 @@ class ApiService {
         (site) => Site.fromJson(site),
       ));
 
+      log('response list site : $result');
+
       if (await getIdSitePreferences() == '2') {
         listSite = listSite
             .where((site) => site.site?.substring(0, 2) == 'CK')

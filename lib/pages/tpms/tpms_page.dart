@@ -519,6 +519,26 @@ class _TpmsPageState extends State<TpmsPage> {
                                       'temp6': element.temp6,
                                     },
                                   ],
+                                  [
+                                    {
+                                      'reccAdj1': element.reccAdj1,
+                                    },
+                                    {
+                                      'reccAdj2': element.reccAdj2,
+                                    },
+                                    {
+                                      'reccAdj3': element.reccAdj3,
+                                    },
+                                    {
+                                      'reccAdj4': element.reccAdj4,
+                                    },
+                                    {
+                                      'reccAdj5': element.reccAdj5,
+                                    },
+                                    {
+                                      'reccAdj6': element.reccAdj6,
+                                    },
+                                  ],
                                 ],
                               );
                             });
@@ -546,7 +566,7 @@ class _TpmsPageState extends State<TpmsPage> {
                                                 child: Column(
                                                   children: [
                                                     Text(
-                                                      unit.devicename,
+                                                      unit.devicename ?? '',
                                                       style: getBlackTextStyle(
                                                         fontSize: 18,
                                                         fontWeight: w700,
@@ -668,6 +688,10 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                       [
                                                                       'temp${index + 1}'] ??
                                                                   '',
+                                                          reccAdj: allUnits[
+                                                                      indexUnit]
+                                                                  [5][index][
+                                                              'reccAdj${index + 1}'],
                                                         ),
                                                       ),
                                                     );
@@ -719,6 +743,10 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                   indexUnit][4]
                                                               [dataIndex][
                                                           'temp${dataIndex + 1}'] ??
+                                                      '',
+                                                  reccAdj: allUnits[indexUnit]
+                                                              [5][dataIndex][
+                                                          'reccAdj${dataIndex + 1}'] ??
                                                       '',
                                                 ),
                                               );
@@ -785,9 +813,9 @@ class _TpmsPageState extends State<TpmsPage> {
                                                         DateFormat(
                                                                 'dd MMMM yyyy  HH:mm:ss',
                                                                 'id_ID')
-                                                            .format(DateTime
-                                                                .parse(unit
-                                                                    .timestamp)),
+                                                            .format(DateTime.parse(
+                                                                unit.timestamp ??
+                                                                    '')),
                                                         style:
                                                             getBlackTextStyle(),
                                                       ),
@@ -854,6 +882,10 @@ class _TpmsPageState extends State<TpmsPage> {
                                                 ],
                                               ),
                                               function: () async {
+                                                if (!Get.isRegistered<
+                                                    HomeState>()) {
+                                                  Get.put(HomeState());
+                                                }
                                                 List<Position> position = [
                                                   Position(
                                                     pos: '1',
@@ -1410,6 +1442,7 @@ class PressureCard extends StatelessWidget {
     required this.temperature,
     required this.rating,
     required this.temperatureStatus,
+    required this.reccAdj,
   });
 
   final String position;
@@ -1419,6 +1452,7 @@ class PressureCard extends StatelessWidget {
   final String pressureStatus;
   final String rating;
   final String temperatureStatus;
+  final String reccAdj;
 
   @override
   Widget build(BuildContext context) {
@@ -1432,102 +1466,114 @@ class PressureCard extends StatelessWidget {
       child: Container(
         child: Column(
           children: [
+            // ================= HEADER =================
             Container(
-                padding: EdgeInsets.all(12),
-                height: MediaQuery.of(context).size.height * 0.103,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                    color: (pressureStatus == '2')
-                        ? Colors.red
-                        : (pressureStatus == '1')
-                            ? green00968A
-                            : (pressureStatus == '0' && pressure != '0')
-                                ? Colors.red
-                                : black,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12))),
-                child: Center(
-                  // child: Column(
-                  //   children: [
-                  //     Text(
-                  //       position,
-                  //       style:
-                  //           getWhiteTextStyle(fontSize: 24, fontWeight: w700),
-                  //     ),
-                  //     Text(
-                  //       (pressureStatus == '2')
-                  //           ? 'Over'
-                  //           : (pressureStatus == '0')
-                  //               ? (pressure != '0')
-                  //                   ? 'Low'
-                  //                   : ''
-                  //               : '',
-                  //       style:
-                  //           getWhiteTextStyle(fontSize: 10, fontWeight: w700),
-                  //     ),
-                  //   ],
-                  // ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+              padding: EdgeInsets.all(12),
+              height: MediaQuery.of(context).size.height * 0.103,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: (pressureStatus == '2')
+                    ? Color(0xff9C27B0)
+                    : (pressureStatus == '1')
+                        ? green00968A
+                        : (pressureStatus == '0' && pressure != '0')
+                            ? Colors.red
+                            : black,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      position,
+                      style: getWhiteTextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    (pressureStatus == '2')
+                        ? Text(
+                            'Over',
+                            style: getWhiteTextStyle(
+                                fontSize: 10, fontWeight: w700),
+                          )
+                        : (pressureStatus == '0')
+                            ? (pressure != '0')
+                                ? Text(
+                                    'Low',
+                                    style: getWhiteTextStyle(
+                                      fontSize: 10,
+                                    ),
+                                  )
+                                : Container()
+                            : Container()
+                  ],
+                ),
+              ),
+            ),
+
+            // ================= PRESSURE =================
+            (pressureStatus == '1')
+                ? Column(
                     children: [
                       Text(
-                        position,
-                        style: getWhiteTextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        pressure,
+                        style: getBlackTextStyle(fontSize: 22),
                       ),
-                      (pressureStatus == '2')
-                          ? Text(
-                              'Over',
-                              style: getWhiteTextStyle(
-                                  fontSize: 10, fontWeight: w700),
-                            )
-                          : (pressureStatus == '0')
-                              ? (pressure != '0')
-                                  ? Text(
-                                      'Low',
-                                      style: getWhiteTextStyle(
-                                        fontSize: 10,
-                                      ),
-                                    )
-                                  : Container()
-                              : Container()
+                      Text(
+                        'Psi',
+                        style: getBlackTextStyle(fontSize: 22),
+                      ),
                     ],
-                  ),
-                )),
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(vertical: 4.0),
-            //   child: Text(
-            //     pressure + ' Psi',
-            //     style: getBlackTextStyle(fontSize: 24),
-            //   ),
-            // ),
-            Column(
-              children: [
-                Text(
-                  pressure,
-                  style: getBlackTextStyle(fontSize: 22),
-                ),
-                Text(
-                  'Psi',
-                  style: getBlackTextStyle(fontSize: 22),
-                ),
-              ],
-            ),
+                  )
+                : (pressure == '0')
+                    ? Column(
+                        children: [
+                          Text(
+                            pressure,
+                            style: getBlackTextStyle(fontSize: 22),
+                          ),
+                          Text(
+                            'Psi',
+                            style: getBlackTextStyle(fontSize: 22),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            '$pressure Psi',
+                            textAlign: TextAlign.center,
+                            style: getBlackTextStyle(fontSize: 22),
+                          ),
+                          Text(
+                            'Rec. pressure $reccAdj Psi',
+                            textAlign: TextAlign.center,
+                            style:
+                                getRedTextStyle(fontSize: 10, fontWeight: w700),
+                          ),
+                        ],
+                      ),
+
             const Divider(),
+
+            // ================= TEMPERATURE =================
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('$temperature °C',
-                      style: getBlackTextStyle(fontSize: 16)
-                          .copyWith(color: thermalColor)),
-                  const SizedBox(
-                    width: 6,
+                  Text(
+                    '$temperature °C',
+                    style: getBlackTextStyle(fontSize: 16)
+                        .copyWith(color: thermalColor),
                   ),
+                  const SizedBox(width: 6),
                   Icon(
                     thermalIcon,
                     color: thermalColor,
@@ -1536,15 +1582,19 @@ class PressureCard extends StatelessWidget {
                 ],
               ),
             ),
-            if (rating != 'N/A' || rating == null || rating == '')
+
+            // ================= RATING (OPTIONAL) =================
+            if (rating != 'N/A' && rating != '' && rating != null)
               Column(
                 children: [
                   const Divider(),
-                  Text('Rat. $rating', style: getBlackTextStyle(fontSize: 24))
+                  Text('Rat. $rating', style: getBlackTextStyle(fontSize: 24)),
                 ],
-              )
-            else
-              Container()
+              ),
+
+            const SizedBox(height: 6),
+
+            const SizedBox(height: 8),
           ],
         ),
       ),
