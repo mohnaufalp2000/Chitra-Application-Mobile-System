@@ -659,9 +659,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                           if (state is ConnectedDevicesLoadedState) {
                             // return _buildConnectedDeviceUI(
                             //     state.connectedDevices);
-                            BlocProvider.of<DiscoverServicesCubit>(
-                              context,
-                            ).discoverServices(state.connectedDevices[0]);
+                            if (state.connectedDevices.isNotEmpty) {
+                              BlocProvider.of<DiscoverServicesCubit>(
+                                context,
+                              ).discoverServices(state.connectedDevices.first);
+                            }
                             return BlocConsumer<DiscoverServicesCubit,
                                 DiscoverServiceState>(
                               listener: (context, discoverState) {

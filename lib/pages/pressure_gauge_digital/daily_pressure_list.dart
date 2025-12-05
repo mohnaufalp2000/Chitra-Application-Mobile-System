@@ -42,7 +42,9 @@ class DailyPressureListPage extends StatefulWidget {
 
 class _DailyPressureListPageState extends State<DailyPressureListPage> {
   // FirebaseFirestore firestore = FirebaseFirestore.instance;
-  // final homeState = Get.find<HomeState>(); // ✅ Ambil dari GetX
+  final HomeState homeState = Get.isRegistered<HomeState>()
+      ? Get.find<HomeState>()
+      : Get.put(HomeState());
 
   // // untuk user office, id site menyimpan id site yang dipilih
   // String idSite = '';
@@ -161,7 +163,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   // }
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
-  final homeState = Get.find<HomeState>(); // ✅ Ambil dari GetX
   String currentIdSite = '';
   String userAccessId = '';
   List<String> pit = [];
@@ -674,6 +675,18 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                           fontSize: 20,
                                         ),
                                       ),
+                                      // if (homeState.selectedSite?.idCompany ==
+                                      //     '2')
+                                      //   Text(
+                                      //     // 'Total Unit : ${dailyData.length ?? 0}',
+                                      //     'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
+
+                                      //     style: getBlackTextStyle(
+                                      //       fontSize: 14,
+                                      //     ),
+                                      //   )
+                                      // else
+                                      //   Container(),
                                       const SizedBox(
                                         height: 12,
                                       ),
@@ -1194,6 +1207,20 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                   selectedPit = index;
                                 });
                               }),
+                          const SizedBox(
+                            height: 12,
+                          ),
+                          if (homeState.selectedSite?.idCompany == '2')
+                            Text(
+                              // 'Total Unit : ${dailyData.length ?? 0}',
+                              'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
+
+                              style: getBlackTextStyle(
+                                fontSize: 14,
+                              ),
+                            )
+                          else
+                            Container(),
                           const SizedBox(
                             height: 12,
                           ),
