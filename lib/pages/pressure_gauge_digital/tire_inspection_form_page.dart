@@ -132,36 +132,39 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   ];
   List<Map<String, dynamic>> position = [];
 
-  List<String> damageType = [
-    'Good Condition',
-    'Accident',
-    'Bead Crack',
-    'Boulder',
-    'Bulging',
-    'Bead Damage',
-    'Chaffer Separation',
-    'Dog Bound',
-    'Foreign Object',
-    'Heat Separation',
-    'Inner Linner Separation',
-    'Impact',
-    'Repair Failure',
-    'Radial Crack',
-    'Run Flat',
-    'Sidewall Crack',
-    'Sidewall Cut',
-    'Sidewall Cut 2',
-    'Sidewall Cut 3',
-    'Sidewall Separation',
-    'Shoulder Cut',
-    'Shoulder Separation',
-    'Tread Chipping',
-    'Tread Chunking',
-    'Tread Lifting',
-    'Tread Cut',
-    'Tread Cut Separation',
-    'Worn Out',
-  ];
+  // List<String> damageType = [
+  //   'Good Condition',
+  //   'Accident',
+  //   'Bead Crack',
+  //   'Boulder',
+  //   'Bulging',
+  //   'Bead Damage',
+  //   'Chaffer Separation',
+  //   'Dog Bound',
+  //   'Foreign Object',
+  //   'Heat Separation',
+  //   'Inner Linner Separation',
+  //   'Impact',
+  //   'Repair Failure',
+  //   'Radial Crack',
+  //   'Run Flat',
+  //   'Sidewall Crack',
+  //   'Sidewall Cut',
+  //   'Sidewall Cut 2',
+  //   'Sidewall Cut 3',
+  //   'Sidewall Separation',
+  //   'Shoulder Cut',
+  //   'Shoulder Separation',
+  //   'Tread Chipping',
+  //   'Tread Chunking',
+  //   'Tread Lifting',
+  //   'Tread Cut',
+  //   'Tread Cut Separation',
+  //   'Worn Out',
+  // ];
+
+  List<String> damageType = [];
+  bool loadingDamages = true;
 
   List<String> selectedDamage = [];
 
@@ -189,6 +192,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   @override
   void initState() {
     idSite = homeState.currentSiteId;
+    _loadDamages();
 
     super.initState();
     requestPlacePermission();
@@ -201,6 +205,38 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     // callTires();
     WidgetsBinding.instance.addObserver(this);
     getUser();
+  }
+
+  Future<void> _loadDamages() async {
+    try {
+      final doc = await firestore
+          .collection('list_tire_damage_inspection')
+          .doc('QUFggzuErZBWEsnCLMFt')
+          .get();
+
+      final data = doc.data();
+      if (data != null && data['damages'] != null) {
+        final List<dynamic> raw = data['damages'];
+
+        // convert + sort A-Z
+        List<String> sortedList = raw.map((e) => e.toString()).toList();
+        sortedList.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+        setState(() {
+          damageType = sortedList;
+          loadingDamages = false;
+        });
+      } else {
+        setState(() {
+          loadingDamages = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error load damages: $e');
+      setState(() {
+        loadingDamages = false;
+      });
+    }
   }
 
   getUser() async {
@@ -1467,223 +1503,458 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         width:
                                             MediaQuery.of(context).size.width,
                                         child: ElevatedButton(
-                                            onPressed: () {
-                                              FocusScope.of(context).unfocus();
-                                              List<bool> checkedDamageValues =
-                                                  List<bool>.filled(
-                                                      damageType.length, false);
+                                          onPressed: () {
+                                            FocusScope.of(context).unfocus();
 
-                                              showDialog(
-                                                context: context,
-                                                builder:
-                                                    (BuildContext context) {
-                                                  return Dialog(
-                                                    child: Container(
-                                                      padding:
-                                                          EdgeInsets.all(20.0),
-                                                      child: Column(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: <Widget>[
-                                                          Text(
-                                                            'Choose Damage Tire',
-                                                            style: TextStyle(
-                                                              fontSize: 24.0,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                            ),
-                                                          ),
-                                                          SizedBox(
-                                                              height: 12.0),
-                                                          Expanded(
-                                                            child:
-                                                                SingleChildScrollView(
-                                                              child: Column(
-                                                                children:
-                                                                    damageType.map(
-                                                                        (damage) {
-                                                                  final dmgIndex =
-                                                                      damageType
-                                                                          .indexOf(
-                                                                              damage);
+                                            if (loadingDamages) {
+                                              // Optional: kasih feedback kalau masih loading
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'Sedang memuat daftar damage...')),
+                                              );
+                                              return;
+                                            }
 
-                                                                  if (dmgIndex >
-                                                                      0) {
-                                                                    return StatefulBuilder(builder:
-                                                                        (context,
-                                                                            setState) {
-                                                                      return CheckboxListTile(
-                                                                        title: Text(
-                                                                            damage),
-                                                                        value: checkedDamageValues[
-                                                                            dmgIndex],
-                                                                        onChanged:
-                                                                            (bool?
-                                                                                value) {
-                                                                          setState(
-                                                                              () {
-                                                                            checkedDamageValues[dmgIndex] =
-                                                                                value ?? false;
-                                                                          });
-                                                                        },
-                                                                      );
-                                                                    });
-                                                                  }
-                                                                  return Container();
-                                                                }).toList(),
-                                                              ),
-                                                            ),
+                                            if (damageType.isEmpty) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                    content: Text(
+                                                        'Daftar damage kosong')),
+                                              );
+                                              return;
+                                            }
+
+                                            List<bool> checkedDamageValues =
+                                                List<bool>.filled(
+                                                    damageType.length, false);
+
+                                            showDialog(
+                                              context: context,
+                                              builder: (BuildContext context) {
+                                                return Dialog(
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            20.0),
+                                                    child: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: <Widget>[
+                                                        const Text(
+                                                          'Choose Damage Tire',
+                                                          style: TextStyle(
+                                                            fontSize: 24.0,
+                                                            fontWeight:
+                                                                FontWeight.bold,
                                                           ),
-                                                          SizedBox(
-                                                              height:
-                                                                  12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
-                                                          Column(
-                                                            children: [
-                                                              SizedBox(
-                                                                height: 42,
-                                                                width: double
-                                                                    .infinity,
-                                                                child: InputFormWidget(
-                                                                    controller:
-                                                                        damageCtrl,
-                                                                    hint:
-                                                                        'Input Manual Here....'),
-                                                              ),
-                                                              const SizedBox(
-                                                                height: 12,
-                                                              ),
-                                                              SizedBox(
-                                                                width: double
-                                                                    .infinity,
-                                                                child:
-                                                                    ElevatedButton(
-                                                                  onPressed:
-                                                                      () {
-                                                                    damageCtrl
-                                                                        .clear();
-                                                                    Navigator.pop(
-                                                                        context);
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 12.0),
+                                                        Expanded(
+                                                          child:
+                                                              SingleChildScrollView(
+                                                            child: Column(
+                                                              children:
+                                                                  damageType.map(
+                                                                      (damage) {
+                                                                final dmgIndex =
+                                                                    damageType
+                                                                        .indexOf(
+                                                                            damage);
+
+                                                                // kalau tidak perlu skip index 0, hapus if ini
+                                                                // if (dmgIndex == 0) return Container();
+
+                                                                return StatefulBuilder(
+                                                                  builder: (context,
+                                                                      setState) {
+                                                                    return CheckboxListTile(
+                                                                      title: Text(
+                                                                          damage),
+                                                                      value: checkedDamageValues[
+                                                                          dmgIndex],
+                                                                      onChanged:
+                                                                          (bool?
+                                                                              value) {
+                                                                        setState(
+                                                                            () {
+                                                                          checkedDamageValues[dmgIndex] =
+                                                                              value ?? false;
+                                                                        });
+                                                                      },
+                                                                    );
                                                                   },
-                                                                  child: Text(
-                                                                      'Close'),
-                                                                ),
-                                                              ),
-                                                              const SizedBox(
-                                                                height: 12,
-                                                              ),
-                                                              SizedBox(
-                                                                width: double
-                                                                    .infinity,
+                                                                );
+                                                              }).toList(),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 12.0),
+                                                        Column(
+                                                          children: [
+                                                            const SizedBox(
+                                                                height: 12),
+                                                            SizedBox(
+                                                              width: double
+                                                                  .infinity,
+                                                              child:
+                                                                  ElevatedButton(
+                                                                onPressed: () {
+                                                                  damageCtrl
+                                                                      .clear();
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                },
                                                                 child:
-                                                                    ElevatedButton(
-                                                                  style: ElevatedButton
-                                                                      .styleFrom(
-                                                                    backgroundColor:
-                                                                        Colors
-                                                                            .green,
-                                                                  ),
-                                                                  onPressed:
-                                                                      () {
-                                                                    setState(
-                                                                        () {});
+                                                                    const Text(
+                                                                        'Close'),
+                                                              ),
+                                                            ),
+                                                            const SizedBox(
+                                                                height: 12),
+                                                            SizedBox(
+                                                              width: double
+                                                                  .infinity,
+                                                              child:
+                                                                  ElevatedButton(
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .green,
+                                                                ),
+                                                                onPressed: () {
+                                                                  setState(
+                                                                      () {}); // setState parent
 
-                                                                    selectedDamage
-                                                                        .clear();
-                                                                    final List<
-                                                                            String>
-                                                                        tmp =
-                                                                        [];
-                                                                    if (damageCtrl.text ==
-                                                                            '' ||
+                                                                  selectedDamage
+                                                                      .clear();
+                                                                  final List<
+                                                                          String>
+                                                                      tmp = [];
+
+                                                                  // NOTE: ini tadinya if (== '' || isNotEmpty) -> selalu true.
+                                                                  if (damageCtrl
+                                                                      .text
+                                                                      .isNotEmpty) {
+                                                                    tmp.add(
                                                                         damageCtrl
-                                                                            .text
-                                                                            .isNotEmpty) {
-                                                                      tmp.add(damageCtrl
-                                                                          .text);
+                                                                            .text);
+                                                                  }
+
+                                                                  for (int i =
+                                                                          0;
+                                                                      i <
+                                                                          checkedDamageValues
+                                                                              .length;
+                                                                      i++) {
+                                                                    if (checkedDamageValues[
+                                                                        i]) {
+                                                                      tmp.add(
+                                                                          damageType[
+                                                                              i]);
                                                                     }
-                                                                    for (int i =
-                                                                            0;
-                                                                        i < checkedDamageValues.length;
-                                                                        i++) {
-                                                                      if (checkedDamageValues[
-                                                                          i]) {
-                                                                        tmp.add(
-                                                                            damageType[i]);
-                                                                      }
-                                                                    }
+                                                                  }
+
+                                                                  position[index]
+                                                                          [
+                                                                          'damageTire'] =
+                                                                      tmp;
+
+                                                                  if (tmp
+                                                                      .isNotEmpty) {
                                                                     position[index]
                                                                             [
                                                                             'damageTire'] =
                                                                         tmp;
-                                                                    if (tmp
-                                                                        .isNotEmpty) {
-                                                                      position[index]
-                                                                              [
-                                                                              'damageTire'] =
-                                                                          tmp;
-                                                                      selectedDamage
-                                                                          .addAll(
-                                                                              tmp);
-                                                                      log('hasil luka ban : ${position}');
-                                                                    }
-                                                                    damageCtrl
-                                                                        .clear();
+                                                                    selectedDamage
+                                                                        .addAll(
+                                                                            tmp);
+                                                                    log('hasil luka ban : $position');
+                                                                  }
 
-                                                                    Navigator.pop(
-                                                                        context);
-                                                                  },
-                                                                  child: Text(
-                                                                    'Submit',
-                                                                    style:
-                                                                        getWhiteTextStyle(
-                                                                      fontWeight:
-                                                                          w700,
-                                                                    ),
+                                                                  damageCtrl
+                                                                      .clear();
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                },
+                                                                child: Text(
+                                                                  'Submit',
+                                                                  style:
+                                                                      getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
                                                                   ),
                                                                 ),
                                                               ),
-                                                            ],
-                                                          ),
-                                                        ],
-                                                      ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
                                                     ),
-                                                  );
-                                                },
-                                              );
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                                backgroundColor: blue344BEF,
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                )),
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 8.0),
-                                              child: Text(
-                                                (position[index][
-                                                                'damageTire'] ==
-                                                            null ||
-                                                        position[index][
-                                                                'damageTire'] ==
-                                                            [] ||
-                                                        (position[index][
-                                                                    'damageTire']
-                                                                as List<
-                                                                    dynamic>)
-                                                            .isEmpty)
-                                                    ? 'Damage Tire (None)'
-                                                    : position[index]
-                                                            ['damageTire']
-                                                        .join('\n---\n'),
-                                                textAlign: TextAlign.center,
-                                                style: getWhiteTextStyle(
-                                                    fontSize: 14),
-                                              ),
-                                            )),
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: blue344BEF,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8.0),
+                                            child: Text(
+                                              (position[index]['damageTire'] ==
+                                                          null ||
+                                                      position[index]
+                                                              ['damageTire'] ==
+                                                          [] ||
+                                                      (position[index]
+                                                                  ['damageTire']
+                                                              as List<dynamic>)
+                                                          .isEmpty)
+                                                  ? 'Damage Tire (None)'
+                                                  : position[index]
+                                                          ['damageTire']
+                                                      .join('\n---\n'),
+                                              textAlign: TextAlign.center,
+                                              style: getWhiteTextStyle(
+                                                  fontSize: 14),
+                                            ),
+                                          ),
+                                        ),
                                       ),
+
+                                      // TIRE DAMAGE OLD
+                                      // SizedBox(
+                                      //   width:
+                                      //       MediaQuery.of(context).size.width,
+                                      //   child: ElevatedButton(
+                                      //       onPressed: () {
+                                      //         FocusScope.of(context).unfocus();
+                                      //         List<bool> checkedDamageValues =
+                                      //             List<bool>.filled(
+                                      //                 damageType.length, false);
+
+                                      //         showDialog(
+                                      //           context: context,
+                                      //           builder:
+                                      //               (BuildContext context) {
+                                      //             return Dialog(
+                                      //               child: Container(
+                                      //                 padding:
+                                      //                     EdgeInsets.all(20.0),
+                                      //                 child: Column(
+                                      //                   mainAxisSize:
+                                      //                       MainAxisSize.min,
+                                      //                   children: <Widget>[
+                                      //                     Text(
+                                      //                       'Choose Damage Tire',
+                                      //                       style: TextStyle(
+                                      //                         fontSize: 24.0,
+                                      //                         fontWeight:
+                                      //                             FontWeight
+                                      //                                 .bold,
+                                      //                       ),
+                                      //                     ),
+                                      //                     SizedBox(
+                                      //                         height: 12.0),
+                                      //                     Expanded(
+                                      //                       child:
+                                      //                           SingleChildScrollView(
+                                      //                         child: Column(
+                                      //                           children:
+                                      //                               damageType.map(
+                                      //                                   (damage) {
+                                      //                             final dmgIndex =
+                                      //                                 damageType
+                                      //                                     .indexOf(
+                                      //                                         damage);
+
+                                      //                             if (dmgIndex >
+                                      //                                 0) {
+                                      //                               return StatefulBuilder(builder:
+                                      //                                   (context,
+                                      //                                       setState) {
+                                      //                                 return CheckboxListTile(
+                                      //                                   title: Text(
+                                      //                                       damage),
+                                      //                                   value: checkedDamageValues[
+                                      //                                       dmgIndex],
+                                      //                                   onChanged:
+                                      //                                       (bool?
+                                      //                                           value) {
+                                      //                                     setState(
+                                      //                                         () {
+                                      //                                       checkedDamageValues[dmgIndex] =
+                                      //                                           value ?? false;
+                                      //                                     });
+                                      //                                   },
+                                      //                                 );
+                                      //                               });
+                                      //                             }
+                                      //                             return Container();
+                                      //                           }).toList(),
+                                      //                         ),
+                                      //                       ),
+                                      //                     ),
+                                      //                     SizedBox(
+                                      //                         height:
+                                      //                             12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
+                                      //                     Column(
+                                      //                       children: [
+                                      //                         // SizedBox(
+                                      //                         //   height: 42,
+                                      //                         //   width: double
+                                      //                         //       .infinity,
+                                      //                         //   child: InputFormWidget(
+                                      //                         //       controller:
+                                      //                         //           damageCtrl,
+                                      //                         //       hint:
+                                      //                         //           'Input Manual Here....'),
+                                      //                         // ),
+                                      //                         const SizedBox(
+                                      //                           height: 12,
+                                      //                         ),
+                                      //                         SizedBox(
+                                      //                           width: double
+                                      //                               .infinity,
+                                      //                           child:
+                                      //                               ElevatedButton(
+                                      //                             onPressed:
+                                      //                                 () {
+                                      //                               damageCtrl
+                                      //                                   .clear();
+                                      //                               Navigator.pop(
+                                      //                                   context);
+                                      //                             },
+                                      //                             child: Text(
+                                      //                                 'Close'),
+                                      //                           ),
+                                      //                         ),
+                                      //                         const SizedBox(
+                                      //                           height: 12,
+                                      //                         ),
+                                      //                         SizedBox(
+                                      //                           width: double
+                                      //                               .infinity,
+                                      //                           child:
+                                      //                               ElevatedButton(
+                                      //                             style: ElevatedButton
+                                      //                                 .styleFrom(
+                                      //                               backgroundColor:
+                                      //                                   Colors
+                                      //                                       .green,
+                                      //                             ),
+                                      //                             onPressed:
+                                      //                                 () {
+                                      //                               setState(
+                                      //                                   () {});
+
+                                      //                               selectedDamage
+                                      //                                   .clear();
+                                      //                               final List<
+                                      //                                       String>
+                                      //                                   tmp =
+                                      //                                   [];
+                                      //                               if (damageCtrl.text ==
+                                      //                                       '' ||
+                                      //                                   damageCtrl
+                                      //                                       .text
+                                      //                                       .isNotEmpty) {
+                                      //                                 tmp.add(damageCtrl
+                                      //                                     .text);
+                                      //                               }
+                                      //                               for (int i =
+                                      //                                       0;
+                                      //                                   i < checkedDamageValues.length;
+                                      //                                   i++) {
+                                      //                                 if (checkedDamageValues[
+                                      //                                     i]) {
+                                      //                                   tmp.add(
+                                      //                                       damageType[i]);
+                                      //                                 }
+                                      //                               }
+                                      //                               position[index]
+                                      //                                       [
+                                      //                                       'damageTire'] =
+                                      //                                   tmp;
+                                      //                               if (tmp
+                                      //                                   .isNotEmpty) {
+                                      //                                 position[index]
+                                      //                                         [
+                                      //                                         'damageTire'] =
+                                      //                                     tmp;
+                                      //                                 selectedDamage
+                                      //                                     .addAll(
+                                      //                                         tmp);
+                                      //                                 log('hasil luka ban : ${position}');
+                                      //                               }
+                                      //                               damageCtrl
+                                      //                                   .clear();
+
+                                      //                               Navigator.pop(
+                                      //                                   context);
+                                      //                             },
+                                      //                             child: Text(
+                                      //                               'Submit',
+                                      //                               style:
+                                      //                                   getWhiteTextStyle(
+                                      //                                 fontWeight:
+                                      //                                     w700,
+                                      //                               ),
+                                      //                             ),
+                                      //                           ),
+                                      //                         ),
+                                      //                       ],
+                                      //                     ),
+                                      //                   ],
+                                      //                 ),
+                                      //               ),
+                                      //             );
+                                      //           },
+                                      //         );
+                                      //       },
+                                      //       style: ElevatedButton.styleFrom(
+                                      //           backgroundColor: blue344BEF,
+                                      //           shape: RoundedRectangleBorder(
+                                      //             borderRadius:
+                                      //                 BorderRadius.circular(12),
+                                      //           )),
+                                      //       child: Padding(
+                                      //         padding:
+                                      //             const EdgeInsets.symmetric(
+                                      //                 vertical: 8.0),
+                                      //         child: Text(
+                                      //           (position[index][
+                                      //                           'damageTire'] ==
+                                      //                       null ||
+                                      //                   position[index][
+                                      //                           'damageTire'] ==
+                                      //                       [] ||
+                                      //                   (position[index][
+                                      //                               'damageTire']
+                                      //                           as List<
+                                      //                               dynamic>)
+                                      //                       .isEmpty)
+                                      //               ? 'Damage Tire (None)'
+                                      //               : position[index]
+                                      //                       ['damageTire']
+                                      //                   .join('\n---\n'),
+                                      //           textAlign: TextAlign.center,
+                                      //           style: getWhiteTextStyle(
+                                      //               fontSize: 14),
+                                      //         ),
+                                      //       )),
+                                      // ),
                                       const SizedBox(
                                         height: 12,
                                       ),
@@ -1748,6 +2019,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                   position[index]['image'] = [
                                                     '${compressedImageFile?.path}|${position[index]['position']}'
                                                   ];
+                                                  log('tire inspection image = ${position[index]['image']}');
 
                                                   // // Convert image to base64
                                                 }
@@ -2373,6 +2645,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                 for (int i = 0; i < position.length; i++) {
                                   final unit = state.units[i];
                                   final id = Uuid();
+
+                                  log('SAVE POSISI ${position[i]['position']} '
+                                      'IMAGE: ${position[i]['image']}');
 
                                   if (position[i]['pressure'] != '' ||
                                       position[i]['hm'] != '' ||
