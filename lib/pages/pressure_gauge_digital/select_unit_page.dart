@@ -1,7 +1,9 @@
 import 'dart:developer';
 
+import 'package:camos/main.dart';
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:get/get.dart';
 
 import '../../core/blocs/unit/unit_bloc.dart';
@@ -23,7 +25,7 @@ class SelectUnitPage extends StatefulWidget {
   State<SelectUnitPage> createState() => _SelectUnitPageState();
 }
 
-class _SelectUnitPageState extends State<SelectUnitPage> {
+class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   String searchQuery = '';
   bool isOnline = false;
   final HomeState homeState = Get.find<HomeState>();
@@ -32,6 +34,52 @@ class _SelectUnitPageState extends State<SelectUnitPage> {
   void initState() {
     super.initState();
     callUnits();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // subscribe ke routeObserver global
+    final modal = ModalRoute.of(context);
+    if (modal != null) {
+      routeObserver.subscribe(this, modal);
+    }
+  }
+
+  @override
+  void dispose() {
+    // unsubscribe sebelum dispose
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  // Dipanggil ketika suatu route DIPUSH di atas route ini (halaman ini 'ditinggalkan')
+  @override
+  void didPushNext() {
+    super.didPushNext();
+    // halaman ditumpuk oleh route lain -> panggil retryPending()
+    _triggerRetryPending();
+  }
+
+  // (opsional) kalau ingin saat kembali ke page
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // route di atas di-pop, kita kembali visible
+    // bisa panggil retryPending di sini juga jika mau
+  }
+
+  Future<void> _triggerRetryPending() async {
+    try {
+      // cek dulu koneksi optional atau langsung panggil
+      // await InternetConnectionChecker().hasConnection
+      // jika kamu tidak mau cek, langsung panggil:
+      await UploadQueueService.to.retryPending();
+      // atau kalau tidak pake singleton, panggil instance mu
+      log('triggerRetryPending from SelectUnitPage.didPushNext');
+    } catch (e, st) {
+      log('retryPending error: $e\n$st');
+    }
   }
 
   Future<void> callUnits() async {

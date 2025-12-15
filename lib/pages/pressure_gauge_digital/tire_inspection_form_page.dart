@@ -16,6 +16,7 @@ import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
 import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
@@ -2646,6 +2647,23 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   final unit = state.units[i];
                                   final id = Uuid();
 
+                                  String? localImagePath;
+                                  try {
+                                    final imgList =
+                                        position[i]['image'] as List<dynamic>?;
+                                    if (imgList != null && imgList.isNotEmpty) {
+                                      final raw = imgList[0]
+                                          as String; // format: "path|position"
+                                      final parts = raw.split('|');
+                                      if (parts.isNotEmpty) {
+                                        localImagePath = parts[0];
+                                      }
+                                    }
+                                  } catch (e) {
+                                    log('parse image error: $e');
+                                  }
+
+                                  log('SAVE POSISI ${localImagePath}');
                                   log('SAVE POSISI ${position[i]['position']} '
                                       'IMAGE: ${position[i]['image']}');
 
@@ -2684,6 +2702,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
                                     log('adakah query : ${querySnapshot.docs.isNotEmpty}');
 
+                                    final bool hasNewLocalImage =
+                                        localImagePath != null;
+
                                     if (querySnapshot.docs.isNotEmpty) {
                                       // Update the existing document
                                       final docId = querySnapshot.docs.first.id;
@@ -2693,10 +2714,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       //   log('kenapa gagal 4 ${e}');
                                       // }
 
-                                      await firestore
-                                          .collection('task')
-                                          .doc(docId)
-                                          .update({
+                                      final Map<String, dynamic> updateData = {
                                         'id': id.v4(),
                                         'id_site': idSite,
                                         'user': user['username'] ?? 'username',
@@ -2727,34 +2745,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         'last_update':
                                             DateTime.now().toIso8601String(),
                                         'is_done': false,
-                                        // 'images': (listImg.isNotEmpty)
-                                        //     ? listImg
-                                        //         .where((img) {
-                                        //           final splitImg =
-                                        //               img.split('|');
-                                        //           return splitImg[1] ==
-                                        //               (position[i]
-                                        //                       ['position'])
-                                        //                   .toString();
-                                        //         })
-                                        //         .toList()
-                                        //         .map((img2) {
-                                        //           final splitImg2 =
-                                        //               img2.split('|');
-                                        //           return (splitImg2[0])
-                                        //               .toString();
-                                        //         })
-                                        //         .toList()
-                                        //     : [],
-                                        'images': ((position[i]['image']
-                                                    as List<dynamic>)
-                                                .isNotEmpty)
-                                            ? [
-                                                (position[i]['image'][0]
-                                                        as String)
-                                                    .split('|')[0]
-                                              ]
-                                            : [],
                                         'sn': (position[i]['sn'] != null ||
                                                 position[i]['sn'] != '')
                                             ? position[i]['sn']
@@ -2766,10 +2756,27 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 idSite == bmbtabuhan.idSite ||
                                                 idSite == bibkgb.idSite)
                                             ? pit[selectedPit]
-                                            : 'Default'
-                                      });
+                                            : 'Default',
+                                      };
+
+                                      // Hanya kalau ada foto baru → kosongkan images & set pending
+                                      if (hasNewLocalImage) {
+                                        updateData['images'] = [];
+                                        updateData['imagePending'] = true;
+                                      }
+
+                                      await firestore
+                                          .collection('task')
+                                          .doc(docId)
+                                          .update(updateData);
+                                      if (hasNewLocalImage) {
+                                        UploadQueueService.to.addPending(
+                                          docId: docId,
+                                          filePath: localImagePath!,
+                                        );
+                                      }
                                     } else {
-                                      await firestore.collection('task').add({
+                                      final Map<String, dynamic> newData = {
                                         'id': id.v4(),
                                         'id_site': idSite,
                                         'user': user['username'] ?? 'username',
@@ -2786,7 +2793,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         'hm': hmUnit.text,
                                         'position': position[i]['position'],
                                         'rating': position[i]['rating'],
-
                                         'brand': unit.brand,
                                         'tire_damage':
                                             (position[i]['damageTire'].isEmpty)
@@ -2801,34 +2807,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         'last_update':
                                             DateTime.now().toIso8601String(),
                                         'is_done': false,
-                                        'images': ((position[i]['image']
-                                                    as List<dynamic>)
-                                                .isNotEmpty)
-                                            ? [
-                                                (position[i]['image'][0]
-                                                        as String)
-                                                    .split('|')[0]
-                                              ]
-                                            : [],
-                                        // 'images': (listImg.isNotEmpty)
-                                        //     ? listImg
-                                        //         .where((img) {
-                                        //           final splitImg =
-                                        //               img.split('|');
-                                        //           return splitImg[1] ==
-                                        //               (position[i]
-                                        //                       ['position'])
-                                        //                   .toString();
-                                        //         })
-                                        //         .toList()
-                                        //         .map((img2) {
-                                        //           final splitImg2 =
-                                        //               img2.split('|');
-                                        //           return (splitImg2[0])
-                                        //               .toString();
-                                        //         })
-                                        //         .toList()
-                                        //     : [],
                                         'sn': (position[i]['sn'] != '')
                                             ? position[i]['sn']
                                             : unit.sn,
@@ -2839,8 +2817,23 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 idSite == bmbtabuhan.idSite ||
                                                 idSite == bibkgb.idSite)
                                             ? pit[selectedPit]
-                                            : 'Default'
-                                      });
+                                            : 'Default',
+                                      };
+
+                                      newData['images'] = [];
+                                      newData['imagePending'] =
+                                          hasNewLocalImage;
+
+                                      final docRef = await firestore
+                                          .collection('task')
+                                          .add(newData);
+
+                                      if (hasNewLocalImage) {
+                                        UploadQueueService.to.addPending(
+                                          docId: docRef.id,
+                                          filePath: localImagePath!,
+                                        );
+                                      }
                                     }
                                   }
                                 }

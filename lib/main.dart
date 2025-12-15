@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:camos/pages/network/network_state.dart';
 import 'package:camos/pages/dashboard/dashboard_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
+import 'package:get_storage/get_storage.dart';
 import 'core/blocs/attendance/attendance_bloc.dart';
 import 'core/blocs/authentication/authentication_bloc.dart';
 import 'core/blocs/bluetooth/bluetooth_on_off_cubit/bluetooth_on_off_cubit.dart';
@@ -41,6 +43,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 late Store store;
 late List<CameraDescription> cameras;
 late List<CameraDescription> camerasTireInspection;
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -69,6 +73,13 @@ void main() async {
       persistenceEnabled: true, // Aktifkan disk persistence
     );
   }
+
+  await GetStorage.init(); // WAJIB untuk GetStorage
+
+  await Get.putAsync<UploadQueueService>(
+    () => UploadQueueService().init(),
+  );
+
   // requestAllPermission();
   requestStoragePermission();
 
@@ -133,6 +144,7 @@ class MyApp extends StatelessWidget {
       child: GetMaterialApp(
         title: 'Material App',
         debugShowCheckedModeBanner: false,
+        navigatorObservers: [routeObserver],
         initialRoute: SplashScreen.routeName,
         routes: routes,
       ),

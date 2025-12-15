@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:camos/core/utils/data/id_site.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../../services/local_database/attendance/attendance_entity.dart';
 import 'package:geolocator/geolocator.dart';
@@ -33,6 +34,7 @@ import 'package:syncfusion_flutter_xlsio/xlsio.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:http/http.dart' as http;
 
 /// konversi angka ke format mata uang
 String currencyFormat(String amount, String prefix) {
@@ -300,6 +302,76 @@ Future<File> createFolderPath(String id, String type,
       return outputFile;
   }
   return File('');
+}
+
+/// Try reduce image until base64 length <= maxAllowed.
+/// Returns resulting base64 if success, otherwise null.
+Future<String?> tryShrinkToOneCell(Uint8List originalBytes,
+    {int maxAllowed = 32000, // safe threshold < 32767
+    List<int> targetWidths = const [800, 600, 400, 300, 200, 150, 120, 80, 50],
+    List<int> qualities = const [80, 70, 60, 50, 40, 30, 20]}) async {
+  // quick check original
+  String b64 = base64Encode(originalBytes);
+  if (b64.length <= maxAllowed) return b64;
+
+  // try progressive compress without resize first (quality down)
+  for (final q in qualities) {
+    try {
+      final comp = await FlutterImageCompress.compressWithList(
+        originalBytes,
+        quality: q,
+        format: CompressFormat.webp, // try webp first, smaller
+      );
+      if (comp != null && comp.isNotEmpty) {
+        final b = base64Encode(Uint8List.fromList(comp));
+        if (b.length <= maxAllowed) return b;
+        // keep smallest candidate optionally
+        if (b.length < b64.length) b64 = b;
+      }
+    } catch (_) {}
+  }
+
+  // try resizing to various widths, and compress at multiple qualities
+  for (final w in targetWidths) {
+    for (final q in qualities) {
+      try {
+        final comp = await FlutterImageCompress.compressWithList(
+          originalBytes,
+          minWidth: w,
+          minHeight: 0, // let lib keep aspect ratio
+          quality: q,
+          format: CompressFormat.webp,
+        );
+        if (comp != null && comp.isNotEmpty) {
+          final b = base64Encode(Uint8List.fromList(comp));
+          if (b.length <= maxAllowed) return b;
+          if (b.length < b64.length) b64 = b;
+        }
+      } catch (_) {}
+    }
+  }
+
+  // final fallback - try JPEG encode if webp failed small enough
+  for (final w in targetWidths) {
+    for (final q in qualities) {
+      try {
+        final comp = await FlutterImageCompress.compressWithList(
+          originalBytes,
+          minWidth: w,
+          quality: q,
+          format: CompressFormat.jpeg,
+        );
+        if (comp != null && comp.isNotEmpty) {
+          final b = base64Encode(Uint8List.fromList(comp));
+          if (b.length <= maxAllowed) return b;
+          if (b.length < b64.length) b64 = b;
+        }
+      } catch (_) {}
+    }
+  }
+
+  // can't reduce enough
+  return null;
 }
 
 /// membuat excel
@@ -662,46 +734,147 @@ Future<List<int>> createExcel(String type,
                 : task[i]['adjusmentPressure'] + 'Psi' ?? '0');
 
         // IMAGE TIRE
+        // IMAGE TIRE (ganti blok lama dengan ini)
         int columnBroken = 11;
         final urlImage = task[i]['images'];
 
-        if (urlImage != null && urlImage.isNotEmpty) {
-          sheet.getRangeByName('H${i + 2}').setText("0");
-          for (var j = 0; j < urlImage.length; j++) {
-            try {
-              if (urlImage[j].isNotEmpty) {
-                final file = File(urlImage[j]);
-                // Periksa apakah file ada di path yang diberikan
+        final cellName = 'H${i + 2}';
+        sheet.getRangeByName(cellName).setText('0'); // default
 
-                if (await file.exists()) {
-                  final bytes = await file.readAsBytes();
-                  final base64String = base64Encode(bytes);
+        try {
+          if (urlImage != null && urlImage.isNotEmpty) {
+            // Ambil gambar pertama saja
+            final img = urlImage[0];
 
-                  if (j == 0) {
-                    sheet.getRangeByName('H${i + 2}').cellStyle.hAlign =
-                        HAlignType.center;
-                    sheet.getRangeByName('H${i + 2}').cellStyle.vAlign =
-                        VAlignType.center;
-                    sheet.getRangeByName('H${i + 2}').setText(base64String);
-                  } else {
-                    sheet.getRangeByName('H${i + 2}').setText('0');
-                  }
+            if (img != null && img.toString().isNotEmpty) {
+              Uint8List? bytes;
+
+              final isUrl = img.toString().startsWith('http://') ||
+                  img.toString().startsWith('https://');
+
+              if (isUrl) {
+                // download image dari URL
+                log('img url: $img');
+                final response = await http.get(Uri.parse(img));
+                if (response.statusCode == 200) {
+                  bytes = response.bodyBytes;
                 } else {
-                  // Jika file tidak ada, tulis angka "0"
-                  sheet.getRangeByName('H${i + 2}').setText("0");
+                  log('Failed to download image, status: ${response.statusCode}');
                 }
               } else {
-                // Jika URL null, tulis angka "0"
-                sheet.getRangeByName('H${i + 2}').setText("0");
+                // coba read sebagai local file path
+                final file = File(img);
+                if (await file.exists()) {
+                  bytes = await file.readAsBytes();
+                } else {
+                  log('Local image not found: $img');
+                }
               }
-            } catch (e) {
-              // Log error dan tulis angka "0" jika terjadi masalah
-              log('kenapa gambar error : $e');
-              sheet.getRangeByName('H${i + 2}').setText("0");
+
+              // if (bytes != null && bytes.isNotEmpty) {
+              //   // coba shrink sampai muat 1 cell
+              //   final resultB64 =
+              //       await tryShrinkToOneCell(bytes, maxAllowed: 32000);
+
+              //   if (resultB64 != null) {
+              //     // sukses: tulis ke 1 sel
+              //     sheet.getRangeByName(cellName).cellStyle.hAlign =
+              //         HAlignType.center;
+              //     sheet.getRangeByName(cellName).cellStyle.vAlign =
+              //         VAlignType.center;
+              //     sheet.getRangeByName(cellName).setText(resultB64);
+              //     sheet.getRangeByIndex(i + 2, columnBroken).setText('1');
+              //   } else {
+              //     // gagal: fallback -> tulis URL atau marker agar backend tahu harus download
+              //     sheet
+              //         .getRangeByName(cellName)
+              //         .setText(img.toString()); // tulis URL
+              //     sheet.getRangeByIndex(i + 2, columnBroken).setText('0');
+              //   }
+              // }
+
+              if (bytes != null && bytes.isNotEmpty) {
+                // Try to reduce size by compressing (decrease quality stepwise)
+                String b64 = base64Encode(bytes);
+                log('Initial base64 length = ${b64.length}');
+
+                const int excelCellLimit = 32767;
+                const int safeChunk = 30000; // chunk size < excelCellLimit
+
+                // try compress loop to reduce base64 size
+                if (b64.length > excelCellLimit) {
+                  // Attempt progressive compression (quality 80 -> 70 -> 60 -> 50)
+                  final qualities = [80, 70, 60, 50, 40, 30];
+                  for (final q in qualities) {
+                    try {
+                      final compressed =
+                          await FlutterImageCompress.compressWithList(
+                        bytes,
+                        quality: q,
+                        format: CompressFormat.jpeg,
+                      );
+                      if (compressed != null && compressed.isNotEmpty) {
+                        final tryB64 =
+                            base64Encode(Uint8List.fromList(compressed));
+                        log('After compress q=$q length=${tryB64.length}');
+                        if (tryB64.length < b64.length) {
+                          b64 = tryB64;
+                        }
+                        // if now fits, break
+                        if (b64.length <= excelCellLimit) break;
+                      }
+                    } catch (e) {
+                      log('compress error q=$q : $e');
+                    }
+                  }
+                }
+
+                // If still too large, split into multiple cells starting at H (col index 8)
+                if (b64.length <= excelCellLimit) {
+                  // fits in single cell
+                  sheet.getRangeByName(cellName).cellStyle.hAlign =
+                      HAlignType.center;
+                  sheet.getRangeByName(cellName).cellStyle.vAlign =
+                      VAlignType.center;
+                  sheet.getRangeByName(cellName).setText(b64);
+                  // mark 1 part in meta column
+                  sheet.getRangeByIndex(i + 2, columnBroken).setText('1');
+                } else {
+                  // split
+                  final int parts = (b64.length / safeChunk).ceil();
+                  log('Splitting base64 into $parts parts (each <= $safeChunk chars)');
+                  // start column H = index 8 (1-based). We will write into H, I, J, ...
+                  int startColIndex = 8;
+                  for (int p = 0; p < parts; p++) {
+                    final start = p * safeChunk;
+                    final end = (start + safeChunk > b64.length)
+                        ? b64.length
+                        : (start + safeChunk);
+                    final chunk = b64.substring(start, end);
+                    sheet
+                        .getRangeByIndex(i + 2, startColIndex + p)
+                        .setText(chunk);
+                  }
+                  // simpan jumlah part di columnBroken
+                  sheet
+                      .getRangeByIndex(i + 2, columnBroken)
+                      .setText(parts.toString());
+                  // clear H cell if you don't want full content there (optionally leave first chunk in H)
+                  // sheet.getRangeByName(cellName).setText('[BASE64_PARTS:$parts]');
+                }
+              } else {
+                // jika tidak dapat bytes, tulis 0 (sudah default), log saja
+                sheet.getRangeByName(cellName).setText('0');
+              }
+            } else {
+              sheet.getRangeByName(cellName).setText('0');
             }
+          } else {
+            sheet.getRangeByName(cellName).setText('0');
           }
-        } else {
-          sheet.getRangeByName('H${i + 2}').setText('0');
+        } catch (e, st) {
+          log('Error processing image for row ${i + 2}: $e\n$st');
+          sheet.getRangeByName(cellName).setText('0');
         }
 
         // Location

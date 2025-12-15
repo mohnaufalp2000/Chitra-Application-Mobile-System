@@ -64,82 +64,95 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
   List<String> pit = [];
 
   // 0 (6 tire), 1 (10 tire), 2 (12 tire)
-  List<int> tireCheck = [6, 10, 12];
+  // List<int> tireCheck = [6, 10, 12];
 
-  List<Map<String, dynamic>> tires = [
-    {
-      'position': '1',
+  // List<Map<String, dynamic>> tires = [
+  //   {
+  //     'position': '1',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '2',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '3',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '4',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '5',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '6',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '7',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '8',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '9',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '10',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '11',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  //   {
+  //     'position': '12',
+  //     'pressure': '',
+  //     'temperature': '',
+  //     'injury': '',
+  //   },
+  // ];
+
+  List<Map<String, dynamic>> tires = List.generate(128, (index) {
+    return {
+      'position': '${index + 1}',
       'pressure': '',
       'temperature': '',
       'injury': '',
-    },
-    {
-      'position': '2',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '3',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '4',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '5',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '6',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '7',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '8',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '9',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '10',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '11',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-    {
-      'position': '12',
-      'pressure': '',
-      'temperature': '',
-      'injury': '',
-    },
-  ];
+    };
+  });
+
+  List<int> tireCheck = List.generate(62, (index) => 6 + (index * 2))
+      .where((e) => e <= 128)
+      .toList();
 
   ValueNotifier<List<int>> readCharValue = ValueNotifier([]);
 
@@ -550,80 +563,14 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
                                   selectedRoute = 0;
                                   selectedTireCheck = 0;
                                   checkAmount = 0;
-                                  tires = [
-                                    {
-                                      'position': '1',
+                                  tires = List.generate(128, (index) {
+                                    return {
+                                      'position': '${index + 1}',
                                       'pressure': '',
                                       'temperature': '',
                                       'injury': '',
-                                    },
-                                    {
-                                      'position': '2',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '3',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '4',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '5',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '6',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '7',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '8',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '9',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '10',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '11',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                    {
-                                      'position': '12',
-                                      'pressure': '',
-                                      'temperature': '',
-                                      'injury': '',
-                                    },
-                                  ];
+                                    };
+                                  });
                                 });
 
                                 Navigator.of(context).pop(); // Close the dialog
@@ -769,26 +716,31 @@ class _DailyPressureTrialPageState extends State<DailyPressureTrialPage> {
               const SizedBox(
                 height: 12,
               ),
-              Row(
-                children: List.generate(tireCheck.length, (index) {
-                  return Expanded(
-                    child: RadioListTile<int>(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        "${tireCheck[index]} Tires",
-                        style: getBlackTextStyle(fontSize: 14),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(tireCheck.length, (index) {
+                    return SizedBox(
+                      width: 140, // atur sesuai kebutuhan
+                      child: RadioListTile<int>(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          "${tireCheck[index]} Tires",
+                          style: getBlackTextStyle(fontSize: 14),
+                        ),
+                        value: index,
+                        groupValue: selectedTireCheck,
+                        onChanged: (int? value) {
+                          setState(() {
+                            selectedTireCheck = value!;
+                          });
+                        },
                       ),
-                      value: index,
-                      groupValue: selectedTireCheck,
-                      onChanged: (int? value) {
-                        setState(() {
-                          selectedTireCheck = value!;
-                        });
-                      },
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
+
               (selectedTireCheck == 0)
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

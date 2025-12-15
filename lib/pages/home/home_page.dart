@@ -1863,7 +1863,9 @@
 
 // -- NEW HOME PAGE -- //
 
+import 'dart:convert';
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/styles/asset_path.dart';
@@ -1891,6 +1893,7 @@ import '../../core/widgets/button_widget.dart';
 import '../../core/widgets/custom_error_widget.dart';
 import '../tire_condition/tire_condition_page.dart';
 import '../tire_inventory/tire_inventory_page.dart';
+import 'package:http/http.dart' as http;
 
 class HomePage extends GetView<HomeState> {
   static const routeName = '/home_page';
@@ -1921,15 +1924,29 @@ class HomePage extends GetView<HomeState> {
                     padding: const EdgeInsets.symmetric(horizontal: 12.0),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          backgroundImage: (controller.user['image'] == '' ||
-                                  controller.user['image'] == null ||
-                                  controller.user['image'] == 'image')
-                              ? AssetImage('$imagePath/default_user_image.png')
-                                  as ImageProvider
-                              : NetworkImage(controller.user['image']),
-                          backgroundColor: Colors.grey.withOpacity(0.4),
-                          radius: 30,
+                        InkWell(
+                          onTap: () async {
+                            // final response = await http.get(Uri.parse(
+                            //     'https://firebasestorage.googleapis.com/v0/b/caismit.appspot.com/o/tire_task_images%2FV5Dl5IewEv1KI8pLUrA6.jpg?alt=media&token=3490d3b7-24f0-46cc-acac-f38a8fd24a6e'));
+
+                            // if (response.statusCode != 200) {
+                            //   throw Exception("Failed to download image");
+                            // }
+                            // Uint8List bytes = response.bodyBytes;
+
+                            // print('blob image : ${base64Encode(bytes)}');
+                          },
+                          child: CircleAvatar(
+                            backgroundImage: (controller.user['image'] == '' ||
+                                    controller.user['image'] == null ||
+                                    controller.user['image'] == 'image')
+                                ? AssetImage(
+                                        '$imagePath/default_user_image.png')
+                                    as ImageProvider
+                                : NetworkImage(controller.user['image']),
+                            backgroundColor: Colors.grey.withOpacity(0.4),
+                            radius: 30,
+                          ),
                         ),
                         const SizedBox(
                           width: 8,
