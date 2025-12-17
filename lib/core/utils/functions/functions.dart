@@ -771,98 +771,99 @@ Future<List<int>> createExcel(String type,
                 }
               }
 
-              // if (bytes != null && bytes.isNotEmpty) {
-              //   // coba shrink sampai muat 1 cell
-              //   final resultB64 =
-              //       await tryShrinkToOneCell(bytes, maxAllowed: 32000);
-
-              //   if (resultB64 != null) {
-              //     // sukses: tulis ke 1 sel
-              //     sheet.getRangeByName(cellName).cellStyle.hAlign =
-              //         HAlignType.center;
-              //     sheet.getRangeByName(cellName).cellStyle.vAlign =
-              //         VAlignType.center;
-              //     sheet.getRangeByName(cellName).setText(resultB64);
-              //     sheet.getRangeByIndex(i + 2, columnBroken).setText('1');
-              //   } else {
-              //     // gagal: fallback -> tulis URL atau marker agar backend tahu harus download
-              //     sheet
-              //         .getRangeByName(cellName)
-              //         .setText(img.toString()); // tulis URL
-              //     sheet.getRangeByIndex(i + 2, columnBroken).setText('0');
-              //   }
-              // }
-
               if (bytes != null && bytes.isNotEmpty) {
-                // Try to reduce size by compressing (decrease quality stepwise)
-                String b64 = base64Encode(bytes);
-                log('Initial base64 length = ${b64.length}');
+                // coba shrink sampai muat 1 cell
+                final resultB64 =
+                    await tryShrinkToOneCell(bytes, maxAllowed: 32000);
 
-                const int excelCellLimit = 32767;
-                const int safeChunk = 30000; // chunk size < excelCellLimit
-
-                // try compress loop to reduce base64 size
-                if (b64.length > excelCellLimit) {
-                  // Attempt progressive compression (quality 80 -> 70 -> 60 -> 50)
-                  final qualities = [80, 70, 60, 50, 40, 30];
-                  for (final q in qualities) {
-                    try {
-                      final compressed =
-                          await FlutterImageCompress.compressWithList(
-                        bytes,
-                        quality: q,
-                        format: CompressFormat.jpeg,
-                      );
-                      if (compressed != null && compressed.isNotEmpty) {
-                        final tryB64 =
-                            base64Encode(Uint8List.fromList(compressed));
-                        log('After compress q=$q length=${tryB64.length}');
-                        if (tryB64.length < b64.length) {
-                          b64 = tryB64;
-                        }
-                        // if now fits, break
-                        if (b64.length <= excelCellLimit) break;
-                      }
-                    } catch (e) {
-                      log('compress error q=$q : $e');
-                    }
-                  }
-                }
-
-                // If still too large, split into multiple cells starting at H (col index 8)
-                if (b64.length <= excelCellLimit) {
-                  // fits in single cell
+                if (resultB64 != null) {
+                  // sukses: tulis ke 1 sel
                   sheet.getRangeByName(cellName).cellStyle.hAlign =
                       HAlignType.center;
                   sheet.getRangeByName(cellName).cellStyle.vAlign =
                       VAlignType.center;
-                  sheet.getRangeByName(cellName).setText(b64);
-                  // mark 1 part in meta column
+                  sheet.getRangeByName(cellName).setText(resultB64);
                   sheet.getRangeByIndex(i + 2, columnBroken).setText('1');
                 } else {
-                  // split
-                  final int parts = (b64.length / safeChunk).ceil();
-                  log('Splitting base64 into $parts parts (each <= $safeChunk chars)');
-                  // start column H = index 8 (1-based). We will write into H, I, J, ...
-                  int startColIndex = 8;
-                  for (int p = 0; p < parts; p++) {
-                    final start = p * safeChunk;
-                    final end = (start + safeChunk > b64.length)
-                        ? b64.length
-                        : (start + safeChunk);
-                    final chunk = b64.substring(start, end);
-                    sheet
-                        .getRangeByIndex(i + 2, startColIndex + p)
-                        .setText(chunk);
-                  }
-                  // simpan jumlah part di columnBroken
+                  // gagal: fallback -> tulis URL atau marker agar backend tahu harus download
                   sheet
-                      .getRangeByIndex(i + 2, columnBroken)
-                      .setText(parts.toString());
-                  // clear H cell if you don't want full content there (optionally leave first chunk in H)
-                  // sheet.getRangeByName(cellName).setText('[BASE64_PARTS:$parts]');
+                      .getRangeByName(cellName)
+                      .setText(img.toString()); // tulis URL
+                  sheet.getRangeByIndex(i + 2, columnBroken).setText('0');
                 }
-              } else {
+              }
+
+              // if (bytes != null && bytes.isNotEmpty) {
+              //   // Try to reduce size by compressing (decrease quality stepwise)
+              //   String b64 = base64Encode(bytes);
+              //   log('Initial base64 length = ${b64.length}');
+
+              //   const int excelCellLimit = 32767;
+              //   const int safeChunk = 30000; // chunk size < excelCellLimit
+
+              //   // try compress loop to reduce base64 size
+              //   if (b64.length > excelCellLimit) {
+              //     // Attempt progressive compression (quality 80 -> 70 -> 60 -> 50)
+              //     final qualities = [80, 70, 60, 50, 40, 30];
+              //     for (final q in qualities) {
+              //       try {
+              //         final compressed =
+              //             await FlutterImageCompress.compressWithList(
+              //           bytes,
+              //           quality: q,
+              //           format: CompressFormat.jpeg,
+              //         );
+              //         if (compressed != null && compressed.isNotEmpty) {
+              //           final tryB64 =
+              //               base64Encode(Uint8List.fromList(compressed));
+              //           log('After compress q=$q length=${tryB64.length}');
+              //           if (tryB64.length < b64.length) {
+              //             b64 = tryB64;
+              //           }
+              //           // if now fits, break
+              //           if (b64.length <= excelCellLimit) break;
+              //         }
+              //       } catch (e) {
+              //         log('compress error q=$q : $e');
+              //       }
+              //     }
+              //   }
+
+              //   // If still too large, split into multiple cells starting at H (col index 8)
+              //   if (b64.length <= excelCellLimit) {
+              //     // fits in single cell
+              //     sheet.getRangeByName(cellName).cellStyle.hAlign =
+              //         HAlignType.center;
+              //     sheet.getRangeByName(cellName).cellStyle.vAlign =
+              //         VAlignType.center;
+              //     sheet.getRangeByName(cellName).setText(b64);
+              //     // mark 1 part in meta column
+              //     sheet.getRangeByIndex(i + 2, columnBroken).setText('1');
+              //   } else {
+              //     // split
+              //     final int parts = (b64.length / safeChunk).ceil();
+              //     log('Splitting base64 into $parts parts (each <= $safeChunk chars)');
+              //     // start column H = index 8 (1-based). We will write into H, I, J, ...
+              //     int startColIndex = 8;
+              //     for (int p = 0; p < parts; p++) {
+              //       final start = p * safeChunk;
+              //       final end = (start + safeChunk > b64.length)
+              //           ? b64.length
+              //           : (start + safeChunk);
+              //       final chunk = b64.substring(start, end);
+              //       sheet
+              //           .getRangeByIndex(i + 2, startColIndex + p)
+              //           .setText(chunk);
+              //     }
+              //     // simpan jumlah part di columnBroken
+              //     sheet
+              //         .getRangeByIndex(i + 2, columnBroken)
+              //         .setText(parts.toString());
+              //     // clear H cell if you don't want full content there (optionally leave first chunk in H)
+              //     // sheet.getRangeByName(cellName).setText('[BASE64_PARTS:$parts]');
+              //   }
+              // }
+              else {
                 // jika tidak dapat bytes, tulis 0 (sudah default), log saja
                 sheet.getRangeByName(cellName).setText('0');
               }
