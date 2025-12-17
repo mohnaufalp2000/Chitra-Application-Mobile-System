@@ -36,6 +36,9 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
   String searchTaskText = '';
 
   bool isAccessed = true;
+  bool isExporting = false;
+  double exportProgress = 0.0;
+
   List<CheckBoxModalWidget> checkBoxList = [];
   List<String> checkBoxTitleSelected = [];
   final allChecked = CheckBoxModalWidget(title: 'All');
@@ -144,67 +147,117 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                    onPressed: () async {
-                      final id = Uuid();
+                  onPressed: isExporting
+                      ? null
+                      : () async {
+                          setState(() {
+                            isExporting = true;
+                            exportProgress = 0.1;
+                          });
 
-                      filteredItemTask.sort((a, b) {
-                        DateTime dateA = DateTime.parse(a[
-                            'last_update']); // Ganti 'tanggal' dengan key tanggal di data Anda
-                        DateTime dateB = DateTime.parse(b['last_update']);
-                        return dateB.compareTo(
-                            dateA); // Ascending order (dari kecil ke besar)
-                      });
+                          try {
+                            final id = Uuid();
 
-                      final file = await createFolderPath(
-                          id.v4(), 'outstanding',
-                          email: auth.currentUser?.email ?? '',
-                          site: filteredItemTask[0]['id_site'] ??
-                              'default_site' // Default value to avoid null
-                          );
-                      print('File path: ${file.path}');
-                      print('Excel created 1');
+                            // 1️⃣ Sorting data
+                            await Future.delayed(
+                                const Duration(milliseconds: 300));
+                            setState(() => exportProgress = 0.3);
 
-                      final bytes = await createExcel('outstanding',
-                          task: filteredItemTask);
-                      print('Excel created 2');
+                            filteredItemTask.sort((a, b) {
+                              DateTime dateA = DateTime.parse(a['last_update']);
+                              DateTime dateB = DateTime.parse(b['last_update']);
+                              return dateB.compareTo(dateA);
+                            });
 
-                      final saved = await file.writeAsBytes(bytes, flush: true);
-                      print('laper : $saved');
+                            // 2️⃣ Create folder
+                            await Future.delayed(
+                                const Duration(milliseconds: 300));
+                            setState(() => exportProgress = 0.45);
 
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        backgroundColor: green00968A,
-                        content: Text(
-                          'Successfull Save Data!',
-                          style: getWhiteTextStyle(),
-                        ),
-                      ));
+                            final file = await createFolderPath(
+                              id.v4(),
+                              'outstanding',
+                              email: auth.currentUser?.email ?? '',
+                              site: filteredItemTask.isNotEmpty
+                                  ? filteredItemTask[0]['id_site']
+                                  : 'default_site',
+                            );
 
-                      final result = await OpenFile.open(file.path);
-                      if (result.type == ResultType.done) {
-                        print('File berhasil dibuka');
-                      } else {
-                        print(result.message);
-                        if (result.type == ResultType.noAppToOpen) {
-                          openPlayStore('attendance');
-                        }
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.table_chart),
-                          const SizedBox(
-                            width: 12,
+                            // 3️⃣ Generate Excel
+                            setState(() => exportProgress = 0.65);
+                            final bytes = await createExcel(
+                              'outstanding',
+                              task: filteredItemTask,
+                            );
+
+                            // 4️⃣ Write file
+                            setState(() => exportProgress = 0.85);
+                            await file.writeAsBytes(bytes, flush: true);
+
+                            // 5️⃣ Done
+                            setState(() => exportProgress = 1.0);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: green00968A,
+                                content: Text(
+                                  'Successfull Save Data!',
+                                  style: getWhiteTextStyle(),
+                                ),
+                              ),
+                            );
+
+                            await OpenFile.open(file.path);
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: Colors.red,
+                                content: Text('Export failed: $e'),
+                              ),
+                            );
+                          } finally {
+                            await Future.delayed(
+                                const Duration(milliseconds: 500));
+                            setState(() {
+                              isExporting = false;
+                              exportProgress = 0.0;
+                            });
+                          }
+                        },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isExporting) ...[
+                          LinearProgressIndicator(
+                            value: exportProgress,
+                            minHeight: 6,
+                            backgroundColor: Colors.grey.shade300,
+                            color: Colors.black,
                           ),
+                          const SizedBox(height: 8),
                           Text(
-                            'Export to Excel',
+                            'Exporting ${(exportProgress * 100).toInt()}%',
                             style: getBlackTextStyle(),
                           ),
+                        ] else ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.table_chart),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Export to Excel',
+                                style: getBlackTextStyle(),
+                              ),
+                            ],
+                          ),
                         ],
-                      ),
-                    )),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(
                 height: 12,
