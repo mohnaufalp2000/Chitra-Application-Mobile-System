@@ -638,8 +638,8 @@ Future<List<int>> createExcel(String type,
           sheet.getRangeByName('D${i + 2}').setText('0');
           sheet.getRangeByName('D${i + 2}').setText(
               (task[i]['pressure'] == '' || task[i]['pressure'] == null)
-                  ? '0 Psi'
-                  : task[i]['pressure'] + ' Psi' ?? '0');
+                  ? '0'
+                  : task[i]['pressure'] ?? '0');
         } catch (e) {}
 
         try {
@@ -730,8 +730,8 @@ Future<List<int>> createExcel(String type,
         sheet.getRangeByName('I${i + 2}').setText(
             (task[i]['adjusmentPressure'] == '' ||
                     task[i]['adjusmentPressure'] == null)
-                ? '0 Psi'
-                : task[i]['adjusmentPressure'] + 'Psi' ?? '0');
+                ? '0'
+                : task[i]['adjusmentPressure'] ?? '0');
 
         // IMAGE TIRE
         // IMAGE TIRE (ganti blok lama dengan ini)
