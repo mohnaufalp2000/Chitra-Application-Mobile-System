@@ -673,38 +673,40 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
 
                               return OustandingTileWidget(
                                   task: OutstandingTask(
-                                      id: task['id'] ?? '',
-                                      idSite: task['id_site'] ?? '',
-                                      user: task['user'] ?? '',
-                                      userEmail: task['user_email'] ?? '',
-                                      unit: task['unit'] ?? '',
-                                      serialNumber: task['serial_number'] ?? '',
-                                      condition: (task['condition'] != null)
-                                          ? List<String>.from(task['condition']
-                                              .map((condition) =>
-                                                  condition.toString()))
-                                          : [],
-                                      tireSize: task['tire_size'] ?? '',
-                                      hm: task['hm'] ?? '',
-                                      position: task['position'] is String
-                                          ? int.tryParse(task['position']) ?? 0
-                                          : task['position'] ?? 0,
-                                      brand: task['brand'] ?? '',
-                                      tireDamage:
-                                          task['tire_damage'] is List<dynamic>
-                                              ? task['tire_damage'].join(', ')
-                                              : task['tire_damage'],
-                                      remarks: task['remarks'] ?? '',
-                                      rtd: task['rtd'] ?? '',
-                                      pressure: task['pressure'] ?? '',
-                                      adjusmentPressure:
-                                          task['adjusmentPressure'] ?? '',
-                                      lastUpdate: task['last_update'] ?? '',
-                                      isDone: task['is_done'] ?? '',
-                                      sn: task['sn'] ?? '',
-                                      kunciUnit: task['kunci_unit'] ?? '',
-                                      kunciTire: task['kunci_tire'] ?? '',
-                                      images: []));
+                                id: task['id'] ?? '',
+                                idSite: task['id_site'] ?? '',
+                                user: task['user'] ?? '',
+                                userEmail: task['user_email'] ?? '',
+                                unit: task['unit'] ?? '',
+                                serialNumber: task['serial_number'] ?? '',
+                                condition: (task['condition'] != null)
+                                    ? List<String>.from(task['condition'].map(
+                                        (condition) => condition.toString()))
+                                    : [],
+                                tireSize: task['tire_size'] ?? '',
+                                hm: task['hm'] ?? '',
+                                position: task['position'] is String
+                                    ? int.tryParse(task['position']) ?? 0
+                                    : task['position'] ?? 0,
+                                brand: task['brand'] ?? '',
+                                tireDamage: task['tire_damage'] is List<dynamic>
+                                    ? task['tire_damage'].join(', ')
+                                    : task['tire_damage'],
+                                remarks: task['remarks'] ?? '',
+                                rtd: task['rtd'] ?? '',
+                                pressure: task['pressure'] ?? '',
+                                adjusmentPressure:
+                                    task['adjusmentPressure'] ?? '',
+                                lastUpdate: task['last_update'] ?? '',
+                                isDone: task['is_done'] ?? '',
+                                sn: task['sn'] ?? '',
+                                kunciUnit: task['kunci_unit'] ?? '',
+                                kunciTire: task['kunci_tire'] ?? '',
+                                images: (task['images'] as List<dynamic>?)
+                                        ?.whereType<String>()
+                                        .toList() ??
+                                    [],
+                              ));
                             }),
                       ],
                     );

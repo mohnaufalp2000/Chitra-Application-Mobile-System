@@ -11,6 +11,35 @@ import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/utils/data/oustanding_task.dart';
 
+Widget _buildImage(String url) {
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(12),
+    child: Image.network(
+      url,
+      width: double.infinity,
+      height: 180,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return SizedBox(
+          height: 180,
+          child: Center(
+            child: CircularProgressIndicator(color: white),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return SizedBox(
+          height: 180,
+          child: Center(
+            child: Icon(Icons.broken_image, color: white),
+          ),
+        );
+      },
+    ),
+  );
+}
+
 class OustandingTileWidget extends StatelessWidget {
   const OustandingTileWidget({
     Key? key,
@@ -98,6 +127,10 @@ class OustandingTileWidget extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (task.images != null && task.images!.isNotEmpty) ...[
+                  _buildImage(task.images!.first),
+                  const SizedBox(height: 12),
+                ],
                 Text(
                   'Inspector',
                   style: getWhiteTextStyle(),
