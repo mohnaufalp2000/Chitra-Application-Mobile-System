@@ -50,7 +50,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Get.put(InternetState());
   cameras = await availableCameras();
-  cameras = [cameras[0], cameras[1]];
+  // cameras = [cameras[0], cameras[1]];
   store = (await ObjectBox.create()).store;
   initializeHERESDK();
   await AttendanceSheetsAPI.initAttendanceSheets();

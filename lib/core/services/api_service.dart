@@ -447,10 +447,13 @@ class ApiService {
       String tireSpecCount = '';
 
       if (status == 'Scrap') {
+        final avgLifetime = result['Avg_lifetime'];
+        final total = result['Total'];
+
         tireSpecCount =
-            '${double.parse(result['Avg_lifetime']).round()}|${result['Total']}';
+            '${(avgLifetime is num ? avgLifetime.round() : 0)}|${total ?? 0}';
       } else {
-        tireSpecCount = result['Total'] as String;
+        tireSpecCount = result['Total']?.toString() ?? '0';
       }
 
       return tireSpecCount;

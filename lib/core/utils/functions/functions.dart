@@ -306,6 +306,74 @@ Future<File> createFolderPath(String id, String type,
 
 /// Try reduce image until base64 length <= maxAllowed.
 /// Returns resulting base64 if success, otherwise null.
+///
+// Future<String?> tryShrinkToOneCell(
+//   Uint8List originalBytes, {
+//   int maxAllowed = 32000,
+// }) async {
+//   // === quick check
+//   final originalB64 = base64Encode(originalBytes);
+//   if (originalB64.length <= maxAllowed) return originalB64;
+
+//   Uint8List currentBytes = originalBytes;
+//   String? bestB64;
+
+//   // STEP 1 — resize aggressively first (paling berdampak)
+//   const widths = [800, 600, 400, 300, 200];
+//   for (final w in widths) {
+//     final resized = await FlutterImageCompress.compressWithList(
+//       currentBytes,
+//       minWidth: w,
+//       minHeight: 0,
+//       quality: 85, // tetap tinggi dulu
+//       format: CompressFormat.webp,
+//     );
+
+//     if (resized == null || resized.isEmpty) continue;
+
+//     final b64 = base64Encode(Uint8List.fromList(resized));
+//     bestB64 ??= b64;
+//     if (b64.length <= maxAllowed) return b64;
+
+//     // lanjut dari hasil resize, bukan original
+//     currentBytes = Uint8List.fromList(resized);
+//     break; // ⛔ stop resize lebih kecil dulu
+//   }
+
+//   // STEP 2 — turunkan quality dari hasil resize
+//   const qualities = [80, 65, 50, 40, 30];
+//   for (final q in qualities) {
+//     final comp = await FlutterImageCompress.compressWithList(
+//       currentBytes,
+//       quality: q,
+//       format: CompressFormat.webp,
+//     );
+
+//     if (comp == null || comp.isEmpty) continue;
+
+//     final b64 = base64Encode(Uint8List.fromList(comp));
+//     if (b64.length <= maxAllowed) return b64;
+
+//     if (bestB64 == null || b64.length < bestB64.length) {
+//       bestB64 = b64;
+//     }
+//   }
+
+//   // STEP 3 — fallback JPEG (hanya sekali!)
+//   final jpeg = await FlutterImageCompress.compressWithList(
+//     currentBytes,
+//     quality: 40,
+//     format: CompressFormat.jpeg,
+//   );
+
+//   if (jpeg != null && jpeg.isNotEmpty) {
+//     final b64 = base64Encode(Uint8List.fromList(jpeg));
+//     if (b64.length <= maxAllowed) return b64;
+//   }
+
+//   return null;
+// }
+
 Future<String?> tryShrinkToOneCell(Uint8List originalBytes,
     {int maxAllowed = 32000, // safe threshold < 32767
     List<int> targetWidths = const [800, 600, 400, 300, 200, 150, 120, 80, 50],
@@ -736,10 +804,11 @@ Future<List<int>> createExcel(String type,
         // IMAGE TIRE
         // IMAGE TIRE (ganti blok lama dengan ini)
         int columnBroken = 11;
+        int rowIndex = i + 2;
         final urlImage = task[i]['images'];
 
         final cellName = 'H${i + 2}';
-        sheet.getRangeByName(cellName).setText('0'); // default
+        // sheet.getRangeByName(cellName).setText('0'); // default
 
         try {
           if (urlImage != null && urlImage.isNotEmpty) {
@@ -770,40 +839,62 @@ Future<List<int>> createExcel(String type,
                   log('Local image not found: $img');
                 }
               }
+              log('img bytes: $bytes');
 
               if (bytes != null && bytes.isNotEmpty) {
-                // coba shrink sampai muat 1 cell
-                final resultB64 =
-                    await tryShrinkToOneCell(bytes, maxAllowed: 32000);
+                final resizedImage = await resizeImage(bytes, 600, 600);
 
-                if (resultB64 != null) {
-                  // sukses: tulis ke 1 sel
-                  sheet.getRangeByName(cellName).cellStyle.hAlign =
-                      HAlignType.center;
-                  sheet.getRangeByName(cellName).cellStyle.vAlign =
-                      VAlignType.center;
-                  sheet.getRangeByName(cellName).setText(resultB64);
-                  sheet.getRangeByIndex(i + 2, columnBroken).setText('1');
-                } else {
-                  // gagal: fallback -> tulis URL atau marker agar backend tahu harus download
-                  sheet
-                      .getRangeByName(cellName)
-                      .setText(img.toString()); // tulis URL
-                  sheet.getRangeByIndex(i + 2, columnBroken).setText('0');
-                }
+                final rowIndex = i + 2;
+                final colIndex = 8;
+
+                final range = sheet.getRangeByIndex(rowIndex, colIndex);
+
+                // ⚠️ JANGAN kebesaran
+                range.rowHeight = 120; // ± 160px
+                range.columnWidth = 20; // ± 140px (INI PENTING)
+
+                final picture = sheet.pictures.addStream(
+                  rowIndex,
+                  colIndex,
+                  resizedImage,
+                );
+
+                // atur ukuran gambar
+                picture.width = 110;
+                picture.height = 110;
+
+                // coba shrink sampai muat 1 cell
+                // final resultB64 =
+                //     await tryShrinkToOneCell(bytes, maxAllowed: 32000);
+
+                // if (resultB64 != null) {
+                //   // sukses: tulis ke 1 sel
+                //   sheet.getRangeByName(cellName).cellStyle.hAlign =
+                //       HAlignType.center;
+                //   sheet.getRangeByName(cellName).cellStyle.vAlign =
+                //       VAlignType.center;
+                //   sheet.getRangeByName(cellName).setText(resultB64);
+                //   sheet.getRangeByIndex(i + 2, columnBroken).setText('1');
+                // } else {
+                //   // gagal: fallback -> tulis URL atau marker agar backend tahu harus download
+                //   sheet
+                //       .getRangeByName(cellName)
+                //       .setText(img.toString()); // tulis URL
+                //   sheet.getRangeByIndex(i + 2, columnBroken).setText('0');
+                // }
               } else {
                 // jika tidak dapat bytes, tulis 0 (sudah default), log saja
-                sheet.getRangeByName(cellName).setText('0');
+                // sheet.getRangeByName(cellName).setText('0');
               }
             } else {
-              sheet.getRangeByName(cellName).setText('0');
+              // sheet.getRangeByName(cellName).setText('0');
             }
           } else {
-            sheet.getRangeByName(cellName).setText('0');
+            // sheet.getRangeByName(cellName).setText('0');
           }
         } catch (e, st) {
           log('Error processing image for row ${i + 2}: $e\n$st');
-          sheet.getRangeByName(cellName).setText('0');
+          // sheet.getRangeByName(cellName).setText('0');
         }
 
         // Location
@@ -1137,15 +1228,45 @@ String getDayOfWeek(DateTime date) {
 }
 
 /// mengurangi ukuran gambar
+// Future<Uint8List> resizeImage(
+//     Uint8List imageBytes, int targetWidth, int targetHeight) async {
+//   img.Image image = img.decodeImage(imageBytes)!;
+
+//   img.Image resizedImage =
+//       img.copyResize(image, width: targetWidth, height: targetHeight);
+
+//   Uint8List resizedBytes = Uint8List.fromList(img.encodePng(resizedImage));
+//   return resizedBytes;
+// }
 Future<Uint8List> resizeImage(
-    Uint8List imageBytes, int targetWidth, int targetHeight) async {
-  img.Image image = img.decodeImage(imageBytes)!;
+  Uint8List imageBytes,
+  int maxWidth,
+  int maxHeight,
+) async {
+  final image = img.decodeImage(imageBytes);
+  if (image == null) {
+    throw Exception('Invalid image bytes');
+  }
 
-  img.Image resizedImage =
-      img.copyResize(image, width: targetWidth, height: targetHeight);
+  // hitung ratio supaya tidak gepeng
+  final ratioW = maxWidth / image.width;
+  final ratioH = maxHeight / image.height;
+  final ratio = ratioW < ratioH ? ratioW : ratioH;
 
-  Uint8List resizedBytes = Uint8List.fromList(img.encodePng(resizedImage));
-  return resizedBytes;
+  final newWidth = (image.width * ratio).round();
+  final newHeight = (image.height * ratio).round();
+
+  final resized = img.copyResize(
+    image,
+    width: newWidth,
+    height: newHeight,
+    interpolation: img.Interpolation.average,
+  );
+
+  // ⚠️ PAKAI JPEG (lebih aman di Excel)
+  return Uint8List.fromList(
+    img.encodeJpg(resized, quality: 80),
+  );
 }
 
 // formatDateTimeString(String dateTimeString) {
