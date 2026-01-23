@@ -51,7 +51,7 @@ class _SplashScreenState extends State<SplashScreen> {
         .where('email', isEqualTo: auth.currentUser?.email)
         .get();
 
-    if (auth.currentUser != null) {
+    if (auth.currentUser != null && user.docs.isNotEmpty) {
       if (auth.currentUser!.emailVerified) {
         List<Site> allSites = await ApiService.getCachedAllSites();
 

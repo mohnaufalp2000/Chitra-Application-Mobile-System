@@ -95,7 +95,7 @@ class HomePage extends GetView<HomeState> {
                               'Good ${controller.greeting()}',
                               style: getBlackTextStyle(fontSize: 12),
                             ),
-                            Text(controller.user['username'],
+                            Text(controller.user['username'] ?? 'Username',
                                 style: getBlackTextStyle(
                                     fontSize: 14, fontWeight: w700)),
                             // -- VERSION APP NUMBER

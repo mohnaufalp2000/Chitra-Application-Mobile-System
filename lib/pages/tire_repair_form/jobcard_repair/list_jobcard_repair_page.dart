@@ -1,3 +1,13 @@
+import 'dart:developer';
+import 'dart:io';
+
+import 'package:camera/camera.dart';
+import 'package:dio/dio.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_gallery_saver/image_gallery_saver.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import '../../../core/blocs/wo_jobcard/wo_jobcard_bloc.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/styles/asset_path.dart';
@@ -14,6 +24,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutterflow_paginate_firestore/paginate_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
 
 class ListJobcardRepair extends StatefulWidget {
   static const routeName = '/list-jobcard-repair';
@@ -111,9 +122,13 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
           },
           items: const [
             BottomNavigationBarItem(
-                icon: Icon(Icons.tag), label: 'Waiting WO#'),
+                // icon: Icon(Icons.tag), label: 'Waiting WO#'),
+                icon: Icon(Icons.tag),
+                label: 'Upload Document Jobcard'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.work_history), label: 'On Progress'),
+                // icon: Icon(Icons.work_history), label: 'On Progress'),
+                icon: Icon(Icons.work_history),
+                label: 'Input Form Jobcard\n(Under Maintenance)'),
             // BottomNavigationBarItem(
             //     icon: Icon(Icons.fact_check), label: 'Waiting QC'),
           ]),
@@ -356,117 +371,125 @@ class _OnProgressState extends State<OnProgress> {
   }
 }
 
-// class OnProgress extends StatefulWidget {
-//   const OnProgress({super.key, required this.woList});
-//   final List<Map<String, dynamic>> woList;
-
-//   @override
-//   State<OnProgress> createState() => _OnProgressState();
-// }
-
-// class _OnProgressState extends State<OnProgress> {
-//   FirebaseFirestore firestore = FirebaseFirestore.instance;
-//   String searchQuery = '';
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final List<String> idWoList =
-//         widget.woList.map((item) => item['id_wo'] as String).toList();
-
-//     if (idWoList.isEmpty) {
-//       return Center(
-//           child: Text(
-//         'No data available',
-//         style: getBlackTextStyle(),
-//       ));
-//     }
-
-//     return Column(
-//       children: [
-//         Padding(
-//           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-//           child: TextField(
-//             onChanged: (value) {
-//               setState(() {
-//                 searchQuery = value;
-//               });
-//             },
-//             decoration: InputDecoration(
-//                 hintText: 'Search... (SN)',
-//                 hintStyle: getGreyTextStyle(grey8391A1),
-//                 prefixIcon: Icon(Icons.search)),
-//           ),
-//         ),
-//         const SizedBox(
-//           height: 12,
-//         ),
-//         PaginateFirestore(
-//             query: firestore
-//                 .collection(FirestoreKey.tireRepairInspectionReport)
-//                 // .collection('tire_repair_ins_report')
-//                 .orderBy('created_at', descending: true)
-//                 .where('id', whereIn: idWoList),
-//             itemBuilderType: PaginateBuilderType.listView,
-//             shrinkWrap: true,
-//             key: const Key('on_progress'),
-//             physics: NeverScrollableScrollPhysics(),
-//             itemsPerPage: 5,
-//             isLive: true,
-//             initialLoader:
-//                 const Center(child: CircularProgressIndicator.adaptive()),
-//             bottomLoader:
-//                 const Center(child: CircularProgressIndicator.adaptive()),
-//             itemBuilder: (context, snapshot, index) {
-//               final Map<String, dynamic> data =
-//                   snapshot[index].data() as Map<String, dynamic>;
-//               // mendapatkan nomor WO
-//               final WO = widget.woList.firstWhere(
-//                   (element) => element['id_wo'] == data['id'],
-//                   orElse: () => {'wo': ''})['wo'];
-//               // mendapatkan WO date
-//               final WODate = widget.woList.firstWhere(
-//                   (element) => element['id_wo'] == data['id'],
-//                   orElse: () => {'wo': ''})['wo_date'];
-
-//               if (searchQuery.isNotEmpty &&
-//                   !data['sn']!.toLowerCase().contains(searchQuery) &&
-//                   !data['sn']!.toUpperCase().contains(searchQuery)) {
-//                 return Container();
-//               }
-
-//               print('WO : $WO');
-//               if (WO == '') {
-//                 return Container();
-//               }
-//               return JobcardCard(
-//                 wo: WO,
-//                 woDate: WODate,
-//                 data: data,
-//               );
-//             }),
-//       ],
-//     );
-//   }
-// }
-
-class WaitingQC extends StatelessWidget {
-  const WaitingQC({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [],
-    );
-  }
-}
-
-class WaitingWOCard extends StatelessWidget {
+class WaitingWOCard extends StatefulWidget {
   const WaitingWOCard({
     super.key,
     required this.data,
   });
 
   final Map<String, dynamic> data;
+
+  @override
+  State<WaitingWOCard> createState() => _WaitingWOCardState();
+}
+
+class _WaitingWOCardState extends State<WaitingWOCard> {
+  final FirebaseStorage storage = FirebaseStorage.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  File? selectedImage;
+  bool isUploading = false;
+  String? imageUrl;
+  bool isLoadingImage = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImageFromFirestore();
+  }
+
+  Future<void> _downloadImage() async {
+    if (imageUrl == null) return;
+
+    try {
+      // 🔐 Permission Gallery / Storage
+      if (await Permission.storage.request().isDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Permission ditolak')),
+        );
+        return;
+      }
+
+      // 📂 Temp directory (sementara)
+      final tempDir = await getTemporaryDirectory();
+      final tempPath = '${tempDir.path}/jobcard_${widget.data['sn']}.jpg';
+
+      // ⬇️ Download dari Firebase Storage
+      await Dio().download(imageUrl!, tempPath);
+
+      // 🔄 Convert ke XFile
+      final XFile xFile = XFile(tempPath);
+
+      // 🔥 Simpan ke Gallery (pakai fungsi kamu)
+      saveToGallery(xFile, widget.data['sn']);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gambar berhasil disimpan ke Gallery')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download gagal: $e')),
+      );
+    }
+  }
+
+  Future<void> downloadAndSaveImageToGallery() async {
+    if (imageUrl == null) return;
+
+    try {
+      // folder sementara
+      final tempDir = await getTemporaryDirectory();
+      final filePath = '${tempDir.path}/jobcard_${widget.data['sn']}.jpg';
+
+      // download dari Firebase Storage
+      await Dio().download(imageUrl!, filePath);
+
+      // convert ke XFile
+      final xFile = XFile(filePath);
+
+      // 🔥 pakai fungsi kamu
+      saveToGallery(xFile, widget.data['sn']);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gambar berhasil disimpan ke Gallery')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan gambar: $e')),
+      );
+    }
+  }
+
+  void saveToGallery(XFile? compressedImageFile, String sn) async {
+    final imageBytes = await compressedImageFile?.readAsBytes();
+
+    await ImageGallerySaver.saveImage(
+      imageBytes!,
+      name: 'jobcard-form-$sn-${DateTime.now().millisecondsSinceEpoch}',
+    );
+  }
+
+  Future<void> _loadImageFromFirestore() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('form-jobcard')
+          .where('sn', isEqualTo: widget.data['sn'])
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        setState(() {
+          imageUrl = snapshot.docs.first['imageUrl'];
+        });
+      }
+    } catch (e) {
+      debugPrint('Load image error: $e');
+    } finally {
+      setState(() {
+        isLoadingImage = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -482,45 +505,45 @@ class WaitingWOCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Customer : ${data['customer']}',
+                'Customer : ${widget.data['customer']}',
               ),
               const SizedBox(
                 height: 6,
               ),
               Text(
-                'Site : ${data['site']}',
+                'Site : ${widget.data['site']}',
               ),
               const SizedBox(
                 height: 6,
               ),
               Text(
-                'Repair Location : ${data['repair_location']}',
+                'Repair Location : ${widget.data['repair_location']}',
               ),
               const SizedBox(
                 height: 14,
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'W/O #',
-                    style: getGreyTextStyle(const Color(0xff969696)),
-                  ),
-                  const SizedBox(
-                    height: 4,
-                  ),
-                  Text(
-                    'Waiting WO',
-                    style: getBlackTextStyle(
-                      fontSize: 18,
-                      fontWeight: w700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(
-                height: 6,
-              ),
+              // Column(
+              //   crossAxisAlignment: CrossAxisAlignment.start,
+              //   children: [
+              //     Text(
+              //       'W/O #',
+              //       style: getGreyTextStyle(const Color(0xff969696)),
+              //     ),
+              //     const SizedBox(
+              //       height: 4,
+              //     ),
+              //     Text(
+              //       'Waiting WO',
+              //       style: getBlackTextStyle(
+              //         fontSize: 18,
+              //         fontWeight: w700,
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              // const SizedBox(
+              //   height: 6,
+              // ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -536,7 +559,7 @@ class WaitingWOCard extends StatelessWidget {
                       ),
                       Text(
                         // 'FGR3463GRE',
-                        '${data['sn']}',
+                        '${widget.data['sn']}',
                         style: getBlackTextStyle(
                           fontSize: 18,
                           fontWeight: w700,
@@ -558,7 +581,7 @@ class WaitingWOCard extends StatelessWidget {
                         height: 4,
                       ),
                       Text(
-                        '${data['tire_size']}',
+                        '${widget.data['tire_size']}',
                         style: getBlackTextStyle(
                           fontSize: 18,
                           fontWeight: w700,
@@ -572,6 +595,211 @@ class WaitingWOCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
+              // 🔥 TARUH KODE IMAGE DI SINI
+              if (isLoadingImage)
+                const Center(child: CircularProgressIndicator())
+              else if (imageUrl != null) ...[
+                GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      barrierDismissible: true,
+                      builder: (_) => Dialog(
+                        backgroundColor: Colors.black,
+                        insetPadding: const EdgeInsets.all(12),
+                        child: Stack(
+                          children: [
+                            InteractiveViewer(
+                              panEnabled: true,
+                              minScale: 1,
+                              maxScale: 4,
+                              child: Image.network(
+                                imageUrl!,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: IconButton(
+                                icon: const Icon(Icons.close,
+                                    color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      imageUrl!,
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton.icon(
+                    onPressed: _downloadImage,
+                    icon: const Icon(Icons.download),
+                    label: const Text('Download'),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 12),
+
+              // 🔘 BUTTON ADD PICTURE
+              ButtonWidget(
+                name: Text('Add Picture', style: getWhiteTextStyle()),
+                color: Colors.green,
+                function: () async {
+                  final ImagePicker picker = ImagePicker();
+
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (_) {
+                      return SafeArea(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.camera_alt),
+                              title: const Text('Ambil dari Kamera'),
+                              onTap: () async {
+                                Navigator.pop(context);
+
+                                final image = await picker.pickImage(
+                                  source: ImageSource.camera,
+                                  imageQuality: 80,
+                                );
+
+                                if (image != null) {
+                                  setState(() {
+                                    isUploading = true;
+                                  });
+
+                                  try {
+                                    final fileName =
+                                        'jobcard_${widget.data['sn']}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+                                    final ref = storage
+                                        .ref()
+                                        .child('form-jobcard/$fileName');
+
+                                    await ref.putFile(File(image.path));
+                                    final url = await ref.getDownloadURL();
+
+                                    await firestore
+                                        .collection('form-jobcard')
+                                        .add({
+                                      'idSite': widget.data['site'],
+                                      'sn': widget.data['sn'],
+                                      'customer': widget.data['customer'],
+                                      'brand': widget.data['brand'],
+                                      'tireSize': widget.data['tire_size'],
+                                      'repairLocation':
+                                          widget.data['repair_location'],
+                                      'imageUrl': url,
+                                      'createdAt': FieldValue.serverTimestamp(),
+                                    });
+
+                                    setState(() {
+                                      imageUrl = url; // 🔥 UPDATE UI LANGSUNG
+                                    });
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'Upload dari kamera berhasil')),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text('Upload gagal: $e')),
+                                    );
+                                  } finally {
+                                    setState(() {
+                                      isUploading = false;
+                                    });
+                                  }
+                                }
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(Icons.photo_library),
+                              title: const Text('Ambil dari Gallery'),
+                              onTap: () async {
+                                Navigator.pop(context);
+                                final image = await picker.pickImage(
+                                  source: ImageSource.gallery,
+                                  imageQuality: 80,
+                                );
+
+                                if (image != null) {
+                                  setState(() {
+                                    isUploading = true;
+                                  });
+
+                                  try {
+                                    final fileName =
+                                        'jobcard_${widget.data['sn']}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+                                    final ref = storage
+                                        .ref()
+                                        .child('form-jobcard/$fileName');
+
+                                    await ref.putFile(File(image.path));
+                                    final url = await ref.getDownloadURL();
+
+                                    await firestore
+                                        .collection('form-jobcard')
+                                        .add({
+                                      'idSite': widget.data['site'],
+                                      'sn': widget.data['sn'],
+                                      'customer': widget.data['customer'],
+                                      'brand': widget.data['brand'],
+                                      'tireSize': widget.data['tire_size'],
+                                      'repairLocation':
+                                          widget.data['repair_location'],
+                                      'imageUrl': url,
+                                      'createdAt': FieldValue.serverTimestamp(),
+                                    });
+
+                                    setState(() {
+                                      imageUrl = url; // 🔥 UPDATE UI
+                                    });
+
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Upload berhasil')),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text('Upload gagal: $e')),
+                                    );
+                                  } finally {
+                                    setState(() {
+                                      isUploading = false;
+                                    });
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
