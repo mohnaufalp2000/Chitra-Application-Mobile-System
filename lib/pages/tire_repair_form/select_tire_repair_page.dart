@@ -1,3 +1,6 @@
+import 'package:camos/pages/home/home_state.dart';
+import 'package:get/get.dart';
+
 import '../../core/styles/asset_path.dart';
 import '../../core/styles/text_manager.dart';
 import '../../core/widgets/appbar_widget.dart';
@@ -9,7 +12,9 @@ import 'package:flutter/material.dart';
 
 class SelectTireRepairPage extends StatelessWidget {
   static const routeName = '/select-tire-repair-page';
-  const SelectTireRepairPage({super.key});
+  SelectTireRepairPage({super.key});
+
+  HomeState homeController = Get.find();
 
   @override
   Widget build(BuildContext context) {

@@ -38,7 +38,7 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
   bool isChecked = false;
   final List<String> jobName =
       JobcardRepair.jobName.map((item) => item['name'] as String).toList();
-  int selectedMenu = 0;
+  int selectedMenu = 1;
   List<Map<String, dynamic>> WOlist = [];
 
   List<bool> isCheckedList =
@@ -48,6 +48,13 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
     // Navigator.pushNamed(context, JobcardQCPage.routeName);
     // Navigator.pushNamed(context, HistoryJobcardRepairPage.routeName);
     Navigator.pushNamed(context, HistoryJobcardRepairPage.routeName);
+  }
+
+  Future<void> _onRefresh() async {
+    context.read<WoJobcardBloc>().add(WoJobcardEvent());
+
+    // kasih delay kecil biar indikator keliatan natural
+    await Future.delayed(const Duration(milliseconds: 500));
   }
 
   @override
@@ -66,45 +73,49 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
         ),
         backgroundColor: const Color(0xFF359B7B),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            color: Colors.white,
-            tooltip: 'History',
-            onPressed: _onHistoryPressed,
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.history),
+        //     color: Colors.white,
+        //     tooltip: 'History',
+        //     onPressed: _onHistoryPressed,
+        //   ),
+        // ],
       ),
       body: SafeArea(
-          child: SingleChildScrollView(
-        child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: BlocConsumer<WoJobcardBloc, WoJobcardState>(
-              listener: (context, state) {
-                if (state is WoJobcardLoadedState) {
-                  WOlist.clear();
-                  WOlist.addAll(state.WOList);
-                }
-              },
-              builder: (context, state) {
-                if (state is WoJobcardLoadingState) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (state is WoJobcardLoadedState) {
-                  final widgetOptions = [
-                    WaitingWO(woList: WOlist),
-                    OnProgress(woList: WOlist),
-                    // const WaitingQC()
-                  ];
-                  return widgetOptions.elementAt(selectedMenu);
-                } else if (state is WoJobcardErrorState) {
-                  return const Center(
-                    child: Icon(Icons.error),
-                  );
-                } else {
-                  return Container();
-                }
-              },
-            )),
+          child: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: SingleChildScrollView(
+          child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: BlocConsumer<WoJobcardBloc, WoJobcardState>(
+                listener: (context, state) {
+                  if (state is WoJobcardLoadedState) {
+                    WOlist.clear();
+                    WOlist.addAll(state.WOList);
+                  }
+                },
+                builder: (context, state) {
+                  if (state is WoJobcardLoadingState) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (state is WoJobcardLoadedState) {
+                    final widgetOptions = [
+                      UploadDocumentJobcard(woList: WOlist),
+                      WaitingWO(woList: WOlist),
+                      OnProgress(woList: WOlist),
+                      // const WaitingQC()
+                    ];
+                    return widgetOptions.elementAt(selectedMenu);
+                  } else if (state is WoJobcardErrorState) {
+                    return const Center(
+                      child: Icon(Icons.error),
+                    );
+                  } else {
+                    return Container();
+                  }
+                },
+              )),
+        ),
       )),
       bottomNavigationBar: BottomNavigationBar(
           currentIndex: selectedMenu,
@@ -126,12 +137,85 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
                 icon: Icon(Icons.tag),
                 label: 'Upload Document Jobcard'),
             BottomNavigationBarItem(
+                icon: Icon(Icons.pending), label: 'Waiting WO#'),
+            // icon: Icon(Icons.tag),),
+            BottomNavigationBarItem(
                 // icon: Icon(Icons.work_history), label: 'On Progress'),
                 icon: Icon(Icons.work_history),
-                label: 'Input Form Jobcard\n(Under Maintenance)'),
+                label: 'Input Form Jobcard'),
             // BottomNavigationBarItem(
             //     icon: Icon(Icons.fact_check), label: 'Waiting QC'),
           ]),
+    );
+  }
+}
+
+class UploadDocumentJobcard extends StatefulWidget {
+  final List<Map<String, dynamic>> woList;
+
+  const UploadDocumentJobcard({super.key, required this.woList});
+
+  @override
+  State<UploadDocumentJobcard> createState() => _UploadDocumentJobcardState();
+}
+
+class _UploadDocumentJobcardState extends State<UploadDocumentJobcard> {
+  FirebaseFirestore firestore = FirebaseFirestore.instance;
+  String searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final List<String> idWoList =
+        widget.woList.map((item) => item['id_wo'] as String).toList();
+
+    print('id wo list : ${idWoList}');
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: TextField(
+            onChanged: (value) {
+              setState(() {
+                searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+                hintText: 'Search... (SN)',
+                hintStyle: getGreyTextStyle(grey8391A1),
+                prefixIcon: Icon(Icons.search)),
+          ),
+        ),
+        const SizedBox(
+          height: 12,
+        ),
+        PaginateFirestore(
+            query: firestore
+                .collection(FirestoreKey.tireRepairInspectionReport)
+                .orderBy('created_at', descending: true),
+            itemBuilderType: PaginateBuilderType.listView,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemsPerPage: 5,
+            key: const Key('upload_document_jobcard'),
+            isLive: true,
+            initialLoader:
+                const Center(child: CircularProgressIndicator.adaptive()),
+            bottomLoader:
+                const Center(child: CircularProgressIndicator.adaptive()),
+            itemBuilder: (context, snapshot, index) {
+              final Map<String, dynamic> data =
+                  snapshot[index].data() as Map<String, dynamic>;
+
+              if (searchQuery.isNotEmpty &&
+                  !data['sn']!.toLowerCase().contains(searchQuery) &&
+                  !data['sn']!.toUpperCase().contains(searchQuery)) {
+                return Container();
+              }
+
+              return UploadDocumentJobcardCard(data: data);
+            }),
+      ],
     );
   }
 }
@@ -371,8 +455,8 @@ class _OnProgressState extends State<OnProgress> {
   }
 }
 
-class WaitingWOCard extends StatefulWidget {
-  const WaitingWOCard({
+class UploadDocumentJobcardCard extends StatefulWidget {
+  const UploadDocumentJobcardCard({
     super.key,
     required this.data,
   });
@@ -380,10 +464,11 @@ class WaitingWOCard extends StatefulWidget {
   final Map<String, dynamic> data;
 
   @override
-  State<WaitingWOCard> createState() => _WaitingWOCardState();
+  State<UploadDocumentJobcardCard> createState() =>
+      _UploadDocumentJobcardCardState();
 }
 
-class _WaitingWOCardState extends State<WaitingWOCard> {
+class _UploadDocumentJobcardCardState extends State<UploadDocumentJobcardCard> {
   final FirebaseStorage storage = FirebaseStorage.instance;
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -800,6 +885,144 @@ class _WaitingWOCardState extends State<WaitingWOCard> {
                   );
                 },
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class WaitingWOCard extends StatefulWidget {
+  const WaitingWOCard({
+    super.key,
+    required this.data,
+  });
+
+  final Map<String, dynamic> data;
+
+  @override
+  State<WaitingWOCard> createState() => _WaitingWOCardState();
+}
+
+class _WaitingWOCardState extends State<WaitingWOCard> {
+  final FirebaseStorage storage = FirebaseStorage.instance;
+  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  File? selectedImage;
+  bool isUploading = false;
+  String? imageUrl;
+  bool isLoadingImage = true;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Card(
+        color: white,
+        elevation: 50,
+        shadowColor: black,
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Customer : ${widget.data['customer']}',
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Text(
+                'Site : ${widget.data['site']}',
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Text(
+                'Repair Location : ${widget.data['repair_location']}',
+              ),
+              const SizedBox(
+                height: 14,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'W/O #',
+                    style: getGreyTextStyle(const Color(0xff969696)),
+                  ),
+                  const SizedBox(
+                    height: 4,
+                  ),
+                  Text(
+                    'Waiting WO',
+                    style: getBlackTextStyle(
+                      fontSize: 18,
+                      fontWeight: w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 6,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Serial Number',
+                        style: getGreyTextStyle(const Color(0xff969696)),
+                      ),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Text(
+                        // 'FGR3463GRE',
+                        '${widget.data['sn']}',
+                        style: getBlackTextStyle(
+                          fontSize: 18,
+                          fontWeight: w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 6,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Tire Size',
+                        style: getGreyTextStyle(const Color(0xff969696)),
+                      ),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Text(
+                        '${widget.data['tire_size']}',
+                        style: getBlackTextStyle(
+                          fontSize: 18,
+                          fontWeight: w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(
+                    width: 6,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
             ],
           ),
         ),

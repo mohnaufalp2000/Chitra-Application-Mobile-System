@@ -31,6 +31,8 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
   List<String> selectedImages = [];
   List<String> selectedImageTypes = [];
   Map<String, double> imageRotations = {};
+  bool _isGeneratingPdf = false;
+  double _pdfProgress = 0; // 0.0 – 1.0
 
   @override
   void didChangeDependencies() {
@@ -100,7 +102,29 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
     required Map<String, double> imageRotations,
     required Map<String, dynamic> data,
     required String imagePath,
+    required Function(double) onProgress,
   }) async {
+    final totalStep = selectedImages.length + 2;
+    int currentStep = 0;
+
+    void update() {
+      currentStep++;
+      onProgress(currentStep / totalStep);
+    }
+
+    // Step 1: init PDF
+    await Future.delayed(const Duration(milliseconds: 300));
+    update();
+
+    // Step 2: proses gambar
+    for (final image in selectedImages) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      update();
+    }
+
+    // Step terakhir: save file
+    await Future.delayed(const Duration(milliseconds: 300));
+    update();
     List<Map<String, dynamic>> selectedWithType = [];
 
     for (int i = 0; i < selectedImages.length; i++) {
@@ -164,7 +188,7 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
               height: 570,
               width: 830,
               margin: p.EdgeInsets.only(right: 12, left: 12, top: 12),
-              padding: p.EdgeInsets.all(24),
+              padding: p.EdgeInsets.symmetric(horizontal: 12),
               decoration:
                   p.BoxDecoration(border: p.Border.all(color: PdfColors.blue)),
               child: p.Column(
@@ -684,7 +708,219 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
                           )
                         ]),
                   ]),
-            )
+            ),
+            p.NewPage(),
+            p.Container(
+              height: 570,
+              width: 830,
+              margin: p.EdgeInsets.only(right: 12, left: 12, top: 12),
+              padding: p.EdgeInsets.symmetric(horizontal: 24),
+              decoration:
+                  p.BoxDecoration(border: p.Border.all(color: PdfColors.blue)),
+              child: p.Column(
+                  crossAxisAlignment: p.CrossAxisAlignment.start,
+                  children: [
+                    p.Row(
+                        mainAxisAlignment: p.MainAxisAlignment.spaceBetween,
+                        children: [
+                          p.SizedBox(
+                            width: 100,
+                            height: 50,
+                            child: p.Image(p.MemoryImage(logoCp)),
+                          ),
+                          p.Text('TIRE REPAIR INSPECTION REPORT',
+                              style: p.TextStyle(
+                                fontSize: 14,
+                              )),
+                          p.Container(
+                            width: 100,
+                            height: 50,
+                          ),
+                        ]),
+                    p.SizedBox(
+                      height: 10,
+                    ),
+                    p.Column(
+                        crossAxisAlignment: p.CrossAxisAlignment.start,
+                        children: [
+                          p.Container(
+                            width: double.infinity,
+                            padding: const p.EdgeInsets.symmetric(vertical: 4),
+                            decoration: p.BoxDecoration(
+                              border: p.Border.all(width: 1),
+                            ),
+                            child: p.Center(
+                              child: p.Text(
+                                'Team Repairman',
+                                style: p.TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: p.FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                          p.Container(
+                            width: double.infinity,
+                            child: p.Table(
+                              border: p.TableBorder.all(width: 1),
+                              columnWidths: {
+                                0: const p.FixedColumnWidth(40), // No
+                                1: const p.FixedColumnWidth(300), // Nama
+                                2: const p.FixedColumnWidth(100), // B/N
+                                3: const p.FixedColumnWidth(100), // E-Sign
+                              },
+                              children: [
+                                // =======================
+                                // HEADER ROW
+                                // =======================
+                                p.TableRow(
+                                  decoration: const p.BoxDecoration(),
+                                  children: [
+                                    _tableHeader('No'),
+                                    _tableHeader('Nama'),
+                                    _tableHeader('B/N'),
+                                    _tableHeader('E-Sign'),
+                                  ],
+                                ),
+
+                                // =======================
+                                // DATA ROWS
+                                // =======================
+                                // _tableRow('1', 'IDHAM DALIWENG', 'CO25262', ''),
+                                // _tableRow('2', 'ANDRE ARIYANTO', 'CO48707', ''),
+                                // _tableRow('3', 'GILDEN FIERY', 'CO48587', ''),
+                                _tableRow('', '', '', ''),
+                                _tableRow('', '', '', ''),
+                                _tableRow('', '', '', ''),
+                              ],
+                            ),
+                          ),
+                          p.SizedBox(height: 12),
+                          p.Container(
+                            width: double.infinity,
+                            padding: const p.EdgeInsets.all(8),
+                            child: p.RichText(
+                              textAlign: p.TextAlign.justify,
+                              text: p.TextSpan(
+                                style: const p.TextStyle(
+                                  fontSize: 10,
+                                ),
+                                children: [
+                                  const p.TextSpan(
+                                    text:
+                                        'Berdasarkan spesifikasi dan hasil inspeksi kondisi luka pada tire tersebut, maka kami menyatakan ',
+                                  ),
+                                  p.TextSpan(
+                                    text: 'layak dan aman',
+                                    style: p.TextStyle(
+                                      fontWeight: p.FontWeight.bold,
+                                      decoration: p.TextDecoration.underline,
+                                    ),
+                                  ),
+                                  const p.TextSpan(
+                                    text: ' untuk di lanjutkan proses ',
+                                  ),
+                                  p.TextSpan(
+                                    text: 'repair',
+                                    style: p.TextStyle(
+                                      fontWeight: p.FontWeight.bold,
+                                      decoration: p.TextDecoration.underline,
+                                    ),
+                                  ),
+                                  const p.TextSpan(
+                                    text:
+                                        '. Kami mohon approval untuk kelengkapan berkas sebagai proses repair selanjutnya.',
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          p.Container(
+                            width: double.infinity,
+                            child: p.Table(
+                              border: p.TableBorder.all(width: 1),
+                              columnWidths: {
+                                0: const p.FixedColumnWidth(30), // Label
+                                1: const p.FixedColumnWidth(100), // Content
+                              },
+                              children: [
+                                // =======================
+                                // APPROVAL
+                                // =======================
+                                p.TableRow(
+                                  children: [
+                                    _leftLabel('Approval'),
+                                    _signatureCell(
+                                      name: '',
+                                      // signedBy:
+                                      //     'Digitally signed by\nAulia Rahman',
+                                      // reason:
+                                      //     'Reason: I am the author of this document',
+                                      // location: 'Location:',
+                                      // date: 'Date: 2026-01-20\n08:58:08 +08:00',
+                                      signatureImage: '', // Uint8List
+                                    ),
+                                  ],
+                                ),
+                                _responsibleRow(
+                                  'Responsible Person: Inspector Repairman',
+                                ),
+
+                                // =======================
+                                // ACKNOWLEDGE 1
+                                // =======================
+                                p.TableRow(
+                                  children: [
+                                    _leftLabel('Approval'),
+                                    _signatureCell(
+                                      name: '',
+                                      // signedBy:
+                                      //     'Digitally signed by\nAndika Septiadi',
+                                      // reason:
+                                      //     'Reason: I agree this document to continue',
+                                      // location: 'Location:',
+                                      // date: 'Date: 2026-01-20\n08:58:08 +08:00',
+                                      signatureImage: 'signatureAndika',
+                                    ),
+                                  ],
+                                ),
+                                _responsibleRow(
+                                  'Responsible Person: Approval PJO Chitra Paratama Site',
+                                ),
+
+                                // =======================
+                                // ACKNOWLEDGE 2
+                                // =======================
+                                p.TableRow(
+                                  children: [
+                                    _leftLabel('Approval'),
+                                    _signatureCell(
+                                      name: '',
+                                      // signedBy: 'Digitally signed by dhh4009',
+                                      // reason: 'DN: cn=dhh4009',
+                                      // location: '',
+                                      // date: 'Date: 2026.01.20 11:12:58 +0800',
+                                      signatureImage: 'null',
+                                    ),
+                                  ],
+                                ),
+                                _responsibleRow(
+                                  'Responsible Person: Approval Customers',
+                                ),
+                              ],
+                            ),
+                          ),
+                          p.Container(
+                            width: double.infinity,
+                            margin: p.EdgeInsets.only(top: 10),
+                            child: p.Text(
+                              'F.RPR.REM - 004.00 Tire Inspection Report',
+                              textAlign: p.TextAlign.right,
+                            ),
+                          ),
+                        ]),
+                  ]),
+            ),
           ];
         }));
 
@@ -892,28 +1128,75 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
             // Tombol Generate PDF
             Expanded(
               flex: 3,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  await generateInspectionPdf(
-                    selectedImages: selectedImages,
-                    selectedImageTypes: selectedImageTypes,
-                    imageRotations: imageRotations,
-                    data: data,
-                    imagePath: imagePath,
-                  );
-                },
-                icon: const Icon(
-                  Icons.picture_as_pdf,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  "Generate PDF",
-                  style: getWhiteTextStyle(),
-                ),
+              child: ElevatedButton(
+                onPressed: _isGeneratingPdf
+                    ? null
+                    : () async {
+                        setState(() {
+                          _isGeneratingPdf = true;
+                          _pdfProgress = 0;
+                        });
+
+                        try {
+                          await generateInspectionPdf(
+                            selectedImages: selectedImages,
+                            selectedImageTypes: selectedImageTypes,
+                            imageRotations: imageRotations,
+                            data: data,
+                            imagePath: imagePath,
+                            onProgress: (progress) {
+                              if (mounted) {
+                                setState(() {
+                                  _pdfProgress = progress; // contoh: 0.35
+                                });
+                              }
+                            },
+                          );
+                        } finally {
+                          if (mounted) {
+                            setState(() {
+                              _isGeneratingPdf = false;
+                            });
+                          }
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   backgroundColor: Colors.green,
                 ),
+                child: _isGeneratingPdf
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              value: _pdfProgress, // ← PROGRESS REAL
+                              strokeWidth: 2.5,
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Colors.black),
+                              backgroundColor: Colors.white24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            "${(_pdfProgress * 100).toInt()}%",
+                            style: getBlackTextStyle(),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.picture_as_pdf, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            "Generate PDF",
+                            style: getWhiteTextStyle(),
+                          ),
+                        ],
+                      ),
               ),
             ),
           ],
@@ -921,4 +1204,123 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
       ),
     );
   }
+}
+
+p.Widget _tableHeader(String text) {
+  return p.Padding(
+    padding: const p.EdgeInsets.all(6),
+    child: p.Center(
+      child: p.Text(
+        text,
+        style: p.TextStyle(
+          fontWeight: p.FontWeight.bold,
+          fontSize: 10,
+        ),
+      ),
+    ),
+  );
+}
+
+p.TableRow _tableRow(String no, String nama, String bn, String eSign) {
+  return p.TableRow(
+    children: [
+      _tableCell(no, align: p.TextAlign.center),
+      _tableCell(nama),
+      _tableCell(bn, align: p.TextAlign.center),
+      _tableCell(
+        eSign,
+      ), // Kolom E-Sign (kosong)
+    ],
+  );
+}
+
+p.Widget _tableCell(
+  String text, {
+  p.TextAlign align = p.TextAlign.left,
+  double height = 30,
+}) {
+  return p.Container(
+    height: height,
+    padding: const p.EdgeInsets.all(6),
+    alignment: p.Alignment.centerLeft,
+    child: p.Text(
+      text,
+      textAlign: align,
+      style: const p.TextStyle(fontSize: 10),
+    ),
+  );
+}
+
+p.Widget _leftLabel(String text) {
+  return p.Container(
+    height: 70,
+    alignment: p.Alignment.center,
+    padding: const p.EdgeInsets.all(8),
+    child: p.Text(
+      text,
+      style: p.TextStyle(
+        fontWeight: p.FontWeight.bold,
+        fontSize: 11,
+      ),
+    ),
+  );
+}
+
+p.Widget _signatureCell({
+  required String name,
+  // required String signedBy,
+  // required String reason,
+  // required String location,
+  // required String date,
+  // Uint8List? signatureImage,
+  required String signatureImage,
+}) {
+  return p.Container(
+    height: 70,
+    padding: const p.EdgeInsets.all(8),
+    child: p.Column(
+      crossAxisAlignment: p.CrossAxisAlignment.start,
+      mainAxisAlignment: p.MainAxisAlignment.end,
+      children: [
+        // if (signatureImage != null)
+        //   p.Center(
+        //     child: p.Image(
+        //       p.MemoryImage(signatureImage),
+        //       height: 50,
+        //     ),
+        //   ),
+        // p.Text(signatureImage),
+        // p.SizedBox(height: 6),
+        // p.Text(
+        //   '$signedBy\n$reason\n$location\n$date',
+        //   style: const p.TextStyle(fontSize: 8),
+        // ),
+        // p.SizedBox(height: 6),
+        p.Center(
+          child: p.Text(
+            name,
+            style: p.TextStyle(
+              fontSize: 11,
+              fontWeight: p.FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+p.TableRow _responsibleRow(String text) {
+  return p.TableRow(
+    children: [
+      p.Container(),
+      p.Container(
+        padding: const p.EdgeInsets.all(6),
+        child: p.Text(
+          text,
+          style: const p.TextStyle(fontSize: 9),
+        ),
+      ),
+    ],
+  );
 }
