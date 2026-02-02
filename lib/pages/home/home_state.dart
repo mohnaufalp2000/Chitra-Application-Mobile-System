@@ -448,28 +448,79 @@ class HomeState extends GetxController {
     }
   }
 
+  // Future<void> retrieveVersionNumber() async {
+  //   try {
+  //     // 🔹 Ambil versi aplikasi dari perangkat
+  //     final packageInfo = await PackageInfo.fromPlatform();
+  //     final currentVersion = packageInfo.version;
+
+  //     // 🔹 Ambil versi terbaru dari Firestore
+  //     final versionDoc = await FirebaseFirestore.instance
+  //         .collection('version')
+  //         .doc('version')
+  //         .get();
+
+  //     final latestVersion = versionDoc.data()?['number'];
+
+  //     if (latestVersion == null) {
+  //       print('⚠️ Field "number" di Firestore kosong.');
+  //       return;
+  //     }
+
+  //     versionNumberRx.value = currentVersion;
+
+  //     // 🔹 Cek perbedaan versi
+  //     if (currentVersion != latestVersion) {
+  //       showUpdateDialog(currentVersion, latestVersion);
+  //     }
+  //   } catch (e) {
+  //     print('❌ Gagal cek versi aplikasi: $e');
+  //   }
+  // }
   Future<void> retrieveVersionNumber() async {
     try {
-      // 🔹 Ambil versi aplikasi dari perangkat
+      // 🔹 Ambil versi aplikasi dari device
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      // 🔹 Ambil versi terbaru dari Firestore
+      // 🔹 Ambil data versi dari Firestore
       final versionDoc = await FirebaseFirestore.instance
           .collection('version')
           .doc('version')
           .get();
 
-      final latestVersion = versionDoc.data()?['number'];
+      if (!versionDoc.exists) {
+        print('⚠️ Dokumen version tidak ditemukan');
+        return;
+      }
+
+      final data = versionDoc.data();
+
+      if (data == null) {
+        print('⚠️ Data version kosong');
+        return;
+      }
+
+      // 🔹 Tentukan platform
+      String? latestVersion;
+
+      if (Platform.isAndroid) {
+        latestVersion = data['number_android'];
+      } else if (Platform.isIOS) {
+        latestVersion = data['number_ios'];
+      } else {
+        print('⚠️ Platform tidak didukung');
+        return;
+      }
 
       if (latestVersion == null) {
-        print('⚠️ Field "number" di Firestore kosong.');
+        print('⚠️ Versi di Firestore kosong untuk platform ini');
         return;
       }
 
       versionNumberRx.value = currentVersion;
 
-      // 🔹 Cek perbedaan versi
+      // 🔹 Bandingkan versi
       if (currentVersion != latestVersion) {
         showUpdateDialog(currentVersion, latestVersion);
       }

@@ -306,36 +306,33 @@ class _TireRepairInspectionPageState extends State<TireRepairInspectionPage>
                       const SizedBox(height: 12),
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12),
-                        child: Expanded(
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.only(right: 24.0, left: 12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Select Repair Location',
-                                  style: getBlackTextStyle(
-                                    fontSize: 12,
-                                  ),
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 24.0, left: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Select Repair Location',
+                                style: getBlackTextStyle(
+                                  fontSize: 12,
                                 ),
-                                DropdownButton<String>(
-                                  value: selectedRepairLocation,
-                                  isExpanded: true,
-                                  items: repairLocationList.map((loc) {
-                                    return DropdownMenuItem<String>(
-                                      value: loc,
-                                      child: Text(loc),
-                                    );
-                                  }).toList(),
-                                  onChanged: (newValue) {
-                                    setState(() {
-                                      selectedRepairLocation = newValue!;
-                                    });
-                                  },
-                                ),
-                              ],
-                            ),
+                              ),
+                              DropdownButton<String>(
+                                value: selectedRepairLocation,
+                                isExpanded: true,
+                                items: repairLocationList.map((loc) {
+                                  return DropdownMenuItem<String>(
+                                    value: loc,
+                                    child: Text(loc),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    selectedRepairLocation = newValue!;
+                                  });
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       ),

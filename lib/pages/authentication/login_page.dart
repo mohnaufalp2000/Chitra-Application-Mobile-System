@@ -78,12 +78,46 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
   }
 
+  // void retrieveVersionNumber() async {
+  //   final versionCol = FirebaseFirestore.instance.collection('version');
+  //   final versionDoc = await versionCol.doc('version').get();
+  //   String versionNumber = versionDoc.data()?['number'];
+  //   if (_packageInfo.version != versionNumber) {
+  //     showUpdateDialog(context);
+  //   }
+  // }
+
   void retrieveVersionNumber() async {
-    final versionCol = FirebaseFirestore.instance.collection('version');
-    final versionDoc = await versionCol.doc('version').get();
-    String versionNumber = versionDoc.data()?['number'];
-    if (_packageInfo.version != versionNumber) {
-      showUpdateDialog(context);
+    try {
+      final versionDoc = await FirebaseFirestore.instance
+          .collection('version')
+          .doc('version')
+          .get();
+
+      if (!versionDoc.exists) return;
+
+      final data = versionDoc.data();
+      if (data == null) return;
+
+      String? latestVersion;
+
+      // 🔹 Deteksi platform
+      if (Platform.isAndroid) {
+        latestVersion = data['number_android'];
+      } else if (Platform.isIOS) {
+        latestVersion = data['number_ios'];
+      } else {
+        return;
+      }
+
+      if (latestVersion == null) return;
+
+      // 🔹 Bandingkan versi
+      if (_packageInfo.version != latestVersion) {
+        showUpdateDialog(context);
+      }
+    } catch (e) {
+      debugPrint('❌ Error cek versi aplikasi: $e');
     }
   }
 
