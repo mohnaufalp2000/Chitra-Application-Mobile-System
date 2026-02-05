@@ -24,10 +24,14 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
           allSites = await ApiService.getAllSite();
         }
 
+        log('all sites spm : $allSites');
+
         final idCompany = allSites
             .firstWhere((site) => site.idSite == event.idSite,
                 orElse: () => Site(idSite: '', idCompany: ''))
             .idCompany;
+
+        print('id company : $idCompany');
 
         if (idCompany!.isEmpty) {
           emit(SpmLoadedState(listSpm: [], isShowMore: []));
@@ -72,6 +76,7 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
 
           // Hanya panggil API TPMS
           enrichedList = await ApiService.getApiSpm(event.idSite, urlSpm);
+          log('spm new : $enrichedList');
         } else {
           // JALUR 2: Jika isCts bukan '0', jalankan logika penggabungan data
           log('Menjalankan proses DENGAN penggabungan rating (isCts != "1")');
@@ -126,6 +131,7 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
             enrichedList.where((spm) => spm.idSite == event.idSite).toList();
 
         List<bool> isShowMore = List.generate(list.length, (index) => false);
+        log('message spm new : $list');
         emit(SpmLoadedState(listSpm: list, isShowMore: isShowMore));
       } catch (e, stackTrace) {
         // Tambahkan stackTrace untuk debugging lebih detail

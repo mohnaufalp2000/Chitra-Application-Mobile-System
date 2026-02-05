@@ -60,6 +60,10 @@ class Spm extends Equatable {
   final String? reccAdj5;
   final String? reccAdj6;
 
+  final String? tyreLength;
+  final String? model;
+  final String? selish;
+
   const Spm({
     this.idtpms,
     this.devicename,
@@ -106,6 +110,11 @@ class Spm extends Equatable {
     this.reccAdj4 = '',
     this.reccAdj5 = '',
     this.reccAdj6 = '',
+
+    /// ✅ TAMBAHAN
+    this.tyreLength,
+    this.model,
+    this.selish,
   });
 
   Spm copyWith({
@@ -127,6 +136,9 @@ class Spm extends Equatable {
     String? reccAdj4,
     String? reccAdj5,
     String? reccAdj6,
+    String? tyreLength,
+    String? model,
+    String? selish,
   }) {
     return Spm(
       idtpms: idtpms,
@@ -174,6 +186,9 @@ class Spm extends Equatable {
       reccAdj4: reccAdj4 ?? this.reccAdj4,
       reccAdj5: reccAdj5 ?? this.reccAdj5,
       reccAdj6: reccAdj6 ?? this.reccAdj6,
+      tyreLength: tyreLength ?? this.tyreLength,
+      model: model ?? this.model,
+      selish: selish ?? this.selish,
     );
   }
 
@@ -223,6 +238,9 @@ class Spm extends Equatable {
         reccAdj4: json["recc_adj_4"]?.toString() ?? '',
         reccAdj5: json["recc_adj_5"]?.toString() ?? '',
         reccAdj6: json["recc_adj_6"]?.toString() ?? '',
+        model: json["model"]?.toString() ?? '',
+        tyreLength: json["tyrelength"]?.toString() ?? '',
+        selish: json["selish"]?.toString() ?? '',
       );
 
   Map<String, dynamic> toJson() => {
@@ -271,6 +289,9 @@ class Spm extends Equatable {
         "recc_adj_4": reccAdj4,
         "recc_adj_5": reccAdj5,
         "recc_adj_6": reccAdj6,
+        "model": model,
+        "tyrelength": tyreLength,
+        "selish": selish,
       };
 
   @override
@@ -320,5 +341,32 @@ class Spm extends Equatable {
         reccAdj4,
         reccAdj5,
         reccAdj6,
+        model,
+        tyreLength,
+        selish,
       ];
+
+  @override
+  String toString() {
+    return 'Spm('
+        'idtpms: $idtpms, '
+        'devicename: $devicename, '
+        'model: $model, '
+        'tyreLength: $tyreLength, '
+        'selish: $selish, '
+        'timestamp: $timestamp, '
+        'lat: $lat, '
+        'lon: $lon, '
+        'alt: $alt, '
+        'pressure: [$pressure1, $pressure2, $pressure3, $pressure4, $pressure5, $pressure6], '
+        'temperature: [$temperature1, $temperature2, $temperature3, $temperature4, $temperature5, $temperature6], '
+        'press: [$press1, $press2, $press3, $press4, $press5, $press6], '
+        'rating: [$rating1, $rating2, $rating3, $rating4, $rating5, $rating6], '
+        'temp: [$temp1, $temp2, $temp3, $temp4, $temp5, $temp6], '
+        'reccAdj: [$reccAdj1, $reccAdj2, $reccAdj3, $reccAdj4, $reccAdj5, $reccAdj6], '
+        'totalpress: $totalpress, '
+        'sumPress: $sumPress, '
+        'idSite: $idSite'
+        ')';
+  }
 }

@@ -14,6 +14,7 @@ import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/home/widget/home_function.dart';
 import 'package:camos/pages/home/widget/tire_condition_card_widget.dart';
 import 'package:camos/pages/network/network_state.dart';
+import 'package:camos/pages/settings/settings_page.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -117,26 +118,45 @@ class HomePage extends GetView<HomeState> {
                           ],
                         ),
                         Spacer(),
-                        InkWell(
-                          onTap: () {
-                            HomeFunction.showLogoutConfirmation(
-                              context: context,
-                              onLogout: () async {
-                                final prefs =
-                                    await SharedPreferences.getInstance();
-                                await prefs.clear();
-                                Get.deleteAll(force: true);
-                                Get.put(InternetState());
-                                Get.offAllNamed(LoginPage.routeName);
+                        Row(
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                Navigator.pushNamed(
+                                    context, SettingsPage.routeName);
                               },
-                            );
-                          },
-                          child: Container(
-                              margin: EdgeInsets.only(right: 12),
-                              child: const Icon(
-                                LucideIcons.logOut,
-                                color: Colors.red,
-                              )),
+                              child: Container(
+                                  margin: EdgeInsets.only(right: 12),
+                                  child: const Icon(
+                                    LucideIcons.settings,
+                                    color: Colors.grey,
+                                  )),
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            InkWell(
+                              onTap: () {
+                                HomeFunction.showLogoutConfirmation(
+                                  context: context,
+                                  onLogout: () async {
+                                    final prefs =
+                                        await SharedPreferences.getInstance();
+                                    await prefs.clear();
+                                    Get.deleteAll(force: true);
+                                    Get.put(InternetState());
+                                    Get.offAllNamed(LoginPage.routeName);
+                                  },
+                                );
+                              },
+                              child: Container(
+                                  margin: EdgeInsets.only(right: 12),
+                                  child: const Icon(
+                                    LucideIcons.logOut,
+                                    color: Colors.red,
+                                  )),
+                            ),
+                          ],
                         ),
                       ],
                     ),

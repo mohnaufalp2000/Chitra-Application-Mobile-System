@@ -198,8 +198,10 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
                         mainAxisAlignment: p.MainAxisAlignment.spaceBetween,
                         children: [
                           p.SizedBox(
-                            width: 150,
-                            height: 100,
+                            // width: 150,
+                            // height: 100,
+                            width: 100,
+                            height: 50,
                             child: p.Image(p.MemoryImage(logoCp)),
                           ),
                           p.Text('TIRE REPAIR INSPECTION REPORT',

@@ -7,9 +7,9 @@
 		<string></string>
 	</array>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>This app uses bluetooth to get connection with pressure gauge digital</string>
+	<string>This app uses Bluetooth to connect with a digital tire pressure gauge to read tire pressure data and display real-time pressure values and alerts inside the app.</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
-	<string>This app uses bluetooth to get connection with pressure gauge digital</string>
+	<string>This app uses Bluetooth to connect with a digital tire pressure gauge to read tire pressure data and display real-time pressure values and alerts inside the app.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

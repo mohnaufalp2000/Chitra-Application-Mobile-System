@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/pages/tpms/widget/spm_image_helper.dart';
 import 'package:get/get.dart';
 
 import '../../core/blocs/authentication/authentication_bloc.dart';
@@ -93,6 +94,11 @@ class _TpmsPageState extends State<TpmsPage> {
     }
   }
 
+  int getTyreLength(Spm spm) {
+    final length = int.tryParse(spm.tyreLength ?? '');
+    return (length != null && length > 0) ? length : 6;
+  }
+
   logoutConfirmation() {
     showDialog(
         context: context,
@@ -147,23 +153,6 @@ class _TpmsPageState extends State<TpmsPage> {
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
-
-    // final data =
-    //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    // if (data != null) {
-    //   // Pastikan data tidak null
-    //   final idSite = data['idSite'];
-    //   _loadAndFindSite(idSite);
-
-    //   if (data['isCTS'] != true && data['isCTS'] != null) {
-    //     final userDocs = await firestore
-    //         .collection('users')
-    //         .where('email', isEqualTo: auth.currentUser!.email)
-    //         .get();
-    //     final mapUser = userDocs.docs[0].data();
-    //     saveUserPreferences(mapUser);
-    //   }
-    //   log('id site spm : $idSite');
 
     // Pastikan data tidak null
     idSite = (Get.isRegistered<HomeState>())
@@ -439,113 +428,200 @@ class _TpmsPageState extends State<TpmsPage> {
                               }).toList();
                             }
 
+                            // allUnits.clear();
+                            // list.forEach((element) {
+                            //   allUnits.add(
+                            //     [
+                            //       [
+                            //         {
+                            //           'pressure1': element.pressure1,
+                            //         },
+                            //         {
+                            //           'pressure2': element.pressure2,
+                            //         },
+                            //         {
+                            //           'pressure3': element.pressure3,
+                            //         },
+                            //         {
+                            //           'pressure4': element.pressure4,
+                            //         },
+                            //         {
+                            //           'pressure5': element.pressure5,
+                            //         },
+                            //         {
+                            //           'pressure6': element.pressure6,
+                            //         },
+                            //       ],
+                            //       [
+                            //         {
+                            //           'press1': element.press1,
+                            //         },
+                            //         {
+                            //           'press2': element.press2,
+                            //         },
+                            //         {
+                            //           'press3': element.press3,
+                            //         },
+                            //         {
+                            //           'press4': element.press4,
+                            //         },
+                            //         {
+                            //           'press5': element.press5,
+                            //         },
+                            //         {
+                            //           'press6': element.press6,
+                            //         },
+                            //       ],
+                            //       [
+                            //         {'temperature1': element.temperature1},
+                            //         {'temperature2': element.temperature2},
+                            //         {'temperature3': element.temperature3},
+                            //         {'temperature4': element.temperature4},
+                            //         {'temperature5': element.temperature5},
+                            //         {'temperature6': element.temperature6},
+                            //       ],
+                            //       [
+                            //         {'rating1': element.rating1},
+                            //         {'rating2': element.rating2},
+                            //         {'rating3': element.rating3},
+                            //         {'rating4': element.rating4},
+                            //         {'rating5': element.rating5},
+                            //         {'rating6': element.rating6},
+                            //       ],
+                            //       [
+                            //         {
+                            //           'temp1': element.temp1,
+                            //         },
+                            //         {
+                            //           'temp2': element.temp2,
+                            //         },
+                            //         {
+                            //           'temp3': element.temp3,
+                            //         },
+                            //         {
+                            //           'temp4': element.temp4,
+                            //         },
+                            //         {
+                            //           'temp5': element.temp5,
+                            //         },
+                            //         {
+                            //           'temp6': element.temp6,
+                            //         },
+                            //       ],
+                            //       [
+                            //         {
+                            //           'reccAdj1': element.reccAdj1,
+                            //         },
+                            //         {
+                            //           'reccAdj2': element.reccAdj2,
+                            //         },
+                            //         {
+                            //           'reccAdj3': element.reccAdj3,
+                            //         },
+                            //         {
+                            //           'reccAdj4': element.reccAdj4,
+                            //         },
+                            //         {
+                            //           'reccAdj5': element.reccAdj5,
+                            //         },
+                            //         {
+                            //           'reccAdj6': element.reccAdj6,
+                            //         },
+                            //       ],
+                            //     ],
+                            //   );
+                            // });
                             allUnits.clear();
+
                             list.forEach((element) {
-                              allUnits.add(
-                                [
+                              final tyreLen = getTyreLength(element);
+
+                              List<Map<String, String?>> buildList(
+                                List<String?> values,
+                                String prefix,
+                              ) {
+                                return List.generate(
+                                  tyreLen,
+                                  (i) => {'$prefix${i + 1}': values[i]},
+                                );
+                              }
+
+                              allUnits.add([
+                                buildList(
                                   [
-                                    {
-                                      'pressure1': element.pressure1,
-                                    },
-                                    {
-                                      'pressure2': element.pressure2,
-                                    },
-                                    {
-                                      'pressure3': element.pressure3,
-                                    },
-                                    {
-                                      'pressure4': element.pressure4,
-                                    },
-                                    {
-                                      'pressure5': element.pressure5,
-                                    },
-                                    {
-                                      'pressure6': element.pressure6,
-                                    },
+                                    element.pressure1,
+                                    element.pressure2,
+                                    element.pressure3,
+                                    element.pressure4,
+                                    element.pressure5,
+                                    element.pressure6,
                                   ],
+                                  'pressure',
+                                ),
+                                buildList(
                                   [
-                                    {
-                                      'press1': element.press1,
-                                    },
-                                    {
-                                      'press2': element.press2,
-                                    },
-                                    {
-                                      'press3': element.press3,
-                                    },
-                                    {
-                                      'press4': element.press4,
-                                    },
-                                    {
-                                      'press5': element.press5,
-                                    },
-                                    {
-                                      'press6': element.press6,
-                                    },
+                                    element.press1,
+                                    element.press2,
+                                    element.press3,
+                                    element.press4,
+                                    element.press5,
+                                    element.press6,
                                   ],
+                                  'press',
+                                ),
+                                buildList(
                                   [
-                                    {'temperature1': element.temperature1},
-                                    {'temperature2': element.temperature2},
-                                    {'temperature3': element.temperature3},
-                                    {'temperature4': element.temperature4},
-                                    {'temperature5': element.temperature5},
-                                    {'temperature6': element.temperature6},
+                                    element.temperature1,
+                                    element.temperature2,
+                                    element.temperature3,
+                                    element.temperature4,
+                                    element.temperature5,
+                                    element.temperature6,
                                   ],
+                                  'temperature',
+                                ),
+                                buildList(
                                   [
-                                    {'rating1': element.rating1},
-                                    {'rating2': element.rating2},
-                                    {'rating3': element.rating3},
-                                    {'rating4': element.rating4},
-                                    {'rating5': element.rating5},
-                                    {'rating6': element.rating6},
+                                    element.rating1,
+                                    element.rating2,
+                                    element.rating3,
+                                    element.rating4,
+                                    element.rating5,
+                                    element.rating6,
                                   ],
+                                  'rating',
+                                ),
+                                buildList(
                                   [
-                                    {
-                                      'temp1': element.temp1,
-                                    },
-                                    {
-                                      'temp2': element.temp2,
-                                    },
-                                    {
-                                      'temp3': element.temp3,
-                                    },
-                                    {
-                                      'temp4': element.temp4,
-                                    },
-                                    {
-                                      'temp5': element.temp5,
-                                    },
-                                    {
-                                      'temp6': element.temp6,
-                                    },
+                                    element.temp1,
+                                    element.temp2,
+                                    element.temp3,
+                                    element.temp4,
+                                    element.temp5,
+                                    element.temp6,
                                   ],
+                                  'temp',
+                                ),
+                                buildList(
                                   [
-                                    {
-                                      'reccAdj1': element.reccAdj1,
-                                    },
-                                    {
-                                      'reccAdj2': element.reccAdj2,
-                                    },
-                                    {
-                                      'reccAdj3': element.reccAdj3,
-                                    },
-                                    {
-                                      'reccAdj4': element.reccAdj4,
-                                    },
-                                    {
-                                      'reccAdj5': element.reccAdj5,
-                                    },
-                                    {
-                                      'reccAdj6': element.reccAdj6,
-                                    },
+                                    element.reccAdj1,
+                                    element.reccAdj2,
+                                    element.reccAdj3,
+                                    element.reccAdj4,
+                                    element.reccAdj5,
+                                    element.reccAdj6,
                                   ],
-                                ],
-                              );
+                                  'reccAdj',
+                                ),
+                              ]);
                             });
+
+                            log('all unit spm : ${allUnits.length}');
 
                             return Column(
                               children: list.map((e) {
                                 final unit = list[list.indexOf(e)];
+                                print('object unit : $unit');
                                 final indexUnit = list.indexOf(e);
 
                                 return Padding(
@@ -575,26 +651,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                                     const SizedBox(
                                                       height: 4,
                                                     ),
-                                                    // FutureBuilder(
-                                                    //     future: ApiService.getSite(
-                                                    //         idSite),
-                                                    //     builder: (context, snapshot) {
-                                                    //       final data = snapshot.data;
-                                                    //       log('future id site : $data');
-                                                    //       if (snapshot
-                                                    //               .connectionState ==
-                                                    //           ConnectionState
-                                                    //               .waiting) {
-                                                    //         return Container();
-                                                    //       }
-                                                    //       return Text(
-                                                    //         'Site : ${data?.site ?? ''}',
-                                                    //         style: getBlackTextStyle(
-                                                    //           fontSize: 14,
-                                                    //           fontWeight: w700,
-                                                    //         ),
-                                                    //       );
-                                                    //     }),
                                                     Text(
                                                       'Site : $siteName',
                                                       style:
@@ -604,7 +660,9 @@ class _TpmsPageState extends State<TpmsPage> {
                                                       height: 150,
                                                       width: 100,
                                                       child: Image.asset(
-                                                          '${imagePath}/dump_truck.png'),
+                                                          SpmImageHelper
+                                                              .getImageByModel(
+                                                                  unit.model)),
                                                     ),
                                                   ],
                                                 ),
@@ -752,47 +810,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                               );
                                             }),
                                           ),
-                                          // GridView.builder(
-                                          //   itemCount: allUnits[indexUnit][0].length -
-                                          //       2, // Mengurangi 2 untuk menghilangkan index pertama dan kedua
-                                          //   shrinkWrap: true,
-                                          //   physics: NeverScrollableScrollPhysics(),
-                                          //   gridDelegate:
-                                          //       SliverGridDelegateWithFixedCrossAxisCount(
-                                          //     crossAxisCount: 4,
-                                          //     childAspectRatio: 0.4,
-                                          //     mainAxisSpacing: 3,
-                                          //   ),
-                                          //   itemBuilder: (context, index) {
-                                          //     // Memperhitungkan offset karena index pertama dan kedua diabaikan
-                                          //     final dataIndex = index + 2;
-
-                                          //     return PressureCard(
-                                          //       position: '${dataIndex + 1}',
-                                          //       index: index,
-                                          //       // temperature: temperatures[dataIndex]
-                                          //       //         ['temperature${dataIndex + 1}'] ??
-                                          //       //     '',
-                                          //       temperature: allUnits[indexUnit][2]
-                                          //                   [dataIndex]
-                                          //               ['temperature${dataIndex + 1}'] ??
-                                          //           '',
-                                          //       // pressureStatus: pressureStatus[dataIndex]
-                                          //       //         ['press${dataIndex + 1}'] ??
-                                          //       //     '',
-                                          //       pressureStatus: allUnits[indexUnit][1]
-                                          //                   [dataIndex]
-                                          //               ['press${dataIndex + 1}'] ??
-                                          //           '',
-                                          //       // pressure: pressures[dataIndex]
-                                          //       //     ['pressure${dataIndex + 1}'],
-                                          //       pressure: allUnits[indexUnit][0]
-                                          //                   [dataIndex]
-                                          //               ['pressure${dataIndex + 1}'] ??
-                                          //           '',
-                                          //     );
-                                          //   },
-                                          // ),
                                           const SizedBox(
                                             height: 12,
                                           ),
@@ -1034,246 +1051,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                           const SizedBox(
                                             height: 6,
                                           ),
-
-                                          // Builder(builder: (context) {
-                                          //   if (isShowMore[indexUnit]) {
-                                          //     return StreamBuilder<
-                                          //         QuerySnapshot>(
-                                          //       stream: firestore
-                                          //           .collection('adjusment_spm')
-                                          //           .where('idSite',
-                                          //               isEqualTo: idSite)
-                                          //           .where('unit',
-                                          //               isEqualTo:
-                                          //                   unit.devicename)
-                                          //           .where('tanggal',
-                                          //               isGreaterThanOrEqualTo:
-                                          //                   DateTime.now()
-                                          //                       .subtract(
-                                          //                           const Duration(
-                                          //                               days:
-                                          //                                   7))
-                                          //                       .toIso8601String())
-                                          //           .orderBy('tanggal',
-                                          //               descending:
-                                          //                   true) // Mengurutkan berdasarkan tanggal terbaru
-                                          //           .limit(
-                                          //               1) // Hanya mengambil 1 data terbaru
-                                          //           .snapshots(),
-                                          //       builder: (context, snapshot) {
-                                          //         if (snapshot
-                                          //                 .connectionState ==
-                                          //             ConnectionState.waiting) {
-                                          //           return Center(
-                                          //               child:
-                                          //                   CircularProgressIndicator());
-                                          //         }
-                                          //         if (!snapshot.hasData ||
-                                          //             snapshot
-                                          //                 .data!.docs.isEmpty) {
-                                          //           return Container(
-                                          //             margin: EdgeInsets.only(
-                                          //                 bottom: 12),
-                                          //             child: Center(
-                                          //                 child: Text(
-                                          //                     'No data available')),
-                                          //           );
-                                          //         }
-
-                                          //         final latestDoc =
-                                          //             snapshot.data!.docs.first;
-                                          //         final Map<String, dynamic>
-                                          //             latestAdjustMap =
-                                          //             latestDoc.data() as Map<
-                                          //                 String, dynamic>;
-                                          //         final positionList =
-                                          //             latestAdjustMap['posisi']
-                                          //                 as List<dynamic>;
-
-                                          //         bool adjustmentEmpty =
-                                          //             positionList.any((item) =>
-                                          //                 item['adjusmentPressure'] !=
-                                          //                     null &&
-                                          //                 item['adjusmentPressure']
-                                          //                     .toString()
-                                          //                     .trim()
-                                          //                     .isNotEmpty);
-
-                                          //         if (!adjustmentEmpty) {
-                                          //           print('data adjust kosong');
-                                          //           return Center(
-                                          //             child: Container(
-                                          //               margin: EdgeInsets.only(
-                                          //                   bottom: 12),
-                                          //               child: Text(
-                                          //                 'No data available',
-                                          //                 style:
-                                          //                     getBlackTextStyle(),
-                                          //               ),
-                                          //             ),
-                                          //           );
-                                          //         }
-
-                                          //         return Column(
-                                          //           crossAxisAlignment:
-                                          //               CrossAxisAlignment
-                                          //                   .start,
-                                          //           children: [
-                                          //             Text(
-                                          //               'Tireman : ${latestAdjustMap['user']}',
-                                          //               style:
-                                          //                   getBlackTextStyle(
-                                          //                 fontSize: 18,
-                                          //               ),
-                                          //             ),
-                                          //             const SizedBox(
-                                          //               height: 12,
-                                          //             ),
-                                          //             // timelowpressure BIKIN ERROR
-                                          //             if (latestAdjustMap[
-                                          //                     'timeLowPressureSPM'] !=
-                                          //                 null)
-                                          //               Text(
-                                          //                 'Last Event Low Pressure : ${DateFormat('dd MMMM yyyy  HH:mm:ss', 'id_ID').format(DateTime.parse(latestAdjustMap['timeLowPressureSPM']))}',
-                                          //               )
-                                          //             else
-                                          //               SizedBox.shrink(),
-
-                                          //             const SizedBox(
-                                          //               height: 12,
-                                          //             ),
-                                          //             Column(
-                                          //               children: positionList
-                                          //                   .map((pl) {
-                                          //                 if (pl['adjusmentPressure'] ==
-                                          //                         '' ||
-                                          //                     pl['adjusmentPressure'] ==
-                                          //                         null) {
-                                          //                   return Container();
-                                          //                 }
-
-                                          //                 return Column(
-                                          //                   crossAxisAlignment:
-                                          //                       CrossAxisAlignment
-                                          //                           .start,
-                                          //                   children: [
-                                          //                     Row(
-                                          //                       mainAxisAlignment:
-                                          //                           MainAxisAlignment
-                                          //                               .spaceBetween,
-                                          //                       children: [
-                                          //                         Text(
-                                          //                           'Pos. ${pl['pos']} : ${pl['adjusmentPressure']} Psi',
-                                          //                           style: getBlackTextStyle(
-                                          //                               fontSize:
-                                          //                                   16),
-                                          //                         ),
-                                          //                         const SizedBox(
-                                          //                             width: 6),
-                                          //                         Text(
-                                          //                           DateFormat(
-                                          //                                   'dd MMMM yyyy  HH:mm:ss',
-                                          //                                   'id_ID')
-                                          //                               .format(
-                                          //                                   DateTime.parse(latestAdjustMap['tanggal'])),
-                                          //                           style: getBlackTextStyle(
-                                          //                               fontSize:
-                                          //                                   16),
-                                          //                         ),
-                                          //                       ],
-                                          //                     ),
-                                          //                     (pl['image'] !=
-                                          //                                 '' &&
-                                          //                             pl['image'] !=
-                                          //                                 null)
-                                          //                         ? Container(
-                                          //                             padding: EdgeInsets
-                                          //                                 .only(
-                                          //                                     top: 8),
-                                          //                             width: double
-                                          //                                 .infinity,
-                                          //                             child:
-                                          //                                 ElevatedButton(
-                                          //                               onPressed:
-                                          //                                   () {
-                                          //                                 showDialog(
-                                          //                                   context:
-                                          //                                       context,
-                                          //                                   builder: (context) =>
-                                          //                                       Dialog(
-                                          //                                     child: Stack(
-                                          //                                       children: [
-                                          //                                         InteractiveViewer(
-                                          //                                           child: Image.network(
-                                          //                                             pl['image'],
-                                          //                                             fit: BoxFit.contain,
-                                          //                                           ),
-                                          //                                         ),
-                                          //                                         Positioned(
-                                          //                                           top: 8.0,
-                                          //                                           right: 8.0,
-                                          //                                           child: IconButton(
-                                          //                                             icon: Icon(Icons.close, color: Colors.black),
-                                          //                                             onPressed: () {
-                                          //                                               Navigator.of(context).pop();
-                                          //                                             },
-                                          //                                           ),
-                                          //                                         ),
-                                          //                                       ],
-                                          //                                     ),
-                                          //                                   ),
-                                          //                                 );
-                                          //                               },
-                                          //                               style: ElevatedButton
-                                          //                                   .styleFrom(
-                                          //                                 backgroundColor:
-                                          //                                     Colors.orange,
-                                          //                               ),
-                                          //                               child:
-                                          //                                   Padding(
-                                          //                                 padding: const EdgeInsets
-                                          //                                     .all(
-                                          //                                     8.0),
-                                          //                                 child:
-                                          //                                     Row(
-                                          //                                   mainAxisAlignment:
-                                          //                                       MainAxisAlignment.center,
-                                          //                                   children: [
-                                          //                                     const Icon(Icons.photo, color: white),
-                                          //                                     const SizedBox(width: 8),
-                                          //                                     Text(
-                                          //                                       'Show Image',
-                                          //                                       style: getWhiteTextStyle(fontWeight: w700, fontSize: 18),
-                                          //                                     ),
-                                          //                                   ],
-                                          //                                 ),
-                                          //                               ),
-                                          //                             ),
-                                          //                           )
-                                          //                         : Container(),
-                                          //                     const Padding(
-                                          //                       padding: EdgeInsets
-                                          //                           .symmetric(
-                                          //                               vertical:
-                                          //                                   8.0),
-                                          //                       child:
-                                          //                           Divider(),
-                                          //                     )
-                                          //                   ],
-                                          //                 );
-                                          //               }).toList(),
-                                          //             ),
-                                          //           ],
-                                          //         );
-                                          //       },
-                                          //     );
-                                          //   }
-                                          //   return Container();
-                                          // }),
-
-                                          // const SizedBox(
-                                          //   height: 12,
-                                          // ),
                                           Row(
                                             children: [
                                               Expanded(
@@ -1389,37 +1166,6 @@ class _TpmsPageState extends State<TpmsPage> {
                           return Container();
                         },
                       ),
-                      // event
-                      // Card(
-                      //   shape: RoundedRectangleBorder(
-                      //     borderRadius: BorderRadius.circular(4),
-                      //   ),
-                      //   color: Colors.red,
-                      //   child: Column(
-                      //     crossAxisAlignment: CrossAxisAlignment.start,
-                      //     children: <Widget>[
-                      //       Container(
-                      //         padding: const EdgeInsets.all(15),
-                      //         child: Column(
-                      //           crossAxisAlignment: CrossAxisAlignment.start,
-                      //           children: <Widget>[
-                      //             const Text(
-                      //               "- Position 3 Low Tire Pressure",
-                      //               style:
-                      //                   TextStyle(fontSize: 16, color: Colors.white),
-                      //             ),
-                      //             Container(height: 10),
-                      //             const Text(
-                      //               "- Position 4 Low Tire Pressure",
-                      //               style:
-                      //                   TextStyle(fontSize: 16, color: Colors.white),
-                      //             ),
-                      //           ],
-                      //         ),
-                      //       ),
-                      //     ],
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),
@@ -1601,73 +1347,3 @@ class PressureCard extends StatelessWidget {
     );
   }
 }
-
-// class PressureCard extends StatelessWidget {
-//   const PressureCard({
-//     super.key,
-//     required this.position,
-//     this.index = -1,
-//     required this.pressure,
-//     required this.pressureStatus,
-//     required this.temperature,
-//     required this.rating,
-//   });
-
-//   final String position;
-//   final int index;
-//   final String pressure;
-//   final String temperature;
-//   final String pressureStatus;
-//   final String rating;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Card(
-//       elevation: 2,
-//       child: Container(
-//         child: Column(
-//           children: [
-//             Container(
-//                 padding: EdgeInsets.all(12),
-//                 width: double.infinity,
-//                 decoration: BoxDecoration(
-//                     color: (pressureStatus == '1')
-//                         ? green00968A
-//                         : (pressureStatus == '0' && pressure != '0')
-//                             ? Colors.red
-//                             : black,
-//                     borderRadius: BorderRadius.only(
-//                         topLeft: Radius.circular(12),
-//                         topRight: Radius.circular(12))),
-//                 child: Center(
-//                   child: Text(
-//                     position,
-//                     style: getWhiteTextStyle(fontSize: 36, fontWeight: w700),
-//                   ),
-//                 )),
-//             Column(
-//               children: [
-//                 Text(
-//                   pressure,
-//                   style: getBlackTextStyle(fontSize: 24),
-//                 ),
-//                 Text('Psi', style: getBlackTextStyle(fontSize: 24)),
-//               ],
-//             ),
-//             const Divider(),
-//             Text('$temperature °C', style: getBlackTextStyle(fontSize: 24)),
-//             if (rating != 'N/A' || rating == null || rating == '')
-//               Column(
-//                 children: [
-//                   const Divider(),
-//                   Text('Rat. $rating', style: getBlackTextStyle(fontSize: 24))
-//                 ],
-//               )
-//             else
-//               Container()
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
