@@ -2235,6 +2235,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                           unitList.contains(element.unitNumber))
                                       : [];
 
+                                  log('not checked unit : ${notChecked}');
+
                                   return Column(
                                     children: [
                                       Text(

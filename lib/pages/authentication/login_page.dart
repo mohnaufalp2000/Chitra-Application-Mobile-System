@@ -515,35 +515,24 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(
                       height: 12,
                     ),
-                    // ButtonWidget(
-                    //     name: Text('ChatBot'),
-                    //     function: () {
-                    //       Navigator.push(
-                    //           context,
-                    //           MaterialPageRoute(
-                    //               builder: (context) => ChatMaximaWidget()));
-                    //     }),
-                    // const SizedBox(
-                    //   height: 12,
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: [
+                    //     Text(
+                    //       'Don\'t have account yet?',
+                    //       style: getBlackTextStyle(
+                    //         fontSize: 16,
+                    //       ),
+                    //     ),
+                    //     TextButtonWidget(
+                    //       name: 'Create Now',
+                    //       style: getGreenTextStyle(fontSize: 16),
+                    //       function: () {
+                    //         push(context, RegisterPage.routeName);
+                    //       },
+                    //     ),
+                    //   ],
                     // ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Don\'t have account yet?',
-                          style: getBlackTextStyle(
-                            fontSize: 16,
-                          ),
-                        ),
-                        TextButtonWidget(
-                          name: 'Create Now',
-                          style: getGreenTextStyle(fontSize: 16),
-                          function: () {
-                            push(context, RegisterPage.routeName);
-                          },
-                        ),
-                      ],
-                    ),
                     const SizedBox(
                       height: 48,
                     ),

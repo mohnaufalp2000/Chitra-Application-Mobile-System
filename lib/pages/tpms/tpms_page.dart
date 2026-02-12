@@ -1202,10 +1202,40 @@ class PressureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isCold = temperatureStatus == '0';
-    final Color thermalColor = isCold ? Colors.blue : Colors.red;
-    final IconData thermalIcon =
-        isCold ? Icons.ac_unit : Icons.local_fire_department;
+    late final Color thermalColor;
+    late final IconData thermalIcon;
+    late final String thermalLabel;
+
+    switch (temperatureStatus) {
+      case '0': // cold
+        thermalColor = Colors.blue;
+        thermalIcon = Icons.ac_unit;
+        thermalLabel = 'Cold';
+        break;
+
+      case '1': // hot
+        thermalColor = Colors.orange;
+        thermalIcon = Icons.whatshot;
+        thermalLabel = 'Hot';
+        break;
+
+      case '2': // warning
+        thermalColor = Colors.amber;
+        thermalIcon = Icons.warning_amber_rounded;
+        thermalLabel = 'Warning';
+        break;
+
+      case '3': // overtemperature
+        thermalColor = Colors.red;
+        thermalIcon = Icons.local_fire_department;
+        thermalLabel = 'Over Temp';
+        break;
+
+      default:
+        thermalColor = Colors.grey;
+        thermalIcon = Icons.device_thermostat;
+        thermalLabel = '-';
+    }
 
     return Card(
       elevation: 2,
@@ -1311,19 +1341,29 @@ class PressureCard extends StatelessWidget {
             // ================= TEMPERATURE =================
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
                 children: [
-                  Text(
-                    '$temperature °C',
-                    style: getBlackTextStyle(fontSize: 16)
-                        .copyWith(color: thermalColor),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$temperature °C',
+                        style: getBlackTextStyle(fontSize: 16)
+                            .copyWith(color: thermalColor),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(
+                        thermalIcon,
+                        color: thermalColor,
+                        size: 24,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  Icon(
-                    thermalIcon,
-                    color: thermalColor,
-                    size: 24,
+                  const SizedBox(height: 4),
+                  Text(
+                    thermalLabel,
+                    style: getBlackTextStyle(fontSize: 12)
+                        .copyWith(color: thermalColor, fontWeight: w700),
                   ),
                 ],
               ),
