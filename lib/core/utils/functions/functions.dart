@@ -297,6 +297,11 @@ Future<File> createFolderPath(String id, String type,
           "${path?.path}/DailyTireCheck_${date}_${site}_${pit}_${email}_${id.substring(0, 8)}_CAMOS.xlsx");
       // final outputFile = File("${path?.path}/daily-check_${id}xlsx");
       return outputFile;
+    case 'tire_inspection':
+      final outputFile = File(
+          "${path?.path}/TireInspection_${site}_${email}_${id.substring(0, 8)}_CAMOS.xlsx");
+      // final outputFile = File("${path?.path}/daily-check_${id}xlsx");
+      return outputFile;
     case 'outstanding-image':
       final outputFile = File("${path?.path}/outstanding-image-$id.jpg");
       return outputFile;
@@ -453,6 +458,236 @@ Future<List<int>> createExcel(String type,
     List<Map<String, dynamic>>? daily,
     List<AttendanceEntity>? presence}) async {
   switch (type) {
+    case 'tire_inspection':
+      final Workbook workbook = Workbook();
+      final Worksheet sheet = workbook.worksheets[0];
+      sheet.name = 'Tire Inspection';
+
+      // Header
+      sheet.getRangeByName('A1').setText('Date');
+      sheet.getRangeByName('B1').setText('Unit Number');
+      sheet.getRangeByName('C1').setText('Tire Position');
+      sheet.getRangeByName('D1').setText('Pressure');
+      sheet.getRangeByName('E1').setText('RTD 1');
+      sheet.getRangeByName('F1').setText('Hm On Inspect');
+      sheet.getRangeByName('G1').setText('Remark');
+      sheet.getRangeByName('H1').setText('Pics');
+      sheet.getRangeByName('I1').setText('Adj. Pressure');
+      sheet.getRangeByName('J1').setText('Inspector');
+      sheet.getRangeByName('K1').setText('Location');
+      sheet.getRangeByName('L1').setText('Tire Damage');
+      sheet.getRangeByName('M1').setText('Broken Component');
+      sheet.getRangeByName('N1').setText('SN Tire');
+
+      int rowIndex = 2;
+
+      for (final doc in task!) {
+        final posisiList = doc['posisi'] as List<dynamic>? ?? [];
+
+        for (final p in posisiList) {
+          final posisi = p as Map<String, dynamic>;
+
+          // Tanggal
+          String formattedDate = doc['hari'] ?? '';
+          try {
+            if (doc['tanggal'] != null &&
+                doc['tanggal'].toString().isNotEmpty) {
+              final parsed = DateTime.parse(doc['tanggal']);
+              formattedDate =
+                  "${parsed.year}-${_twoDigits(parsed.month)}-${_twoDigits(parsed.day)}";
+            }
+          } catch (e) {
+            log('error parse tanggal: $e');
+          }
+
+          // A = Date
+          sheet.getRangeByName('A$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('A$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('A$rowIndex').setText(formattedDate);
+
+          // B = Unit Number
+          sheet.getRangeByName('B$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('B$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('B$rowIndex').setText(
+              (doc['unit'] == '' || doc['unit'] == null) ? '0' : doc['unit']);
+
+          // C = Tire Position
+          sheet.getRangeByName('C$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('C$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('C$rowIndex').setText(
+              (posisi['position'] == null)
+                  ? '0'
+                  : posisi['position'].toString());
+
+          // D = Pressure
+          sheet.getRangeByName('D$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('D$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('D$rowIndex').setText(
+              (posisi['pressure'] == '' || posisi['pressure'] == null)
+                  ? '0'
+                  : posisi['pressure'].toString());
+
+          // E = RTD 1
+          try {
+            sheet.getRangeByName('E$rowIndex').cellStyle.hAlign =
+                HAlignType.center;
+            sheet.getRangeByName('E$rowIndex').cellStyle.vAlign =
+                VAlignType.center;
+            sheet.getRangeByName('E$rowIndex').setText(
+                (posisi['rtd1'] == '' || posisi['rtd1'] == null)
+                    ? '0'
+                    : posisi['rtd1'].toString());
+          } catch (e) {
+            log('error rtd: $e');
+          }
+
+          // F = HM On Inspect
+          sheet.getRangeByName('F$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('F$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('F$rowIndex').setText(
+              (doc['hm'] == null || doc['hm'] == '')
+                  ? '0'
+                  : doc['hm'].toString());
+
+          // G = Remark
+          sheet.getRangeByName('G$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('G$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('G$rowIndex').setText(
+              (posisi['remarks'] == '' || posisi['remarks'] == null)
+                  ? '0'
+                  : posisi['remarks']);
+
+          // H = Pics (image dari Firebase Storage)
+          try {
+            final urlImage = posisi['images'] as List<dynamic>?;
+            if (urlImage != null && urlImage.isNotEmpty) {
+              final img = urlImage[0];
+              if (img != null && img.toString().isNotEmpty) {
+                Uint8List? bytes;
+                final isUrl = img.toString().startsWith('http://') ||
+                    img.toString().startsWith('https://');
+                if (isUrl) {
+                  log('img url: $img');
+                  final response = await http.get(Uri.parse(img));
+                  if (response.statusCode == 200) {
+                    bytes = response.bodyBytes;
+                  } else {
+                    log('Failed to download image, status: ${response.statusCode}');
+                  }
+                } else {
+                  final file = File(img);
+                  if (await file.exists()) {
+                    bytes = await file.readAsBytes();
+                  } else {
+                    log('Local image not found: $img');
+                  }
+                }
+
+                if (bytes != null && bytes.isNotEmpty) {
+                  final resizedImage = await resizeImage(bytes, 600, 600);
+                  final range = sheet.getRangeByIndex(rowIndex, 8);
+                  range.rowHeight = 120;
+                  range.columnWidth = 20;
+                  final picture =
+                      sheet.pictures.addStream(rowIndex, 8, resizedImage);
+                  picture.width = 110;
+                  picture.height = 110;
+                }
+              }
+            }
+          } catch (e, st) {
+            log('Error processing image for row $rowIndex: $e\n$st');
+          }
+
+          // I = Adj. Pressure
+          sheet.getRangeByName('I$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('I$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('I$rowIndex').setText(
+              (posisi['adjusmentPressure'] == '' ||
+                      posisi['adjusmentPressure'] == null)
+                  ? '0'
+                  : posisi['adjusmentPressure'].toString());
+
+          // J = Inspector
+          sheet.getRangeByName('J$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('J$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('J$rowIndex').setText(
+              (doc['user'] == '' || doc['user'] == null) ? '0' : doc['user']);
+
+          // K = Location
+          sheet.getRangeByName('K$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('K$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('K$rowIndex').setText(
+              (doc['pit'] == '' || doc['pit'] == null)
+                  ? 'Default'
+                  : doc['pit']);
+
+          // L = Tire Damage
+          final lukaData = posisi['damageTire'];
+          String damageText = '0';
+          if (lukaData is List && lukaData.isNotEmpty) {
+            damageText = (lukaData as List<dynamic>)
+                .where((e) => e != null && e.toString().isNotEmpty)
+                .join('\n');
+          } else if (lukaData is String && lukaData.isNotEmpty) {
+            damageText = lukaData;
+          }
+          sheet.getRangeByName('L$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('L$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('L$rowIndex').setText(damageText);
+
+          // M = Broken Component (condition yang checked)
+          final conditionList = posisi['condition'] as List<dynamic>? ?? [];
+          final checkedConditions = conditionList
+              .where((c) => c is Map && c['checked'] == true)
+              .map((c) => c['name'].toString())
+              .toList();
+          final conditionText =
+              checkedConditions.isEmpty ? '0' : checkedConditions.join(', ');
+          sheet.getRangeByName('M$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('M$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('M$rowIndex').setText(conditionText);
+
+          // N = SN Tire
+          sheet.getRangeByName('N$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('N$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet.getRangeByName('N$rowIndex').setText(
+              (posisi['sn'] == '' || posisi['sn'] == null)
+                  ? '0'
+                  : posisi['sn']);
+
+          rowIndex++;
+        }
+      }
+
+      final List<int> bytes = workbook.saveAsStream();
+      workbook.dispose();
+      return bytes;
+
     case 'attendance':
       final Workbook workbook = Workbook();
       final Worksheet sheet = workbook.worksheets[0];

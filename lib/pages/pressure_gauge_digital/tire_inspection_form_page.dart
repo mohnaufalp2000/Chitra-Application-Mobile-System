@@ -2528,443 +2528,691 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                           ),
                         ],
                       ),
-                      function: (selectedMenu == 0)
-                          ? () {
-                              ScaffoldMessenger.of(context)
-                                  .hideCurrentSnackBar();
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                content: Text(
-                                  'Successful save data, please check in home page',
-                                  style: getWhiteTextStyle(),
-                                ),
-                                backgroundColor: green00968A,
-                              ));
-                              final id = Uuid();
-                              final fixId = id.v4();
-                              isSaved = true;
-                              final savedTires =
-                                  state.units[swiperController.index];
+                      // function: () async {
+                      //   // jika data pressure kosong
+                      //   bool hasEmptyPressure =
+                      //       position.any((p) => p['pressure'] == '');
 
-                              imageBox.put(TireInspectPictureEntity(
-                                  idImage: fixId, image: ''));
+                      //   if (hasEmptyPressure) {
+                      //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-                              // Disimpan di objectbox
-                              context
-                                  .read<OutstandingTaskBloc>()
-                                  .add(AddOutStandingTaskEvent(
-                                      task: OutstandingTask(
-                                    id: id.v4(),
-                                    idSite: idSite,
-                                    user: auth.currentUser!.email ?? '',
-                                    userEmail: auth.currentUser!.email ?? '',
-                                    unit: idUnit.text,
-                                    position:
-                                        int.parse(savedTires.posisi ?? '0'),
-                                    brand: savedTires.brand ?? '',
-                                    serialNumber: savedTires.sn ?? '',
-                                    tireSize: savedTires.size ?? '',
-                                    hm: hmUnit.text,
-                                    condition: checkedCategories
-                                        .map((category) => category)
-                                        .toList(),
-                                    tireDamage: selectedTireDamage,
-                                    remarks: remarks,
-                                    rtd: rtd,
-                                    pressure: pressureCtrl.text,
-                                    adjusmentPressure: pressureCtrl.text,
-                                    lastUpdate:
-                                        DateTime.now().toIso8601String(),
-                                    isDone: false,
-                                    sn: savedTires.sn ?? '',
-                                    images: (Platform.isAndroid) ? listImg : [],
-                                    kunciUnit: savedTires.kunciUnit ?? '',
-                                    kunciTire: savedTires.kunciTire ?? '',
-                                  )));
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       SnackBar(
+                      //         backgroundColor: Colors.red,
+                      //         content: Text(
+                      //           'Please input data pressure (Choose 0 Psi if No Tire or Block Valve)',
+                      //           style: TextStyle(color: Colors.white),
+                      //         ),
+                      //       ),
+                      //     );
+                      //     return;
+                      //   }
+                      //   // jika belum memeilih pit
+                      //   if (idSite == bmbsitarum.idSite ||
+                      //       idSite == bmbhauling.idSite ||
+                      //       idSite == bmbtabuhan.idSite ||
+                      //       idSite == bibkgb.idSite ||
+                      //       idSite == bibgh.idSite) {
+                      //     if (selectedPit == -1) {
+                      //       ScaffoldMessenger.of(context).showSnackBar(
+                      //         SnackBar(
+                      //           backgroundColor: Colors.red,
+                      //           content: Text(
+                      //             'Please select location of unit first!',
+                      //             style: TextStyle(color: Colors.white),
+                      //           ),
+                      //         ),
+                      //       );
+                      //       return;
+                      //     }
+                      //   }
 
-                              ScaffoldMessenger.of(context)
-                                  .showSnackBar(SnackBar(
-                                      backgroundColor: green00968A,
-                                      content: Text(
-                                        'Succesful Save Data',
-                                        style: getWhiteTextStyle(),
-                                      )));
+                      //   // input ke tire inspection
+                      //   try {
+                      //     position.removeWhere((element) =>
+                      //         element['pressure'] == '' &&
+                      //         (element['damageTire'] as List<dynamic>)
+                      //             .isEmpty &&
+                      //         element['adjusmentPressure'] == '' &&
+                      //         element['rtd1'] == '' &&
+                      //         element['rtd2'] == '' &&
+                      //         element['rating'] == '' &&
+                      //         element['sn'] == '' &&
+                      //         element['remarks'] == '');
+
+                      //     for (int i = 0; i < position.length; i++) {
+                      //       final unit = state.units[i];
+                      //       final id = Uuid();
+
+                      //       String? localImagePath;
+                      //       try {
+                      //         final imgList =
+                      //             position[i]['image'] as List<dynamic>?;
+                      //         if (imgList != null && imgList.isNotEmpty) {
+                      //           final raw = imgList[0]
+                      //               as String; // format: "path|position"
+                      //           final parts = raw.split('|');
+                      //           if (parts.isNotEmpty) {
+                      //             localImagePath = parts[0];
+                      //           }
+                      //         }
+                      //       } catch (e) {
+                      //         log('parse image error: $e');
+                      //       }
+
+                      //       log('SAVE POSISI ${localImagePath}');
+                      //       log('SAVE POSISI ${position[i]['position']} '
+                      //           'IMAGE: ${position[i]['image']}');
+
+                      //       if (position[i]['pressure'] != '' ||
+                      //           position[i]['hm'] != '' ||
+                      //           position[i]['damageTire'] != [] ||
+                      //           position[i]['damageTire'][0] != damageType[0] ||
+                      //           position[i]['adjusmentPressure'] != '' ||
+                      //           position[i]['rtd1'] != '' ||
+                      //           position[i]['rtd2'] != '' ||
+                      //           position[i]['rating'] != '' ||
+                      //           position[i]['sn'] != '' ||
+                      //           position[i]['remarks'] != '') {
+                      //         final today = DateTime.now();
+                      //         final startOfDay =
+                      //             DateTime(today.year, today.month, today.day);
+                      //         final endOfDay = DateTime(today.year, today.month,
+                      //             today.day, 23, 59, 59);
+
+                      //         final querySnapshot = await firestore
+                      //             .collection('task')
+                      //             .where('kunci_unit',
+                      //                 isEqualTo: unit.kunciUnit)
+                      //             .where('kunci_tire',
+                      //                 isEqualTo: unit.kunciTire)
+                      //             .where('position',
+                      //                 isEqualTo: position[i]['position'])
+                      //             .where('last_update',
+                      //                 isGreaterThanOrEqualTo:
+                      //                     startOfDay.toIso8601String())
+                      //             .where('last_update',
+                      //                 isLessThanOrEqualTo:
+                      //                     endOfDay.toIso8601String())
+                      //             .get();
+
+                      //         log('adakah query : ${querySnapshot.docs.isNotEmpty}');
+
+                      //         final bool hasNewLocalImage =
+                      //             localImagePath != null;
+
+                      //         if (querySnapshot.docs.isNotEmpty) {
+                      //           // Update the existing document
+                      //           final docId = querySnapshot.docs.first.id;
+                      //           // try {
+                      //           //   log('kenapa gagal 3 ${position[i]['image'] as List<dynamic>}');
+                      //           // } catch (e) {
+                      //           //   log('kenapa gagal 4 ${e}');
+                      //           // }
+
+                      //           final Map<String, dynamic> updateData = {
+                      //             'id': id.v4(),
+                      //             'id_site': idSite,
+                      //             'user': user['username'] ?? 'username',
+                      //             'user_email': auth.currentUser!.email,
+                      //             'unit': unit.unitNumber,
+                      //             'serial_number': unit.sn,
+                      //             'condition': position[i]['condition']
+                      //                 .where((condition) =>
+                      //                     condition['checked'] == true)
+                      //                 .map((condition) =>
+                      //                     condition['name'].toString())
+                      //                 .toList(),
+                      //             'tire_size': unit.size,
+                      //             'hm': hmUnit.text,
+                      //             'position': position[i]['position'],
+                      //             'rating': position[i]['rating'],
+                      //             'brand': unit.brand,
+                      //             'tire_damage':
+                      //                 (position[i]['damageTire'].isEmpty)
+                      //                     ? damageType[0]
+                      //                     : position[i]['damageTire'],
+                      //             'remarks': position[i]['remarks'],
+                      //             'rtd':
+                      //                 '${position[i]['rtd1']}/${position[i]['rtd2']}',
+                      //             'pressure': position[i]['pressure'],
+                      //             'adjusmentPressure': position[i]
+                      //                 ['adjusmentPressure'],
+                      //             'last_update':
+                      //                 DateTime.now().toIso8601String(),
+                      //             'is_done': false,
+                      //             'sn': (position[i]['sn'] != null ||
+                      //                     position[i]['sn'] != '')
+                      //                 ? position[i]['sn']
+                      //                 : unit.sn,
+                      //             'kunci_unit': unit.kunciUnit,
+                      //             'kunci_tire': unit.kunciTire,
+                      //             'pit': (idSite == bmbsitarum.idSite ||
+                      //                     idSite == bmbhauling.idSite ||
+                      //                     idSite == bmbtabuhan.idSite ||
+                      //                     idSite == bibkgb.idSite)
+                      //                 ? pit[selectedPit]
+                      //                 : 'Default',
+                      //           };
+
+                      //           // Hanya kalau ada foto baru → kosongkan images & set pending
+                      //           if (hasNewLocalImage) {
+                      //             updateData['images'] = [];
+                      //             updateData['imagePending'] = true;
+                      //           }
+
+                      //           await firestore
+                      //               .collection('task')
+                      //               .doc(docId)
+                      //               .update(updateData);
+                      //           if (hasNewLocalImage) {
+                      //             UploadQueueService.to.addPending(
+                      //               docId: docId,
+                      //               filePath: localImagePath!,
+                      //             );
+                      //           }
+                      //         } else {
+                      //           final Map<String, dynamic> newData = {
+                      //             'id': id.v4(),
+                      //             'id_site': idSite,
+                      //             'user': user['username'] ?? 'username',
+                      //             'user_email': auth.currentUser!.email,
+                      //             'unit': unit.unitNumber,
+                      //             'serial_number': unit.sn,
+                      //             'condition': position[i]['condition']
+                      //                 .where((condition) =>
+                      //                     condition['checked'] == true)
+                      //                 .map((condition) =>
+                      //                     condition['name'].toString())
+                      //                 .toList(),
+                      //             'tire_size': unit.size,
+                      //             'hm': hmUnit.text,
+                      //             'position': position[i]['position'],
+                      //             'rating': position[i]['rating'],
+                      //             'brand': unit.brand,
+                      //             'tire_damage':
+                      //                 (position[i]['damageTire'].isEmpty)
+                      //                     ? damageType[0]
+                      //                     : position[i]['damageTire'],
+                      //             'remarks': position[i]['remarks'],
+                      //             'rtd':
+                      //                 '${position[i]['rtd1']}/${position[i]['rtd2']}',
+                      //             'pressure': position[i]['pressure'],
+                      //             'adjusmentPressure': position[i]
+                      //                 ['adjusmentPressure'],
+                      //             'last_update':
+                      //                 DateTime.now().toIso8601String(),
+                      //             'is_done': false,
+                      //             'sn': (position[i]['sn'] != '')
+                      //                 ? position[i]['sn']
+                      //                 : unit.sn,
+                      //             'kunci_unit': unit.kunciUnit,
+                      //             'kunci_tire': unit.kunciTire,
+                      //             'pit': (idSite == bmbsitarum.idSite ||
+                      //                     idSite == bmbhauling.idSite ||
+                      //                     idSite == bmbtabuhan.idSite ||
+                      //                     idSite == bibkgb.idSite)
+                      //                 ? pit[selectedPit]
+                      //                 : 'Default',
+                      //           };
+
+                      //           newData['images'] = [];
+                      //           newData['imagePending'] = hasNewLocalImage;
+
+                      //           final docRef = await firestore
+                      //               .collection('task')
+                      //               .add(newData);
+
+                      //           if (hasNewLocalImage) {
+                      //             UploadQueueService.to.addPending(
+                      //               docId: docRef.id,
+                      //               filePath: localImagePath!,
+                      //             );
+                      //           }
+                      //         }
+                      //       }
+                      //     }
+
+                      //     // input ke daily check pressure
+                      //     try {
+                      //       final today = DateTime.now();
+                      //       final startOfDay =
+                      //           DateTime(today.year, today.month, today.day);
+                      //       final endOfDay = DateTime(
+                      //           today.year, today.month, today.day, 23, 59, 59);
+                      //       final formattedToday =
+                      //           '${today.month.toString().padLeft(2, '0')}' // MM
+                      //           '${today.day.toString().padLeft(2, '0')}' // DD
+                      //           '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
+
+                      //       final querySnapshot = await FirebaseFirestore
+                      //           .instance
+                      //           .collection('daily_pressure')
+                      //           .where('unit',
+                      //               isEqualTo: dataUnit['unitNumber'])
+                      //           .where('tanggal',
+                      //               isGreaterThanOrEqualTo:
+                      //                   startOfDay.toIso8601String())
+                      //           .where('tanggal',
+                      //               isLessThanOrEqualTo:
+                      //                   endOfDay.toIso8601String())
+                      //           .get();
+
+                      //       print(
+                      //           'Documents found: ${querySnapshot.docs.length}');
+
+                      //       if (querySnapshot.docs.isNotEmpty) {
+                      //         final docId = querySnapshot.docs.first.id;
+
+                      //         // revisi data
+                      //         await firestore
+                      //             .collection('daily_pressure')
+                      //             .doc(docId)
+                      //             .update({
+                      //           'idSite': idSite,
+                      //           'user':
+                      //               user['username'] ?? auth.currentUser!.email,
+                      //           'tanggal': DateTime.now().toIso8601String(),
+                      //           'unit': idUnit.text,
+                      //           'hm': hmUnit.text,
+                      //           'posisi': position.map((p) {
+                      //             final pIndex = position.indexOf(p);
+
+                      //             log('tekanan angin : ${p['pressure']}');
+                      //             return {
+                      //               'pos': '${pIndex + 1}',
+                      //               'pressure': (p['pressure']) ?? '0',
+                      //               'rating': (p['rating']) ?? '',
+                      //               'adjusmentPressure':
+                      //                   (p['adjusmentPressure']) ?? '0',
+                      //               'luka': p['damageTire'],
+                      //               'idUnit': p['idUnit'],
+                      //               'idInventory': p['idInventory'],
+                      //               'tireSize': p['tireSize'],
+                      //               'idDaily':
+                      //                   '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
+                      //               'tireAccessories': []
+                      //             };
+                      //           }),
+                      //           'pit': (idSite == bmbsitarum.idSite ||
+                      //                   idSite == bmbhauling.idSite ||
+                      //                   idSite == bmbtabuhan.idSite ||
+                      //                   idSite == bibkgb.idSite)
+                      //               ? pit[selectedPit]
+                      //               : 'Default'
+                      //         });
+                      //       } else {
+                      //         // tambah data
+                      //         await firestore.collection('daily_pressure').add({
+                      //           // 'nama': (user),
+                      //           'idSite': idSite,
+                      //           'user':
+                      //               user['username'] ?? auth.currentUser!.email,
+                      //           'tanggal': DateTime.now().toIso8601String(),
+                      //           'unit': idUnit.text,
+                      //           'hm': hmUnit.text,
+                      //           'posisi': position.map((p) {
+                      //             final pIndex = position.indexOf(p);
+                      //             log('tekanan angin : ${p['pressure']}');
+
+                      //             return {
+                      //               'pos': '${pIndex + 1}',
+                      //               'pressure': (p['pressure']) ?? '0',
+                      //               'rating': (p['rating']) ?? '0',
+                      //               'adjusmentPressure':
+                      //                   (p['adjusmentPressure']) ?? '0',
+                      //               'luka': p['damageTire'],
+                      //               'idUnit': p['idUnit'],
+                      //               'idInventory': p['idInventory'],
+                      //               'tireSize': p['tireSize'],
+                      //               'idDaily':
+                      //                   '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
+                      //               'tireAccessories': []
+                      //             };
+                      //           }),
+                      //           'pit': (idSite == bmbsitarum.idSite ||
+                      //                   idSite == bmbhauling.idSite ||
+                      //                   idSite == bmbtabuhan.idSite ||
+                      //                   idSite == bibkgb.idSite)
+                      //               ? pit[selectedPit]
+                      //               : 'Default'
+                      //         });
+                      //       }
+                      //     } catch (e) {
+                      //       print('error bmb : $e');
+                      //     }
+                      //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      //       content: Text(
+                      //         'Successful save data, please check in home page',
+                      //         style: getWhiteTextStyle(),
+                      //       ),
+                      //       backgroundColor: green00968A,
+                      //     ));
+                      //     Navigator.pop(context);
+                      //   } catch (e) {
+                      //     log('kenapa gagal : $e');
+                      //   }
+                      // }
+                      function: () async {
+                        // input ke tire inspection
+                        try {
+                          position.removeWhere((element) =>
+                              element['pressure'] == '' &&
+                              (element['damageTire'] as List<dynamic>)
+                                  .isEmpty &&
+                              element['adjusmentPressure'] == '' &&
+                              element['rtd1'] == '' &&
+                              element['rtd2'] == '' &&
+                              element['rating'] == '' &&
+                              element['sn'] == '' &&
+                              element['remarks'] == '');
+
+                          final today = DateTime.now();
+                          final hari =
+                              '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+                          final jam =
+                              '${today.hour.toString().padLeft(2, '0')}:${today.minute.toString().padLeft(2, '0')}:${today.second.toString().padLeft(2, '0')}';
+                          final docId = '${hari}_${jam}';
+
+                          // Bangun list posisi sesuai struktur tire_inspection
+                          final List<Map<String, dynamic>> posisiList = [];
+                          final firstUnit = state.units[0];
+                          final String kunciUnit = firstUnit.kunciUnit ?? '';
+
+                          for (int i = 0; i < position.length; i++) {
+                            final unit = state.units[i];
+
+                            String? localImagePath;
+                            try {
+                              final imgList =
+                                  position[i]['image'] as List<dynamic>?;
+                              if (imgList != null && imgList.isNotEmpty) {
+                                final raw = imgList[0] as String;
+                                final parts = raw.split('|');
+                                if (parts.isNotEmpty) {
+                                  localImagePath = parts[0];
+                                }
+                              }
+                            } catch (e) {
+                              log('parse image error: $e');
                             }
-                          // PAKAI YANG INI!!!!
-                          : () async {
-                              // jika data pressure kosong
-                              bool hasEmptyPressure =
-                                  position.any((p) => p['pressure'] == '');
 
-                              if (hasEmptyPressure) {
-                                ScaffoldMessenger.of(context)
-                                    .hideCurrentSnackBar();
+                            final bool hasNewLocalImage =
+                                localImagePath != null;
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.red,
-                                    content: Text(
-                                      'Please input data pressure (Choose 0 Psi if No Tire or Block Valve)',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-                              // jika belum memeilih pit
-                              if (idSite == bmbsitarum.idSite ||
-                                  idSite == bmbhauling.idSite ||
-                                  idSite == bmbtabuhan.idSite ||
-                                  idSite == bibkgb.idSite) {
-                                if (selectedPit == -1) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      backgroundColor: Colors.red,
-                                      content: Text(
-                                        'Please select location of unit first!',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  );
-                                  return;
-                                }
-                              }
+                            posisiList.add({
+                              'position': position[i]['position'],
+                              'pressure': position[i]['pressure'],
+                              'adjusmentPressure': position[i]
+                                  ['adjusmentPressure'],
+                              'rating': position[i]['rating'],
+                              'rtd1': position[i]['rtd1'],
+                              'rtd2': position[i]['rtd2'],
+                              'sn': (position[i]['sn'] != null &&
+                                      position[i]['sn'] != '')
+                                  ? position[i]['sn']
+                                  : unit.sn,
+                              'remarks': position[i]['remarks'],
+                              'damageTire':
+                                  (position[i]['damageTire'] as List).isEmpty
+                                      ? damageType[0]
+                                      : position[i]['damageTire'],
+                              'condition': (position[i]['condition'] as List)
+                                  .where((c) => c['checked'] == true)
+                                  .map((c) => c['name'].toString())
+                                  .toList(),
+                              'idUnit': position[i]['idUnit'],
+                              'idInventory': position[i]['idInventory'],
+                              'tireSize': position[i]['tireSize'],
+                              'kunci_tire': unit.kunciTire,
+                              'hm': hmUnit.text,
+                              'images': [],
+                              'imagePending': hasNewLocalImage,
+                              'tireAccessories': [],
+                            });
 
-                              // input ke tire inspection
+                            if (hasNewLocalImage) {
+                              // Pending upload akan di-handle setelah document dibuat
+                            }
+                          }
+
+                          // Cek apakah sudah ada dokumen tire_inspection hari ini untuk unit ini
+                          final startOfDay =
+                              DateTime(today.year, today.month, today.day);
+                          final endOfDay = DateTime(
+                              today.year, today.month, today.day, 23, 59, 59);
+
+                          final querySnapshot = await firestore
+                              .collection('tire_inspection')
+                              // .where('kunci_unit', isEqualTo: kunciUnit) // kunci_unit dari unit
+                              .where('hari', isEqualTo: hari)
+                              .get();
+
+                          log('tire_inspection exists: ${querySnapshot.docs.isNotEmpty}');
+
+                          if (querySnapshot.docs.isNotEmpty) {
+                            // Update dokumen yang sudah ada
+                            final existingDocId = querySnapshot.docs.first.id;
+
+                            await firestore
+                                .collection('tire_inspection')
+                                .doc(existingDocId)
+                                .update({
+                              'id': const Uuid().v4(),
+                              'id_site': idSite,
+                              'user': user['username'] ?? 'username',
+                              'user_email': auth.currentUser!.email,
+                              'unit': dataUnit['unitNumber'],
+                              'kunci_unit': kunciUnit,
+                              'hm': hmUnit.text,
+                              'hari': hari,
+                              'jam': jam,
+                              'tanggal': today.toIso8601String(),
+                              'pit': (idSite == bmbsitarum.idSite ||
+                                      idSite == bmbhauling.idSite ||
+                                      idSite == bmbtabuhan.idSite ||
+                                      idSite == bibkgb.idSite)
+                                  ? pit[selectedPit]
+                                  : 'Default',
+                              'posisi': posisiList,
+                            });
+
+                            // Handle image upload per posisi
+                            for (int i = 0; i < position.length; i++) {
+                              String? localImagePath;
                               try {
-                                position.removeWhere((element) =>
-                                    element['pressure'] == '' &&
-                                    (element['damageTire'] as List<dynamic>)
-                                        .isEmpty &&
-                                    element['adjusmentPressure'] == '' &&
-                                    element['rtd1'] == '' &&
-                                    element['rtd2'] == '' &&
-                                    element['rating'] == '' &&
-                                    element['sn'] == '' &&
-                                    element['remarks'] == '');
-
-                                for (int i = 0; i < position.length; i++) {
-                                  final unit = state.units[i];
-                                  final id = Uuid();
-
-                                  String? localImagePath;
-                                  try {
-                                    final imgList =
-                                        position[i]['image'] as List<dynamic>?;
-                                    if (imgList != null && imgList.isNotEmpty) {
-                                      final raw = imgList[0]
-                                          as String; // format: "path|position"
-                                      final parts = raw.split('|');
-                                      if (parts.isNotEmpty) {
-                                        localImagePath = parts[0];
-                                      }
-                                    }
-                                  } catch (e) {
-                                    log('parse image error: $e');
-                                  }
-
-                                  log('SAVE POSISI ${localImagePath}');
-                                  log('SAVE POSISI ${position[i]['position']} '
-                                      'IMAGE: ${position[i]['image']}');
-
-                                  if (position[i]['pressure'] != '' ||
-                                      position[i]['hm'] != '' ||
-                                      position[i]['damageTire'] != [] ||
-                                      position[i]['damageTire'][0] !=
-                                          damageType[0] ||
-                                      position[i]['adjusmentPressure'] != '' ||
-                                      position[i]['rtd1'] != '' ||
-                                      position[i]['rtd2'] != '' ||
-                                      position[i]['rating'] != '' ||
-                                      position[i]['sn'] != '' ||
-                                      position[i]['remarks'] != '') {
-                                    final today = DateTime.now();
-                                    final startOfDay = DateTime(
-                                        today.year, today.month, today.day);
-                                    final endOfDay = DateTime(today.year,
-                                        today.month, today.day, 23, 59, 59);
-
-                                    final querySnapshot = await firestore
-                                        .collection('task')
-                                        .where('kunci_unit',
-                                            isEqualTo: unit.kunciUnit)
-                                        .where('kunci_tire',
-                                            isEqualTo: unit.kunciTire)
-                                        .where('position',
-                                            isEqualTo: position[i]['position'])
-                                        .where('last_update',
-                                            isGreaterThanOrEqualTo:
-                                                startOfDay.toIso8601String())
-                                        .where('last_update',
-                                            isLessThanOrEqualTo:
-                                                endOfDay.toIso8601String())
-                                        .get();
-
-                                    log('adakah query : ${querySnapshot.docs.isNotEmpty}');
-
-                                    final bool hasNewLocalImage =
-                                        localImagePath != null;
-
-                                    if (querySnapshot.docs.isNotEmpty) {
-                                      // Update the existing document
-                                      final docId = querySnapshot.docs.first.id;
-                                      // try {
-                                      //   log('kenapa gagal 3 ${position[i]['image'] as List<dynamic>}');
-                                      // } catch (e) {
-                                      //   log('kenapa gagal 4 ${e}');
-                                      // }
-
-                                      final Map<String, dynamic> updateData = {
-                                        'id': id.v4(),
-                                        'id_site': idSite,
-                                        'user': user['username'] ?? 'username',
-                                        'user_email': auth.currentUser!.email,
-                                        'unit': unit.unitNumber,
-                                        'serial_number': unit.sn,
-                                        'condition': position[i]['condition']
-                                            .where((condition) =>
-                                                condition['checked'] == true)
-                                            .map((condition) =>
-                                                condition['name'].toString())
-                                            .toList(),
-                                        'tire_size': unit.size,
-                                        'hm': hmUnit.text,
-                                        'position': position[i]['position'],
-                                        'rating': position[i]['rating'],
-                                        'brand': unit.brand,
-                                        'tire_damage':
-                                            (position[i]['damageTire'].isEmpty)
-                                                ? damageType[0]
-                                                : position[i]['damageTire'],
-                                        'remarks': position[i]['remarks'],
-                                        'rtd':
-                                            '${position[i]['rtd1']}/${position[i]['rtd2']}',
-                                        'pressure': position[i]['pressure'],
-                                        'adjusmentPressure': position[i]
-                                            ['adjusmentPressure'],
-                                        'last_update':
-                                            DateTime.now().toIso8601String(),
-                                        'is_done': false,
-                                        'sn': (position[i]['sn'] != null ||
-                                                position[i]['sn'] != '')
-                                            ? position[i]['sn']
-                                            : unit.sn,
-                                        'kunci_unit': unit.kunciUnit,
-                                        'kunci_tire': unit.kunciTire,
-                                        'pit': (idSite == bmbsitarum.idSite ||
-                                                idSite == bmbhauling.idSite ||
-                                                idSite == bmbtabuhan.idSite ||
-                                                idSite == bibkgb.idSite)
-                                            ? pit[selectedPit]
-                                            : 'Default',
-                                      };
-
-                                      // Hanya kalau ada foto baru → kosongkan images & set pending
-                                      if (hasNewLocalImage) {
-                                        updateData['images'] = [];
-                                        updateData['imagePending'] = true;
-                                      }
-
-                                      await firestore
-                                          .collection('task')
-                                          .doc(docId)
-                                          .update(updateData);
-                                      if (hasNewLocalImage) {
-                                        UploadQueueService.to.addPending(
-                                          docId: docId,
-                                          filePath: localImagePath!,
-                                        );
-                                      }
-                                    } else {
-                                      final Map<String, dynamic> newData = {
-                                        'id': id.v4(),
-                                        'id_site': idSite,
-                                        'user': user['username'] ?? 'username',
-                                        'user_email': auth.currentUser!.email,
-                                        'unit': unit.unitNumber,
-                                        'serial_number': unit.sn,
-                                        'condition': position[i]['condition']
-                                            .where((condition) =>
-                                                condition['checked'] == true)
-                                            .map((condition) =>
-                                                condition['name'].toString())
-                                            .toList(),
-                                        'tire_size': unit.size,
-                                        'hm': hmUnit.text,
-                                        'position': position[i]['position'],
-                                        'rating': position[i]['rating'],
-                                        'brand': unit.brand,
-                                        'tire_damage':
-                                            (position[i]['damageTire'].isEmpty)
-                                                ? damageType[0]
-                                                : position[i]['damageTire'],
-                                        'remarks': position[i]['remarks'],
-                                        'rtd':
-                                            '${position[i]['rtd1']}/${position[i]['rtd2']}',
-                                        'pressure': position[i]['pressure'],
-                                        'adjusmentPressure': position[i]
-                                            ['adjusmentPressure'],
-                                        'last_update':
-                                            DateTime.now().toIso8601String(),
-                                        'is_done': false,
-                                        'sn': (position[i]['sn'] != '')
-                                            ? position[i]['sn']
-                                            : unit.sn,
-                                        'kunci_unit': unit.kunciUnit,
-                                        'kunci_tire': unit.kunciTire,
-                                        'pit': (idSite == bmbsitarum.idSite ||
-                                                idSite == bmbhauling.idSite ||
-                                                idSite == bmbtabuhan.idSite ||
-                                                idSite == bibkgb.idSite)
-                                            ? pit[selectedPit]
-                                            : 'Default',
-                                      };
-
-                                      newData['images'] = [];
-                                      newData['imagePending'] =
-                                          hasNewLocalImage;
-
-                                      final docRef = await firestore
-                                          .collection('task')
-                                          .add(newData);
-
-                                      if (hasNewLocalImage) {
-                                        UploadQueueService.to.addPending(
-                                          docId: docRef.id,
-                                          filePath: localImagePath!,
-                                        );
-                                      }
-                                    }
-                                  }
+                                final imgList =
+                                    position[i]['image'] as List<dynamic>?;
+                                if (imgList != null && imgList.isNotEmpty) {
+                                  final raw = imgList[0] as String;
+                                  final parts = raw.split('|');
+                                  if (parts.isNotEmpty)
+                                    localImagePath = parts[0];
                                 }
-
-                                // input ke daily check pressure
-                                try {
-                                  final today = DateTime.now();
-                                  final startOfDay = DateTime(
-                                      today.year, today.month, today.day);
-                                  final endOfDay = DateTime(today.year,
-                                      today.month, today.day, 23, 59, 59);
-                                  final formattedToday =
-                                      '${today.month.toString().padLeft(2, '0')}' // MM
-                                      '${today.day.toString().padLeft(2, '0')}' // DD
-                                      '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
-
-                                  final querySnapshot = await FirebaseFirestore
-                                      .instance
-                                      .collection('daily_pressure')
-                                      .where('unit',
-                                          isEqualTo: dataUnit['unitNumber'])
-                                      .where('tanggal',
-                                          isGreaterThanOrEqualTo:
-                                              startOfDay.toIso8601String())
-                                      .where('tanggal',
-                                          isLessThanOrEqualTo:
-                                              endOfDay.toIso8601String())
-                                      .get();
-
-                                  print(
-                                      'Documents found: ${querySnapshot.docs.length}');
-
-                                  if (querySnapshot.docs.isNotEmpty) {
-                                    final docId = querySnapshot.docs.first.id;
-
-                                    // revisi data
-                                    await firestore
-                                        .collection('daily_pressure')
-                                        .doc(docId)
-                                        .update({
-                                      'idSite': idSite,
-                                      'user': user['username'] ??
-                                          auth.currentUser!.email,
-                                      'tanggal':
-                                          DateTime.now().toIso8601String(),
-                                      'unit': idUnit.text,
-                                      'hm': hmUnit.text,
-                                      'posisi': position.map((p) {
-                                        final pIndex = position.indexOf(p);
-
-                                        log('tekanan angin : ${p['pressure']}');
-                                        return {
-                                          'pos': '${pIndex + 1}',
-                                          'pressure': (p['pressure']) ?? '0',
-                                          'rating': (p['rating']) ?? '',
-                                          'adjusmentPressure':
-                                              (p['adjusmentPressure']) ?? '0',
-                                          'luka': p['damageTire'],
-                                          'idUnit': p['idUnit'],
-                                          'idInventory': p['idInventory'],
-                                          'tireSize': p['tireSize'],
-                                          'idDaily':
-                                              '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
-                                          'tireAccessories': []
-                                        };
-                                      }),
-                                      'pit': (idSite == bmbsitarum.idSite ||
-                                              idSite == bmbhauling.idSite ||
-                                              idSite == bmbtabuhan.idSite ||
-                                              idSite == bibkgb.idSite)
-                                          ? pit[selectedPit]
-                                          : 'Default'
-                                    });
-                                  } else {
-                                    // tambah data
-                                    await firestore
-                                        .collection('daily_pressure')
-                                        .add({
-                                      // 'nama': (user),
-                                      'idSite': idSite,
-                                      'user': user['username'] ??
-                                          auth.currentUser!.email,
-                                      'tanggal':
-                                          DateTime.now().toIso8601String(),
-                                      'unit': idUnit.text,
-                                      'hm': hmUnit.text,
-                                      'posisi': position.map((p) {
-                                        final pIndex = position.indexOf(p);
-                                        log('tekanan angin : ${p['pressure']}');
-
-                                        return {
-                                          'pos': '${pIndex + 1}',
-                                          'pressure': (p['pressure']) ?? '0',
-                                          'rating': (p['rating']) ?? '0',
-                                          'adjusmentPressure':
-                                              (p['adjusmentPressure']) ?? '0',
-                                          'luka': p['damageTire'],
-                                          'idUnit': p['idUnit'],
-                                          'idInventory': p['idInventory'],
-                                          'tireSize': p['tireSize'],
-                                          'idDaily':
-                                              '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
-                                          'tireAccessories': []
-                                        };
-                                      }),
-                                      'pit': (idSite == bmbsitarum.idSite ||
-                                              idSite == bmbhauling.idSite ||
-                                              idSite == bmbtabuhan.idSite ||
-                                              idSite == bibkgb.idSite)
-                                          ? pit[selectedPit]
-                                          : 'Default'
-                                    });
-                                  }
-                                } catch (e) {
-                                  print('error bmb : $e');
-                                }
-                                ScaffoldMessenger.of(context)
-                                    .hideCurrentSnackBar();
-                                ScaffoldMessenger.of(context)
-                                    .showSnackBar(SnackBar(
-                                  content: Text(
-                                    'Successful save data, please check in home page',
-                                    style: getWhiteTextStyle(),
-                                  ),
-                                  backgroundColor: green00968A,
-                                ));
-                                Navigator.pop(context);
                               } catch (e) {
-                                log('kenapa gagal : $e');
+                                log('parse image error: $e');
                               }
-                            }),
+                              if (localImagePath != null) {
+                                UploadQueueService.to.addPending(
+                                  docId: existingDocId,
+                                  filePath: localImagePath,
+                                );
+                              }
+                            }
+                          } else {
+                            // Buat dokumen baru dengan ID format tanggal_jam
+                            final newData = {
+                              'id': const Uuid().v4(),
+                              'id_site': idSite,
+                              'user': user['username'] ?? 'username',
+                              'user_email': auth.currentUser!.email,
+                              'unit': dataUnit['unitNumber'],
+                              'kunci_unit': kunciUnit,
+                              'hm': hmUnit.text,
+                              'hari': hari,
+                              'jam': jam,
+                              'tanggal': today.toIso8601String(),
+                              'pit': (idSite == bmbsitarum.idSite ||
+                                      idSite == bmbhauling.idSite ||
+                                      idSite == bmbtabuhan.idSite ||
+                                      idSite == bibkgb.idSite)
+                                  ? pit[selectedPit]
+                                  : 'Default',
+                              'posisi': posisiList,
+                            };
+
+                            final docRef = await firestore
+                                .collection('tire_inspection')
+                                .doc(docId)
+                                .set(newData);
+
+                            // Handle image upload per posisi
+                            for (int i = 0; i < position.length; i++) {
+                              String? localImagePath;
+                              try {
+                                final imgList =
+                                    position[i]['image'] as List<dynamic>?;
+                                if (imgList != null && imgList.isNotEmpty) {
+                                  final raw = imgList[0] as String;
+                                  final parts = raw.split('|');
+                                  if (parts.isNotEmpty)
+                                    localImagePath = parts[0];
+                                }
+                              } catch (e) {
+                                log('parse image error: $e');
+                              }
+                              if (localImagePath != null) {
+                                UploadQueueService.to.addPending(
+                                  docId: docId,
+                                  filePath: localImagePath,
+                                );
+                              }
+                            }
+                          }
+
+                          //     // input ke daily check pressure
+                          try {
+                            final today = DateTime.now();
+                            final startOfDay =
+                                DateTime(today.year, today.month, today.day);
+                            final endOfDay = DateTime(
+                                today.year, today.month, today.day, 23, 59, 59);
+                            final formattedToday =
+                                '${today.month.toString().padLeft(2, '0')}' // MM
+                                '${today.day.toString().padLeft(2, '0')}' // DD
+                                '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
+
+                            final querySnapshot = await FirebaseFirestore
+                                .instance
+                                .collection('daily_pressure')
+                                .where('unit',
+                                    isEqualTo: dataUnit['unitNumber'])
+                                .where('tanggal',
+                                    isGreaterThanOrEqualTo:
+                                        startOfDay.toIso8601String())
+                                .where('tanggal',
+                                    isLessThanOrEqualTo:
+                                        endOfDay.toIso8601String())
+                                .get();
+
+                            print(
+                                'Documents found: ${querySnapshot.docs.length}');
+
+                            if (querySnapshot.docs.isNotEmpty) {
+                              final docId = querySnapshot.docs.first.id;
+
+                              // revisi data
+                              await firestore
+                                  .collection('daily_pressure')
+                                  .doc(docId)
+                                  .update({
+                                'idSite': idSite,
+                                'user':
+                                    user['username'] ?? auth.currentUser!.email,
+                                'tanggal': DateTime.now().toIso8601String(),
+                                'unit': idUnit.text,
+                                'hm': hmUnit.text,
+                                'posisi': position.map((p) {
+                                  final pIndex = position.indexOf(p);
+
+                                  log('tekanan angin : ${p['pressure']}');
+                                  return {
+                                    'pos': '${pIndex + 1}',
+                                    'pressure': (p['pressure']) ?? '0',
+                                    'rating': (p['rating']) ?? '',
+                                    'adjusmentPressure':
+                                        (p['adjusmentPressure']) ?? '0',
+                                    'luka': p['damageTire'],
+                                    'idUnit': p['idUnit'],
+                                    'idInventory': p['idInventory'],
+                                    'tireSize': p['tireSize'],
+                                    'idDaily':
+                                        '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
+                                    'tireAccessories': []
+                                  };
+                                }),
+                                'pit': (idSite == bmbsitarum.idSite ||
+                                        idSite == bmbhauling.idSite ||
+                                        idSite == bmbtabuhan.idSite ||
+                                        idSite == bibkgb.idSite)
+                                    ? pit[selectedPit]
+                                    : 'Default'
+                              });
+                            } else {
+                              // tambah data
+                              await firestore.collection('daily_pressure').add({
+                                // 'nama': (user),
+                                'idSite': idSite,
+                                'user':
+                                    user['username'] ?? auth.currentUser!.email,
+                                'tanggal': DateTime.now().toIso8601String(),
+                                'unit': idUnit.text,
+                                'hm': hmUnit.text,
+                                'posisi': position.map((p) {
+                                  final pIndex = position.indexOf(p);
+                                  log('tekanan angin : ${p['pressure']}');
+
+                                  return {
+                                    'pos': '${pIndex + 1}',
+                                    'pressure': (p['pressure']) ?? '0',
+                                    'rating': (p['rating']) ?? '0',
+                                    'adjusmentPressure':
+                                        (p['adjusmentPressure']) ?? '0',
+                                    'luka': p['damageTire'],
+                                    'idUnit': p['idUnit'],
+                                    'idInventory': p['idInventory'],
+                                    'tireSize': p['tireSize'],
+                                    'idDaily':
+                                        '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
+                                    'tireAccessories': []
+                                  };
+                                }),
+                                'pit': (idSite == bmbsitarum.idSite ||
+                                        idSite == bmbhauling.idSite ||
+                                        idSite == bmbtabuhan.idSite ||
+                                        idSite == bibkgb.idSite)
+                                    ? pit[selectedPit]
+                                    : 'Default'
+                              });
+                            }
+                          } catch (e) {
+                            print('error bmb : $e');
+                          }
+
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                              'Successful save data, please check in home page',
+                              style: getWhiteTextStyle(),
+                            ),
+                            backgroundColor: green00968A,
+                          ));
+                          Navigator.pop(context);
+                        } catch (e) {
+                          log('kenapa gagal : $e');
+                        }
+                      }),
                 );
               }
               return Container();

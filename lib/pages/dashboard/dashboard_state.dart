@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:appcheck/appcheck.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/pages/home/new_tire_inspection_page.dart';
 import 'package:camos/pages/home/tire_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +18,8 @@ class DashboardState extends GetxController {
 
   final pages = <Widget>[
     const Center(child: HomePage()),
-    Center(child: TireInspectionPage()),
+    // Center(child: TireInspectionPage()),
+    Center(child: NewTireInspectionPage()),
   ];
 
   void changePage(int index) {
