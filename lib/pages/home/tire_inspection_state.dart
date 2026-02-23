@@ -58,39 +58,35 @@ class TireInspectionState extends GetxController {
     }
   }
 
-  /// 🔹 Apply search and date filter
-  void applyFilters() {
-    var list = tasks;
+  var selectedDates = <String>[].obs;
 
-    // filter berdasarkan date range
-    if (selectedDateRange.value != null) {
-      list = list
-          .where((task) {
-            final dateStr = task['date']?.toString();
-            if (dateStr == null || dateStr.isEmpty) return false;
-            final date = DateTime.tryParse(dateStr);
-            if (date == null) return false;
-            return date.isAfter(selectedDateRange.value!.start
-                    .subtract(const Duration(days: 1))) &&
-                date.isBefore(
-                    selectedDateRange.value!.end.add(const Duration(days: 1)));
-          })
-          .toList()
-          .obs;
+  void applyFilters() {
+    var list = List<Map<String, dynamic>>.from(tasks);
+
+    // Filter berdasarkan tanggal yang dipilih di checkbox
+    if (selectedDates.isNotEmpty) {
+      list = list.where((task) {
+        final dateStr = task['last_update']?.toString() ?? '';
+        if (dateStr.isEmpty) return false;
+        final datePart = dateStr.split('T')[0];
+        return selectedDates.contains(datePart);
+      }).toList();
     }
 
-    // filter berdasarkan search
+    // Filter search
     if (searchQuery.value.isNotEmpty) {
       final query = searchQuery.value.toLowerCase();
-      list = list
-          .where((task) {
-            final unit = (task['unit'] ?? '').toString().toLowerCase();
-            return unit.contains(query);
-          })
-          .toList()
-          .obs;
+      list = list.where((task) {
+        return (task['unit'] ?? '').toString().toLowerCase().contains(query);
+      }).toList();
     }
 
     filteredTasks.assignAll(list);
+  }
+
+  void resetFilters() {
+    selectedDates.clear();
+    searchQuery.value = '';
+    fetchTasks();
   }
 }

@@ -139,9 +139,21 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Tire Inspection Result',
-                  style: getGreenTextStyle(fontWeight: w700, fontSize: 20),
+                Row(
+                  children: [
+                    InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Icon(Icons.arrow_back)),
+                    const SizedBox(
+                      width: 12,
+                    ),
+                    Text(
+                      'Tire Inspection Result',
+                      style: getGreenTextStyle(fontWeight: w700, fontSize: 20),
+                    ),
+                  ],
                 ),
                 const SizedBox(
                   height: 24,
@@ -737,6 +749,7 @@ class _TireInspectionPageState extends State<TireInspectionPage> {
 // import 'tire_inspection_state.dart';
 
 // class TireInspectionPage extends StatelessWidget {
+//   static const routeName = '/tire-repair-inspection';
 //   final TireInspectionState controller = Get.put(TireInspectionState());
 //   final TextEditingController searchController = TextEditingController();
 

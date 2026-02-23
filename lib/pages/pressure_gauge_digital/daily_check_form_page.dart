@@ -39,7 +39,7 @@ import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 
 class DailyCheckFormPage extends StatefulWidget {
-  static const routeName = '/tire-inspection-page';
+  static const routeName = '/daily-check-pressure-page';
 
   const DailyCheckFormPage({super.key});
 
