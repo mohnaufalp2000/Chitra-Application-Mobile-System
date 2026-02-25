@@ -572,6 +572,7 @@ Future<List<int>> createExcel(String type,
           // H = Pics (image dari Firebase Storage)
           try {
             final urlImage = posisi['images'] as List<dynamic>?;
+
             if (urlImage != null && urlImage.isNotEmpty) {
               final img = urlImage[0];
               if (img != null && img.toString().isNotEmpty) {
@@ -605,7 +606,11 @@ Future<List<int>> createExcel(String type,
                   picture.width = 110;
                   picture.height = 110;
                 }
+              } else {
+                sheet.getRangeByIndex(rowIndex, 8).setNumber(0);
               }
+            } else {
+              sheet.getRangeByIndex(rowIndex, 8).setNumber(0);
             }
           } catch (e, st) {
             log('Error processing image for row $rowIndex: $e\n$st');

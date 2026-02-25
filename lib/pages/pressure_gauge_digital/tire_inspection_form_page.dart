@@ -208,6 +208,55 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     getUser();
   }
 
+  Future<void> loadPreviousDamage(
+      int index, String unit, String kunciTire) async {
+    print('load previous damage unit : $unit');
+    try {
+      final snapshot = await firestore
+          .collection('tire_inspection')
+          .where('unit', isEqualTo: unit) // ✅ FILTER UNIT
+          .orderBy('tanggal', descending: true)
+          .limit(1) // ✅ hanya dokumen terbaru unit itu
+          .get();
+
+      log('load previous damage : ${snapshot.docs}');
+
+      if (snapshot.docs.isEmpty) return;
+
+      final doc = snapshot.docs.first;
+
+      final List<dynamic> posisiList = doc['posisi'];
+
+      for (final pos in posisiList) {
+        if (pos['kunci_tire'] == kunciTire) {
+          final prevDamage = pos['damageTire'];
+          final prevRemarks = pos['remarks'];
+
+          if (prevDamage != null) {
+            setState(() {
+              position[index]['damageTire'] =
+                  prevDamage is List ? prevDamage : [prevDamage];
+            });
+
+            log('AUTO DAMAGE FOUND: $prevDamage');
+            return;
+          }
+
+          if (prevRemarks != null && prevRemarks != '') {
+            setState(() {
+              position[index]['remarks'] = prevRemarks;
+            });
+
+            log('AUTO REMARKS FOUND: $prevRemarks');
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      log('loadPreviousDamage error: $e');
+    }
+  }
+
   Future<void> _loadDamages() async {
     try {
       final doc = await firestore
@@ -441,6 +490,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
             for (int i = 0; i < state.units.length; i++) {
               final unit = state.units[i];
+              for (int i = 0; i < position.length; i++) {
+                final unit = state.units[i];
+
+                if (unit.kunciTire != null) {
+                  loadPreviousDamage(
+                      i, unit.unitNumber ?? '', unit.kunciTire ?? '');
+                }
+              }
               remarksControllers.add(TextEditingController(text: ''));
               snControllers.add(TextEditingController(text: ''));
               rtd1Controllers.add(TextEditingController(text: ''));
@@ -1528,9 +1585,19 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               return;
                                             }
 
+                                            // List<bool> checkedDamageValues =
+                                            //     List<bool>.filled(
+                                            //         damageType.length, false);
+                                            final List<dynamic>
+                                                existingDamages =
+                                                position[index]['damageTire'] ??
+                                                    [];
+
                                             List<bool> checkedDamageValues =
-                                                List<bool>.filled(
-                                                    damageType.length, false);
+                                                damageType.map((damage) {
+                                              return existingDamages
+                                                  .contains(damage);
+                                            }).toList();
 
                                             showDialog(
                                               context: context,
@@ -2953,7 +3020,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       position[i]['sn'] != '')
                                   ? position[i]['sn']
                                   : unit.sn,
-                              'remarks': position[i]['remarks'],
+                              'remarks':
+                                  (position[i]['damageTire'] as List).isEmpty
+                                      ? damageType[0]
+                                      : position[i]['damageTire'][0],
                               'damageTire':
                                   (position[i]['damageTire'] as List).isEmpty
                                       ? damageType[0]

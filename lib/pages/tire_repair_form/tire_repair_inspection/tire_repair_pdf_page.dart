@@ -178,6 +178,10 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
         .buffer
         .asUint8List();
 
+    final ByteData img =
+        await rootBundle.load('${imagePath}/list_tire_damage.png');
+    final Uint8List imageBytes = img.buffer.asUint8List();
+
     pdf.addPage(p.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
         margin: p.EdgeInsets.zero,
@@ -922,6 +926,16 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
                           ),
                         ]),
                   ]),
+            ),
+            p.NewPage(),
+            // Masih error
+            p.Container(
+              width: PdfPageFormat.a4.landscape.width,
+              height: PdfPageFormat.a4.landscape.height,
+              child: p.Image(
+                p.MemoryImage(imageBytes),
+                fit: p.BoxFit.cover,
+              ),
             ),
           ];
         }));
