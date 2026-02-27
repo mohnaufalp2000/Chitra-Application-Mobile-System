@@ -270,7 +270,26 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
         // convert + sort A-Z
         List<String> sortedList = raw.map((e) => e.toString()).toList();
-        sortedList.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        // sortedList.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        sortedList.sort((a, b) {
+          final aLower = a.toLowerCase().trim();
+          final bLower = b.toLowerCase().trim();
+
+          final aGood = aLower == "good" ||
+              aLower.startsWith("good ") ||
+              aLower.contains("good condition");
+
+          final bGood = bLower == "good" ||
+              bLower.startsWith("good ") ||
+              bLower.contains("good condition");
+
+          /// PRIORITAS GOOD
+          if (aGood && !bGood) return -1;
+          if (!aGood && bGood) return 1;
+
+          /// SORT NORMAL
+          return aLower.compareTo(bLower);
+        });
 
         setState(() {
           damageType = sortedList;
