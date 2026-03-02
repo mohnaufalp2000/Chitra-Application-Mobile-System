@@ -566,7 +566,7 @@ Future<List<int>> createExcel(String type,
               VAlignType.center;
           sheet.getRangeByName('G$rowIndex').setText(
               (posisi['remarks'] == '' || posisi['remarks'] == null)
-                  ? '0'
+                  ? 'Good Condition'
                   : posisi['remarks']);
 
           // H = Pics (image dari Firebase Storage)
