@@ -1154,6 +1154,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                     ),
                                   ),
                                   Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         mainAxisAlignment:
@@ -1835,6 +1837,24 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       const SizedBox(
                                         height: 12,
                                       ),
+
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: blue344BEF,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          'Tire Damage',
+                                          textAlign: TextAlign.start,
+                                          style: getBlackTextStyle(
+                                            fontSize: 12,
+                                          ).copyWith(color: Colors.white),
+                                        ),
+                                      ),
+
                                       SizedBox(
                                         width:
                                             MediaQuery.of(context).size.width,
@@ -1871,11 +1891,32 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 position[index]['damageTire'] ??
                                                     [];
 
-                                            List<bool> checkedDamageValues =
-                                                damageType.map((damage) {
-                                              return existingDamages
-                                                  .contains(damage);
-                                            }).toList();
+                                            List<bool> checkedDamageValues;
+
+                                            if (existingDamages.isEmpty ||
+                                                existingDamages[0] == "") {
+                                              print(
+                                                  'exisitng damage empty true');
+                                              // otomatis centang Good Condition jika belum ada damage
+                                              checkedDamageValues =
+                                                  damageType.map((damage) {
+                                                final text = damage
+                                                    .toString()
+                                                    .toLowerCase()
+                                                    .trim();
+                                                return text == 'good' ||
+                                                    text == 'good condition';
+                                              }).toList();
+                                            } else {
+                                              print(
+                                                  'exisitng damage empty false');
+                                              // jika sudah ada data damage
+                                              checkedDamageValues =
+                                                  damageType.map((damage) {
+                                                return existingDamages
+                                                    .contains(damage);
+                                              }).toList();
+                                            }
 
                                             showDialog(
                                               context: context,
@@ -1927,8 +1968,29 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                               value) {
                                                                         setState(
                                                                             () {
-                                                                          checkedDamageValues[dmgIndex] =
+                                                                          // checkedDamageValues[dmgIndex] =
+                                                                          //     value ?? false;
+                                                                          bool
+                                                                              newValue =
                                                                               value ?? false;
+
+                                                                          if (dmgIndex ==
+                                                                              0) {
+                                                                            // GOOD CONDITION dicentang
+                                                                            checkedDamageValues =
+                                                                                List<bool>.filled(checkedDamageValues.length, false);
+                                                                            checkedDamageValues[0] =
+                                                                                newValue;
+                                                                          } else {
+                                                                            // Damage lain dicentang
+                                                                            checkedDamageValues[dmgIndex] =
+                                                                                newValue;
+
+                                                                            if (newValue) {
+                                                                              // otomatis uncheck Good Condition
+                                                                              checkedDamageValues[0] = false;
+                                                                            }
+                                                                          }
                                                                         });
                                                                       },
                                                                     );
@@ -2058,19 +2120,50 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             padding: const EdgeInsets.symmetric(
                                                 vertical: 8.0),
                                             child: Text(
-                                              (position[index]['damageTire'] ==
-                                                          null ||
-                                                      position[index]
-                                                              ['damageTire'] ==
-                                                          [] ||
+                                              // (position[index]['damageTire'] ==
+                                              //             null ||
+                                              //         position[index]
+                                              //                 ['damageTire'] ==
+                                              //             [] ||
+                                              //         (position[index]
+                                              //                     ['damageTire']
+                                              //                 as List<dynamic>)
+                                              //             .isEmpty)
+                                              //     ? 'Damage Tire (None)'
+                                              //     : position[index]
+                                              //             ['damageTire']
+                                              //         .join('\n---\n'),
+                                              // (position[index]['damageTire'] ==
+                                              //             null ||
+                                              //         position[index]
+                                              //                 ['damageTire'] ==
+                                              //             [] ||
+                                              //         (position[index]
+                                              //                     ['damageTire']
+                                              //                 as List<dynamic>)
+                                              //             .isEmpty)
+                                              //     ? damageType[0]
+                                              //     : position[index]
+                                              //             ['damageTire']
+                                              //         .join('\n---\n'),
+                                              ((position[index]['damageTire'] ==
+                                                          null) ||
                                                       (position[index]
                                                                   ['damageTire']
-                                                              as List<dynamic>)
+                                                              as List)
+                                                          .where((e) =>
+                                                              e != null &&
+                                                              e
+                                                                  .toString()
+                                                                  .trim()
+                                                                  .isNotEmpty)
                                                           .isEmpty)
-                                                  ? 'Damage Tire (None)'
-                                                  : position[index]
-                                                          ['damageTire']
+                                                  ? 'Good Condition'
+                                                  : (position[index]
+                                                              ['damageTire']
+                                                          as List)
                                                       .join('\n---\n'),
+
                                               textAlign: TextAlign.center,
                                               style: getWhiteTextStyle(
                                                   fontSize: 14),
@@ -3060,6 +3153,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
                           // Bangun list posisi sesuai struktur tire_inspection
                           final List<Map<String, dynamic>> posisiList = [];
+                          log('unit tire inspection ${state.units}');
                           final firstUnit = state.units[0];
                           final String kunciUnit = firstUnit.kunciUnit ?? '';
 
@@ -3134,6 +3228,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               .collection('tire_inspection')
                               // .where('kunci_unit', isEqualTo: kunciUnit) // kunci_unit dari unit
                               .where('hari', isEqualTo: hari)
+                              .where('unit', isEqualTo: firstUnit.unitNumber)
+                              // .where('tanggal',
+                              //     isGreaterThanOrEqualTo:
+                              //         startOfDay.toIso8601String())
+                              // .where('tanggal',
+                              //     isLessThanOrEqualTo:
+                              //         endOfDay.toIso8601String())
                               .get();
 
                           log('tire_inspection exists: ${querySnapshot.docs.isNotEmpty}');
