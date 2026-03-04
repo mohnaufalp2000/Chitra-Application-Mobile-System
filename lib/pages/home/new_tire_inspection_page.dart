@@ -212,6 +212,50 @@ class NewTireInspectionPage extends StatelessWidget {
   }
 }
 
+p.Widget header(String text) {
+  return p.Container(
+    alignment: p.Alignment.center,
+    padding: const p.EdgeInsets.all(3),
+    child: p.Text(
+      text,
+      textAlign: p.TextAlign.center,
+      style: p.TextStyle(
+        fontSize: 7,
+        fontWeight: p.FontWeight.bold,
+      ),
+    ),
+  );
+}
+
+p.Widget spanHeader(String text, int span) {
+  return p.Container(
+    alignment: p.Alignment.center,
+    padding: const p.EdgeInsets.all(3),
+    child: p.Text(
+      text,
+      textAlign: p.TextAlign.center,
+      style: p.TextStyle(
+        fontSize: 7,
+        fontWeight: p.FontWeight.bold,
+      ),
+    ),
+  );
+}
+
+p.Widget cell(String text) {
+  return p.Container(
+    alignment: p.Alignment.center,
+    padding: const p.EdgeInsets.all(3),
+    child: p.Text(
+      text,
+      textAlign: p.TextAlign.center,
+      style: const p.TextStyle(fontSize: 7),
+    ),
+  );
+}
+
+p.Widget empty() => p.Container();
+
 class _TireInspectionCard extends StatefulWidget {
   final Map<String, dynamic> doc;
   final List<dynamic> posisiList;
@@ -313,15 +357,33 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                           children: [
                                             p.Text(
                                                 'UNIT : ${doc['unit'] ?? '-'}',
-                                                style: const p.TextStyle(
-                                                    fontSize: 8)),
+                                                style: p.TextStyle(
+                                                  fontSize: 8,
+                                                  fontWeight: p.FontWeight.bold,
+                                                )),
+                                            p.SizedBox(height: 6),
                                             p.Text('SMU : ${doc['hm'] ?? '-'}',
-                                                style: const p.TextStyle(
-                                                    fontSize: 8)),
+                                                style: p.TextStyle(
+                                                  fontSize: 8,
+                                                  fontWeight: p.FontWeight.bold,
+                                                )),
+                                            p.SizedBox(height: 6),
                                             p.Text(
                                                 'DATE : ${doc['hari'] ?? '-'}',
-                                                style: const p.TextStyle(
+                                                style: p.TextStyle(
+                                                  fontSize: 8,
+                                                  fontWeight: p.FontWeight.bold,
+                                                )),
+                                            p.SizedBox(height: 6),
+                                            p.Text('TYPE : 250/500/1000/2000',
+                                                style: p.TextStyle(
+                                                    fontWeight:
+                                                        p.FontWeight.bold,
                                                     fontSize: 8)),
+                                            p.SizedBox(height: 3),
+                                            p.Text('*Lingkari type service',
+                                                style:
+                                                    p.TextStyle(fontSize: 8)),
                                           ],
                                         ),
                                       ],
@@ -330,44 +392,140 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                     p.SizedBox(height: 10),
 
                                     /// ================= TABEL UTAMA =================
-                                    p.Table.fromTextArray(
+                                    p.Table(
                                       border: p.TableBorder.all(width: 0.5),
-                                      headerStyle: p.TextStyle(
-                                          fontWeight: p.FontWeight.bold,
-                                          fontSize: 7),
-                                      cellStyle: const p.TextStyle(fontSize: 7),
-                                      headers: [
-                                        'POS',
-                                        'SN',
-                                        'SIZE',
-                                        'PRESS',
-                                        'ADJ',
-                                        'RTD',
-                                        'RATING',
-                                        'DAMAGE',
-                                        'REMARK'
-                                      ],
-                                      data: posisiList.map((pData) {
-                                        final posisi =
-                                            pData as Map<String, dynamic>;
-                                        return [
-                                          posisi['position']?.toString() ?? '',
-                                          posisi['sn'] ?? '',
-                                          posisi['tireSize'] ?? '',
-                                          posisi['pressure'] ?? '',
-                                          posisi['adjusmentPressure'] ?? '',
-                                          '${posisi['rtd1'] ?? ''}/${posisi['rtd2'] ?? ''}',
-                                          posisi['rating'] ?? '',
-                                          (posisi['damageTire'] is List)
-                                              ? (posisi['damageTire'] as List)
-                                                  .join(', ')
-                                              : posisi['damageTire']
+                                      columnWidths: {
+                                        0: const p.FixedColumnWidth(25), // POS
+                                        1: const p.FixedColumnWidth(
+                                            90), // BRAND
+                                        2: const p.FixedColumnWidth(
+                                            90), // SERIAL
+                                        3: const p.FixedColumnWidth(
+                                            45), // PATTERN
+                                        4: const p.FixedColumnWidth(30), // TYPE
+                                        5: const p.FixedColumnWidth(
+                                            45), // TREAD
+                                        6: const p.FixedColumnWidth(30),
+                                        7: const p.FixedColumnWidth(30),
+                                        8: const p.FixedColumnWidth(30),
+                                        9: const p.FixedColumnWidth(30),
+                                        10: const p.FixedColumnWidth(35),
+                                        11: const p.FixedColumnWidth(35),
+                                        12: const p.FixedColumnWidth(45),
+                                        13: const p.FixedColumnWidth(45),
+                                        14: const p.FixedColumnWidth(
+                                            80), // REMARK
+                                      },
+                                      children: [
+                                        /// HEADER ROW 1
+                                        p.TableRow(
+                                          children: [
+                                            header('POS'),
+                                            header('BRAND'),
+                                            header('SERIAL NUMBER'),
+                                            header('PATTERN'),
+                                            header('TYPE'),
+                                            header('TREAD DEPT'),
+                                            header('PRESSURE'),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            header('KONDISI'),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            header('REMARK'),
+                                          ],
+                                        ),
+
+                                        /// HEADER ROW 2
+                                        p.TableRow(
+                                          children: [
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            header('ACTUAL'),
+                                            header('ADJUST'),
+                                            header('HOT'),
+                                            header('COLD'),
+                                            header('BEAD'),
+                                            header('TREAD'),
+                                            header('SIDEWALL'),
+                                            header('SHOULDER'),
+                                            empty(),
+                                          ],
+                                        ),
+
+                                        /// DATA ROW
+                                        ...posisiList.map((pData) {
+                                          final posisi =
+                                              pData as Map<String, dynamic>;
+
+                                          return p.TableRow(
+                                            children: [
+                                              cell(posisi['position']
                                                       ?.toString() ??
-                                                  '',
-                                          posisi['remarks'] ?? '',
-                                        ];
-                                      }).toList(),
+                                                  ''),
+                                              cell(posisi['brand'] ?? ''),
+                                              cell(posisi['sn'] ?? ''),
+                                              cell(posisi['pattern'] ?? ''),
+                                              cell(posisi['type'] ?? ''),
+                                              cell(
+                                                  '${posisi['rtd1'] ?? ''}/${posisi['rtd2'] ?? ''}'),
+                                              cell(posisi['actual'] ?? ''),
+                                              cell(posisi['adjust'] ?? ''),
+                                              cell(posisi['hot'] ?? ''),
+                                              cell(posisi['cold'] ?? ''),
+                                              cell(posisi['bead'] ?? ''),
+                                              cell(posisi['tread'] ?? ''),
+                                              cell(posisi['sidewall'] ?? ''),
+                                              cell(posisi['shoulder'] ?? ''),
+                                              cell(posisi['remarks'] ?? ''),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ],
                                     ),
+                                    // p.Table.fromTextArray(
+                                    //   border: p.TableBorder.all(width: 0.5),
+                                    //   headerStyle: p.TextStyle(
+                                    //       fontWeight: p.FontWeight.bold,
+                                    //       fontSize: 7),
+                                    //   cellStyle: const p.TextStyle(fontSize: 7),
+                                    //   headers: [
+                                    //     'POS',
+                                    //     'SERIAL NUMBER',
+                                    //     'PATTERN',
+                                    //     'TYPE',
+                                    //     'TREAD DEPT',
+                                    //     'PRESSURE CONDITION',
+                                    //     'KONDISI FISIK TYRE',
+                                    //     'REMARK'
+                                    //   ],
+                                    //   data: posisiList.map((pData) {
+                                    //     final posisi =
+                                    //         pData as Map<String, dynamic>;
+                                    //     return [
+                                    //       posisi['position']?.toString() ?? '',
+                                    //       posisi['sn'] ?? '',
+                                    //       posisi['tireSize'] ?? '',
+                                    //       posisi['pressure'] ?? '',
+                                    //       posisi['adjusmentPressure'] ?? '',
+                                    //       '${posisi['rtd1'] ?? ''}/${posisi['rtd2'] ?? ''}',
+                                    //       posisi['rating'] ?? '',
+                                    //       (posisi['damageTire'] is List)
+                                    //           ? (posisi['damageTire'] as List)
+                                    //               .join(', ')
+                                    //           : posisi['damageTire']
+                                    //                   ?.toString() ??
+                                    //               '',
+                                    //       posisi['remarks'] ?? '',
+                                    //     ];
+                                    //   }).toList(),
+                                    // ),
 
                                     p.SizedBox(height: 12),
 
