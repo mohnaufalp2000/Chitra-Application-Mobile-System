@@ -244,17 +244,20 @@ p.Widget spanHeader(String text, int span) {
 
 p.Widget cell(String text) {
   return p.Container(
-    alignment: p.Alignment.center,
+    alignment: p.Alignment.centerLeft,
     padding: const p.EdgeInsets.all(3),
     child: p.Text(
       text,
-      textAlign: p.TextAlign.center,
+      textAlign: p.TextAlign.left,
       style: const p.TextStyle(fontSize: 7),
     ),
   );
 }
 
 p.Widget empty() => p.Container();
+p.Widget emptyDisable() => p.Container(
+      color: PdfColors.grey300,
+    );
 
 class _TireInspectionCard extends StatefulWidget {
   final Map<String, dynamic> doc;
@@ -397,11 +400,11 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                       columnWidths: {
                                         0: const p.FixedColumnWidth(25), // POS
                                         1: const p.FixedColumnWidth(
-                                            90), // BRAND
+                                            50), // BRAND
                                         2: const p.FixedColumnWidth(
-                                            90), // SERIAL
+                                            70), // SERIAL
                                         3: const p.FixedColumnWidth(
-                                            45), // PATTERN
+                                            80), // PATTERN
                                         4: const p.FixedColumnWidth(30), // TYPE
                                         5: const p.FixedColumnWidth(
                                             45), // TREAD
@@ -475,8 +478,10 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                               cell(posisi['type'] ?? ''),
                                               cell(
                                                   '${posisi['rtd1'] ?? ''}/${posisi['rtd2'] ?? ''}'),
-                                              cell(posisi['actual'] ?? ''),
-                                              cell(posisi['adjust'] ?? ''),
+                                              cell(posisi['pressure'] ?? ''),
+                                              cell(
+                                                  posisi['adjusmentPressure'] ??
+                                                      ''),
                                               cell(posisi['hot'] ?? ''),
                                               cell(posisi['cold'] ?? ''),
                                               cell(posisi['bead'] ?? ''),
@@ -489,106 +494,266 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                         }).toList(),
                                       ],
                                     ),
-                                    // p.Table.fromTextArray(
-                                    //   border: p.TableBorder.all(width: 0.5),
-                                    //   headerStyle: p.TextStyle(
-                                    //       fontWeight: p.FontWeight.bold,
-                                    //       fontSize: 7),
-                                    //   cellStyle: const p.TextStyle(fontSize: 7),
-                                    //   headers: [
-                                    //     'POS',
-                                    //     'SERIAL NUMBER',
-                                    //     'PATTERN',
-                                    //     'TYPE',
-                                    //     'TREAD DEPT',
-                                    //     'PRESSURE CONDITION',
-                                    //     'KONDISI FISIK TYRE',
-                                    //     'REMARK'
-                                    //   ],
-                                    //   data: posisiList.map((pData) {
-                                    //     final posisi =
-                                    //         pData as Map<String, dynamic>;
-                                    //     return [
-                                    //       posisi['position']?.toString() ?? '',
-                                    //       posisi['sn'] ?? '',
-                                    //       posisi['tireSize'] ?? '',
-                                    //       posisi['pressure'] ?? '',
-                                    //       posisi['adjusmentPressure'] ?? '',
-                                    //       '${posisi['rtd1'] ?? ''}/${posisi['rtd2'] ?? ''}',
-                                    //       posisi['rating'] ?? '',
-                                    //       (posisi['damageTire'] is List)
-                                    //           ? (posisi['damageTire'] as List)
-                                    //               .join(', ')
-                                    //           : posisi['damageTire']
-                                    //                   ?.toString() ??
-                                    //               '',
-                                    //       posisi['remarks'] ?? '',
-                                    //     ];
-                                    //   }).toList(),
-                                    // ),
-
                                     p.SizedBox(height: 12),
 
                                     /// ================= JOB DESCRIPTION =================
-                                    p.Container(
-                                      padding: const p.EdgeInsets.all(5),
-                                      color: PdfColors.grey300,
-                                      child: p.Text(
-                                        'JOB DESCRIPTION',
-                                        style: p.TextStyle(
-                                            fontWeight: p.FontWeight.bold,
-                                            fontSize: 8),
-                                      ),
-                                    ),
+                                    p.Table(
+                                      border: p.TableBorder.all(width: 0.5),
+                                      columnWidths: {
+                                        0: const p.FixedColumnWidth(18), // NO
+                                        1: const p.FixedColumnWidth(
+                                            68), // JOB DESCRIPTION
 
-                                    p.SizedBox(height: 5),
-
-                                    /// Rim condition per posisi
-                                    if (posisiList.isNotEmpty) ...[
-                                      (() {
-                                        final posisi = posisiList.first
-                                            as Map<String, dynamic>;
-                                        final rimList = posisi['rimCondition']
-                                                as List<dynamic>? ??
-                                            [];
-
-                                        return p.Column(
-                                          crossAxisAlignment:
-                                              p.CrossAxisAlignment.start,
+                                        for (int i = 2; i < 14; i++)
+                                          i: const p.FixedColumnWidth(
+                                              22), // semua kolom pos sama
+                                      },
+                                      children: [
+                                        /// HEADER ROW 1
+                                        p.TableRow(
+                                          decoration: const p.BoxDecoration(
+                                            color: PdfColors.orange100,
+                                          ),
                                           children: [
-                                            p.SizedBox(height: 4),
-                                            p.Text(
-                                              'Position ${posisi['position']}',
-                                              style: p.TextStyle(
-                                                  fontWeight: p.FontWeight.bold,
-                                                  fontSize: 8),
-                                            ),
-                                            p.SizedBox(height: 4),
-                                            p.Table.fromTextArray(
-                                              border:
-                                                  p.TableBorder.all(width: 0.5),
-                                              cellStyle: const p.TextStyle(
-                                                  fontSize: 7),
-                                              headers: [
-                                                'JOB',
-                                                'COND',
-                                                'REMARK'
-                                              ],
-                                              data: rimList.map((r) {
-                                                final rim =
-                                                    r as Map<String, dynamic>;
-                                                return [
-                                                  rim['title'] ?? '',
-                                                  rim['condition'] ?? '',
-                                                  rim['remark'] ?? '',
-                                                ];
-                                              }).toList(),
-                                            ),
+                                            header('NO'),
+                                            header('JOB DESCRIPTION'),
+                                            spanHeader('POS 1', 2),
+                                            empty(),
+                                            spanHeader('POS 2', 2),
+                                            empty(),
+                                            spanHeader('POS 3', 2),
+                                            empty(),
+                                            spanHeader('POS 4', 2),
+                                            empty(),
+                                            spanHeader('POS 5', 2),
+                                            empty(),
+                                            spanHeader('POS 6', 2),
+                                            empty(),
                                           ],
-                                        );
-                                      })(),
-                                    ],
+                                        ),
 
+                                        p.TableRow(
+                                          decoration: const p.BoxDecoration(
+                                            color: PdfColors.orange100,
+                                          ),
+                                          children: [
+                                            empty(),
+                                            empty(),
+                                            header('GOOD'),
+                                            header('POOR'),
+                                            header('GOOD'),
+                                            header('POOR'),
+                                            header('GOOD'),
+                                            header('POOR'),
+                                            header('GOOD'),
+                                            header('POOR'),
+                                            header('GOOD'),
+                                            header('POOR'),
+                                            header('GOOD'),
+                                            header('POOR'),
+                                            header('Remark'),
+                                          ],
+                                        ),
+
+                                        p.TableRow(
+                                          children: [
+                                            cell('1'),
+                                            cell('PERIKSA KONDISI FISIK RIM'),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                          ],
+                                        ),
+
+                                        /// a
+                                        p.TableRow(
+                                          children: [
+                                            cell('a'),
+                                            cell('RIM BASE'),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                          ],
+                                        ),
+                                        p.TableRow(
+                                          children: [
+                                            cell('a'),
+                                            cell('FLANGE'),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                          ],
+                                        ),
+                                        p.TableRow(
+                                          children: [
+                                            cell('c'),
+                                            cell('LOCK RING'),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                            empty(),
+                                          ],
+                                        ),
+
+                                        p.TableRow(
+                                          children: [
+                                            cell('2'),
+                                            cell(
+                                                'PERIKSA KONDISI VALVE (Terpasang/Tidak Terpasang)'),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                          ],
+                                        ),
+
+                                        p.TableRow(
+                                          children: [
+                                            cell('3'),
+                                            cell('PERIKSA KONDISI CORE VALVE'),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                          ],
+                                        ),
+
+                                        p.TableRow(
+                                          children: [
+                                            cell('4'),
+                                            cell(
+                                                'PERIKSA KONDISI NUT AND STUD RODA'),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                            emptyDisable(),
+                                            emptyDisable(),
+                                            empty(),
+                                          ],
+                                        ),
+
+                                        /// DATA
+                                        ...posisiList.expand((r) {
+                                          final rim = r['rimCondition'] as List;
+
+                                          log('rim condition $rim');
+
+                                          return rim.map((ri) {
+                                            return p.TableRow(
+                                              children: [
+                                                cell(ri['title'] ?? ''),
+                                                cell(ri['condition'] == 'GOOD'
+                                                    ? '✔'
+                                                    : ''),
+                                                cell(ri['condition'] == 'POOR'
+                                                    ? '✔'
+                                                    : ''),
+                                                cell(ri['remark'] ?? ''),
+                                              ],
+                                            );
+                                          });
+                                        }).toList(),
+                                      ],
+                                    ),
                                     p.SizedBox(height: 50),
 
                                     /// ================= SIGNATURE =================

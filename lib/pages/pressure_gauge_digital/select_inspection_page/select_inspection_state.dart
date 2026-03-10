@@ -1,5 +1,6 @@
 import 'package:camos/pages/network/network_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/daily_pressure_list.dart';
+import 'package:camos/pages/pressure_gauge_digital/pre_assembly_tire_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/select_unit_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -41,6 +42,21 @@ class SelectInspectionState extends GetxController {
       },
       onOnline: () {
         Navigator.pushNamed(context, DailyPressureListPage.routeName);
+      },
+    );
+  }
+
+  Future<void> openPreAssemblyTire(BuildContext context) async {
+    selectedActivity.value = 'pre_assembly_tire';
+
+    // Pastikan koneksi dicek dulu
+    await _handleNavigation(
+      context,
+      onOffline: () {
+        _showOfflineDialog(context);
+      },
+      onOnline: () {
+        Navigator.pushNamed(context, PreAssemblyTirePage.routeName);
       },
     );
   }

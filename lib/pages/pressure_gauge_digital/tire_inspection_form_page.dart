@@ -3211,6 +3211,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               'images': [],
                               'imagePending': hasNewLocalImage,
                               'tireAccessories': [],
+                              'brand': firstUnit.brand,
+                              'pattern': firstUnit.pattern,
                             });
 
                             if (hasNewLocalImage) {
@@ -3264,6 +3266,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   ? pit[selectedPit]
                                   : 'Default',
                               'posisi': posisiList,
+                              'brand': firstUnit.unitNumber,
+                              'pattern': firstUnit.pattern,
                             });
 
                             // Handle image upload per posisi
