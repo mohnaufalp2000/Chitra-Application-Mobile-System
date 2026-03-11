@@ -49,19 +49,31 @@ class PreAssemblyTirePage extends StatelessWidget {
     );
   }
 
-  Widget kondisiDropdown(String key, String title, List<String> options) {
+  Widget kondisiDropdown(
+      String key, String title, String subtitle, List<String> options) {
+    /// set default value jika belum ada
+    controller.formData.putIfAbsent(key, () => "Normal");
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 6),
-        DropdownButtonFormField(
-          items: options
-              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-              .toList(),
-          onChanged: (val) => controller.setValue(key, val),
-          decoration: const InputDecoration(border: OutlineInputBorder()),
-        ),
+        Text(subtitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 6),
+        Obx(() => DropdownButtonFormField<String>(
+              value: controller.formData[key],
+              items: options
+                  .map((e) => DropdownMenuItem<String>(
+                        value: e,
+                        child: Text(e),
+                      ))
+                  .toList(),
+              onChanged: (val) => controller.setValue(key, val),
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+              ),
+            )),
         const SizedBox(height: 15),
       ],
     );
@@ -99,7 +111,8 @@ class PreAssemblyTirePage extends StatelessWidget {
               const SizedBox(height: 20),
 
               /// CHECKLIST
-              kondisiDropdown("rim_condition", "1. Kondisi RIM", [
+              kondisiDropdown("rim_condition", "1. Kondisi RIM",
+                  'Periksa semua bagian RIM (Wheel Base)', [
                 "Normal",
                 "Berkarat",
                 "Crack Back Section",
@@ -113,10 +126,10 @@ class PreAssemblyTirePage extends StatelessWidget {
 
               yesNo("hole_stud", "4. Hole Stud Oval?"),
 
-              kondisiDropdown("bead_seat", "5. Bead Seat Band Condition",
+              kondisiDropdown("bead_seat", "5. Bead Seat Band Condition", 'a',
                   ["Normal", "Berkarat", "Crack", "Oval", "Dented", "Deform"]),
 
-              kondisiDropdown("flange", "6. Flange Condition",
+              kondisiDropdown("flange", "6. Flange Condition", 'a',
                   ["Normal", "Berkarat", "Crack", "Oval", "Dented", "Deform"]),
 
               inputField("lock_ring_distance", "7. Lock Ring Distance (mm)"),
