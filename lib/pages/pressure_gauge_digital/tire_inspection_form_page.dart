@@ -3287,9 +3287,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               }
                               if (localImagePath != null) {
                                 UploadQueueService.to.addPending(
-                                  docId: existingDocId,
-                                  filePath: localImagePath,
-                                );
+                                    docId: existingDocId,
+                                    filePath: localImagePath,
+                                    posisiIndex: i);
                               }
                             }
                           } else {
@@ -3338,6 +3338,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                 UploadQueueService.to.addPending(
                                   docId: docId,
                                   filePath: localImagePath,
+                                  posisiIndex: i,
                                 );
                               }
                             }

@@ -114,6 +114,7 @@ class NewTireInspectionState extends GetxController {
     }
 
     filteredTasks.assignAll(list);
+    log('filtered task : $filteredTasks');
   }
 
   void resetFilters() {
