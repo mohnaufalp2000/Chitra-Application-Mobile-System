@@ -71,12 +71,13 @@ class SelectInspectionState extends GetxController {
     required VoidCallback onOnline,
     required VoidCallback onOffline,
   }) async {
-    if (networkController.isConnected.isFalse ||
-        await networkController.isNetworkReliable() == false) {
-      onOffline();
-    } else {
-      onOnline();
-    }
+    // if (networkController.isConnected.isFalse ||
+    //     await networkController.isNetworkReliable() == false) {
+    //   onOffline();
+    // } else {
+    //   onOnline();
+    // }
+    onOnline();
   }
 
   /// Dialog kalau tidak ada koneksi

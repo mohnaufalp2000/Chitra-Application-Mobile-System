@@ -32,13 +32,14 @@ class UploadQueueService extends GetxService {
   void _save() => box.write(_key, pending);
 
   /// Tambah ke antrian upload
-  void addPending({
-    required String docId,
-    required String filePath,
-  }) {
+  void addPending(
+      {required String docId,
+      required String filePath,
+      required int posisiIndex}) {
     pending.add({
       "docId": docId,
       "filePath": filePath,
+      "posisiIndex": posisiIndex,
     });
     _save();
   }
@@ -66,9 +67,32 @@ class UploadQueueService extends GetxService {
         await ref.putFile(file);
         final url = await ref.getDownloadURL();
 
-        await firestore.collection('task').doc(docId).update({
-          'images': [url],
-          'imagePending': false,
+        // await firestore.collection('tire_inspection').doc(docId).update({
+        //   'images': [url],
+        //   'imagePending': false,
+        // });
+        final posisiIndex = item["posisiIndex"] as int?;
+
+        if (posisiIndex == null) continue;
+
+// Ambil data posisi lama dulu
+        final docRef = firestore.collection('tire_inspection').doc(docId);
+        final snapshot = await docRef.get();
+
+        if (!snapshot.exists) continue;
+
+        final data = snapshot.data() as Map<String, dynamic>;
+        final List posisi = List.from(data['posisi'] ?? []);
+
+        if (posisiIndex >= posisi.length) continue;
+
+// Update hanya posisi tertentu
+        posisi[posisiIndex]['images'] = [url];
+        posisi[posisiIndex]['imagePending'] = false;
+
+// Simpan kembali seluruh posisi
+        await docRef.update({
+          'posisi': posisi,
         });
 
         // Hapus file lokal setelah sukses
