@@ -564,10 +564,11 @@ Future<List<int>> createExcel(String type,
               HAlignType.center;
           sheet.getRangeByName('G$rowIndex').cellStyle.vAlign =
               VAlignType.center;
-          sheet.getRangeByName('G$rowIndex').setText(
-              (posisi['remarks'] == '' || posisi['remarks'] == null)
-                  ? 'Good Condition'
-                  : posisi['remarks']);
+          sheet.getRangeByName('G$rowIndex').setText((posisi['remarks'] == '' ||
+                  posisi['remarks'] == ' ' ||
+                  posisi['remarks'] == null)
+              ? 'Good Condition'
+              : posisi['remarks']);
 
           // H = Pics (image dari Firebase Storage)
           try {
