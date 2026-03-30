@@ -5,6 +5,7 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/home/new_tire_inspection_state.dart';
 import 'package:camos/pages/home/tire_inspection_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -168,7 +169,11 @@ class NewTireInspectionPage extends StatelessWidget {
                 // Reset Filter
                 IconButton(
                   icon: const Icon(Icons.refresh),
-                  onPressed: () {
+                  onPressed: () async {
+                    await Get.putAsync<UploadQueueService>(
+                      () => UploadQueueService().init(),
+                    );
+
                     searchController.clear();
                     ntController.resetFilters();
                   },

@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:get/get.dart';
@@ -53,6 +54,7 @@ class UploadQueueService extends GetxService {
     final List<Map<String, dynamic>> current = List.from(pending);
 
     for (final item in current) {
+      log('posisi item ${item}');
       final docId = item["docId"] as String?;
       final filePath = item["filePath"] as String?;
 
@@ -62,7 +64,11 @@ class UploadQueueService extends GetxService {
       if (!file.existsSync()) continue;
 
       try {
-        final ref = FirebaseStorage.instance.ref('tire_task_images/$docId.jpg');
+        final posisiIndex = item["posisiIndex"] as int?;
+        final fileName =
+            '${docId}_${posisiIndex}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+        final ref = FirebaseStorage.instance.ref('tire_task_images/$fileName');
 
         await ref.putFile(file);
         final url = await ref.getDownloadURL();
@@ -71,7 +77,7 @@ class UploadQueueService extends GetxService {
         //   'images': [url],
         //   'imagePending': false,
         // });
-        final posisiIndex = item["posisiIndex"] as int?;
+        log('posisi index 1 : $posisiIndex');
 
         if (posisiIndex == null) continue;
 
@@ -84,7 +90,12 @@ class UploadQueueService extends GetxService {
         final data = snapshot.data() as Map<String, dynamic>;
         final List posisi = List.from(data['posisi'] ?? []);
 
+        log('posisi length : ${posisi.length}');
+        log('posisi lengkap : ${posisi}');
+
         if (posisiIndex >= posisi.length) continue;
+
+        log('posisi index 3 : $posisiIndex');
 
 // Update hanya posisi tertentu
         posisi[posisiIndex]['images'] = [url];
