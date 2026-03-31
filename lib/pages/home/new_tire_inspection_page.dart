@@ -8,6 +8,7 @@ import 'package:camos/pages/home/tire_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
@@ -259,6 +260,32 @@ p.Widget cell(String text) {
   );
 }
 
+late p.MemoryImage checkImage;
+
+Future<void> initChecklistAssets() async {
+  checkImage = p.MemoryImage(
+    (await rootBundle.load('assets/icons/check-mark.png')).buffer.asUint8List(),
+  );
+}
+
+p.Widget cellCheckIcon(bool isChecked) {
+  return p.Container(
+    alignment: p.Alignment.center,
+    padding: const p.EdgeInsets.all(3),
+    decoration: p.BoxDecoration(
+      color: isChecked ? PdfColors.green100 : PdfColors.red100,
+    ),
+    child: isChecked
+        ? p.Image(
+            checkImage,
+            width: 20,
+            height: 20,
+            fit: p.BoxFit.contain,
+          )
+        : p.SizedBox(width: 20, height: 20),
+  );
+}
+
 p.Widget empty() => p.Container();
 p.Widget emptyDisable() => p.Container(
       color: PdfColors.grey300,
@@ -325,6 +352,7 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                       OutlinedButton.icon(
                         onPressed: () async {
                           final pdf = p.Document();
+                          await initChecklistAssets();
 
                           final posisiList =
                               doc['posisi'] as List<dynamic>? ?? [];
@@ -400,6 +428,7 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                     p.SizedBox(height: 10),
 
                                     /// ================= TABEL UTAMA =================
+
                                     p.Table(
                                       border: p.TableBorder.all(width: 0.5),
                                       columnWidths: {
@@ -499,9 +528,11 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                         }).toList(),
                                       ],
                                     ),
+
                                     p.SizedBox(height: 12),
 
                                     /// ================= JOB DESCRIPTION =================
+
                                     p.Table(
                                       border: p.TableBorder.all(width: 0.5),
                                       columnWidths: {
@@ -585,77 +616,98 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                           ],
                                         ),
 
-                                        /// a
+                                        // /// a
                                         p.TableRow(
                                           children: [
                                             cell('a'),
                                             cell('RIM BASE'),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
+                                            ...posisiList.expand((posisi) {
+                                              final rim = posisi['rimCondition']
+                                                  as List;
+
+                                              if (rim.isEmpty) {
+                                                return [
+                                                  cellCheckIcon(false),
+                                                  cellCheckIcon(false),
+                                                ];
+                                              }
+
+                                              final ri = rim[0];
+
+                                              final isGood = ri['condition']
+                                                      ?.toString()
+                                                      .toUpperCase() ==
+                                                  'GOOD';
+
+                                              return [
+                                                cellCheckIcon(isGood),
+                                                cellCheckIcon(!isGood),
+                                              ];
+                                            }).toList(),
+                                            ...List.generate(
+                                                10, (_) => empty()),
                                           ],
                                         ),
                                         p.TableRow(
                                           children: [
-                                            cell('a'),
+                                            cell('b'),
                                             cell('FLANGE'),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
+                                            ...posisiList.expand((posisi) {
+                                              final rim = posisi['rimCondition']
+                                                  as List;
+
+                                              if (rim.isEmpty) {
+                                                return [
+                                                  cellCheckIcon(false),
+                                                  cellCheckIcon(false),
+                                                ];
+                                              }
+
+                                              final ri = rim[1];
+
+                                              final isGood = ri['condition']
+                                                      ?.toString()
+                                                      .toUpperCase() ==
+                                                  'GOOD';
+
+                                              return [
+                                                cellCheckIcon(isGood),
+                                                cellCheckIcon(!isGood),
+                                              ];
+                                            }).toList(),
+                                            ...List.generate(
+                                                10, (_) => empty()),
                                           ],
                                         ),
                                         p.TableRow(
                                           children: [
                                             cell('c'),
                                             cell('LOCK RING'),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
-                                            empty(),
+                                            ...posisiList.expand((posisi) {
+                                              final rim = posisi['rimCondition']
+                                                  as List;
+
+                                              if (rim.isEmpty) {
+                                                return [
+                                                  cellCheckIcon(false),
+                                                  cellCheckIcon(false),
+                                                ];
+                                              }
+
+                                              final ri = rim[2];
+
+                                              final isGood = ri['condition']
+                                                      ?.toString()
+                                                      .toUpperCase() ==
+                                                  'GOOD';
+
+                                              return [
+                                                cellCheckIcon(isGood),
+                                                cellCheckIcon(!isGood),
+                                              ];
+                                            }).toList(),
+                                            ...List.generate(
+                                                10, (_) => empty()),
                                           ],
                                         ),
 
@@ -664,24 +716,31 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                             cell('2'),
                                             cell(
                                                 'PERIKSA KONDISI VALVE (Terpasang/Tidak Terpasang)'),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
+                                            ...posisiList.expand((posisi) {
+                                              final rim = posisi['rimCondition']
+                                                  as List;
+
+                                              if (rim.isEmpty) {
+                                                return [
+                                                  cellCheckIcon(false),
+                                                  cellCheckIcon(false),
+                                                ];
+                                              }
+
+                                              final ri = rim[3];
+
+                                              final isGood = ri['condition']
+                                                      ?.toString()
+                                                      .toUpperCase() ==
+                                                  'GOOD';
+
+                                              return [
+                                                cellCheckIcon(isGood),
+                                                cellCheckIcon(!isGood),
+                                              ];
+                                            }).toList(),
+                                            ...List.generate(
+                                                10, (_) => empty()),
                                           ],
                                         ),
 
@@ -689,24 +748,31 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                           children: [
                                             cell('3'),
                                             cell('PERIKSA KONDISI CORE VALVE'),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
+                                            ...posisiList.expand((posisi) {
+                                              final rim = posisi['rimCondition']
+                                                  as List;
+
+                                              if (rim.isEmpty) {
+                                                return [
+                                                  cellCheckIcon(false),
+                                                  cellCheckIcon(false),
+                                                ];
+                                              }
+
+                                              final ri = rim[4];
+
+                                              final isGood = ri['condition']
+                                                      ?.toString()
+                                                      .toUpperCase() ==
+                                                  'GOOD';
+
+                                              return [
+                                                cellCheckIcon(isGood),
+                                                cellCheckIcon(!isGood),
+                                              ];
+                                            }).toList(),
+                                            ...List.generate(
+                                                10, (_) => empty()),
                                           ],
                                         ),
 
@@ -715,53 +781,62 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                             cell('4'),
                                             cell(
                                                 'PERIKSA KONDISI NUT AND STUD RODA'),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
-                                            emptyDisable(),
-                                            emptyDisable(),
-                                            empty(),
+                                            ...posisiList.expand((posisi) {
+                                              final rim = posisi['rimCondition']
+                                                  as List;
+
+                                              if (rim.isEmpty) {
+                                                return [
+                                                  cellCheckIcon(false),
+                                                  cellCheckIcon(false),
+                                                ];
+                                              }
+
+                                              final ri = rim[5];
+
+                                              final isGood = ri['condition']
+                                                      ?.toString()
+                                                      .toUpperCase() ==
+                                                  'GOOD';
+
+                                              return [
+                                                cellCheckIcon(isGood),
+                                                cellCheckIcon(!isGood),
+                                              ];
+                                            }).toList(),
+                                            ...List.generate(
+                                                10, (_) => empty()),
                                           ],
                                         ),
 
-                                        /// DATA
-                                        ...posisiList.expand((r) {
-                                          final rim = r['rimCondition'] as List;
+                                        // DATA
+                                        // ...posisiList.expand((r) {
+                                        //   final rim = r['rimCondition'] as List;
 
-                                          log('rim condition $rim');
+                                        //   return rim.map((ri) {
+                                        //     log('rim title $ri');
 
-                                          return rim.map((ri) {
-                                            return p.TableRow(
-                                              children: [
-                                                cell(ri['title'] ?? ''),
-                                                cell(ri['condition'] == 'GOOD'
-                                                    ? '✔'
-                                                    : ''),
-                                                cell(ri['condition'] == 'POOR'
-                                                    ? '✔'
-                                                    : ''),
-                                                cell(ri['remark'] ?? ''),
-                                              ],
-                                            );
-                                          });
-                                        }).toList(),
+                                        //     return p.TableRow(
+                                        //       children: [
+                                        //         cell(ri['title'] ?? ''),
+                                        //         cell(ri['condition'] == 'GOOD'
+                                        //             ? '✔'
+                                        //             : ''),
+                                        //         cell(ri['condition'] == 'POOR'
+                                        //             ? '✔'
+                                        //             : ''),
+                                        //         cell(ri['remark'] ?? ''),
+                                        //       ],
+                                        //     );
+                                        //   });
+                                        // }).toList(),
                                       ],
                                     ),
+
                                     p.SizedBox(height: 50),
 
                                     /// ================= SIGNATURE =================
+
                                     p.Row(
                                       mainAxisAlignment:
                                           p.MainAxisAlignment.spaceBetween,
