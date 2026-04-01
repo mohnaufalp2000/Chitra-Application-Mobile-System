@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: "0c8368c9b3f0abbc193b9d6133649a614204b528982bebc7026372d61677ce3a"
+      sha256: cb6a278ef2dbb298455e1a713bda08524a175630ec643a242c399c932a0a1f7d
       url: "https://pub.dev"
     source: hosted
-    version: "3.3.7"
+    version: "3.6.1"
   args:
     dependency: transitive
     description:
@@ -85,10 +85,10 @@ packages:
     dependency: transitive
     description:
       name: bidi
-      sha256: dc00274c7edabae2ab30c676e736ea1eb0b1b7a1b436cb5fe372e431ccb39ab0
+      sha256: "77f475165e94b261745cf1032c751e2032b8ed92ccb2bf5716036db79320637d"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.6"
+    version: "2.0.13"
   bloc:
     dependency: transitive
     description:
@@ -945,10 +945,10 @@ packages:
     dependency: "direct main"
     description:
       name: image
-      sha256: a72242c9a0ffb65d03de1b7113bc4e189686fc07c7147b8b41811d0dd0e0d9bf
+      sha256: f31d52537dc417fdcde36088fdf11d191026fd5e4fae742491ebd40e5a8bea7d
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.17"
+    version: "4.3.0"
   image_gallery_saver:
     dependency: "direct main"
     description:
@@ -1305,10 +1305,10 @@ packages:
     dependency: "direct main"
     description:
       name: pdf
-      sha256: "9f75fc7f5580ea5e635b5724de58fb27f684c9ad03ed46fdc1aac768e4557315"
+      sha256: "28eacad99bffcce2e05bba24e50153890ad0255294f4dd78a17075a2ba5c8416"
       url: "https://pub.dev"
     source: hosted
-    version: "3.10.4"
+    version: "3.11.3"
   percent_indicator:
     dependency: "direct main"
     description:
@@ -1389,14 +1389,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.4"
-  pointycastle:
-    dependency: transitive
-    description:
-      name: pointycastle
-      sha256: "7c1e5f0d23c9016c5bbd8b1473d0d3fb3fc851b876046039509e18e0c7485f2c"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.7.3"
   pool:
     dependency: transitive
     description:

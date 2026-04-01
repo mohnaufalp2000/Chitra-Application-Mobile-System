@@ -149,8 +149,12 @@ class NewTireInspectionState extends GetxController {
       // Langsung pass filteredTasks — tidak perlu flatten
       // createTireInspectionExcel sudah handle loop posisi di dalamnya
       exportProgress.value = 0.85;
+      // yang bikin error !!
+      final cleanedData = takeOutRimCondition(filteredTasks);
+      log('filtered data : ${cleanedData.toList()}');
+
       final bytes =
-          await createExcel('tire_inspection', task: filteredTasks.toList());
+          await createExcel('tire_inspection', task: cleanedData.toList());
       await file.writeAsBytes(bytes, flush: true);
 
       exportProgress.value = 1.0;
@@ -173,5 +177,24 @@ class NewTireInspectionState extends GetxController {
       isExporting.value = false;
       exportProgress.value = 0.0;
     }
+  }
+
+  List<Map<String, dynamic>> takeOutRimCondition(List tasks) {
+    return tasks.map((task) {
+      final newTask = Map<String, dynamic>.from(task);
+
+      if (newTask['posisi'] is List) {
+        newTask['posisi'] = (newTask['posisi'] as List).map((pos) {
+          final newPos = Map<String, dynamic>.from(pos);
+
+          // 🔥 HAPUS rimCondition
+          newPos.remove('rimCondition');
+
+          return newPos;
+        }).toList();
+      }
+
+      return newTask;
+    }).toList();
   }
 }

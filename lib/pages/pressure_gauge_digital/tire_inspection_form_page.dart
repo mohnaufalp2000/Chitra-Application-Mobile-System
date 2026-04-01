@@ -190,6 +190,227 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   List<String> pit = [];
   int selectedPit = -1;
 
+  void showRimInspectionDialog(int tireIndex) {
+    final originalList = position[tireIndex]['rimCondition'];
+
+    /// 🔥 COPY DATA DULU (supaya Close tidak menyimpan)
+    List<Map<String, dynamic>> tempList =
+        originalList.map<Map<String, dynamic>>((item) {
+      return {
+        'title': item['title'],
+        'condition': item['condition'],
+        'remark': item['remark'],
+      };
+    }).toList();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, stState) {
+            return AlertDialog(
+              title: Text(
+                'Periksa Kondisi : ',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: List.generate(tempList.length, (i) {
+                      final rimItem = tempList[i];
+                      final bool isGood = rimItem['condition'] == 'Good';
+                      final bool isPoor = rimItem['condition'] == 'Poor';
+
+                      return Container(
+                        margin: EdgeInsets.only(bottom: 14),
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isGood
+                              ? Colors.green.withOpacity(0.12)
+                              : Colors.red.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            /// TITLE
+                            Text(
+                              rimItem['title'],
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+
+                            SizedBox(height: 10),
+
+                            /// GOOD / POOR
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      stState(() {
+                                        rimItem['condition'] = 'Good';
+                                      });
+                                    },
+                                    child: Container(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: isGood
+                                            ? Colors.green
+                                            : Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        'GOOD',
+                                        style: TextStyle(
+                                          color: isGood
+                                              ? Colors.white
+                                              : Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      stState(() {
+                                        rimItem['condition'] = 'Poor';
+                                      });
+                                    },
+                                    child: Container(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 10),
+                                      decoration: BoxDecoration(
+                                        color: isPoor
+                                            ? Colors.red
+                                            : Colors.grey[300],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        'POOR',
+                                        style: TextStyle(
+                                          color: isPoor
+                                              ? Colors.white
+                                              : Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: 10),
+
+                            // Job Description
+                            TextField(
+                              controller: TextEditingController(
+                                  text: rimItem['jobDescription'] ?? '')
+                                ..selection = TextSelection.fromPosition(
+                                  TextPosition(
+                                      offset: (rimItem['jobDescription'] ?? '')
+                                          .length),
+                                ),
+                              style: TextStyle(fontSize: 12),
+                              decoration: InputDecoration(
+                                hintText: 'Job Description',
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 6),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              maxLines: 1,
+                              onChanged: (val) {
+                                rimItem['jobDescription'] = val;
+                              },
+                            ),
+
+                            SizedBox(height: 10),
+
+                            /// REMARK
+                            TextField(
+                              controller: TextEditingController(
+                                  text: rimItem['remark'] ?? '')
+                                ..selection = TextSelection.fromPosition(
+                                  TextPosition(
+                                      offset: (rimItem['remark'] ?? '').length),
+                                ),
+                              style: TextStyle(fontSize: 12), // kecilkan font
+                              decoration: InputDecoration(
+                                hintText: 'Remark...',
+                                isDense: true, // bikin lebih compact
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 6, // lebih kecil
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              maxLines: 2, // supaya tidak terlalu tinggi
+                              onChanged: (val) {
+                                rimItem['remark'] = val;
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+
+              /// 🔥 ACTION BUTTONS
+              actions: [
+                /// CLOSE (TIDAK SIMPAN)
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    'Close',
+                    style: getRedTextStyle(fontWeight: w500),
+                  ),
+                ),
+
+                /// SAVE (SIMPAN KE position)
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      position[tireIndex]['rimCondition'] = tempList;
+                    });
+
+                    Navigator.pop(context);
+                  },
+                  child: Text(
+                    'Save',
+                    style: getWhiteTextStyle(fontWeight: w500),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   void initState() {
     idSite = homeState.currentSiteId;
@@ -536,15 +757,53 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                 'idInventory': unit.idinventory,
                 'idUnit': unit.idUnit,
                 'tireSize': unit.size,
-                'condition': [
-                  {'name': 'Reseal Oring', 'checked': false},
-                  {'name': 'Rim Condition', 'checked': false},
-                  {'name': 'Inflate Tire', 'checked': false},
-                  {'name': 'Lock Driver', 'checked': false},
-                  {'name': 'Slide Lock', 'checked': false},
-                  {'name': 'Valve Cap', 'checked': false},
-                  {'name': 'Valve Protector', 'checked': false},
-                  {'name': 'Stud and Nut', 'checked': false},
+                // 'condition': [
+                //   {'name': 'Reseal Oring', 'checked': false},
+                //   {'name': 'Rim Condition', 'checked': false},
+                //   {'name': 'Inflate Tire', 'checked': false},
+                //   {'name': 'Lock Driver', 'checked': false},
+                //   {'name': 'Slide Lock', 'checked': false},
+                //   {'name': 'Valve Cap', 'checked': false},
+                //   {'name': 'Valve Protector', 'checked': false},
+                //   {'name': 'Stud and Nut', 'checked': false},
+                // ],
+                'rimCondition': [
+                  {
+                    'title': 'RIM BASE',
+                    'jobDescription': '',
+                    'condition': 'Good',
+                    'remark': ''
+                  },
+                  {
+                    'title': 'FLANGE',
+                    'jobDescription': '',
+                    'condition': 'Good',
+                    'remark': ''
+                  },
+                  {
+                    'title': 'LOCK RING',
+                    'jobDescription': '',
+                    'condition': 'Good',
+                    'remark': ''
+                  },
+                  {
+                    'title': 'VALVE (TERPASANG/TIDAK TERPASANG)',
+                    'jobDescription': '',
+                    'condition': 'Good',
+                    'remark': ''
+                  },
+                  {
+                    'title': 'CORE VALVE',
+                    'jobDescription': '',
+                    'condition': 'Good',
+                    'remark': ''
+                  },
+                  {
+                    'title': 'NUT DAN STUD RODA',
+                    'jobDescription': '',
+                    'condition': 'Good',
+                    'remark': ''
+                  },
                 ],
                 'tireAccessories': []
               });
@@ -1913,232 +2172,33 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         ),
                                       ),
 
-                                      // TIRE DAMAGE OLD
-                                      // SizedBox(
-                                      //   width:
-                                      //       MediaQuery.of(context).size.width,
-                                      //   child: ElevatedButton(
-                                      //       onPressed: () {
-                                      //         FocusScope.of(context).unfocus();
-                                      //         List<bool> checkedDamageValues =
-                                      //             List<bool>.filled(
-                                      //                 damageType.length, false);
-
-                                      //         showDialog(
-                                      //           context: context,
-                                      //           builder:
-                                      //               (BuildContext context) {
-                                      //             return Dialog(
-                                      //               child: Container(
-                                      //                 padding:
-                                      //                     EdgeInsets.all(20.0),
-                                      //                 child: Column(
-                                      //                   mainAxisSize:
-                                      //                       MainAxisSize.min,
-                                      //                   children: <Widget>[
-                                      //                     Text(
-                                      //                       'Choose Damage Tire',
-                                      //                       style: TextStyle(
-                                      //                         fontSize: 24.0,
-                                      //                         fontWeight:
-                                      //                             FontWeight
-                                      //                                 .bold,
-                                      //                       ),
-                                      //                     ),
-                                      //                     SizedBox(
-                                      //                         height: 12.0),
-                                      //                     Expanded(
-                                      //                       child:
-                                      //                           SingleChildScrollView(
-                                      //                         child: Column(
-                                      //                           children:
-                                      //                               damageType.map(
-                                      //                                   (damage) {
-                                      //                             final dmgIndex =
-                                      //                                 damageType
-                                      //                                     .indexOf(
-                                      //                                         damage);
-
-                                      //                             if (dmgIndex >
-                                      //                                 0) {
-                                      //                               return StatefulBuilder(builder:
-                                      //                                   (context,
-                                      //                                       setState) {
-                                      //                                 return CheckboxListTile(
-                                      //                                   title: Text(
-                                      //                                       damage),
-                                      //                                   value: checkedDamageValues[
-                                      //                                       dmgIndex],
-                                      //                                   onChanged:
-                                      //                                       (bool?
-                                      //                                           value) {
-                                      //                                     setState(
-                                      //                                         () {
-                                      //                                       checkedDamageValues[dmgIndex] =
-                                      //                                           value ?? false;
-                                      //                                     });
-                                      //                                   },
-                                      //                                 );
-                                      //                               });
-                                      //                             }
-                                      //                             return Container();
-                                      //                           }).toList(),
-                                      //                         ),
-                                      //                       ),
-                                      //                     ),
-                                      //                     SizedBox(
-                                      //                         height:
-                                      //                             12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
-                                      //                     Column(
-                                      //                       children: [
-                                      //                         // SizedBox(
-                                      //                         //   height: 42,
-                                      //                         //   width: double
-                                      //                         //       .infinity,
-                                      //                         //   child: InputFormWidget(
-                                      //                         //       controller:
-                                      //                         //           damageCtrl,
-                                      //                         //       hint:
-                                      //                         //           'Input Manual Here....'),
-                                      //                         // ),
-                                      //                         const SizedBox(
-                                      //                           height: 12,
-                                      //                         ),
-                                      //                         SizedBox(
-                                      //                           width: double
-                                      //                               .infinity,
-                                      //                           child:
-                                      //                               ElevatedButton(
-                                      //                             onPressed:
-                                      //                                 () {
-                                      //                               damageCtrl
-                                      //                                   .clear();
-                                      //                               Navigator.pop(
-                                      //                                   context);
-                                      //                             },
-                                      //                             child: Text(
-                                      //                                 'Close'),
-                                      //                           ),
-                                      //                         ),
-                                      //                         const SizedBox(
-                                      //                           height: 12,
-                                      //                         ),
-                                      //                         SizedBox(
-                                      //                           width: double
-                                      //                               .infinity,
-                                      //                           child:
-                                      //                               ElevatedButton(
-                                      //                             style: ElevatedButton
-                                      //                                 .styleFrom(
-                                      //                               backgroundColor:
-                                      //                                   Colors
-                                      //                                       .green,
-                                      //                             ),
-                                      //                             onPressed:
-                                      //                                 () {
-                                      //                               setState(
-                                      //                                   () {});
-
-                                      //                               selectedDamage
-                                      //                                   .clear();
-                                      //                               final List<
-                                      //                                       String>
-                                      //                                   tmp =
-                                      //                                   [];
-                                      //                               if (damageCtrl.text ==
-                                      //                                       '' ||
-                                      //                                   damageCtrl
-                                      //                                       .text
-                                      //                                       .isNotEmpty) {
-                                      //                                 tmp.add(damageCtrl
-                                      //                                     .text);
-                                      //                               }
-                                      //                               for (int i =
-                                      //                                       0;
-                                      //                                   i < checkedDamageValues.length;
-                                      //                                   i++) {
-                                      //                                 if (checkedDamageValues[
-                                      //                                     i]) {
-                                      //                                   tmp.add(
-                                      //                                       damageType[i]);
-                                      //                                 }
-                                      //                               }
-                                      //                               position[index]
-                                      //                                       [
-                                      //                                       'damageTire'] =
-                                      //                                   tmp;
-                                      //                               if (tmp
-                                      //                                   .isNotEmpty) {
-                                      //                                 position[index]
-                                      //                                         [
-                                      //                                         'damageTire'] =
-                                      //                                     tmp;
-                                      //                                 selectedDamage
-                                      //                                     .addAll(
-                                      //                                         tmp);
-                                      //                                 log('hasil luka ban : ${position}');
-                                      //                               }
-                                      //                               damageCtrl
-                                      //                                   .clear();
-
-                                      //                               Navigator.pop(
-                                      //                                   context);
-                                      //                             },
-                                      //                             child: Text(
-                                      //                               'Submit',
-                                      //                               style:
-                                      //                                   getWhiteTextStyle(
-                                      //                                 fontWeight:
-                                      //                                     w700,
-                                      //                               ),
-                                      //                             ),
-                                      //                           ),
-                                      //                         ),
-                                      //                       ],
-                                      //                     ),
-                                      //                   ],
-                                      //                 ),
-                                      //               ),
-                                      //             );
-                                      //           },
-                                      //         );
-                                      //       },
-                                      //       style: ElevatedButton.styleFrom(
-                                      //           backgroundColor: blue344BEF,
-                                      //           shape: RoundedRectangleBorder(
-                                      //             borderRadius:
-                                      //                 BorderRadius.circular(12),
-                                      //           )),
-                                      //       child: Padding(
-                                      //         padding:
-                                      //             const EdgeInsets.symmetric(
-                                      //                 vertical: 8.0),
-                                      //         child: Text(
-                                      //           (position[index][
-                                      //                           'damageTire'] ==
-                                      //                       null ||
-                                      //                   position[index][
-                                      //                           'damageTire'] ==
-                                      //                       [] ||
-                                      //                   (position[index][
-                                      //                               'damageTire']
-                                      //                           as List<
-                                      //                               dynamic>)
-                                      //                       .isEmpty)
-                                      //               ? 'Damage Tire (None)'
-                                      //               : position[index]
-                                      //                       ['damageTire']
-                                      //                   .join('\n---\n'),
-                                      //           textAlign: TextAlign.center,
-                                      //           style: getWhiteTextStyle(
-                                      //               fontSize: 14),
-                                      //         ),
-                                      //       )),
-                                      // ),
                                       const SizedBox(
                                         height: 12,
                                       ),
-
+                                      SizedBox(
+                                        width: double.infinity,
+                                        height: 45,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.orange,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                          onPressed: () {
+                                            showRimInspectionDialog(index);
+                                          },
+                                          child: Text(
+                                            'Check Tire Component Condition',
+                                            style: getWhiteTextStyle(
+                                                fontWeight: w700),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(
+                                        height: 16,
+                                      ),
                                       SizedBox(
                                         width: double.infinity,
                                         height: 45,
@@ -2589,87 +2649,84 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       const SizedBox(
                                         height: 24,
                                       ),
-                                      Text(
-                                        'Broken Component (Optional)',
-                                        style:
-                                            getBlackTextStyle(fontWeight: w700),
-                                      ),
-                                      SizedBox(
-                                        // height: 160,
-                                        child: GridView.builder(
-                                            physics:
-                                                NeverScrollableScrollPhysics(),
-                                            shrinkWrap: true,
-                                            itemCount: position[index]
-                                                    ['condition']
-                                                .length,
-                                            gridDelegate:
-                                                SliverGridDelegateWithFixedCrossAxisCount(
-                                                    crossAxisCount: 2,
-                                                    childAspectRatio: 3),
-                                            itemBuilder:
-                                                (context, indexBroken) {
-                                              final broken = position[index]
-                                                  ['condition'][indexBroken];
-                                              return InkWell(
-                                                onTap: () {
-                                                  setState(() {
-                                                    // checkedListCategory[
-                                                    //         index] =
-                                                    //     !checkedListCategory[
-                                                    //         index];
-                                                    broken['checked'] =
-                                                        !broken['checked'];
-                                                  });
-                                                  // widget.onCategoryChecked(checkedListCategory);
-                                                },
-                                                child: Container(
-                                                  padding: EdgeInsets.all(10),
-                                                  child: Row(
-                                                    children: [
-                                                      Container(
-                                                        width: 24,
-                                                        height: 24,
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          color: broken[
-                                                                  'checked']
-                                                              ? black
-                                                              : Colors
-                                                                  .transparent,
-                                                          border: Border.all(
-                                                              color:
-                                                                  Colors.black),
-                                                        ),
-                                                        child: Icon(
-                                                          Icons.check,
-                                                          color: Colors.white,
-                                                          size: 16,
-                                                        ),
-                                                      ),
-                                                      SizedBox(width: 10),
-                                                      LayoutBuilder(builder:
-                                                          (context,
-                                                              constraints) {
-                                                        double fontSize =
-                                                            constraints
-                                                                    .maxHeight *
-                                                                0.35;
-                                                        // log('ukuran' + fontSize.toString());
-                                                        return Text(
-                                                          broken['name'],
-                                                          style:
-                                                              getBlackTextStyle(
-                                                                  fontSize:
-                                                                      fontSize),
-                                                        );
-                                                      }),
-                                                    ],
-                                                  ),
-                                                ),
-                                              );
-                                            }),
-                                      ),
+                                      SizedBox(height: 12),
+
+                                      // SizedBox(
+                                      //   // height: 160,
+                                      //   child: GridView.builder(
+                                      //       physics:
+                                      //           NeverScrollableScrollPhysics(),
+                                      //       shrinkWrap: true,
+                                      //       itemCount: position[index]
+                                      //               ['condition']
+                                      //           .length,
+                                      //       gridDelegate:
+                                      //           SliverGridDelegateWithFixedCrossAxisCount(
+                                      //               crossAxisCount: 2,
+                                      //               childAspectRatio: 3),
+                                      //       itemBuilder:
+                                      //           (context, indexBroken) {
+                                      //         final broken = position[index]
+                                      //             ['condition'][indexBroken];
+                                      //         return InkWell(
+                                      //           onTap: () {
+                                      //             setState(() {
+                                      //               // checkedListCategory[
+                                      //               //         index] =
+                                      //               //     !checkedListCategory[
+                                      //               //         index];
+                                      //               broken['checked'] =
+                                      //                   !broken['checked'];
+                                      //             });
+                                      //             // widget.onCategoryChecked(checkedListCategory);
+                                      //           },
+                                      //           child: Container(
+                                      //             padding: EdgeInsets.all(10),
+                                      //             child: Row(
+                                      //               children: [
+                                      //                 Container(
+                                      //                   width: 24,
+                                      //                   height: 24,
+                                      //                   decoration:
+                                      //                       BoxDecoration(
+                                      //                     color: broken[
+                                      //                             'checked']
+                                      //                         ? black
+                                      //                         : Colors
+                                      //                             .transparent,
+                                      //                     border: Border.all(
+                                      //                         color:
+                                      //                             Colors.black),
+                                      //                   ),
+                                      //                   child: Icon(
+                                      //                     Icons.check,
+                                      //                     color: Colors.white,
+                                      //                     size: 16,
+                                      //                   ),
+                                      //                 ),
+                                      //                 SizedBox(width: 10),
+                                      //                 LayoutBuilder(builder:
+                                      //                     (context,
+                                      //                         constraints) {
+                                      //                   double fontSize =
+                                      //                       constraints
+                                      //                               .maxHeight *
+                                      //                           0.35;
+                                      //                   // log('ukuran' + fontSize.toString());
+                                      //                   return Text(
+                                      //                     broken['name'],
+                                      //                     style:
+                                      //                         getBlackTextStyle(
+                                      //                             fontSize:
+                                      //                                 fontSize),
+                                      //                   );
+                                      //                 }),
+                                      //               ],
+                                      //             ),
+                                      //           ),
+                                      //         );
+                                      //       }),
+                                      // ),
                                     ],
                                   ),
                                 ],
@@ -3141,10 +3198,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   (position[i]['damageTire'] as List).isEmpty
                                       ? damageType[0]
                                       : position[i]['damageTire'],
-                              'condition': (position[i]['condition'] as List)
-                                  .where((c) => c['checked'] == true)
-                                  .map((c) => c['name'].toString())
-                                  .toList(),
+                              // 'condition': (position[i]['condition'] as List)
+                              //     .where((c) => c['checked'] == true)
+                              //     .map((c) => c['name'].toString())
+                              //     .toList(),
+                              'rimCondition': position[i]['rimCondition'],
                               'idUnit': position[i]['idUnit'],
                               'idInventory': position[i]['idInventory'],
                               'tireSize': position[i]['tireSize'],
@@ -3153,6 +3211,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               'images': [],
                               'imagePending': hasNewLocalImage,
                               'tireAccessories': [],
+                              'brand': firstUnit.brand,
+                              'pattern': firstUnit.pattern,
                             });
 
                             if (hasNewLocalImage) {
@@ -3206,6 +3266,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   ? pit[selectedPit]
                                   : 'Default',
                               'posisi': posisiList,
+                              'brand': firstUnit.unitNumber,
+                              'pattern': firstUnit.pattern,
                             });
 
                             // Handle image upload per posisi
