@@ -278,11 +278,11 @@ p.Widget cellCheckIcon(bool isChecked) {
     child: isChecked
         ? p.Image(
             checkImage,
-            width: 20,
-            height: 20,
+            width: 10,
+            height: 10,
             fit: p.BoxFit.contain,
           )
-        : p.SizedBox(width: 20, height: 20),
+        : p.SizedBox(width: 10, height: 10),
   );
 }
 
@@ -808,28 +808,6 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                                                 10, (_) => empty()),
                                           ],
                                         ),
-
-                                        // DATA
-                                        // ...posisiList.expand((r) {
-                                        //   final rim = r['rimCondition'] as List;
-
-                                        //   return rim.map((ri) {
-                                        //     log('rim title $ri');
-
-                                        //     return p.TableRow(
-                                        //       children: [
-                                        //         cell(ri['title'] ?? ''),
-                                        //         cell(ri['condition'] == 'GOOD'
-                                        //             ? '✔'
-                                        //             : ''),
-                                        //         cell(ri['condition'] == 'POOR'
-                                        //             ? '✔'
-                                        //             : ''),
-                                        //         cell(ri['remark'] ?? ''),
-                                        //       ],
-                                        //     );
-                                        //   });
-                                        // }).toList(),
                                       ],
                                     ),
 
