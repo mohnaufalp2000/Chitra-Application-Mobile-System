@@ -1415,6 +1415,7 @@ class _TireRepairInspectionFormPageState
                                     'tire_size': tireSizeCtrl.text,
                                     'sn': serialNumberCtrl.text,
                                     'brand': brandCtrl.text,
+                                    'remark': remarksCtrl.text,
                                     'type_construction':
                                         selectedConstructionType,
                                     'pattern': patternCtrl.text,

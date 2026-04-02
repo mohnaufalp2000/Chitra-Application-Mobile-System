@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 
 import '../../../core/blocs/process_jobcard/process_jobcard_bloc.dart';
 import '../../../core/styles/color.dart';
@@ -301,7 +302,6 @@ class _ProcessRepairState extends State<ProcessRepair> {
         else
           Container(),
         if (existingJob != 'Skiving' &&
-            existingJob != 'Buffing' &&
             existingJob != 'Painting' &&
             existingJob != 'Dimensi Luka' &&
             existingJob != 'Buffing InnerLinner' &&
@@ -329,6 +329,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                         .toList()
                       ..sort(
                           (a, b) => a.materialName.compareTo(b.materialName));
+                    log('daftar materials : ${filteredMaterials}');
 
                     // if (!filteredMaterials
                     //     .any((e) => e.idMatstock == selectedMaterial)) {

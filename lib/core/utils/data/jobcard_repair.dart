@@ -1,7 +1,7 @@
 class JobcardRepair {
   static const List<Map<String, dynamic>> jobName = [
     {'name': 'Skiving', 'type_material': ''},
-    {'name': 'Buffing', 'type_material': ''},
+    {'name': 'Buffing', 'type_material': 'CUSHION_GUM'},
     {'name': 'Dimensi Luka', 'type_material': ''},
     {'name': 'Cementing', 'type_material': 'CEMENT'},
     {'name': 'Buffing InnerLinner', 'type_material': ''},
