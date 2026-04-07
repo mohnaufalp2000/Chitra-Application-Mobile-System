@@ -862,7 +862,7 @@ Future<List<int>> createExcel(String type,
       }
 
       final List<int> bytes = workbook.saveAsStream();
-      workbook.dispose();
+      // workbook.dispose();
       return bytes;
 
     case 'outstanding':
@@ -1173,7 +1173,7 @@ Future<List<int>> createExcel(String type,
       }
 
       final List<int> bytes = workbook.saveAsStream();
-      workbook.dispose();
+      // workbook.dispose();
       return bytes;
 
     case 'daily-check':
@@ -1302,7 +1302,6 @@ Future<List<int>> createExcel(String type,
       }
 
       final List<int> bytes = workbook.saveAsStream();
-      workbook.dispose();
       return bytes;
   }
   return [];

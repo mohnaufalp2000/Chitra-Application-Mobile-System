@@ -667,7 +667,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         break;
       case '65':
         pit.add('Room B1 Selatan');
-        pit.add('Utara');
+        pit.add('TIA');
         pit.add('Serongga');
         pit.add('CSA Selatan');
         pit.add('WS');
@@ -1131,7 +1131,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                         itemCount: units.length,
                         itemBuilder: (context, index) {
                           final unit = units[index];
-                          snControllers[index].text = unit.sn ?? '';
+                          if (snControllers[index].text.isEmpty) {
+                            snControllers[index].text = unit.sn ?? '';
+                          }
 
                           return Card(
                             elevation: 2,

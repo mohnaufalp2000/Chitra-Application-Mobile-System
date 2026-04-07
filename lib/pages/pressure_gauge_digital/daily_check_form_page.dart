@@ -1679,7 +1679,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           break;
                         case '65':
                           pit.add('Room B1 Selatan');
-                          pit.add('Utara');
+                          pit.add('TIA');
                           pit.add('Serongga');
                           pit.add('CSA Selatan');
                           pit.add('WS');
