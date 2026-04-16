@@ -52,7 +52,7 @@ void main() async {
   cameras = await availableCameras();
   // cameras = [cameras[0], cameras[1]];
   store = (await ObjectBox.create()).store;
-  initializeHERESDK();
+  // initializeHERESDK();
   await AttendanceSheetsAPI.initAttendanceSheets();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);

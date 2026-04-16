@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/pages/tire_repair_form/jobcard_repair/list_jobcard_repair_page.dart';
+
 import '../../../core/blocs/process_jobcard/process_jobcard_bloc.dart';
 import '../../../core/styles/color.dart';
 import '../../../core/styles/text_manager.dart';
@@ -42,6 +44,7 @@ class _JobcardFormPageState extends State<JobcardFormPage>
     final map =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
     final tireDetail = map['tireDetail'];
+    final selectedJob = map['selectedJob'] ?? '';
     final wo = map['wo'];
     final woDate = map['woDate'];
     final processRepairCountBefore = 1;
@@ -72,6 +75,7 @@ class _JobcardFormPageState extends State<JobcardFormPage>
             ProcessRepair(
               tireDetail: tireDetail,
               processRepairCountBefore: '1',
+              selectedJob: selectedJob,
             ),
             TireDetail(tireDetail: tireDetail, wo: wo, woDate: woDate),
           ],
@@ -83,12 +87,15 @@ class _JobcardFormPageState extends State<JobcardFormPage>
 
 class ProcessRepair extends StatefulWidget {
   final Map<String, dynamic> tireDetail;
+  String selectedJob;
   final String processRepairCountBefore;
 
-  const ProcessRepair(
-      {super.key,
-      required this.tireDetail,
-      required this.processRepairCountBefore});
+  ProcessRepair({
+    super.key,
+    required this.tireDetail,
+    required this.processRepairCountBefore,
+    this.selectedJob = '',
+  });
 
   @override
   State<ProcessRepair> createState() => _ProcessRepairState();
@@ -98,6 +105,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
   // String? selectedMaterial;
   List<Map<String, dynamic>> selectedMaterials = [];
   String existingJob = '';
+  String existingDuration = '';
   final TextEditingController injuriesController = TextEditingController();
   final TextEditingController dateController = TextEditingController();
   final TextEditingController qtyController = TextEditingController();
@@ -120,9 +128,85 @@ class _ProcessRepairState extends State<ProcessRepair> {
   int dimensiLukaMax = 5;
   int visibleItemCountDimensi = 1;
 
+  Future<void> initEditJobcard() async {
+    // Edit Jobcard (Proses yg dipilih)
+    existingJob = widget.selectedJob;
+    // Data sebelumnya
+    final selectedJobQuery = await firestore
+        .collection(FirestoreKey.tireRepairInspectionReport)
+        .where('sn', isEqualTo: widget.tireDetail['sn'])
+        .limit(1)
+        .get();
+
+    final selectedJobData = selectedJobQuery.docs[0].data();
+    final selectedJobSelect = (selectedJobData['jobcard1'] as List<dynamic>)
+        .firstWhere((element) => element['name'] == existingJob);
+
+    final format = DateFormat('dd-MM-yyyy');
+    selectedDate = format.parse(selectedJobSelect['date']);
+    try {
+      selectedMaterials.addAll(
+          List<Map<String, dynamic>>.from(selectedJobSelect['material']));
+    } catch (e) {
+      print('error material : $e');
+    }
+
+    final dimensi = (selectedJobSelect['dimensi'] ?? '').toString();
+
+    final groups = dimensi
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    log('dimensi length: ${groups}');
+
+    LController.clear();
+    WController.clear();
+    PController.clear();
+    TController.clear();
+
+    for (int i = 0; i < dimensiLukaMax; i++) {
+      String? L, W, P, T;
+
+      if (i < groups.length) {
+        final parts = groups[i].split(',');
+
+        for (var part in parts) {
+          if (part.startsWith('L')) {
+            L = part.substring(1);
+          } else if (part.startsWith('W')) {
+            W = part.substring(1);
+          } else if (part.startsWith('P')) {
+            P = part.substring(1);
+          } else if (part.startsWith('T')) {
+            T = part.substring(1);
+          }
+        }
+      }
+
+      // isi sesuai index
+      LController.add(TextEditingController(text: L ?? ''));
+      WController.add(TextEditingController(text: W ?? ''));
+      PController.add(TextEditingController(text: P ?? ''));
+      TController.add(TextEditingController(text: T ?? ''));
+    }
+
+    // LController.add(TextEditingController());
+    // WController.add(TextEditingController());
+    // PController.add(TextEditingController());
+    // TController.add(TextEditingController());
+
+    hoursController.text = selectedJobSelect['hours'];
+    minutesController.text = selectedJobSelect['minutes'];
+    repairmanController.text = selectedJobSelect['bywhom'];
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
+
     context.read<ProcessJobcardBloc>().add(FetchMaterialListEvent());
     injuriesController.text = widget.tireDetail['remarks'];
 
@@ -135,18 +219,31 @@ class _ProcessRepairState extends State<ProcessRepair> {
 
     if (widget.tireDetail['jobcard1'].isEmpty) {
       existingJob = 'Skiving';
+      existingDuration = JobcardRepair.jobName
+          .firstWhere((element) => element['name'] == 'Skiving')['duration'];
+      print('duration : $existingDuration');
     } else {
+      // Edit Jobcard
+      if (widget.selectedJob != '') {
+        initEditJobcard();
+        return;
+      }
       final lastName = widget.tireDetail['jobcard1'].last['name'];
+      final lastDuration = widget.tireDetail['jobcard1'].last['duration'];
 
       final jobList = JobcardRepair.jobName;
       final currentIndex = jobList.indexWhere((job) => job['name'] == lastName);
 
       existingJob = widget.tireDetail['jobcard1'].last['name'];
+      existingDuration = JobcardRepair.jobName
+          .firstWhere((element) => element['name'] == existingJob)['duration'];
       if (currentIndex != -1 && currentIndex < jobList.length - 1) {
         existingJob = jobList[currentIndex + 1]['name'];
+        existingDuration = jobList[currentIndex + 1]['duration'];
       } else {
         // Kalau tidak ketemu atau sudah di akhir list, tetap pakai lastName
         existingJob = lastName;
+        existingDuration = lastDuration;
       }
     }
   }
@@ -162,13 +259,31 @@ class _ProcessRepairState extends State<ProcessRepair> {
     super.dispose();
   }
 
+  // Future<void> _selectDate(BuildContext context) async {
+  //   final DateTime? picked = await showDatePicker(
+  //     context: context,
+  //     initialDate: selectedDate,
+  //     firstDate: DateTime(1900),
+  //     lastDate: DateTime(2100),
+  //   );
+  //   if (picked != null && picked != selectedDate) {
+  //     setState(() {
+  //       selectedDate = picked;
+  //     });
+  //   }
+  // }
   Future<void> _selectDate(BuildContext context) async {
+    final today = DateTime.now();
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: (selectedDate ?? today).isAfter(today)
+          ? today
+          : (selectedDate ?? today),
       firstDate: DateTime(1900),
-      lastDate: DateTime(2100),
+      lastDate: DateTime(today.year, today.month, today.day),
     );
+
     if (picked != null && picked != selectedDate) {
       setState(() {
         selectedDate = picked;
@@ -186,7 +301,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
         const SizedBox(
           height: 12,
         ),
-        const FormTitle(title: 'Injuries'),
+        const FormTitle(title: 'Luka'),
         const SizedBox(
           height: 12,
         ),
@@ -218,7 +333,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
         const SizedBox(
           height: 12,
         ),
-        const FormTitle(title: 'Date'),
+        const FormTitle(title: 'Tanggal Pengerjaan'),
         const SizedBox(
           height: 12,
         ),
@@ -245,7 +360,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
             ),
             child: Text(
               selectedDate == null
-                  ? 'Select Date'
+                  ? 'Pilih Tanggal'
                   : '${selectedDate?.day}/${selectedDate?.month}/${selectedDate?.year}',
               style: const TextStyle(color: Colors.black),
             ),
@@ -329,16 +444,13 @@ class _ProcessRepairState extends State<ProcessRepair> {
                         .toList()
                       ..sort(
                           (a, b) => a.materialName.compareTo(b.materialName));
-                    log('daftar materials : ${filteredMaterials}');
+                    log('semua materials : ${filteredMaterials}');
 
-                    // if (!filteredMaterials
-                    //     .any((e) => e.idMatstock == selectedMaterial)) {
-                    //   selectedMaterial = null;
-                    // }
-
+                    // mendapatkan satuan material
                     final existingMaterialUnit = (filteredMaterials.isNotEmpty)
                         ? filteredMaterials[0].smu.name
                         : '';
+                    log('existing materials : ${filteredMaterials}');
 
                     return Column(
                       children: [
@@ -353,6 +465,11 @@ class _ProcessRepairState extends State<ProcessRepair> {
                               isScrollControlled: true,
                               enableDrag: false,
                               builder: (context) {
+                                List<Map<String, dynamic>>
+                                    tempSelectedMaterials = [];
+                                tempSelectedMaterials =
+                                    List<Map<String, dynamic>>.from(
+                                        selectedMaterials);
                                 return StatefulBuilder(
                                   builder: (BuildContext context,
                                       StateSetter setModalState) {
@@ -382,14 +499,11 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                             FontWeight.bold,
                                                         fontSize: 16),
                                                   ),
-                                                  IconButton(
-                                                      onPressed: () {
-                                                        selectedMaterials
-                                                            .clear();
-                                                        setState(() {});
-                                                        Navigator.pop(context);
-                                                      },
-                                                      icon: Icon(Icons.close))
+                                                  // IconButton(
+                                                  //     onPressed: () {
+                                                  //       Navigator.pop(context);
+                                                  //     },
+                                                  //     icon: Icon(Icons.close))
                                                 ],
                                               ),
                                               const SizedBox(height: 12),
@@ -633,7 +747,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 const SizedBox(
                   height: 12,
                 ),
-                const FormTitle(title: 'Hours'),
+                const FormTitle(title: 'Jam'),
                 const SizedBox(
                   height: 12,
                 ),
@@ -670,7 +784,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
             ),
             Column(
               children: [
-                const FormTitle(title: 'Minutes'),
+                const FormTitle(title: 'Menit'),
                 const SizedBox(
                   height: 12,
                 ),
@@ -706,7 +820,15 @@ class _ProcessRepairState extends State<ProcessRepair> {
         const SizedBox(
           height: 12,
         ),
-        const FormTitle(title: 'By Whom'),
+        Text(
+          '*Rekomendasi Durasi Pekerjaan: ${existingDuration}',
+          textAlign: TextAlign.center,
+          style: getGreyTextStyle(grey6A707C),
+        ),
+        const SizedBox(
+          height: 12,
+        ),
+        const FormTitle(title: 'Nama Repairman'),
         const SizedBox(
           height: 12,
         ),
@@ -885,9 +1007,13 @@ class _ProcessRepairState extends State<ProcessRepair> {
                 'jobcard1': jobcardOldList,
               });
 
-              context
-                  .read<ProcessJobcardBloc>()
-                  .add(SubmitJobcardEvent(jobcard: jobcardData));
+              bool isEdit = false;
+              if (widget.selectedJob != '') {
+                isEdit = true;
+              }
+
+              context.read<ProcessJobcardBloc>().add(
+                  SubmitJobcardEvent(jobcard: jobcardData, isEdit: isEdit));
             })
       ]),
     );

@@ -28,7 +28,11 @@ class ProcessJobcardBloc
       emit(SubmitLoadingState());
 
       try {
-        await ApiService.postJobJobcardRepair(event.jobcard);
+        if (event.isEdit) {
+          await ApiService.editJobJobcardRepair(event.jobcard);
+        } else {
+          await ApiService.postJobJobcardRepair(event.jobcard);
+        }
 
         emit(SubmitSuccessState());
       } catch (e) {
