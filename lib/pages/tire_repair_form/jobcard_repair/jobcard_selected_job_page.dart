@@ -308,178 +308,307 @@ class _JobcardSelectedJobPageState extends State<JobcardSelectedJobPage> {
                                           ),
                                         const SizedBox(width: 6),
                                         // Gunakan Expanded di sini agar teks tidak overflow jika panjang
-                                        Expanded(
-                                          child: Text(
+                                        if (jobcardItem != null)
+                                          Expanded(
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  jobName['name'],
+                                                  style: getBlackTextStyle(
+                                                      fontWeight: w700),
+                                                ),
+                                                // Edit Jobcard
+                                                SizedBox(
+                                                    width: 60,
+                                                    height: 25,
+                                                    child: TextButton(
+                                                      onPressed: () async {
+                                                        Navigator.pushNamed(
+                                                          context,
+                                                          JobcardFormPage
+                                                              .routeName,
+                                                          arguments: {
+                                                            'tireDetail': data,
+                                                            'wo':
+                                                                arguments['wo'],
+                                                            'woDate': arguments[
+                                                                'woDate'],
+                                                            'processRepairCount':
+                                                                processRepairCount,
+                                                            'selectedJob':
+                                                                jobName['name']
+                                                          },
+                                                        ).then((value) async {
+                                                          if (value == true &&
+                                                              mounted) {
+                                                            await Future.delayed(
+                                                                const Duration(
+                                                                    milliseconds:
+                                                                        300));
+                                                            final querySnapshot =
+                                                                await firestore
+                                                                    .collection(
+                                                                        FirestoreKey
+                                                                            .tireRepairInspectionReport)
+                                                                    .where('id',
+                                                                        isEqualTo:
+                                                                            data['id'])
+                                                                    .limit(1)
+                                                                    .get();
+
+                                                            if (querySnapshot
+                                                                .docs
+                                                                .isNotEmpty) {
+                                                              final newData =
+                                                                  querySnapshot
+                                                                          .docs
+                                                                          .first
+                                                                          .data()
+                                                                      as Map<
+                                                                          String,
+                                                                          dynamic>;
+
+                                                              // CUKUP UPDATE 'data'
+                                                              setState(() {
+                                                                data = newData;
+                                                              });
+                                                            }
+                                                          }
+                                                        });
+                                                      },
+                                                      style:
+                                                          TextButton.styleFrom(
+                                                        backgroundColor:
+                                                            Colors.orange,
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(12),
+                                                        ),
+                                                      ),
+                                                      child: const FittedBox(
+                                                        fit: BoxFit.scaleDown,
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(Icons.edit,
+                                                                color: Colors
+                                                                    .white,
+                                                                size: 14),
+                                                            SizedBox(width: 2),
+                                                            Text('Edit',
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        10,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold)),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    )),
+                                              ],
+                                            ),
+                                          )
+                                        else
+                                          Text(
                                             jobName['name'],
                                             style: getBlackTextStyle(
                                                 fontWeight: w700),
                                           ),
-                                        ),
                                         if (!jobcardList.any((item) =>
                                                 item['name'] ==
                                                 jobName['name']) &&
                                             existingJob == jobName['name'])
-                                          SizedBox(
-                                              width: 60,
-                                              height: 25,
-                                              child: TextButton(
-                                                onPressed: () async {
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (BuildContext context) {
-                                                      return AlertDialog(
-                                                        title: Text(
-                                                          'Confirmation Skip (${jobName['name']})',
-                                                          style:
-                                                              getBlackTextStyle(),
+                                          Expanded(
+                                            child: Row(
+                                              children: [
+                                                Spacer(),
+                                                SizedBox(
+                                                    width: 60,
+                                                    height: 25,
+                                                    child: TextButton(
+                                                      onPressed: () async {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext
+                                                              context) {
+                                                            return AlertDialog(
+                                                              title: Text(
+                                                                'Confirmation Skip (${jobName['name']})',
+                                                                style:
+                                                                    getBlackTextStyle(),
+                                                              ),
+                                                              content: Text(
+                                                                'Are you sure you want to skip this process (${jobName['name']})?',
+                                                                style:
+                                                                    getBlackTextStyle(),
+                                                              ),
+                                                              actions: [
+                                                                TextButton(
+                                                                  onPressed: () =>
+                                                                      Navigator.of(
+                                                                              context)
+                                                                          .pop(), // Tutup dialog
+                                                                  child: const Text(
+                                                                      'Cancel'),
+                                                                ),
+                                                                ElevatedButton(
+                                                                  onPressed:
+                                                                      () async {
+                                                                    final oldData = await firestore
+                                                                        .collection(FirestoreKey
+                                                                            .tireRepairInspectionReport)
+                                                                        .where(
+                                                                            'id',
+                                                                            isEqualTo:
+                                                                                data['id'])
+                                                                        .get();
+                                                                    final jobcardData =
+                                                                        {
+                                                                      'name': jobName[
+                                                                          'name'],
+                                                                      'fulldate':
+                                                                          DateTime.now()
+                                                                              .toIso8601String(),
+                                                                      'date': DateFormat(
+                                                                              'dd-MM-yyyy')
+                                                                          .format(
+                                                                              DateTime.now()),
+                                                                      'material':
+                                                                          [
+                                                                        {
+                                                                          'id_matstock':
+                                                                              '',
+                                                                          'name':
+                                                                              '',
+                                                                          'qty':
+                                                                              '',
+                                                                          'smu':
+                                                                              '',
+                                                                        }
+                                                                      ],
+                                                                      'hours':
+                                                                          '0',
+                                                                      'minutes':
+                                                                          '0',
+                                                                      'bywhom':
+                                                                          '',
+                                                                      'remarks':
+                                                                          '',
+                                                                      'process_repair_count':
+                                                                          1,
+                                                                      'id_wo': data[
+                                                                          'id'],
+                                                                      'dimensi':
+                                                                          '',
+                                                                      'created_at':
+                                                                          DateTime.now()
+                                                                              .toIso8601String(),
+                                                                    };
+
+                                                                    await oldData
+                                                                        .docs[0]
+                                                                        .reference
+                                                                        .update({
+                                                                      'jobcard1':
+                                                                          FieldValue
+                                                                              .arrayUnion([
+                                                                        jobcardData
+                                                                      ]),
+                                                                    });
+
+                                                                    await ApiService
+                                                                        .postJobJobcardRepair(
+                                                                            jobcardData);
+
+                                                                    if (context
+                                                                        .mounted)
+                                                                      Navigator.pop(
+                                                                          context);
+
+                                                                    final querySnapshot = await firestore
+                                                                        .collection(FirestoreKey
+                                                                            .tireRepairInspectionReport)
+                                                                        .where(
+                                                                            'id',
+                                                                            isEqualTo:
+                                                                                data['id'])
+                                                                        .limit(1)
+                                                                        .get();
+                                                                    if (querySnapshot
+                                                                            .docs
+                                                                            .isNotEmpty &&
+                                                                        mounted) {
+                                                                      final newData = querySnapshot
+                                                                          .docs
+                                                                          .first
+                                                                          .data();
+
+                                                                      setState(
+                                                                          () {
+                                                                        data =
+                                                                            newData;
+                                                                      });
+                                                                    }
+                                                                  },
+                                                                  child:
+                                                                      const Text(
+                                                                          'Yes'),
+                                                                ),
+                                                              ],
+                                                            );
+                                                          },
+                                                        );
+                                                      }, // Disingkat
+                                                      style:
+                                                          TextButton.styleFrom(
+                                                        backgroundColor:
+                                                            const Color(
+                                                                0xFF35469B),
+                                                        padding:
+                                                            EdgeInsets.zero,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(12),
                                                         ),
-                                                        content: Text(
-                                                          'Are you sure you want to skip this process (${jobName['name']})?',
-                                                          style:
-                                                              getBlackTextStyle(),
+                                                      ),
+                                                      child: const FittedBox(
+                                                        fit: BoxFit.scaleDown,
+                                                        child: Row(
+                                                          children: [
+                                                            Icon(
+                                                                Icons
+                                                                    .skip_next_outlined,
+                                                                color: Colors
+                                                                    .white,
+                                                                size: 14),
+                                                            SizedBox(width: 2),
+                                                            Text('Skip',
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        10,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold)),
+                                                          ],
                                                         ),
-                                                        actions: [
-                                                          TextButton(
-                                                            onPressed: () =>
-                                                                Navigator.of(
-                                                                        context)
-                                                                    .pop(), // Tutup dialog
-                                                            child: const Text(
-                                                                'Cancel'),
-                                                          ),
-                                                          ElevatedButton(
-                                                            onPressed:
-                                                                () async {
-                                                              final oldData = await firestore
-                                                                  .collection(
-                                                                      FirestoreKey
-                                                                          .tireRepairInspectionReport)
-                                                                  .where('id',
-                                                                      isEqualTo:
-                                                                          data[
-                                                                              'id'])
-                                                                  .get();
-                                                              final jobcardData =
-                                                                  {
-                                                                'name': jobName[
-                                                                    'name'],
-                                                                'fulldate': DateTime
-                                                                        .now()
-                                                                    .toIso8601String(),
-                                                                'date': DateFormat(
-                                                                        'dd-MM-yyyy')
-                                                                    .format(DateTime
-                                                                        .now()),
-                                                                'material': [
-                                                                  {
-                                                                    'id_matstock':
-                                                                        '',
-                                                                    'name': '',
-                                                                    'qty': '',
-                                                                    'smu': '',
-                                                                  }
-                                                                ],
-                                                                'hours': '0',
-                                                                'minutes': '0',
-                                                                'bywhom': '',
-                                                                'remarks': '',
-                                                                'process_repair_count':
-                                                                    1,
-                                                                'id_wo':
-                                                                    data['id'],
-                                                                'dimensi': '',
-                                                                'created_at':
-                                                                    DateTime.now()
-                                                                        .toIso8601String(),
-                                                              };
-
-                                                              await oldData
-                                                                  .docs[0]
-                                                                  .reference
-                                                                  .update({
-                                                                'jobcard1':
-                                                                    FieldValue
-                                                                        .arrayUnion([
-                                                                  jobcardData
-                                                                ]),
-                                                              });
-
-                                                              await ApiService
-                                                                  .postJobJobcardRepair(
-                                                                      jobcardData);
-
-                                                              if (context
-                                                                  .mounted)
-                                                                Navigator.pop(
-                                                                    context);
-
-                                                              final querySnapshot = await firestore
-                                                                  .collection(
-                                                                      FirestoreKey
-                                                                          .tireRepairInspectionReport)
-                                                                  .where('id',
-                                                                      isEqualTo:
-                                                                          data[
-                                                                              'id'])
-                                                                  .limit(1)
-                                                                  .get();
-                                                              if (querySnapshot
-                                                                      .docs
-                                                                      .isNotEmpty &&
-                                                                  mounted) {
-                                                                final newData =
-                                                                    querySnapshot
-                                                                        .docs
-                                                                        .first
-                                                                        .data();
-
-                                                                setState(() {
-                                                                  data =
-                                                                      newData;
-                                                                });
-                                                              }
-                                                            },
-                                                            child: const Text(
-                                                                'Yes'),
-                                                          ),
-                                                        ],
-                                                      );
-                                                    },
-                                                  );
-                                                }, // Disingkat
-                                                style: TextButton.styleFrom(
-                                                  backgroundColor:
-                                                      const Color(0xFF35469B),
-                                                  padding: EdgeInsets.zero,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            12),
-                                                  ),
-                                                ),
-                                                child: const FittedBox(
-                                                  fit: BoxFit.scaleDown,
-                                                  child: Row(
-                                                    children: [
-                                                      Icon(
-                                                          Icons
-                                                              .skip_next_outlined,
-                                                          color: Colors.white,
-                                                          size: 14),
-                                                      SizedBox(width: 2),
-                                                      Text('Skip',
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 10,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold)),
-                                                    ],
-                                                  ),
-                                                ),
-                                              )),
+                                                      ),
+                                                    )),
+                                              ],
+                                            ),
+                                          ),
                                       ],
                                     ),
                                     if (jobcardItem != null)

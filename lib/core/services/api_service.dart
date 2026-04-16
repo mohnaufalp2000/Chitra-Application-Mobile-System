@@ -71,6 +71,25 @@ class ApiService {
     }
   }
 
+  /// 🔹 EDIT: Jobcard Repair
+  static Future<void> editJobJobcardRepair(Map<String, dynamic> jobcard) async {
+    final url = await _getUrlFromFirestore('edit-jobcard-repair');
+    if (url == null) return;
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(jobcard),
+      );
+      log('✅ Berhasil edit Jobcard Repair');
+      log('Response status: ${response.statusCode}');
+      log('Response body: ${response.body}');
+    } catch (e) {
+      log('❌ Error edit Jobcard Repair: $e');
+    }
+  }
+
   /// 🔹 GET: Material Repair List
   static Future<List<MaterialRepair>> getMaterialRepairList() async {
     final url = await _getUrlFromFirestore('get-material-list-repair');
