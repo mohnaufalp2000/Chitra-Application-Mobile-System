@@ -12,10 +12,13 @@ import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_dev
 import 'package:camos/core/blocs/bluetooth/connected_devices_cubit/connected_devices_state.dart';
 import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_cubit.dart';
 import 'package:camos/core/blocs/bluetooth/discover_services_cubit/discover_services_state.dart';
+import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/tire_damage_ai.dart';
 import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
 import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/bounding_box_painter.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
@@ -56,6 +59,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
 
+import 'widget/ai_loading_widget.dart';
+
 class TireInspectionFormPage extends StatefulWidget {
   static const routeName = '/pgd-page';
   const TireInspectionFormPage({super.key});
@@ -90,6 +95,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   List<TextEditingController> rtd2Controllers = [];
 
   SwiperController swiperController = SwiperController();
+
+  Map<int, TireDamageAi> aiResults = {};
+  Map<int, bool> loadingAI = {};
+  Map<int, double> imageWidths = {};
+  Map<int, double> imageHeights = {};
 
   String selectedUnit = '';
   List<String> checkedCategories = [];
@@ -2219,7 +2229,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                   await picker.pickImage(
                                                       imageQuality: 50,
                                                       source:
-                                                          ImageSource.camera);
+                                                          // ImageSource.camera);
+                                                          ImageSource.gallery);
                                               try {
                                                 if (image != null) {
                                                   Directory? directory;
@@ -2263,7 +2274,45 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                   ];
                                                   log('tire inspection image = ${position[index]['image']}');
 
-                                                  // // Convert image to base64
+                                                  // Convert image to base64
+                                                  final file = File(
+                                                      compressedImageFile!
+                                                          .path);
+                                                  final bytes =
+                                                      await file.readAsBytes();
+                                                  final decodedImage =
+                                                      await decodeImageFromList(
+                                                          bytes);
+                                                  imageWidths[index] =
+                                                      decodedImage.width
+                                                          .toDouble();
+                                                  imageHeights[index] =
+                                                      decodedImage.height
+                                                          .toDouble();
+
+                                                  final base64Image =
+                                                      base64Encode(bytes);
+
+                                                  Future(() async {
+                                                    setState(() {
+                                                      loadingAI[index] = true;
+                                                    });
+
+                                                    final result =
+                                                        await ApiService
+                                                            .postPredictImageAI(
+                                                      await ApiService
+                                                          .getValidToken(),
+                                                      base64Image,
+                                                    );
+                                                    setState(() {
+                                                      aiResults[index] =
+                                                          result!;
+                                                      loadingAI[index] = false;
+                                                    });
+
+                                                    log('tire damage ai : $result');
+                                                  });
                                                 }
                                               } catch (e) {
                                                 log('error gambar string : $e');
@@ -2389,18 +2438,58 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
-                                                Container(
-                                                    width: double.infinity,
-                                                    decoration: BoxDecoration(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                    ),
-                                                    child: Image.file(File(
-                                                        (position[index]
-                                                                    ['image'][0]
-                                                                as String)
-                                                            .split('|')[0]))),
+                                                (loadingAI[index] == true)
+                                                    ? Center(
+                                                        child:
+                                                            AiLoadingWidget(),
+                                                      )
+                                                    : Stack(
+                                                        children: [
+                                                          Container(
+                                                            width:
+                                                                double.infinity,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          12),
+                                                            ),
+                                                            child: Image.file(
+                                                              File(
+                                                                (position[index]
+                                                                            [
+                                                                            'image'][0]
+                                                                        as String)
+                                                                    .split(
+                                                                        '|')[0],
+                                                              ),
+                                                              fit: BoxFit
+                                                                  .contain,
+                                                            ),
+                                                          ),
+                                                          Positioned.fill(
+                                                            child: CustomPaint(
+                                                              painter:
+                                                                  BoundingBoxPainter(
+                                                                detections: aiResults[
+                                                                            index]
+                                                                        ?.data
+                                                                        .tireDamageResult ??
+                                                                    [],
+                                                                imageWidth:
+                                                                    imageWidths[
+                                                                            index] ??
+                                                                        1,
+                                                                imageHeight:
+                                                                    imageHeights[
+                                                                            index] ??
+                                                                        1,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
