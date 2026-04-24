@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:typed_data';
 
+import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/utils/data/menu.dart';
@@ -63,17 +64,7 @@ class HomePage extends GetView<HomeState> {
                     child: Row(
                       children: [
                         InkWell(
-                          onTap: () async {
-                            // final response = await http.get(Uri.parse(
-                            //     'https://firebasestorage.googleapis.com/v0/b/caismit.appspot.com/o/tire_task_images%2FV5Dl5IewEv1KI8pLUrA6.jpg?alt=media&token=3490d3b7-24f0-46cc-acac-f38a8fd24a6e'));
-
-                            // if (response.statusCode != 200) {
-                            //   throw Exception("Failed to download image");
-                            // }
-                            // Uint8List bytes = response.bodyBytes;
-
-                            // print('blob image : ${base64Encode(bytes)}');
-                          },
+                          onTap: () async {},
                           child: CircleAvatar(
                             backgroundImage: (controller.user['image'] == '' ||
                                     controller.user['image'] == null ||

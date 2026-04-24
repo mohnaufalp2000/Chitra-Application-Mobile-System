@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/core/services/model/tire_damage_ai.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'model/daily_press.dart';
@@ -21,16 +22,13 @@ class ApiService {
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=';
   static const String postUrl =
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/getdatacamos.php?function=';
-  static const String tirePostUrl =
-      'https://chitraparatama.co.id/ICS/product/push_data.php?function=';
-  static const String jobcardUrl =
-      'https://chitraparatama.co.id/ICS/product/get_api.php?function=';
 
   /// 🔹 Ambil URL dari Firestore
-  static Future<String?> _getUrlFromFirestore(String docId) async {
+  static Future<String?> _getUrlFromFirestore(
+      String collection, String docId) async {
     try {
       final doc = await FirebaseFirestore.instance
-          .collection('url_tire_repair')
+          .collection(collection)
           .doc(docId)
           .get();
 
@@ -52,9 +50,132 @@ class ApiService {
     }
   }
 
+  static Future<String?> _getKeyFromFirestore(
+      String collection, String docId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection(collection)
+          .doc(docId)
+          .get();
+
+      if (!doc.exists) {
+        log('❌ Dokumen $docId tidak ditemukan di Firestore.');
+        return null;
+      }
+
+      final key = doc.data()?['key'];
+      if (key == null || key.isEmpty) {
+        log('⚠️ key kosong di dokumen $docId.');
+        return null;
+      }
+
+      return key;
+    } catch (e) {
+      log('🔥 Error ambil Key Firestore ($docId): $e');
+      return null;
+    }
+  }
+
+  /// 🔹 POST: Predict Image AI
+  static Future<TireDamageAi?> postPredictImageAI(
+    String token,
+    String base64Image,
+  ) async {
+    final url =
+        await _getUrlFromFirestore('url_tire_damage_ai', 'predict-image');
+    if (url == null) return null;
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          'image': base64Image,
+          "visualize": false,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final result = TireDamageAi.fromJson(response.body);
+
+        return result;
+      } else {
+        log("ERROR API: ${response.statusCode}");
+        log("BODY: ${response.body}");
+        return null;
+      }
+    } catch (e) {
+      log("ERROR EXCEPTION: $e");
+      return null;
+    }
+  }
+
+  static String? _token;
+  static DateTime? _expiredAt;
+  static Future<String> getValidToken() async {
+    final now = DateTime.now();
+
+    // cek apakah token masih valid (kasih buffer 5 menit)
+    if (_token != null &&
+        _expiredAt != null &&
+        now.isBefore(_expiredAt!.subtract(Duration(minutes: 5)))) {
+      return _token!;
+    }
+
+    // kalau expired / belum ada → ambil baru
+    final newToken = await getTokenAI();
+
+    if (newToken.isNotEmpty) {
+      _token = newToken;
+      _expiredAt = now.add(Duration(minutes: 60));
+    }
+    log('token : $_token');
+
+    return _token ?? '';
+  }
+
+  static Future<String> getTokenAI() async {
+    final url = await _getUrlFromFirestore('url_tire_damage_ai', 'get-token');
+    if (url == null) return '';
+
+    final apiKey = await _getKeyFromFirestore('url_tire_damage_ai', 'api-key');
+    print('apiKey : $apiKey');
+    final secretKey =
+        await _getKeyFromFirestore('url_tire_damage_ai', 'secret-key');
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(
+          {
+            'api_key': apiKey,
+            'secret_key': secretKey,
+          },
+        ),
+      );
+
+      final data = jsonDecode(response.body);
+      final accessToken = data['access_token'];
+
+      log('✅ Berhasil Get Token AI');
+      log('Response status: ${response.statusCode}');
+      log('Response body: ${accessToken}');
+
+      return accessToken;
+    } catch (e) {
+      log('❌ Error Get Token AI : $e');
+    }
+    return '';
+  }
+
   /// 🔹 POST: Jobcard Repair
   static Future<void> postJobJobcardRepair(Map<String, dynamic> jobcard) async {
-    final url = await _getUrlFromFirestore('post-jobcard-repair');
+    final url =
+        await _getUrlFromFirestore('url_tire_repair', 'post-jobcard-repair');
     if (url == null) return;
 
     try {
@@ -73,7 +194,8 @@ class ApiService {
 
   /// 🔹 EDIT: Jobcard Repair
   static Future<void> editJobJobcardRepair(Map<String, dynamic> jobcard) async {
-    final url = await _getUrlFromFirestore('edit-jobcard-repair');
+    final url =
+        await _getUrlFromFirestore('url_tire_repair', 'edit-jobcard-repair');
     if (url == null) return;
 
     try {
@@ -92,7 +214,8 @@ class ApiService {
 
   /// 🔹 GET: Material Repair List
   static Future<List<MaterialRepair>> getMaterialRepairList() async {
-    final url = await _getUrlFromFirestore('get-material-list-repair');
+    final url = await _getUrlFromFirestore(
+        'url_tire_repair', 'get-material-list-repair');
     if (url == null) return [];
 
     try {
@@ -116,7 +239,8 @@ class ApiService {
 
   /// 🔹 GET: WO Jobcard List
   static Future<List<Map<String, dynamic>>> getWOJobcardList() async {
-    final url = await _getUrlFromFirestore('wo-jobcard-repair');
+    final url =
+        await _getUrlFromFirestore('url_tire_repair', 'wo-jobcard-repair');
     if (url == null) return [];
 
     try {
@@ -147,7 +271,8 @@ class ApiService {
 
   /// 🔹 POST: New Tire Repair
   static Future<void> postNewTireRepair(Map<String, dynamic> newTireMap) async {
-    final url = await _getUrlFromFirestore('post-new-tire-repair');
+    final url =
+        await _getUrlFromFirestore('url_tire_repair', 'post-new-tire-repair');
     if (url == null) return;
 
     try {
@@ -166,7 +291,8 @@ class ApiService {
   /// 🔹 POST: Edit Tire Repair
   static Future<void> editNewTireRepair(
       Map<String, dynamic> editTireMap) async {
-    final url = await _getUrlFromFirestore('edit-new-tire-repair');
+    final url =
+        await _getUrlFromFirestore('url_tire_repair', 'edit-new-tire-repair');
     if (url == null) return;
 
     try {
