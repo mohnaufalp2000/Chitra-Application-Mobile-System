@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:camos/core/utils/data/id_site.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/local_database/attendance/attendance_entity.dart';
 import 'package:geolocator/geolocator.dart';
@@ -1363,7 +1364,9 @@ openPlayStore(String type) async {
       }
 
       if (Platform.isIOS) {
-        StoreRedirect.redirect(iOSAppId: '6468975738');
+        // StoreRedirect.redirect(iOSAppId: '6468975738');
+        launchUrl(Uri.parse(
+            'https://apps.apple.com/us/app/camos-chitra-paratama/id6468975738'));
       }
       break;
   }
