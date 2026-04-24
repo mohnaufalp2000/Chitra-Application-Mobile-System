@@ -2222,15 +2222,67 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                       BorderRadius.circular(12),
                                                 )),
                                             onPressed: () async {
-                                              requestCameraPermission();
                                               final ImagePicker picker =
                                                   ImagePicker();
+
+                                              final ImageSource? source =
+                                                  await showDialog<ImageSource>(
+                                                context: context,
+                                                builder: (context) {
+                                                  return AlertDialog(
+                                                    title: Text(
+                                                        "Pilih Sumber Gambar"),
+                                                    content: Column(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        ListTile(
+                                                          leading: Icon(
+                                                              Icons.camera_alt),
+                                                          title: Text("Kamera"),
+                                                          onTap: () =>
+                                                              Navigator.pop(
+                                                                  context,
+                                                                  ImageSource
+                                                                      .camera),
+                                                        ),
+                                                        ListTile(
+                                                          leading: Icon(Icons
+                                                              .photo_library),
+                                                          title:
+                                                              Text("Gallery"),
+                                                          onTap: () =>
+                                                              Navigator.pop(
+                                                                  context,
+                                                                  ImageSource
+                                                                      .gallery),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              );
+
+                                              // final XFile? image =
+                                              //     await picker.pickImage(
+                                              //         imageQuality: 50,
+                                              //         source:
+                                              //             // ImageSource.camera);
+                                              //             ImageSource.gallery);
+
+                                              if (source == null) return;
+
+                                              if (source ==
+                                                  ImageSource.camera) {
+                                                requestCameraPermission();
+                                              }
+
                                               final XFile? image =
                                                   await picker.pickImage(
-                                                      imageQuality: 50,
-                                                      source:
-                                                          // ImageSource.camera);
-                                                          ImageSource.gallery);
+                                                source: source,
+                                                imageQuality: 50,
+                                              );
+
                                               try {
                                                 if (image != null) {
                                                   Directory? directory;

@@ -50,6 +50,32 @@ class ApiService {
     }
   }
 
+  static Future<String?> _getKeyFromFirestore(
+      String collection, String docId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection(collection)
+          .doc(docId)
+          .get();
+
+      if (!doc.exists) {
+        log('❌ Dokumen $docId tidak ditemukan di Firestore.');
+        return null;
+      }
+
+      final key = doc.data()?['key'];
+      if (key == null || key.isEmpty) {
+        log('⚠️ key kosong di dokumen $docId.');
+        return null;
+      }
+
+      return key;
+    } catch (e) {
+      log('🔥 Error ambil Key Firestore ($docId): $e');
+      return null;
+    }
+  }
+
   /// 🔹 POST: Predict Image AI
   static Future<TireDamageAi?> postPredictImageAI(
     String token,
@@ -106,6 +132,7 @@ class ApiService {
       _token = newToken;
       _expiredAt = now.add(Duration(minutes: 60));
     }
+    log('token : $_token');
 
     return _token ?? '';
   }
@@ -114,14 +141,19 @@ class ApiService {
     final url = await _getUrlFromFirestore('url_tire_damage_ai', 'get-token');
     if (url == null) return '';
 
+    final apiKey = await _getKeyFromFirestore('url_tire_damage_ai', 'api-key');
+    print('apiKey : $apiKey');
+    final secretKey =
+        await _getKeyFromFirestore('url_tire_damage_ai', 'secret-key');
+
     try {
       final response = await http.post(
         Uri.parse(url),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(
           {
-            'api_key': '2fdac74e-b152-4b05-823d-93ecbdb24231',
-            'secret_key': 'Z32DSLZPY0',
+            'api_key': apiKey,
+            'secret_key': secretKey,
           },
         ),
       );
