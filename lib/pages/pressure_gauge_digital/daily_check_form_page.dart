@@ -124,6 +124,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   ];
   List<String> pit = [];
 
+  List<String>? _ratingCache;
+  List<dynamic>? _damageCache;
+
   TextEditingController pressureCtrl = TextEditingController(text: '');
   TextEditingController pressureDigitalCtrl = TextEditingController(text: '');
   TextEditingController damageCtrl = TextEditingController(text: '');
@@ -140,26 +143,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   Map<String, dynamic> user = {};
 
   final ImagePicker _picker = ImagePicker();
-
-  // Future<List<String>> receiveRatingTire(String unit) async {
-  //   List<String> fixRating = [];
-  //   final yesterday = DateTime.now().subtract(Duration(days: 1));
-  //   final startOfDay = DateTime(yesterday.year, yesterday.month, yesterday.day);
-  //   final endOfDay =
-  //       DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
-  //   final ratingQuery = await firestore
-  //       .collection(dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
-  //       .where('unit', isEqualTo: unit)
-  //       .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-  //       .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
-  //       .get();
-  //   final ratingMap = ratingQuery.docs.first;
-  //   List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
-  //   for (int i = 0; i < ratingList.length; i++) {
-  //     fixRating.add(ratingList[i]['rating'] ?? '');
-  //   }
-  //   return fixRating;
-  // }
 
   void applyPressureData(String pressureValue) {
     setState(() {
@@ -194,83 +177,186 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     });
   }
 
+  Future<List<String>> fetchRatingData(DateTime date, String unit) async {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+    final ratingQuery = await firestore
+        .collection(
+            dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
+        .where('unit', isEqualTo: unit)
+        .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+        .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+        .get();
+
+    if (ratingQuery.docs.isNotEmpty) {
+      final ratingMap = ratingQuery.docs.first;
+      List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
+
+      return ratingList
+          .map((item) => item['rating'] ?? '')
+          .toList()
+          .cast<String>();
+    }
+
+    return [];
+  }
+
   Future<List<String>> receiveRatingTire(String unit) async {
-    List<String> fixRating = [];
+    try {
+      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      var result = await fetchRatingData(yesterday, unit)
+          .timeout(const Duration(seconds: 5));
 
-    Future<List<String>> fetchRatingData(DateTime date) async {
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-      final ratingQuery = await firestore
-          .collection(
-              dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
-          .where('unit', isEqualTo: unit)
-          .where('tanggal',
-              isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-          .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
-          .get();
-
-      if (ratingQuery.docs.isNotEmpty) {
-        final ratingMap = ratingQuery.docs.first;
-        List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
-        return ratingList
-            .map((item) => item['rating'] ?? '')
-            .toList()
-            .cast<String>();
+      if (result.isEmpty) {
+        final dayBeforeYesterday =
+            DateTime.now().subtract(const Duration(days: 2));
+        result = await fetchRatingData(dayBeforeYesterday, unit)
+            .timeout(const Duration(seconds: 5));
       }
 
-      return [];
+      if (result.isNotEmpty) {
+        _ratingCache = result;
+        return result;
+      }
+
+      return _ratingCache ?? [];
+    } on TimeoutException {
+      log('Timeout rating');
+      return _ratingCache ?? [];
+    } catch (e) {
+      log('Error rating: $e');
+      return _ratingCache ?? [];
+    }
+  }
+
+  // Future<List<String>> receiveRatingTire(String unit) async {
+  //   List<String> fixRating = [];
+
+  //   Future<List<String>> fetchRatingData(DateTime date) async {
+  //     final startOfDay = DateTime(date.year, date.month, date.day);
+  //     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+  //     final ratingQuery = await firestore
+  //         .collection(
+  //             dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
+  //         .where('unit', isEqualTo: unit)
+  //         .where('tanggal',
+  //             isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+  //         .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+  //         .get();
+
+  //     if (ratingQuery.docs.isNotEmpty) {
+  //       final ratingMap = ratingQuery.docs.first;
+  //       List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
+  //       return ratingList
+  //           .map((item) => item['rating'] ?? '')
+  //           .toList()
+  //           .cast<String>();
+  //     }
+
+  //     return [];
+  //   }
+
+  //   // Coba ambil data untuk kemarin
+  //   final yesterday = DateTime.now().subtract(Duration(days: 1));
+  //   fixRating = await fetchRatingData(yesterday);
+
+  //   // Jika data kemarin kosong, coba ambil data untuk kemarin lusa
+  //   if (fixRating.isEmpty) {
+  //     final dayBeforeYesterday = DateTime.now().subtract(Duration(days: 2));
+  //     fixRating = await fetchRatingData(dayBeforeYesterday);
+  //   }
+
+  //   return fixRating;
+  // }
+
+  Future<List<dynamic>> fetchDamageData(DateTime date, String unit) async {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+    final damageQuery = await firestore
+        .collection(
+            dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
+        .where('unit', isEqualTo: unit)
+        .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+        .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+        .get();
+
+    if (damageQuery.docs.isNotEmpty) {
+      final damageMap = damageQuery.docs.first;
+      List<dynamic> damageList = damageMap.data()['posisi'] as List<dynamic>;
+
+      return damageList.map((item) => item['luka'] ?? '').toList();
     }
 
-    // Coba ambil data untuk kemarin
-    final yesterday = DateTime.now().subtract(Duration(days: 1));
-    fixRating = await fetchRatingData(yesterday);
-
-    // Jika data kemarin kosong, coba ambil data untuk kemarin lusa
-    if (fixRating.isEmpty) {
-      final dayBeforeYesterday = DateTime.now().subtract(Duration(days: 2));
-      fixRating = await fetchRatingData(dayBeforeYesterday);
-    }
-
-    return fixRating;
+    return [];
   }
 
   Future<List<dynamic>> receiveDamageTire(String unit) async {
-    List<dynamic> fixDamage = [];
+    try {
+      final yesterday = DateTime.now().subtract(const Duration(days: 1));
+      var result = await fetchDamageData(yesterday, unit)
+          .timeout(const Duration(seconds: 5));
 
-    Future<List<dynamic>> fetchDamageData(DateTime date) async {
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-      final damageQuery = await firestore
-          .collection(
-              dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
-          .where('unit', isEqualTo: unit)
-          .where('tanggal',
-              isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-          .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
-          .get();
-
-      if (damageQuery.docs.isNotEmpty) {
-        final damageMap = damageQuery.docs.first;
-        List<dynamic> damageList = damageMap.data()['posisi'] as List<dynamic>;
-
-        return damageList.map((item) => item['luka'] ?? '').toList();
+      if (result.isEmpty) {
+        final dayBeforeYesterday =
+            DateTime.now().subtract(const Duration(days: 2));
+        result = await fetchDamageData(dayBeforeYesterday, unit)
+            .timeout(const Duration(seconds: 5));
       }
 
-      return [];
+      if (result.isNotEmpty) {
+        _damageCache = result;
+        return result;
+      }
+
+      return _damageCache ?? [];
+    } on TimeoutException {
+      log('Timeout damage');
+      return _damageCache ?? [];
+    } catch (e) {
+      log('Error damage: $e');
+      return _damageCache ?? [];
     }
-
-    // Coba ambil data untuk kemarin
-    final yesterday = DateTime.now().subtract(Duration(days: 1));
-    fixDamage = await fetchDamageData(yesterday);
-
-    // Jika data kemarin kosong, coba ambil data untuk kemarin lusa
-    if (fixDamage.isEmpty) {
-      final dayBeforeYesterday = DateTime.now().subtract(Duration(days: 2));
-      fixDamage = await fetchDamageData(dayBeforeYesterday);
-    }
-
-    return fixDamage;
   }
+
+  // Future<List<dynamic>> receiveDamageTire(String unit) async {
+  //   List<dynamic> fixDamage = [];
+
+  //   Future<List<dynamic>> fetchDamageData(DateTime date) async {
+  //     final startOfDay = DateTime(date.year, date.month, date.day);
+  //     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+  //     final damageQuery = await firestore
+  //         .collection(
+  //             dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
+  //         .where('unit', isEqualTo: unit)
+  //         .where('tanggal',
+  //             isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+  //         .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+  //         .get();
+
+  //     if (damageQuery.docs.isNotEmpty) {
+  //       final damageMap = damageQuery.docs.first;
+  //       List<dynamic> damageList = damageMap.data()['posisi'] as List<dynamic>;
+
+  //       return damageList.map((item) => item['luka'] ?? '').toList();
+  //     }
+
+  //     return [];
+  //   }
+
+  //   // Coba ambil data untuk kemarin
+  //   final yesterday = DateTime.now().subtract(Duration(days: 1));
+  //   fixDamage = await fetchDamageData(yesterday);
+
+  //   // Jika data kemarin kosong, coba ambil data untuk kemarin lusa
+  //   if (fixDamage.isEmpty) {
+  //     final dayBeforeYesterday = DateTime.now().subtract(Duration(days: 2));
+  //     fixDamage = await fetchDamageData(dayBeforeYesterday);
+  //   }
+
+  //   return fixDamage;
+  // }
 
   List<bool> updateCheckedDamageValues(
       List<dynamic> damage, List<bool> checkedDamageValues) {
@@ -1722,9 +1808,17 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         }
                       }
 
+                      final results = await Future.wait([
+                        receiveRatingTire(dataUnit['unitNumber']),
+                        receiveDamageTire(dataUnit['unitNumber']),
+                      ]);
+
+                      final ratings = results[0] as List<String>;
+                      final damages = results[1] as List<dynamic>;
+
                       // Input data rating sebelumnya
-                      List<dynamic> ratings =
-                          await receiveRatingTire(dataUnit['unitNumber']);
+                      // List<dynamic> ratings =
+                      //     await receiveRatingTire(dataUnit['unitNumber']);
                       log('list rating : $ratings');
                       setState(() {
                         for (int i = 0; i < ratings.length; i++) {
@@ -1734,8 +1828,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         }
                       });
                       // Input data damage sebelumnya
-                      List<dynamic> damages =
-                          await receiveDamageTire(dataUnit['unitNumber']);
+                      // List<dynamic> damages =
+                      //     await receiveDamageTire(dataUnit['unitNumber']);
                       List<List<String>> convertedDamage = damages
                           .map<List<String>>((e) => List<String>.from(e))
                           .toList();
