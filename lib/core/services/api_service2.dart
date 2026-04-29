@@ -18,9 +18,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // static const String url =
-  //     'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=';
-  static const String url = 'https://dev.cts-chitraparatama.co.id/api/product/';
+  static const String url =
+      'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=';
   static const String postUrl =
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/getdatacamos.php?function=';
 
@@ -338,10 +337,8 @@ class ApiService {
   // mendapatkan daftar unit di salah satu site
   static Future<List<UnitTire>> getUnits(String site) async {
     log('id site from daily : $site');
-    // final response =
-    //     await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
     final response =
-        await http.get(Uri.parse('${url}get_tire_running?idsite=$site'));
+        await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
 
     // try {
     final body = response.body;
@@ -353,7 +350,7 @@ class ApiService {
     List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
       (unit) => UnitTire.fromJson(unit),
     ));
-    int countAllTire = int.parse(result['total row'][0]);
+    int countAllTire = result['total row'][0];
     // log('ban all : ${result['total row']}');
 
     List<UnitTire> fixData = [];
@@ -548,7 +545,7 @@ class ApiService {
 
   static Future<List<UnitTire>> getUniqueUnits(String site) async {
     final response =
-        await http.get(Uri.parse('${url}get_tire_running?idsite=$site'));
+        await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
 
     try {
       final body = response.body;
@@ -569,7 +566,7 @@ class ApiService {
   // mendapatkan data tire condition di salah satu site
   static Future<List<UnitTire>> getTireCondition(String site) async {
     final response =
-        await http.get(Uri.parse('${url}get_tire_running?idsite=$site'));
+        await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
 
     try {
       final body = response.body;
@@ -587,10 +584,8 @@ class ApiService {
 
   // mendapatkan data tire inventory
   static Future<String> getTireSpecCount(String site, String status) async {
-    // final response = await http.get(Uri.parse(
-    //     '${url}get_tire&limit=10&offset=10&idsite=$site&status=$status'));
     final response = await http.get(Uri.parse(
-        '${url}get_tire?limit=10&offset=10&idsite=$site&status=$status'));
+        '${url}get_tire&limit=10&offset=10&idsite=$site&status=$status'));
     try {
       final body = response.body;
       final result = jsonDecode(body);
@@ -616,10 +611,8 @@ class ApiService {
   // mendapatkan detail tire inventory
   static Future<List<TireSpec>> getDetailInventory(
       String status, String offset, String site) async {
-    // final response = await http.get(Uri.parse(
-    //     '${url}get_tire&limit=10&offset=$offset&idsite=$site&status=$status'));
     final response = await http.get(Uri.parse(
-        '${url}get_tire?limit=10&offset=$offset&idsite=$site&status=$status'));
+        '${url}get_tire&limit=10&offset=$offset&idsite=$site&status=$status'));
 
     log('error detail inventory body' + site);
 
@@ -746,10 +739,8 @@ class ApiService {
   }
 
   static Future<List<SpmJam7>> getJam7SPM(String idSite) async {
-    // final response = await http.get(Uri.parse(
-    //     'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=get_tpms_jam7&idsite=$idSite'));
-    final response =
-        await http.get(Uri.parse('${url}get_tpms_jam7?idsite=$idSite'));
+    final response = await http.get(Uri.parse(
+        'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=get_tpms_jam7&idsite=$idSite'));
 
     try {
       final body = response.body;
