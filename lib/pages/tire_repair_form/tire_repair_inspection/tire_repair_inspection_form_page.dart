@@ -1490,15 +1490,17 @@ class _TireRepairInspectionFormPageState
                                 }
                               } else {
                                 // MODE: ADD
-                                const chars =
-                                    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                                final rand = math.Random.secure();
-                                final newId = List.generate(
-                                        10,
-                                        (_) =>
-                                            chars[rand.nextInt(chars.length)])
-                                    .join();
-
+                                // const chars =
+                                //     'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                                // final rand = math.Random.secure();
+                                // final newId = List.generate(
+                                //         10,
+                                //         (_) =>
+                                //             chars[rand.nextInt(chars.length)])
+                                //     .join();
+                                final uuid = Uuid();
+                                final newId =
+                                    '${DateTime.now().millisecondsSinceEpoch}_${uuid.v4().substring(0, 8)}';
                                 final reportData = {
                                   'id': newId,
                                   'customer': customerCtrl.text,
