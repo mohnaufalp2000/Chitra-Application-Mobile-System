@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/pages/tpms/spm_pressure_converter.dart';
 import 'package:camos/pages/tpms/widget/spm_image_helper.dart';
 import 'package:get/get.dart';
 
@@ -350,6 +351,7 @@ class _TpmsPageState extends State<TpmsPage> {
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               TextField(
                 onChanged: (value) {
@@ -365,6 +367,21 @@ class _TpmsPageState extends State<TpmsPage> {
               const SizedBox(
                 height: 12,
               ),
+              // Row(
+              //   children: [
+              //     Text(
+              //       'Total Unit SPM $siteName : ',
+              //       style: getBlackTextStyle(),
+              //     ),
+              //     Text(
+              //       '${allUnits.length}',
+              //       style: getBlackTextStyle(fontWeight: w700),
+              //     ),
+              //   ],
+              // ),
+              // const SizedBox(
+              //   height: 12,
+              // ),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
@@ -427,110 +444,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                     .contains(searchQuery.toLowerCase());
                               }).toList();
                             }
-
-                            // allUnits.clear();
-                            // list.forEach((element) {
-                            //   allUnits.add(
-                            //     [
-                            //       [
-                            //         {
-                            //           'pressure1': element.pressure1,
-                            //         },
-                            //         {
-                            //           'pressure2': element.pressure2,
-                            //         },
-                            //         {
-                            //           'pressure3': element.pressure3,
-                            //         },
-                            //         {
-                            //           'pressure4': element.pressure4,
-                            //         },
-                            //         {
-                            //           'pressure5': element.pressure5,
-                            //         },
-                            //         {
-                            //           'pressure6': element.pressure6,
-                            //         },
-                            //       ],
-                            //       [
-                            //         {
-                            //           'press1': element.press1,
-                            //         },
-                            //         {
-                            //           'press2': element.press2,
-                            //         },
-                            //         {
-                            //           'press3': element.press3,
-                            //         },
-                            //         {
-                            //           'press4': element.press4,
-                            //         },
-                            //         {
-                            //           'press5': element.press5,
-                            //         },
-                            //         {
-                            //           'press6': element.press6,
-                            //         },
-                            //       ],
-                            //       [
-                            //         {'temperature1': element.temperature1},
-                            //         {'temperature2': element.temperature2},
-                            //         {'temperature3': element.temperature3},
-                            //         {'temperature4': element.temperature4},
-                            //         {'temperature5': element.temperature5},
-                            //         {'temperature6': element.temperature6},
-                            //       ],
-                            //       [
-                            //         {'rating1': element.rating1},
-                            //         {'rating2': element.rating2},
-                            //         {'rating3': element.rating3},
-                            //         {'rating4': element.rating4},
-                            //         {'rating5': element.rating5},
-                            //         {'rating6': element.rating6},
-                            //       ],
-                            //       [
-                            //         {
-                            //           'temp1': element.temp1,
-                            //         },
-                            //         {
-                            //           'temp2': element.temp2,
-                            //         },
-                            //         {
-                            //           'temp3': element.temp3,
-                            //         },
-                            //         {
-                            //           'temp4': element.temp4,
-                            //         },
-                            //         {
-                            //           'temp5': element.temp5,
-                            //         },
-                            //         {
-                            //           'temp6': element.temp6,
-                            //         },
-                            //       ],
-                            //       [
-                            //         {
-                            //           'reccAdj1': element.reccAdj1,
-                            //         },
-                            //         {
-                            //           'reccAdj2': element.reccAdj2,
-                            //         },
-                            //         {
-                            //           'reccAdj3': element.reccAdj3,
-                            //         },
-                            //         {
-                            //           'reccAdj4': element.reccAdj4,
-                            //         },
-                            //         {
-                            //           'reccAdj5': element.reccAdj5,
-                            //         },
-                            //         {
-                            //           'reccAdj6': element.reccAdj6,
-                            //         },
-                            //       ],
-                            //     ],
-                            //   );
-                            // });
                             allUnits.clear();
 
                             list.forEach((element) {
@@ -613,10 +526,19 @@ class _TpmsPageState extends State<TpmsPage> {
                                   ],
                                   'reccAdj',
                                 ),
+                                buildList(
+                                  [
+                                    element.pressureUnit,
+                                    element.pressureUnit,
+                                    element.pressureUnit,
+                                    element.pressureUnit,
+                                    element.pressureUnit,
+                                    element.pressureUnit,
+                                  ],
+                                  'pressureUnit',
+                                ),
                               ]);
                             });
-
-                            log('all unit spm : ${allUnits.length}');
 
                             return Column(
                               children: list.map((e) {
@@ -700,20 +622,12 @@ class _TpmsPageState extends State<TpmsPage> {
                                                         child: PressureCard(
                                                           position:
                                                               '${index + 1}',
-                                                          // temperature: temperatures[index]
-                                                          //         [
-                                                          //         'temperature${index + 1}'] ??
-                                                          //     '',
                                                           temperature: allUnits[
                                                                           indexUnit]
                                                                       [2][index]
                                                                   [
                                                                   'temperature${index + 1}'] ??
                                                               '',
-                                                          // pressureStatus: pressureStatus[
-                                                          //             index]
-                                                          //         ['press${index + 1}'] ??
-                                                          //     '',
                                                           pressureStatus:
                                                               allUnits[indexUnit]
                                                                               [
@@ -723,8 +637,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                       [
                                                                       'press${index + 1}'] ??
                                                                   '',
-                                                          // pressure:
-                                                          //     e['pressure${index + 1}'],
                                                           pressure: allUnits[
                                                                           indexUnit]
                                                                       [0][index]
@@ -750,6 +662,12 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                       indexUnit]
                                                                   [5][index][
                                                               'reccAdj${index + 1}'],
+                                                          pressureUnit: allUnits[
+                                                                          indexUnit]
+                                                                      [6][index]
+                                                                  [
+                                                                  'pressureUnit${index + 1}'] ??
+                                                              '',
                                                         ),
                                                       ),
                                                     );
@@ -767,28 +685,21 @@ class _TpmsPageState extends State<TpmsPage> {
                                                 allUnits[indexUnit][0].length -
                                                     2, (index) {
                                               final dataIndex = index + 2;
+                                              log('unit pressure spm : ${allUnits[indexUnit]}');
                                               return Expanded(
                                                 child: PressureCard(
                                                   position: '${dataIndex + 1}',
                                                   index: index,
-                                                  // temperature: temperatures[dataIndex]
-                                                  //         ['temperature${dataIndex + 1}'] ??
-                                                  //     '',
                                                   temperature: allUnits[
                                                                   indexUnit][2]
                                                               [dataIndex][
                                                           'temperature${dataIndex + 1}'] ??
                                                       '',
-                                                  // pressureStatus: pressureStatus[dataIndex]
-                                                  //         ['press${dataIndex + 1}'] ??
-                                                  //     '',
                                                   pressureStatus: allUnits[
                                                                   indexUnit][1]
                                                               [dataIndex][
                                                           'press${dataIndex + 1}'] ??
                                                       '',
-                                                  // pressure: pressures[dataIndex]
-                                                  //     ['pressure${dataIndex + 1}'],
                                                   pressure: allUnits[indexUnit]
                                                               [0][dataIndex][
                                                           'pressure${dataIndex + 1}'] ??
@@ -805,6 +716,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                                   reccAdj: allUnits[indexUnit]
                                                               [5][dataIndex][
                                                           'reccAdj${dataIndex + 1}'] ??
+                                                      '',
+                                                  pressureUnit: allUnits[
+                                                                  indexUnit][6]
+                                                              [dataIndex][
+                                                          'pressureUnit${dataIndex + 1}'] ??
                                                       '',
                                                 ),
                                               );
@@ -1189,6 +1105,7 @@ class PressureCard extends StatelessWidget {
     required this.rating,
     required this.temperatureStatus,
     required this.reccAdj,
+    required this.pressureUnit,
   });
 
   final String position;
@@ -1199,6 +1116,7 @@ class PressureCard extends StatelessWidget {
   final String rating;
   final String temperatureStatus;
   final String reccAdj;
+  final String pressureUnit;
 
   @override
   Widget build(BuildContext context) {
@@ -1207,183 +1125,381 @@ class PressureCard extends StatelessWidget {
     late final String thermalLabel;
 
     switch (temperatureStatus) {
-      case '0': // cold
+      case '0':
         thermalColor = Colors.blue;
         thermalIcon = Icons.ac_unit;
         thermalLabel = 'Cold';
         break;
-
-      case '1': // hot
+      case '1':
         thermalColor = Colors.orange;
         thermalIcon = Icons.whatshot;
         thermalLabel = 'Hot';
         break;
-
-      case '2': // warning
+      case '2':
         thermalColor = Colors.amber;
         thermalIcon = Icons.warning_amber_rounded;
         thermalLabel = 'Warning';
         break;
-
-      case '3': // overtemperature
+      case '3':
         thermalColor = Colors.red;
         thermalIcon = Icons.local_fire_department;
         thermalLabel = 'Over Temp';
         break;
-
       default:
         thermalColor = Colors.grey;
         thermalIcon = Icons.device_thermostat;
         thermalLabel = '-';
     }
 
+    final psi = spmConvertPressure(double.parse(pressure), pressureUnit)['psi'];
+    final bar = spmConvertPressure(double.parse(pressure), pressureUnit)['bar'];
+    final reccPsi =
+        spmConvertPressure(double.parse(reccAdj), pressureUnit)['psi'];
+    final reccBar =
+        spmConvertPressure(double.parse(reccAdj), pressureUnit)['bar'];
+
     return Card(
-      elevation: 2,
-      child: Container(
+      elevation: 5,
+      child: SizedBox(
+        height: 280,
         child: Column(
           children: [
             // ================= HEADER =================
             Container(
-              padding: EdgeInsets.all(12),
-              height: MediaQuery.of(context).size.height * 0.103,
+              padding: const EdgeInsets.all(12),
+              height: 70,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: (pressureStatus == '2')
-                    ? Color(0xff9C27B0)
+                    ? const Color(0xff9C27B0)
                     : (pressureStatus == '1')
                         ? green00968A
                         : (pressureStatus == '0' && pressure != '0')
                             ? Colors.red
                             : black,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
                 ),
               ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      position,
-                      style: getWhiteTextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                      ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    position,
+                    style: getWhiteTextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
                     ),
-                    (pressureStatus == '2')
-                        ? Text(
-                            'Over',
-                            style: getWhiteTextStyle(
-                                fontSize: 10, fontWeight: w700),
-                          )
-                        : (pressureStatus == '0')
-                            ? (pressure != '0')
-                                ? Text(
-                                    'Low',
-                                    style: getWhiteTextStyle(
-                                      fontSize: 10,
-                                    ),
-                                  )
-                                : Container()
-                            : Container()
+                  ),
+                  if (pressureStatus == '2')
+                    Text('Over',
+                        style:
+                            getWhiteTextStyle(fontSize: 10, fontWeight: w700))
+                  else if (pressureStatus == '0' && pressure != '0')
+                    Text('Low', style: getWhiteTextStyle(fontSize: 10)),
+                ],
+              ),
+            ),
+
+            // ================= BODY =================
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // ===== PRESSURE =====
+                    Column(
+                      children: [
+                        Text('$psi Psi',
+                            style: getBlackTextStyle(
+                                fontSize: 18, fontWeight: w700)),
+                        Text('$bar BAR',
+                            style: getBlackTextStyle(fontSize: 14)),
+                        const Divider(),
+                        // Rec selalu ada (biar tinggi konsisten)
+                        Text(
+                          (pressureStatus != '1' && pressure != '0')
+                              ? 'Recc :$reccPsi Psi / $reccBar BAR'
+                              : '-',
+                          style: getRedTextStyle(fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    // ===== TEMPERATURE =====
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '$temperature °C',
+                              style: getBlackTextStyle(fontSize: 16)
+                                  .copyWith(color: thermalColor),
+                            ),
+                            Icon(thermalIcon, color: thermalColor, size: 20),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          thermalLabel,
+                          style: getBlackTextStyle(fontSize: 10)
+                              .copyWith(color: thermalColor, fontWeight: w600),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    // ===== RATING (selalu ada) =====
+                    Text(
+                      (rating != 'N/A' && rating.isNotEmpty)
+                          ? 'Rat. $rating'
+                          : '-',
+                      style: getBlackTextStyle(fontSize: 20),
+                    ),
                   ],
                 ),
               ),
             ),
-
-            // ================= PRESSURE =================
-            (pressureStatus == '1')
-                ? Column(
-                    children: [
-                      Text(
-                        pressure,
-                        style: getBlackTextStyle(fontSize: 22),
-                      ),
-                      Text(
-                        'Psi',
-                        style: getBlackTextStyle(fontSize: 22),
-                      ),
-                    ],
-                  )
-                : (pressure == '0')
-                    ? Column(
-                        children: [
-                          Text(
-                            pressure,
-                            style: getBlackTextStyle(fontSize: 22),
-                          ),
-                          Text(
-                            'Psi',
-                            style: getBlackTextStyle(fontSize: 22),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            '$pressure Psi',
-                            textAlign: TextAlign.center,
-                            style: getBlackTextStyle(fontSize: 22),
-                          ),
-                          Text(
-                            'Rec. pressure $reccAdj Psi',
-                            textAlign: TextAlign.center,
-                            style:
-                                getRedTextStyle(fontSize: 10, fontWeight: w700),
-                          ),
-                        ],
-                      ),
-
-            const Divider(),
-
-            // ================= TEMPERATURE =================
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$temperature °C',
-                        style: getBlackTextStyle(fontSize: 16)
-                            .copyWith(color: thermalColor),
-                      ),
-                      const SizedBox(width: 6),
-                      Icon(
-                        thermalIcon,
-                        color: thermalColor,
-                        size: 24,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    thermalLabel,
-                    style: getBlackTextStyle(fontSize: 12)
-                        .copyWith(color: thermalColor, fontWeight: w700),
-                  ),
-                ],
-              ),
-            ),
-
-            // ================= RATING (OPTIONAL) =================
-            if (rating != 'N/A' && rating != '' && rating != null)
-              Column(
-                children: [
-                  const Divider(),
-                  Text('Rat. $rating', style: getBlackTextStyle(fontSize: 24)),
-                ],
-              ),
-
-            const SizedBox(height: 6),
-
-            const SizedBox(height: 8),
           ],
         ),
       ),
     );
   }
 }
+
+// class PressureCard extends StatelessWidget {
+//   const PressureCard({
+//     super.key,
+//     required this.position,
+//     this.index = -1,
+//     required this.pressure,
+//     required this.pressureStatus,
+//     required this.temperature,
+//     required this.rating,
+//     required this.temperatureStatus,
+//     required this.reccAdj,
+//     required this.pressureUnit,
+//   });
+
+//   final String position;
+//   final int index;
+//   final String pressure;
+//   final String temperature;
+//   final String pressureStatus;
+//   final String rating;
+//   final String temperatureStatus;
+//   final String reccAdj;
+//   final String pressureUnit;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     late final Color thermalColor;
+//     late final IconData thermalIcon;
+//     late final String thermalLabel;
+
+//     switch (temperatureStatus) {
+//       case '0': // cold
+//         thermalColor = Colors.blue;
+//         thermalIcon = Icons.ac_unit;
+//         thermalLabel = 'Cold';
+//         break;
+
+//       case '1': // hot
+//         thermalColor = Colors.orange;
+//         thermalIcon = Icons.whatshot;
+//         thermalLabel = 'Hot';
+//         break;
+
+//       case '2': // warning
+//         thermalColor = Colors.amber;
+//         thermalIcon = Icons.warning_amber_rounded;
+//         thermalLabel = 'Warning';
+//         break;
+
+//       case '3': // overtemperature
+//         thermalColor = Colors.red;
+//         thermalIcon = Icons.local_fire_department;
+//         thermalLabel = 'Over Temp';
+//         break;
+
+//       default:
+//         thermalColor = Colors.grey;
+//         thermalIcon = Icons.device_thermostat;
+//         thermalLabel = '-';
+//     }
+
+//     final psi = spmConvertPressure(double.parse(pressure), pressureUnit)['psi'];
+//     final bar = spmConvertPressure(double.parse(pressure), pressureUnit)['bar'];
+//     final reccPsi =
+//         spmConvertPressure(double.parse(reccAdj), pressureUnit)['psi'];
+//     final reccBar =
+//         spmConvertPressure(double.parse(reccAdj), pressureUnit)['bar'];
+
+//     return Card(
+//       elevation: 2,
+//       child: SizedBox(
+//         height: 310,
+//         child: Container(
+//           child: Column(
+//             children: [
+//               // ================= HEADER =================
+//               Container(
+//                 padding: EdgeInsets.all(12),
+//                 height: MediaQuery.of(context).size.height * 0.086,
+//                 width: double.infinity,
+//                 decoration: BoxDecoration(
+//                   color: (pressureStatus == '2')
+//                       ? Color(0xff9C27B0)
+//                       : (pressureStatus == '1')
+//                           ? green00968A
+//                           : (pressureStatus == '0' && pressure != '0')
+//                               ? Colors.red
+//                               : black,
+//                   borderRadius: BorderRadius.only(
+//                     topLeft: Radius.circular(12),
+//                     topRight: Radius.circular(12),
+//                   ),
+//                 ),
+//                 child: Center(
+//                   child: Column(
+//                     mainAxisAlignment: MainAxisAlignment.center,
+//                     children: [
+//                       Text(
+//                         position,
+//                         style: getWhiteTextStyle(
+//                           fontSize: 24,
+//                           fontWeight: FontWeight.w700,
+//                         ),
+//                       ),
+//                       (pressureStatus == '2')
+//                           ? Text(
+//                               'Over',
+//                               style: getWhiteTextStyle(
+//                                   fontSize: 10, fontWeight: w700),
+//                             )
+//                           : (pressureStatus == '0')
+//                               ? (pressure != '0')
+//                                   ? Text(
+//                                       'Low',
+//                                       style: getWhiteTextStyle(
+//                                         fontSize: 10,
+//                                       ),
+//                                     )
+//                                   : Container()
+//                               : Container()
+//                     ],
+//                   ),
+//                 ),
+//               ),
+
+//               // ================= PRESSURE =================
+//               (pressureStatus == '1')
+//                   ? Column(
+//                       children: [
+//                         // Psi
+//                         Text(
+//                           '$psi Psi',
+//                           style: getBlackTextStyle(fontSize: 16),
+//                         ),
+//                         // BAR
+//                         Text(
+//                           '$bar BAR',
+//                           style: getBlackTextStyle(fontSize: 16),
+//                         ),
+//                       ],
+//                     )
+//                   : (pressure == '0')
+//                       ? Column(
+//                           children: [
+//                             // Psi
+//                             Text(
+//                               '$psi Psi',
+//                               style: getBlackTextStyle(fontSize: 16),
+//                             ),
+//                             // BAR
+//                             Text(
+//                               '$bar BAR',
+//                               style: getBlackTextStyle(fontSize: 16),
+//                             ),
+//                           ],
+//                         )
+//                       : Column(
+//                           crossAxisAlignment: CrossAxisAlignment.center,
+//                           children: [
+//                             // Psi
+//                             Text(
+//                               '$psi Psi',
+//                               style: getBlackTextStyle(fontSize: 16),
+//                             ),
+//                             // BAR
+//                             Text(
+//                               '$bar BAR',
+//                               style: getBlackTextStyle(fontSize: 16),
+//                             ),
+//                             const Divider(),
+
+//                             Text(
+//                               'Rec. pressure\n$reccPsi Psi / $reccBar BAR',
+//                               textAlign: TextAlign.center,
+//                               style: getRedTextStyle(
+//                                   fontSize: 10, fontWeight: w700),
+//                             ),
+//                           ],
+//                         ),
+
+//               const Divider(),
+
+//               // ================= TEMPERATURE =================
+//               Padding(
+//                 padding: const EdgeInsets.symmetric(vertical: 8.0),
+//                 child: Column(
+//                   children: [
+//                     Row(
+//                       mainAxisAlignment: MainAxisAlignment.center,
+//                       children: [
+//                         Text(
+//                           '$temperature °C',
+//                           style: getBlackTextStyle(fontSize: 16)
+//                               .copyWith(color: thermalColor),
+//                         ),
+//                         const SizedBox(width: 6),
+//                         Icon(
+//                           thermalIcon,
+//                           color: thermalColor,
+//                           size: 24,
+//                         ),
+//                       ],
+//                     ),
+//                     const SizedBox(height: 4),
+//                     Text(
+//                       thermalLabel,
+//                       style: getBlackTextStyle(fontSize: 12)
+//                           .copyWith(color: thermalColor, fontWeight: w700),
+//                     ),
+//                   ],
+//                 ),
+//               ),
+
+//               // ================= RATING (OPTIONAL) =================
+//               if (rating != 'N/A' && rating != '' && rating != null)
+//                 Column(
+//                   children: [
+//                     const Divider(),
+//                     Text('Rat. $rating',
+//                         style: getBlackTextStyle(fontSize: 24)),
+//                   ],
+//                 ),
+
+//               const SizedBox(height: 6),
+
+//               const SizedBox(height: 8),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
