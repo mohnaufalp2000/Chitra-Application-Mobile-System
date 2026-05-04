@@ -3929,6 +3929,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       'Data Succesfully Added',
                       style: getWhiteTextStyle(),
                     )));
+                Navigator.pop(context);
               } catch (e) {
                 print('error bmb : $e');
               }
