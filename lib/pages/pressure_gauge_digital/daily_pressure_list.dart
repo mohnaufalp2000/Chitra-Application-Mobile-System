@@ -335,6 +335,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         pit.add('Room B1 Selatan');
         pit.add('TIA');
         pit.add('Serongga');
+        pit.add('CSA Bagaspati');
         pit.add('CSA Selatan');
         pit.add('WS');
         break;
