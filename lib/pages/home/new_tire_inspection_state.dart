@@ -150,11 +150,14 @@ class NewTireInspectionState extends GetxController {
       // createTireInspectionExcel sudah handle loop posisi di dalamnya
       exportProgress.value = 0.85;
       // yang bikin error !!
-      final cleanedData = takeOutRimCondition(filteredTasks);
-      log('filtered data : ${cleanedData.toList()}');
+      // final cleanedData = takeOutRimCondition(filteredTasks);
+      // log('filtered data : ${cleanedData.toList()}');
+
+      // final bytes =
+      //     await createExcel('tire_inspection', task: cleanedData.toList());
 
       final bytes =
-          await createExcel('tire_inspection', task: cleanedData.toList());
+          await createExcel('tire_inspection', task: filteredTasks.toList());
       await file.writeAsBytes(bytes, flush: true);
 
       exportProgress.value = 1.0;

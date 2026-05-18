@@ -479,6 +479,20 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('L1').setText('Tire Damage');
       sheet.getRangeByName('M1').setText('Broken Component');
       sheet.getRangeByName('N1').setText('SN Tire');
+      sheet.getRangeByName('O1').setText('Rim Base Condition');
+      sheet.getRangeByName('P1').setText('Rim Base Remark');
+      sheet.getRangeByName('Q1').setText('Flange Condition');
+      sheet.getRangeByName('R1').setText('Flange Remark');
+      sheet.getRangeByName('S1').setText('Lock Ring Condition');
+      sheet.getRangeByName('T1').setText('Lock Ring Remark');
+      sheet
+          .getRangeByName('U1')
+          .setText('Valve (Terpasang - GOOD/Tidak - POOR)');
+      sheet.getRangeByName('V1').setText('Valve Remark');
+      sheet.getRangeByName('W1').setText('Core Valve Condition');
+      sheet.getRangeByName('X1').setText('Core Valve Remark');
+      sheet.getRangeByName('Y1').setText('Nut and Stud Condition');
+      sheet.getRangeByName('Z1').setText('Nut and Stud Remark');
 
       int rowIndex = 2;
 
@@ -686,6 +700,106 @@ Future<List<int>> createExcel(String type,
               (posisi['sn'] == '' || posisi['sn'] == null)
                   ? '0'
                   : posisi['sn']);
+
+          // Tire Check Condition
+          final rimCondition = p['rimCondition'] as List<dynamic>? ?? [];
+
+          for (var rim in rimCondition) {
+            log('jenis kondisi rim : $rim');
+            final title = rim['title'].toString();
+            final condition = rim['condition']?.toString() ?? '-';
+            final remark = rim['remark']?.toString() ?? '-';
+
+            // RIM BASE
+            if (title == 'RIM BASE') {
+              sheet.getRangeByName('O$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('O$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('O$rowIndex').setText(condition);
+
+              sheet.getRangeByName('P$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('P$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('P$rowIndex').setText(remark);
+            }
+
+            // FLANGE
+            if (title == 'FLANGE') {
+              sheet.getRangeByName('Q$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('Q$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('Q$rowIndex').setText(condition);
+
+              sheet.getRangeByName('R$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('R$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('R$rowIndex').setText(remark);
+            }
+
+            // LOCK RING
+            if (title == 'LOCK RING') {
+              sheet.getRangeByName('S$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('S$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('S$rowIndex').setText(condition);
+
+              sheet.getRangeByName('T$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('T$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('T$rowIndex').setText(remark);
+            }
+
+            // VALVE
+            if (title == 'VALVE (TERPASANG/TIDAK TERPASANG)') {
+              sheet.getRangeByName('U$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('U$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('U$rowIndex').setText(condition);
+
+              sheet.getRangeByName('V$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('V$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('V$rowIndex').setText(remark);
+            }
+
+            // CORE VALVE
+            if (title == 'CORE VALVE') {
+              sheet.getRangeByName('W$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('W$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('W$rowIndex').setText(condition);
+
+              sheet.getRangeByName('X$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('X$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('X$rowIndex').setText(remark);
+            }
+
+            // NUT AND STUD
+            if (title == 'NUT DAN STUD RODA') {
+              sheet.getRangeByName('Y$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('Y$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('Y$rowIndex').setText(condition);
+
+              sheet.getRangeByName('Z$rowIndex').cellStyle.hAlign =
+                  HAlignType.center;
+              sheet.getRangeByName('Z$rowIndex').cellStyle.vAlign =
+                  VAlignType.center;
+              sheet.getRangeByName('Z$rowIndex').setText(remark);
+            }
+          }
 
           rowIndex++;
         }
