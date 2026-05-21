@@ -5,6 +5,7 @@ import 'package:camos/core/styles/text_manager.dart';
 import 'package:camos/core/widgets/button_widget.dart';
 import 'package:camos/pages/home/new_tire_inspection_state.dart';
 import 'package:camos/pages/home/tire_inspection_page.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_badge_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:flutter/material.dart';
@@ -973,7 +974,18 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                         const SizedBox(height: 4),
                         _row('SN', posisi['sn'] ?? '-'),
                         _row('Tire Size', posisi['tireSize'] ?? '-'),
-                        _row('Pressure', '${posisi['pressure'] ?? '-'} Psi'),
+                        Row(
+                          children: [
+                            Expanded(
+                                child: _row('Pressure',
+                                    '${posisi['pressure'] ?? '-'} Psi')),
+                            const SizedBox(
+                              width: 6,
+                            ),
+                            TemperatureStatusBadgeWidget(
+                                status: posisi['temperatureStatus'])
+                          ],
+                        ),
                         _row('Adj Pressure',
                             '${posisi['adjusmentPressure'] ?? '-'} Psi'),
                         _row('RTD',

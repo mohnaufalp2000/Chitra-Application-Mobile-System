@@ -479,6 +479,7 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('L1').setText('Tire Damage');
       sheet.getRangeByName('M1').setText('Broken Component');
       sheet.getRangeByName('N1').setText('SN Tire');
+      sheet.getRangeByName('O1').setText('temperature_status');
 
       int rowIndex = 2;
 
@@ -686,6 +687,15 @@ Future<List<int>> createExcel(String type,
               (posisi['sn'] == '' || posisi['sn'] == null)
                   ? '0'
                   : posisi['sn']);
+
+          // O = Temperature Status
+          sheet.getRangeByName('O$rowIndex').cellStyle.hAlign =
+              HAlignType.center;
+          sheet.getRangeByName('O$rowIndex').cellStyle.vAlign =
+              VAlignType.center;
+          sheet
+              .getRangeByName('O$rowIndex')
+              .setText(posisi['temperatureStatus']);
 
           rowIndex++;
         }
@@ -1202,6 +1212,9 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('P1').setText('temp');
       if (daily?[0]['idSite'] == '33') {
         sheet.getRangeByName('Q1').setText('Tire Accessories');
+        sheet.getRangeByName('R1').setText('temperature_status');
+      } else {
+        sheet.getRangeByName('Q1').setText('temperature_status');
       }
 
       // log('daily excel daily excel : $daily');
@@ -1296,6 +1309,13 @@ Future<List<int>> createExcel(String type,
                           '${acc['name']} (${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})')
                       .join('\n'),
                 );
+            sheet
+                .getRangeByName('R${rowIndex}')
+                .setText(posisi[j]['temperatureStatus'] ?? '');
+          } else {
+            sheet
+                .getRangeByName('Q${rowIndex}')
+                .setText(posisi[j]['temperatureStatus'] ?? '');
           }
 
           rowIndex++;

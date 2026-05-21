@@ -16,6 +16,9 @@ import 'package:camos/core/utils/bluetooth/utils/bluetooth_utils.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/bluetooth/list_of_connected_devices_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/build_temperature_button_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_badge_widget.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_selector_widget.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -134,6 +137,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   int selectedPit = -1;
   int selectedPosIndex = -1;
   int selectedType = 1;
+  String selectedTemperature = 'HOT';
   int selectedRoute = 0;
   int checkAmount = 0;
   Map<String, dynamic> dataUnit = {};
@@ -1793,7 +1797,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                               Position(
                                   pos: '${i + 1}',
                                   pressure: '',
+                                  temperatureStatus: 'HOT',
                                   adjusmentPressure: '',
+                                  adjustmentTemperatureStatus: 'HOT',
                                   rating: '',
                                   luka: [],
                                   image: '',
@@ -2347,164 +2353,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                       ),
                                     ),
 
-                                    // BlocBuilder<BluetoothOnOffCubit,
-                                    //     BluetoothOnOffState>(
-                                    //   builder: (context, onOffState) {
-                                    //     log('bluetooth is on state : ${onOffState is BluetoothOnState}');
-                                    //     log('bluetooth is off state : ${onOffState is BluetoothOffState}');
-
-                                    //     if (onOffState is BluetoothOnState) {
-                                    //       return BlocConsumer<
-                                    //           ConnectedDevicesCubit,
-                                    //           connectedDevicesState
-                                    //           .ConnectedDevicesState>(
-                                    //         listener: (context, state) {
-                                    //           if (state is connectedDevicesState
-                                    //               .ConnectedDevicesLoadedState) {
-                                    //             if (state.connectedDevices
-                                    //                 .isNotEmpty) {
-                                    //               BlocProvider.of<
-                                    //                   DiscoverServicesCubit>(
-                                    //                 context,
-                                    //               ).discoverServices(state
-                                    //                   .connectedDevices[0]);
-                                    //             }
-                                    //           }
-                                    //         },
-                                    //         builder: (context, state) {
-                                    //           if (state is connectedDevicesState
-                                    //               .ConnectedDevicesLoadedState) {
-                                    //             return Column(
-                                    //               children: [
-                                    //                 ListOfConnectedDevicesWidget(
-                                    //                   connectedDevices: state
-                                    //                       .connectedDevices,
-                                    //                 ),
-                                    //                 BlocConsumer<
-                                    //                     DiscoverServicesCubit,
-                                    //                     DiscoverServiceState>(
-                                    //                   listener: (context,
-                                    //                       discoverState) {
-                                    //                     if (discoverState
-                                    //                         is ServicesLoadedState) {
-                                    //                       final services =
-                                    //                           discoverState
-                                    //                               .services;
-                                    //                       log('services pgd : $services');
-
-                                    //                       for (BluetoothService service
-                                    //                           in services) {
-                                    //                         for (BluetoothCharacteristic characteristic
-                                    //                             in service
-                                    //                                 .characteristics) {
-                                    //                           characteristic
-                                    //                               .lastValueStream
-                                    //                               .listen((
-                                    //                             event,
-                                    //                           ) {
-                                    //                             String
-                                    //                                 notifInString =
-                                    //                                 String.fromCharCodes(
-                                    //                                     event);
-                                    //                             debugPrint(
-                                    //                               "debugBluetoothNotification*************",
-                                    //                             );
-                                    //                             debugPrint(
-                                    //                               "debugBluetoothNotification: charName: ${BluetoothUtils.getBluetoothChar(characteristic.characteristicUuid.str)}",
-                                    //                             );
-
-                                    //                             debugPrint(
-                                    //                               "notifhohoho: stringNotif: $notifInString",
-                                    //                             );
-                                    //                             setState(() {
-                                    //                               String press =
-                                    //                                   '';
-
-                                    //                               if (notifInString
-                                    //                                   .contains(
-                                    //                                       '|')) {
-                                    //                                 int floorPressure =
-                                    //                                     double
-                                    //                                         .parse(
-                                    //                                   notifInString
-                                    //                                       .split(
-                                    //                                     '|',
-                                    //                                   )[0],
-                                    //                                 ).floor();
-
-                                    //                                 // int floorTemperature =
-                                    //                                 //     double.parse(
-                                    //                                 //       notifInString.split(
-                                    //                                 //         '|',
-                                    //                                 //       )[1],
-                                    //                                 //     ).floor();
-                                    //                                 // temperature = floorTemperature
-                                    //                                 //     .toString();
-                                    //                                 applyPressureData(
-                                    //                                     floorPressure
-                                    //                                         .toString());
-                                    //                               } else {
-                                    //                                 int floorPressure =
-                                    //                                     double
-                                    //                                         .parse(
-                                    //                                   notifInString,
-                                    //                                 ).floor();
-                                    //                                 press
-                                    //                                     .toString();
-                                    //                                 applyPressureData(
-                                    //                                     floorPressure
-                                    //                                         .toString());
-                                    //                               }
-                                    //                             });
-
-                                    //                             debugPrint(
-                                    //                               "debugBluetoothNotification*************",
-                                    //                             );
-                                    //                           });
-                                    //                         }
-                                    //                       }
-                                    //                     }
-                                    //                   },
-                                    //                   builder: (context,
-                                    //                       discoverState) {
-                                    //                     if (discoverState
-                                    //                         is ErrorLoadingServiceState) {
-                                    //                       return Center(
-                                    //                           child: Text(
-                                    //                               'Error'));
-                                    //                     }
-                                    //                     return Container();
-                                    //                   },
-                                    //                 ),
-                                    //               ],
-                                    //             );
-                                    //           } else if (state
-                                    //               is connectedDevicesState
-                                    //               .LoadingState) {
-                                    //             return const Center(
-                                    //               child:
-                                    //                   CircularProgressIndicator(),
-                                    //             );
-                                    //           }
-                                    //           return const SizedBox();
-                                    //         },
-                                    //       );
-                                    //     } else if (onOffState
-                                    //         is BluetoothOffState) {
-                                    //       return const Center(
-                                    //         child:
-                                    //             Text("Bluetooth is turned off"),
-                                    //       );
-                                    //     } else if (onOffState
-                                    //         is BluetoothNotSupportedState) {
-                                    //       return Center(
-                                    //           child: Text(
-                                    //               onOffState.failData.msg));
-                                    //     }
-                                    //     return const Center(
-                                    //         child: CircularProgressIndicator());
-                                    //   },
-                                    // ),
                                     Column(
                                         children: position.map((pos) {
                                       final posIndex = position.indexOf(pos);
@@ -2549,6 +2397,52 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                               // Manual Inspect
                               : Column(
                                   children: [
+                                    // UNIT/TIRE TEMPERATURE
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: [
+                                        Icon(
+                                          Icons.device_thermostat,
+                                          size: 38,
+                                        ),
+                                        const SizedBox(
+                                          width: 12,
+                                        ),
+                                        Text(
+                                          'Unit/Tire Temperature',
+                                          style: getBlackTextStyle(
+                                              fontSize: 18, fontWeight: w700),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(
+                                      height: 8,
+                                    ),
+                                    TemperatureStatusSelectorWidget(
+                                      selectedStatus: position.isNotEmpty
+                                          ? position[0].temperatureStatus
+                                          : 'HOT',
+                                      onChanged: (value) {
+                                        setState(() {
+                                          for (int i = 0;
+                                              i < position.length;
+                                              i++) {
+                                            position[i] = position[i].copyWith(
+                                              temperatureStatus: value,
+                                            );
+                                            position[i] = position[i].copyWith(
+                                              adjustmentTemperatureStatus:
+                                                  value,
+                                            );
+                                            log('temperature terkini : ${position[0].temperatureStatus}');
+                                          }
+                                        });
+                                      },
+                                    ),
+                                    const SizedBox(
+                                      height: 12,
+                                    ),
                                     // POSITION
                                     Row(
                                       mainAxisAlignment:
@@ -2651,7 +2545,49 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                   SizedBox(
                                                                       height:
                                                                           16.0),
-                                                                  Column(),
+                                                                  // ADD COT HOLD PRESSURE
+                                                                  // StatefulBuilder(
+                                                                  //   builder:
+                                                                  //       (context,
+                                                                  //           state) {
+                                                                  //     return Row(
+                                                                  //       children: [
+                                                                  //         Expanded(
+                                                                  //           child: buildTemperatureButton(
+                                                                  //             title: 'HOT',
+                                                                  //             isSelected: position[posIndex].temperatureStatus == 'HOT',
+                                                                  //             color: Colors.red,
+                                                                  //             onTap: () {
+                                                                  //               position[posIndex] = position[posIndex].copyWith(
+                                                                  //                 temperatureStatus: 'HOT',
+                                                                  //               );
+                                                                  //               print('TEMPERATURE STATUS : ${position[posIndex].temperatureStatus}');
+                                                                  //               state(() {});
+                                                                  //             },
+                                                                  //           ),
+                                                                  //         ),
+                                                                  //         const SizedBox(width: 12),
+                                                                  //         Expanded(
+                                                                  //           child: buildTemperatureButton(
+                                                                  //             title: 'COLD',
+                                                                  //             isSelected: position[posIndex].temperatureStatus == 'COLD',
+                                                                  //             color: Colors.blue,
+                                                                  //             onTap: () {
+                                                                  //               position[posIndex] = position[posIndex].copyWith(temperatureStatus: 'COLD');
+                                                                  //               print('TEMPERATURE STATUS : ${position[posIndex].temperatureStatus}');
+
+                                                                  //               state(() {});
+                                                                  //             },
+                                                                  //           ),
+                                                                  //         ),
+                                                                  //       ],
+                                                                  //     );
+                                                                  //   },
+                                                                  // ),
+
+                                                                  const SizedBox(
+                                                                    height: 12,
+                                                                  ),
                                                                   Wrap(
                                                                     children:
                                                                         pressure
@@ -2707,6 +2643,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                       );
                                                                     }).toList(),
                                                                   ),
+
                                                                   Row(
                                                                     children: [
                                                                       Expanded(
@@ -2789,9 +2726,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                     .circular(
                                                                         12),
                                                           )),
-                                                  // child: (position[posIndex]
-                                                  //             ['pressure'] ==
-                                                  //         '')
                                                   child: (position[posIndex]
                                                               .pressure ==
                                                           '')
@@ -2813,13 +2747,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                             )
                                                           ],
                                                         )
-                                                      // : Text(
-                                                      //     '${position[posIndex]['pressure']} Psi',
-                                                      //     style: getWhiteTextStyle(
-                                                      //       fontSize: 24,
-                                                      //       fontWeight: w700,
-                                                      //     ),
-                                                      //   ),
                                                       : Text(
                                                           '${position[posIndex].pressure} Psi',
                                                           style:
@@ -2875,7 +2802,49 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                   SizedBox(
                                                                       height:
                                                                           16.0),
-                                                                  Column(),
+                                                                  // ADD COT HOLD PRESSURE
+                                                                  // StatefulBuilder(
+                                                                  //   builder:
+                                                                  //       (context,
+                                                                  //           state) {
+                                                                  //     return Row(
+                                                                  //       children: [
+                                                                  //         Expanded(
+                                                                  //           child: buildTemperatureButton(
+                                                                  //             title: 'HOT',
+                                                                  //             isSelected: position[posIndex].adjustmentTemperatureStatus == 'HOT',
+                                                                  //             color: Colors.red,
+                                                                  //             onTap: () {
+                                                                  //               position[posIndex] = position[posIndex].copyWith(
+                                                                  //                 adjustmentTemperatureStatus: 'HOT',
+                                                                  //               );
+                                                                  //               print('TEMPERATURE STATUS : ${position[posIndex].adjustmentTemperatureStatus}');
+                                                                  //               state(() {});
+                                                                  //             },
+                                                                  //           ),
+                                                                  //         ),
+                                                                  //         const SizedBox(width: 12),
+                                                                  //         Expanded(
+                                                                  //           child: buildTemperatureButton(
+                                                                  //             title: 'COLD',
+                                                                  //             isSelected: position[posIndex].adjustmentTemperatureStatus == 'COLD',
+                                                                  //             color: Colors.blue,
+                                                                  //             onTap: () {
+                                                                  //               position[posIndex] = position[posIndex].copyWith(adjustmentTemperatureStatus: 'COLD');
+                                                                  //               print('TEMPERATURE STATUS : ${position[posIndex].adjustmentTemperatureStatus}');
+
+                                                                  //               state(() {});
+                                                                  //             },
+                                                                  //           ),
+                                                                  //         ),
+                                                                  //       ],
+                                                                  //     );
+                                                                  //   },
+                                                                  // ),
+
+                                                                  const SizedBox(
+                                                                    height: 12,
+                                                                  ),
                                                                   Wrap(
                                                                     children:
                                                                         pressure
@@ -3000,13 +2969,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                           style:
                                                               getWhiteTextStyle(),
                                                         )
-                                                      // : Text(
-                                                      //     '${position[posIndex]['adjusmentPressure']} Psi (Adj)',
-                                                      //     style: getWhiteTextStyle(
-                                                      //       fontSize: 16,
-                                                      //       fontWeight: w700,
-                                                      //     ),
-                                                      //   ),
                                                       : Text(
                                                           '${position[posIndex].adjusmentPressure} Psi (Adj)',
                                                           style:
@@ -3576,6 +3538,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
         child: SizedBox(
           height: 52,
           child: ElevatedButton(
+            // onPressed: () async {
+            //   final temp = (position[0].adjusmentPressure != '')
+            //       ? (position[0].adjustmentTemperatureStatus)
+            //       : '';
+            //   log('position temperature : ${temp}');
+            // },
             onPressed: () async {
               DateTime? selectedDateTimeSPM = DateTime.now();
 
@@ -3780,7 +3748,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'pos': '${pIndex + 1}',
                         'rating': (p.rating) ?? '',
                         'pressure': (p.pressure) ?? '0',
+                        'temperatureStatus': (p.temperatureStatus),
                         'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                        'adjusmentTemperatureStatus':
+                            (position[0].adjusmentPressure != '')
+                                ? (position[0].adjustmentTemperatureStatus)
+                                : '',
                         'luka': (selectedType == 0) ? '' : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
@@ -3842,21 +3815,16 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'hm': hmCtrl.text,
                         'posisi': position.map((p) {
                           final pIndex = position.indexOf(p);
-                          // return {
-                          //   'pos': '${pIndex + 1}',
-                          //   'pressure': (p['pressure']) ?? '0',
-                          //   'rating': (p['rating']) ?? '',
-                          //   'adjusmentPressure': (p['adjusmentPressure']) ?? '0',
-                          //   'luka': (selectedType == 0) ? '' : p['damage'],
-                          //   'image': (listImage[pIndex] != '')
-                          //       ? listImage[pIndex]
-                          //       : '',
-                          // };
                           return {
                             'pos': '${pIndex + 1}',
                             'pressure': (p.pressure) ?? '0',
+                            'temperatureStatus': (p.temperatureStatus),
                             'rating': (p.rating) ?? '',
                             'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                            'adjusmentTemperatureStatus':
+                                (position[0].adjusmentPressure != '')
+                                    ? (position[0].adjustmentTemperatureStatus)
+                                    : '',
                             'luka': (selectedType == 0) ? '' : p.luka,
                             'image': (listImage[pIndex] != '')
                                 ? listImage[pIndex]
@@ -3900,8 +3868,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       return {
                         'pos': '${pIndex + 1}',
                         'pressure': (p.pressure) ?? '0',
+                        'temperatureStatus': (p.temperatureStatus),
                         'rating': (p.rating) ?? '',
                         'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                        'adjusmentTemperatureStatus':
+                            (position[0].adjusmentPressure != '')
+                                ? (position[0].adjustmentTemperatureStatus)
+                                : '',
                         'luka': (selectedType == 0) ? '' : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',

@@ -78,8 +78,10 @@ class DailyPress extends Equatable {
 class Position extends Equatable {
   final String pos;
   final String pressure;
+  final String temperatureStatus;
   final String rating;
   final String adjusmentPressure;
+  final String adjustmentTemperatureStatus;
   final List<String> luka;
   final String image;
   final String size;
@@ -96,8 +98,10 @@ class Position extends Equatable {
   Position({
     required this.pos,
     required this.pressure,
+    required this.temperatureStatus,
     required this.rating,
     required this.adjusmentPressure,
+    required this.adjustmentTemperatureStatus,
     required this.luka,
     required this.image,
     required this.size,
@@ -114,7 +118,7 @@ class Position extends Equatable {
 
   @override
   String toString() {
-    return 'Position(pos: $pos, pressure: $pressure, rating: $rating, adjusmentPressure: $adjusmentPressure, '
+    return 'Position(pos: $pos, pressure: $pressure, temperatureStatus: $temperatureStatus, rating: $rating, adjusmentPressure: $adjusmentPressure, adjustmentTemperatureStatus: $adjustmentTemperatureStatus, '
         'luka: ${luka.join(", ")}, image: $image, size: $size, idInventory: $idInventory, idUnit: $idUnit, '
         'idDaily: $idDaily, kondisi: $kondisi, minPress: $minPress, maxPress: $maxPress, avgPress: $avgPress, '
         'temp: $temp, tireAccessories: ${tireAccessories.map((e) => e.toMap()).toList()})';
@@ -134,8 +138,11 @@ class Position extends Equatable {
     return Position(
       pos: map['pos'] ?? '',
       pressure: map['pressure']?.toString() ?? '0',
+      temperatureStatus: map['temperatureStatus']?.toString() ?? '',
       rating: map['rating'] ?? '',
       adjusmentPressure: map['adjusmentPressure']?.toString() ?? '0',
+      adjustmentTemperatureStatus:
+          map['adjustmentTemperatureStatus']?.toString() ?? '0',
       luka: _parseList(map['luka']),
       image: map['image'] ?? '',
       size: map['tireSize'] ?? '',
@@ -160,8 +167,10 @@ class Position extends Equatable {
   Position copyWith({
     String? pos,
     String? pressure,
+    String? temperatureStatus,
     String? rating,
     String? adjusmentPressure,
+    String? adjustmentTemperatureStatus,
     List<String>? luka,
     String? image,
     String? size,
@@ -178,8 +187,11 @@ class Position extends Equatable {
     return Position(
       pos: pos ?? this.pos,
       pressure: pressure ?? this.pressure,
+      temperatureStatus: temperatureStatus ?? this.temperatureStatus,
       rating: rating ?? this.rating,
       adjusmentPressure: adjusmentPressure ?? this.adjusmentPressure,
+      adjustmentTemperatureStatus:
+          adjustmentTemperatureStatus ?? this.adjustmentTemperatureStatus,
       luka: luka ?? this.luka,
       image: image ?? this.image,
       size: size ?? this.size,
@@ -199,8 +211,10 @@ class Position extends Equatable {
     return {
       'pos': pos,
       'pressure': pressure,
+      'temperatureStatus': temperatureStatus,
       'rating': rating,
       'adjusmentPressure': adjusmentPressure,
+      'adjustmentTemperatureStatus': adjustmentTemperatureStatus,
       'luka': luka,
       'image': image,
       'tireSize': size,
