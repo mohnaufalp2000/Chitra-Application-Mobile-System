@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:camos/core/utils/data/id_site.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_badge_widget.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -45,122 +46,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   final HomeState homeState = Get.isRegistered<HomeState>()
       ? Get.find<HomeState>()
       : Get.put(HomeState());
-
-  // // untuk user office, id site menyimpan id site yang dipilih
-  // String idSite = '';
-  // // untuk user office, actual id site menyimpan id site office
-  // String actualIdSite = '';
-  // List<String> pit = [];
-  // int selectedPit = 0;
-  // int selectedMenu = 2;
-  // String searchQuery = '';
-  // Map<String, dynamic> user = {};
-  // List<Map<String, dynamic>> filteredItemTask = [];
-  // List<UnitTire> units = [];
-  // bool isOnline = false;
-  // DateTime now = DateTime.now();
-  // bool isLoading = false;
-  // int countAllTire = 0;
-  // Map<String, dynamic> allTireSize = {};
-  // List<UnitTire> allUnit = [];
-  // bool isEmpty = false;
-
-  // // List<UnitTire> filteredUnits = [];
-
-  // @override
-  // void initState() {
-  //   super.initState();
-
-  //   insertPit();
-  //   getUser();
-  // }
-
-  // getCount() async {
-  //   final snapshot = await firestore
-  //       .collection('daily_pressure')
-  //       .where('idSite', isEqualTo: idSite)
-  //       .count()
-  //       .get();
-  //   final count = snapshot.count;
-  //   log('jumlah : $count');
-  // }
-
-  // // coba buat variable offline dan online, jika tekan tombol online ambil dari cts, jika tekan tombol offline ambil dari local tapi kalau belum ambil dari cts, ambil dari cts dulu
-  // Future<void> getUnits() async {
-  //   log('get units terpanggil');
-  //   // jika user site ambil dari cache
-  //   if (await getIdSitePreferences() != '1' &&
-  //       await getIdSitePreferences() != '2') {
-  //     //       // belum ganti bulan
-  //     if (!isOnline) {
-  //       log('apakah offline');
-  //       // units = await ApiService.getCachedUnits(
-  //       //     idSite: await getIdSitePreferences());
-  //       context.read<UnitBloc>().add(GetUnitsEvent(
-  //           idSite: await getIdSitePreferences(), isOnline: isOnline));
-  //     } else {
-  //       final connectivityResult = await Connectivity().checkConnectivity();
-
-  //       if (connectivityResult == ConnectivityResult.none) {
-  //         setState(() {
-  //           isOnline = !isOnline;
-  //         });
-  //         showDialog(
-  //             context: context,
-  //             builder: (BuildContext context) {
-  //               return AlertDialog(
-  //                 title: Text(
-  //                   'Please check your internet connection!',
-  //                   style: getBlackTextStyle(),
-  //                 ),
-  //                 actions: [
-  //                   TextButton(
-  //                       onPressed: () {
-  //                         Navigator.pop(context);
-  //                         Navigator.pop(context);
-  //                       },
-  //                       child: Text('Okay'))
-  //                 ],
-  //               );
-  //             });
-  //       } else {
-  //         // units = await ApiService.getUnits(idSite);
-  //         context.read<UnitBloc>().add(GetUnitsEvent(
-  //             idSite: await getIdSitePreferences(), isOnline: isOnline));
-  //       }
-  //     }
-  //   } else {
-  //     // jika user office tidak perlu ambil dari cache
-  //     context
-  //         .read<UnitBloc>()
-  //         .add(GetUnitsEvent(idSite: idSite, isOnline: true));
-  //   }
-  // }
-
-  // getUser() async {
-  //   user = await getUserPreferences();
-  //   log('username : ${user}');
-  // }
-
-  // insertPit() async {
-  //   idSite = await getIdSitePreferences();
-  //   actualIdSite = await getIdSitePreferences();
-  //   if (idSite == '1' || idSite == '2') {
-  //     idSite = await getSelectedIdSitePreferences();
-  //   }
-  //   log('id site : $idSite');
-
-  //   await getUnits();
-
-  //   // int count = await getTodayDocumentCount();
-  //   log('jumlah unit dicek : $count');
-  // }
-
-  // Future<String> getActualIdSite() async {
-  //   final actIdSite = await getIdSitePreferences();
-
-  //   return actIdSite;
-  // }
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   String currentIdSite = '';
@@ -978,13 +863,32 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                 CrossAxisAlignment
                                                                     .end,
                                                             children: [
-                                                              Text(
-                                                                '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
-                                                                style: getWhiteTextStyle(
-                                                                    fontWeight:
-                                                                        w700,
-                                                                    fontSize:
-                                                                        18),
+                                                              Row(
+                                                                children: [
+                                                                  Text(
+                                                                    '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
+                                                                    style: getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                        fontSize:
+                                                                            18),
+                                                                  ),
+                                                                  const SizedBox(
+                                                                    width: 6,
+                                                                  ),
+                                                                  TemperatureStatusBadgeWidget(
+                                                                      status: pl[
+                                                                          'temperatureStatus']),
+                                                                  // Text(
+                                                                  //   // '${(pl['temperatureStatus'] == '' || pl['temperatureStatus'] == null) ? 'HOT' : pl['temperatureStatus']}',
+                                                                  //   '${(pl['temperatureStatus'])}',
+                                                                  //   style: getWhiteTextStyle(
+                                                                  //       fontWeight:
+                                                                  //           w700,
+                                                                  //       fontSize:
+                                                                  //           18),
+                                                                  // ),
+                                                                ],
                                                               ),
                                                               (pl['adjusmentPressure'] != null &&
                                                                       pl['adjusmentPressure'] !=
@@ -1656,7 +1560,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                                   List<Position> position = [];
                                                                                   for (int i = 0; i < data.posisi.length; i++) {
                                                                                     final p = data.posisi[i];
-                                                                                    position.add(Position(pos: p.pos, pressure: p.pressure, rating: p.rating, adjusmentPressure: p.adjusmentPressure, luka: p.luka, image: p.image, size: p.size, idInventory: p.idInventory, idUnit: p.idUnit, idDaily: p.idDaily, kondisi: p.kondisi));
+                                                                                    // ADD COT HOLD PRESSURE
+                                                                                    position.add(Position(pos: p.pos, pressure: p.pressure, temperatureStatus: p.temperatureStatus, rating: p.rating, adjusmentPressure: p.adjusmentPressure, adjustmentTemperatureStatus: p.adjustmentTemperatureStatus, luka: p.luka, image: p.image, size: p.size, idInventory: p.idInventory, idUnit: p.idUnit, idDaily: p.idDaily, kondisi: p.kondisi));
                                                                                   }
 
                                                                                   final dataUnit = {

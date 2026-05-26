@@ -323,7 +323,13 @@ class ApiService {
           "data3": data3,
         }),
       );
+      log('body send data : ${{
+        "data1": data1,
+        "data2": data2,
+        "data3": data3,
+      }}');
       if (response.statusCode == 201 || response.statusCode == 200) {
+        print('send data success : ${response}');
       } else {
         // Gagal
         print('Gagal mengirim data. Status: ${response.statusCode}');

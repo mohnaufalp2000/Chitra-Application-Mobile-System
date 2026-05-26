@@ -7,6 +7,7 @@ IdSite bibkgbhauling = IdSite(nameSite: 'CK-BIB KGB HAULING', idSite: '174');
 IdSite bibghhauling = IdSite(nameSite: 'CK-BIB GH HAULING', idSite: '172');
 IdSite mhumining = IdSite(nameSite: 'CK-MHU MINING', idSite: '32');
 IdSite mhuhauling = IdSite(nameSite: 'CK-MHU HAULING', idSite: '130');
+IdSite amn = IdSite(nameSite: 'AMN', idSite: '230');
 
 final List<IdSite> bmbSites = [
   IdSite(nameSite: 'CK-BMB Sitarum', idSite: '52'),

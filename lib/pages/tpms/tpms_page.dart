@@ -819,13 +819,17 @@ class _TpmsPageState extends State<TpmsPage> {
                                                     HomeState>()) {
                                                   Get.put(HomeState());
                                                 }
+                                                // ADD COT HOLD PRESSURE
                                                 List<Position> position = [
                                                   Position(
                                                     pos: '1',
                                                     pressure:
                                                         '${allUnits[indexUnit][0][0]['pressure1']}',
+                                                    temperatureStatus: 'HOT',
                                                     rating: '',
                                                     adjusmentPressure: '',
+                                                    adjustmentTemperatureStatus:
+                                                        '',
                                                     luka: [],
                                                     image: '',
                                                     size: '',
@@ -838,8 +842,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                                     pos: '2',
                                                     pressure:
                                                         '${allUnits[indexUnit][0][1]['pressure2']}',
+                                                    temperatureStatus: 'HOT',
                                                     rating: '',
                                                     adjusmentPressure: '',
+                                                    adjustmentTemperatureStatus:
+                                                        '',
                                                     luka: [],
                                                     image: '',
                                                     size: '',
@@ -852,8 +859,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                                     pos: '3',
                                                     pressure:
                                                         '${allUnits[indexUnit][0][2]['pressure3']}',
+                                                    temperatureStatus: 'HOT',
                                                     rating: '',
                                                     adjusmentPressure: '',
+                                                    adjustmentTemperatureStatus:
+                                                        '',
                                                     luka: [],
                                                     image: '',
                                                     size: '',
@@ -866,8 +876,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                                     pos: '4',
                                                     pressure:
                                                         '${allUnits[indexUnit][0][3]['pressure4']}',
+                                                    temperatureStatus: 'HOT',
                                                     rating: '',
                                                     adjusmentPressure: '',
+                                                    adjustmentTemperatureStatus:
+                                                        '',
                                                     luka: [],
                                                     image: '',
                                                     size: '',
@@ -880,8 +893,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                                     pos: '5',
                                                     pressure:
                                                         '${allUnits[indexUnit][0][4]['pressure5']}',
+                                                    temperatureStatus: 'HOT',
                                                     rating: '',
                                                     adjusmentPressure: '',
+                                                    adjustmentTemperatureStatus:
+                                                        '',
                                                     luka: [],
                                                     image: '',
                                                     size: '',
@@ -894,8 +910,11 @@ class _TpmsPageState extends State<TpmsPage> {
                                                     pos: '6',
                                                     pressure:
                                                         '${allUnits[indexUnit][0][5]['pressure6']}',
+                                                    temperatureStatus: 'HOT',
                                                     rating: '',
                                                     adjusmentPressure: '',
+                                                    adjustmentTemperatureStatus:
+                                                        '',
                                                     luka: [],
                                                     image: '',
                                                     size: '',
