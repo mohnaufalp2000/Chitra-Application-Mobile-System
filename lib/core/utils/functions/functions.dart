@@ -496,7 +496,10 @@ Future<List<int>> createExcel(String type,
                 doc['tanggal'].toString().isNotEmpty) {
               final parsed = DateTime.parse(doc['tanggal']);
               formattedDate =
-                  "${parsed.year}-${_twoDigits(parsed.month)}-${_twoDigits(parsed.day)}";
+                  "${parsed.year}-${_twoDigits(parsed.month)}-${_twoDigits(parsed.day)} "
+                  "${_twoDigits(parsed.hour)}:"
+                  "${_twoDigits(parsed.minute)}:"
+                  "${_twoDigits(parsed.second)}";
             }
           } catch (e) {
             log('error parse tanggal: $e');
@@ -1228,7 +1231,9 @@ Future<List<int>> createExcel(String type,
         for (int j = 0; j < posisi.length; j++) {
           // Format tanggal menjadi MM/dd/yyyy
           DateTime parse = DateTime.parse(daily[i]['tanggal']);
-          String formattedDate = DateFormat('MM/dd/yyyy').format(parse);
+          String formattedDate =
+              DateFormat('MM/dd/yyyy HH:mm:ss').format(parse);
+          print('tanggal daily terbaru : $formattedDate');
 
           sheet.getRangeByName('A${rowIndex}').setText(formattedDate); // Date
           sheet.getRangeByName('B${rowIndex}').setText(unit); // Unit
