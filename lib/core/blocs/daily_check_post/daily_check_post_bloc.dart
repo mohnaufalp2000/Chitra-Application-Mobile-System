@@ -113,8 +113,8 @@ class DailyCheckPostBloc
                 'tgl_daily': tglDaily,
                 'checked': checkedTire.toString(),
                 'low': lowPressure.toString(),
-                // 'id_site': dailyCheckConverted[0].idSite.toString(),
-                'id_site': '5',
+                'id_site': dailyCheckConverted[0].idSite.toString(),
+                // 'id_site': '5',
                 'size': size,
               });
             }
@@ -122,53 +122,6 @@ class DailyCheckPostBloc
         } catch (e) {
           log('error data 1 : $e');
         }
-
-        // try {
-        //   List<String> uniqueDay = dailyCheckConverted
-        //       .map((e) => e.tanggal.split('T')[0])
-        //       .toSet()
-        //       .toList();
-
-        //   final countCheckedTire = uniqueDay
-        //       .map((day) => {
-        //             'tgl_daily': day,
-        //             'checked_tire': dailyCheckConverted
-        //                 .where((daily) => daily.tanggal.split('T')[0] == day)
-        //                 .fold(0,
-        //                     (total, element) => total + element.posisi.length)
-        //           })
-        //       .toList();
-
-        //   final countLowPressureTire = uniqueDay
-        //       .map((day) => {
-        //             'tgl_daily': day,
-        //             'low_pressure_tire': dailyCheckConverted
-        //                 .where((daily) => daily.tanggal.split('T')[0] == day)
-        //                 .fold(
-        //                     0,
-        //                     (total, element) =>
-        //                         total +
-        //                         element.posisi
-        //                             .where(
-        //                                 (pos) => pos.kondisi == "Low Pressure")
-        //                             .length)
-        //           })
-        //       .toList();
-
-        //   data1 = countCheckedTire.asMap().entries.map((entry) {
-        //     int index = entry.key;
-        //     return {
-        //       'target_daily': event.countAllTire,
-        //       'tgl_daily': entry.value['tgl_daily'],
-        //       'checked': entry.value['checked_tire'],
-        //       'low': countLowPressureTire[index]['low_pressure_tire'],
-        //       'id_site': dailyCheckConverted[0].idSite,
-        //       // 'id_site': '3',
-        //     };
-        //   }).toList();
-        // } catch (e) {
-        //   log('error data 1 : $e');
-        // }
 
         // Data 2
         List<Map<String, dynamic>> data2 = [];
@@ -180,11 +133,17 @@ class DailyCheckPostBloc
                         "id_unit_site": pos.idUnit,
                         "pos": pos.pos,
                         "inv": pos.idInventory,
-                        "tanggal_daily": daily.tanggal.split('T')[0],
+                        // "tanggal_daily": daily.tanggal.split('T')[0],
+                        "tanggal_daily": "${DateTime.parse(daily.tanggal).year}-"
+                            "${DateTime.parse(daily.tanggal).month.toString().padLeft(2, '0')}-"
+                            "${DateTime.parse(daily.tanggal).day.toString().padLeft(2, '0')} "
+                            "${DateTime.parse(daily.tanggal).hour.toString().padLeft(2, '0')}:"
+                            "${DateTime.parse(daily.tanggal).minute.toString().padLeft(2, '0')}:"
+                            "${DateTime.parse(daily.tanggal).second.toString().padLeft(2, '0')}",
                         "press": pos.pressure,
                         "kondisi": pos.kondisi,
-                        // 'id_site': dailyCheckConverted[0].idSite,
-                        "id_site": "5",
+                        'id_site': dailyCheckConverted[0].idSite,
+                        // "id_site": "5",
                         "adj": "0"
                       })
                   .toList())
@@ -221,12 +180,19 @@ class DailyCheckPostBloc
 
           List<DailyPress> convertedData3 =
               firestoreData.map((e) => DailyPress.fromFirestore(e)).toList();
+          log('data 3 converted data : $convertedData3');
 
           final distinctData3 = Set<DailyPress>.from(convertedData3).toList();
+
+          log('data 3 distinct data : $convertedData3');
 
           data3 = event.allUnit.map((e) {
             var filteredList =
                 distinctData3.where((element) => element.unit == e.unitNumber);
+
+            log('data 3 filtered data : $filteredList');
+            log('data 3 filtered data length : ${filteredList.length}');
+
             return {
               "id_daily_unit":
                   "${e.unitNumber}3${DateFormat('yyyy-MM').format(startOfMonth)}",
@@ -234,7 +200,7 @@ class DailyCheckPostBloc
               "date": DateFormat('yyyy-MM').format(startOfMonth),
               "qty": filteredList.isEmpty ? 0 : filteredList.length,
               // 'site': dailyCheckConverted[0].idSite,
-              "site": "5"
+              "site": dailyCheckConverted[0].idSite,
             };
           }).toList();
         } catch (e) {
