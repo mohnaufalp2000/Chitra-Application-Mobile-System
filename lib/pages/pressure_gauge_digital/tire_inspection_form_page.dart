@@ -19,8 +19,6 @@ import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/bounding_box_painter.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/build_temperature_button_widget.dart';
-import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_selector_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
@@ -176,7 +174,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   //   'Worn Out',
   // ];
 
-  List<String> damageType = [];
+  List<Map<String, dynamic>> damageType = [];
   bool loadingDamages = true;
 
   List<String> selectedDamage = [];
@@ -492,36 +490,38 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
   Future<void> _loadDamages() async {
     try {
-      final doc = await firestore
-          .collection('list_tire_damage_inspection')
-          .doc('QUFggzuErZBWEsnCLMFt')
-          .get();
+      final query =
+          await firestore.collection('list_tire_damage_inspection').get();
 
-      final data = doc.data();
+      final docs = query.docs.where((doc) {
+        return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
+      }).toList();
+
+      docs.sort((a, b) => b.id.compareTo(a.id));
+
+      final latestDoc = docs.first;
+
+      final data = latestDoc.data();
+
       if (data != null && data['damages'] != null) {
         final List<dynamic> raw = data['damages'];
 
-        // convert + sort A-Z
-        List<String> sortedList = raw.map((e) => e.toString()).toList();
-        // sortedList.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+        List<Map<String, dynamic>> sortedList =
+            raw.map<Map<String, dynamic>>((e) {
+          return Map<String, dynamic>.from(e);
+        }).toList();
+
         sortedList.sort((a, b) {
-          final aLower = a.toLowerCase().trim();
-          final bLower = b.toLowerCase().trim();
+          final aRemark = (a['remark'] ?? '').toString().toLowerCase();
+          final bRemark = (b['remark'] ?? '').toString().toLowerCase();
 
-          final aGood = aLower == "good" ||
-              aLower.startsWith("good ") ||
-              aLower.contains("good condition");
+          final aGood = aRemark.contains('good');
+          final bGood = bRemark.contains('good');
 
-          final bGood = bLower == "good" ||
-              bLower.startsWith("good ") ||
-              bLower.contains("good condition");
-
-          /// PRIORITAS GOOD
           if (aGood && !bGood) return -1;
           if (!aGood && bGood) return 1;
 
-          /// SORT NORMAL
-          return aLower.compareTo(bLower);
+          return aRemark.compareTo(bRemark);
         });
 
         setState(() {
@@ -535,6 +535,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       }
     } catch (e) {
       debugPrint('Error load damages: $e');
+
       setState(() {
         loadingDamages = false;
       });
@@ -758,9 +759,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               position.add({
                 'position': i + 1,
                 'pressure': '',
-                'temperatureStatus': 'HOT',
                 'adjusmentPressure': '',
-                'adjusmentTemperatureStatus': 'HOT',
                 'hm': '',
                 'damageTire': [],
                 'rtd1': '',
@@ -1140,41 +1139,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                     const SizedBox(
                       height: 12,
                     ),
-                    // UNIT/TIRE TEMPERATURE
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.device_thermostat,
-                          size: 38,
-                        ),
-                        const SizedBox(
-                          width: 12,
-                        ),
-                        Text(
-                          'Unit/Tire Temperature',
-                          style:
-                              getBlackTextStyle(fontSize: 18, fontWeight: w700),
-                        ),
-                      ],
-                    ),
-                    TemperatureStatusSelectorWidget(
-                      selectedStatus: position.isNotEmpty
-                          ? position[0]['temperatureStatus']
-                          : 'HOT',
-                      onChanged: (value) {
-                        setState(() {
-                          for (int i = 0; i < position.length; i++) {
-                            position[i]['temperatureStatus'] = value;
-                            position[i]['adjusmentTemperatureStatus'] = value;
-                            log('temperature terkini : ${position[i]['temperatureStatus']}');
-                          }
-                        });
-                      },
-                    ),
-                    const SizedBox(
-                      height: 12,
-                    ),
                     ListView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
@@ -1414,60 +1378,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                 SizedBox(
                                                                     height:
                                                                         16.0),
-                                                                // ADD COT HOLD PRESSURE
-
-                                                                // StatefulBuilder(
-                                                                //   builder:
-                                                                //       (context,
-                                                                //           state) {
-                                                                //     return Row(
-                                                                //       children: [
-                                                                //         Expanded(
-                                                                //           child:
-                                                                //               buildTemperatureButton(
-                                                                //             title:
-                                                                //                 'HOT',
-                                                                //             isSelected:
-                                                                //                 position[index]['temperatureStatus'] == 'HOT',
-                                                                //             color:
-                                                                //                 Colors.red,
-                                                                //             onTap:
-                                                                //                 () {
-                                                                //               position[index]['temperatureStatus'] = 'HOT';
-                                                                //               print('TEMPERATURE STATUS : ${position[index]['temperatureStatus']}');
-                                                                //               state(() {});
-                                                                //             },
-                                                                //           ),
-                                                                //         ),
-                                                                //         const SizedBox(
-                                                                //             width:
-                                                                //                 12),
-                                                                //         Expanded(
-                                                                //           child:
-                                                                //               buildTemperatureButton(
-                                                                //             title:
-                                                                //                 'COLD',
-                                                                //             isSelected:
-                                                                //                 position[index]['temperatureStatus'] == 'COLD',
-                                                                //             color:
-                                                                //                 Colors.blue,
-                                                                //             onTap:
-                                                                //                 () {
-                                                                //               position[index]['temperatureStatus'] = 'COLD';
-                                                                //               print('TEMPERATURE STATUS : ${position[index]['temperatureStatus']}');
-
-                                                                //               state(() {});
-                                                                //             },
-                                                                //           ),
-                                                                //         ),
-                                                                //       ],
-                                                                //     );
-                                                                //   },
-                                                                // ),
-
-                                                                const SizedBox(
-                                                                  height: 12,
-                                                                ),
+                                                                Column(),
                                                                 Wrap(
                                                                   children:
                                                                       pressure.map(
@@ -1667,60 +1578,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                 SizedBox(
                                                                     height:
                                                                         16.0),
-                                                                // ADD COT HOLD PRESSURE
-
-                                                                // StatefulBuilder(
-                                                                //   builder:
-                                                                //       (context,
-                                                                //           state) {
-                                                                //     return Row(
-                                                                //       children: [
-                                                                //         Expanded(
-                                                                //           child:
-                                                                //               buildTemperatureButton(
-                                                                //             title:
-                                                                //                 'HOT',
-                                                                //             isSelected:
-                                                                //                 position[index]['adjusmentTemperatureStatus'] == 'HOT',
-                                                                //             color:
-                                                                //                 Colors.red,
-                                                                //             onTap:
-                                                                //                 () {
-                                                                //               position[index]['adjusmentTemperatureStatus'] = 'HOT';
-                                                                //               print('TEMPERATURE STATUS : ${position[index]['adjusmentTemperatureStatus']}');
-                                                                //               state(() {});
-                                                                //             },
-                                                                //           ),
-                                                                //         ),
-                                                                //         const SizedBox(
-                                                                //             width:
-                                                                //                 12),
-                                                                //         Expanded(
-                                                                //           child:
-                                                                //               buildTemperatureButton(
-                                                                //             title:
-                                                                //                 'COLD',
-                                                                //             isSelected:
-                                                                //                 position[index]['adjusmentTemperatureStatus'] == 'COLD',
-                                                                //             color:
-                                                                //                 Colors.blue,
-                                                                //             onTap:
-                                                                //                 () {
-                                                                //               position[index]['adjusmentTemperatureStatus'] = 'COLD';
-                                                                //               print('TEMPERATURE STATUS : ${position[index]['adjusmentTemperatureStatus']}');
-
-                                                                //               state(() {});
-                                                                //             },
-                                                                //           ),
-                                                                //         ),
-                                                                //       ],
-                                                                //     );
-                                                                //   },
-                                                                // ),
-
-                                                                SizedBox(
-                                                                    height:
-                                                                        12.0),
+                                                                Column(),
                                                                 Wrap(
                                                                   children:
                                                                       pressure.map(
@@ -1845,10 +1703,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                             getWhiteTextStyle(),
                                                       )
                                                     : Text(
-                                                        '${position[index]['adjusmentPressure']} Psi',
+                                                        '${position[index]['adjusmentPressure']} Psi (Adj)',
                                                         style:
                                                             getWhiteTextStyle(
-                                                          fontSize: 24,
+                                                          fontSize: 16,
                                                           fontWeight: w700,
                                                         ),
                                                       ),
@@ -2041,9 +1899,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               return;
                                             }
 
-                                            // List<bool> checkedDamageValues =
-                                            //     List<bool>.filled(
-                                            //         damageType.length, false);
                                             final List<dynamic>
                                                 existingDamages =
                                                 position[index]['damageTire'] ??
@@ -2058,7 +1913,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               // otomatis centang Good Condition jika belum ada damage
                                               checkedDamageValues =
                                                   damageType.map((damage) {
-                                                final text = damage
+                                                final text = damage['remark']
                                                     .toString()
                                                     .toLowerCase()
                                                     .trim();
@@ -2072,7 +1927,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               checkedDamageValues =
                                                   damageType.map((damage) {
                                                 return existingDamages
-                                                    .contains(damage);
+                                                    .contains(damage['remark']);
                                               }).toList();
                                             }
 
@@ -2118,7 +1973,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                       setState) {
                                                                     return CheckboxListTile(
                                                                       title: Text(
-                                                                          damage),
+                                                                          damage[
+                                                                              'remark']),
                                                                       value: checkedDamageValues[
                                                                           dmgIndex],
                                                                       onChanged:
@@ -2126,8 +1982,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                               value) {
                                                                         setState(
                                                                             () {
-                                                                          // checkedDamageValues[dmgIndex] =
-                                                                          //     value ?? false;
                                                                           bool
                                                                               newValue =
                                                                               value ?? false;
@@ -2199,17 +2053,34 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
                                                                   selectedDamage
                                                                       .clear();
+
+                                                                  Map<String,
+                                                                          int>
+                                                                      ratingPriority =
+                                                                      {
+                                                                    '': 1,
+                                                                    'A': 1,
+                                                                    'B': 2,
+                                                                    'C': 3,
+                                                                    'X': 4,
+                                                                  };
+
                                                                   final List<
-                                                                          String>
+                                                                          Map<String,
+                                                                              dynamic>>
                                                                       tmp = [];
 
                                                                   // NOTE: ini tadinya if (== '' || isNotEmpty) -> selalu true.
                                                                   if (damageCtrl
                                                                       .text
                                                                       .isNotEmpty) {
-                                                                    tmp.add(
-                                                                        damageCtrl
-                                                                            .text);
+                                                                    tmp.add({
+                                                                      'remark':
+                                                                          damageCtrl
+                                                                              .text,
+                                                                      'rating':
+                                                                          ''
+                                                                    });
                                                                   }
 
                                                                   for (int i =
@@ -2226,20 +2097,57 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                     }
                                                                   }
 
+                                                                  final onlyRemark = tmp
+                                                                      .map<String>((item) =>
+                                                                          item['remark']
+                                                                              ?.toString() ??
+                                                                          '')
+                                                                      .where((remark) =>
+                                                                          remark
+                                                                              .isNotEmpty)
+                                                                      .toList();
+
                                                                   position[index]
                                                                           [
                                                                           'damageTire'] =
-                                                                      tmp;
+                                                                      onlyRemark;
 
                                                                   if (tmp
                                                                       .isNotEmpty) {
                                                                     position[index]
                                                                             [
                                                                             'damageTire'] =
-                                                                        tmp;
+                                                                        onlyRemark;
+
+                                                                    // rating based damage
+                                                                    String
+                                                                        worstRating =
+                                                                        '';
+                                                                    worstRating =
+                                                                        tmp.fold(
+                                                                      '',
+                                                                      (worst,
+                                                                          item) {
+                                                                        final current =
+                                                                            item['rating'] ??
+                                                                                '';
+
+                                                                        return ratingPriority[current]! >
+                                                                                ratingPriority[worst]!
+                                                                            ? current
+                                                                            : worst;
+                                                                      },
+                                                                    );
+
+                                                                    position[index]
+                                                                            [
+                                                                            'rating'] =
+                                                                        worstRating;
+
                                                                     selectedDamage
                                                                         .addAll(
-                                                                            tmp);
+                                                                            onlyRemark);
+
                                                                     log('hasil luka ban : $position');
                                                                   }
 
@@ -2278,32 +2186,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             padding: const EdgeInsets.symmetric(
                                                 vertical: 8.0),
                                             child: Text(
-                                              // (position[index]['damageTire'] ==
-                                              //             null ||
-                                              //         position[index]
-                                              //                 ['damageTire'] ==
-                                              //             [] ||
-                                              //         (position[index]
-                                              //                     ['damageTire']
-                                              //                 as List<dynamic>)
-                                              //             .isEmpty)
-                                              //     ? 'Damage Tire (None)'
-                                              //     : position[index]
-                                              //             ['damageTire']
-                                              //         .join('\n---\n'),
-                                              // (position[index]['damageTire'] ==
-                                              //             null ||
-                                              //         position[index]
-                                              //                 ['damageTire'] ==
-                                              //             [] ||
-                                              //         (position[index]
-                                              //                     ['damageTire']
-                                              //                 as List<dynamic>)
-                                              //             .isEmpty)
-                                              //     ? damageType[0]
-                                              //     : position[index]
-                                              //             ['damageTire']
-                                              //         .join('\n---\n'),
                                               ((position[index]['damageTire'] ==
                                                           null) ||
                                                       (position[index]
@@ -2321,7 +2203,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                               ['damageTire']
                                                           as List)
                                                       .join('\n---\n'),
-
                                               textAlign: TextAlign.center,
                                               style: getWhiteTextStyle(
                                                   fontSize: 14),
@@ -3053,16 +2934,380 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                           ),
                         ],
                       ),
+                      // function: () async {
+                      //   // jika data pressure kosong
+                      //   bool hasEmptyPressure =
+                      //       position.any((p) => p['pressure'] == '');
+
+                      //   if (hasEmptyPressure) {
+                      //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       SnackBar(
+                      //         backgroundColor: Colors.red,
+                      //         content: Text(
+                      //           'Please input data pressure (Choose 0 Psi if No Tire or Block Valve)',
+                      //           style: TextStyle(color: Colors.white),
+                      //         ),
+                      //       ),
+                      //     );
+                      //     return;
+                      //   }
+                      //   // jika belum memeilih pit
+                      //   if (idSite == bmbsitarum.idSite ||
+                      //       idSite == bmbhauling.idSite ||
+                      //       idSite == bmbtabuhan.idSite ||
+                      //       idSite == bibkgb.idSite ||
+                      //       idSite == bibgh.idSite) {
+                      //     if (selectedPit == -1) {
+                      //       ScaffoldMessenger.of(context).showSnackBar(
+                      //         SnackBar(
+                      //           backgroundColor: Colors.red,
+                      //           content: Text(
+                      //             'Please select location of unit first!',
+                      //             style: TextStyle(color: Colors.white),
+                      //           ),
+                      //         ),
+                      //       );
+                      //       return;
+                      //     }
+                      //   }
+
+                      //   // input ke tire inspection
+                      //   try {
+                      //     position.removeWhere((element) =>
+                      //         element['pressure'] == '' &&
+                      //         (element['damageTire'] as List<dynamic>)
+                      //             .isEmpty &&
+                      //         element['adjusmentPressure'] == '' &&
+                      //         element['rtd1'] == '' &&
+                      //         element['rtd2'] == '' &&
+                      //         element['rating'] == '' &&
+                      //         element['sn'] == '' &&
+                      //         element['remarks'] == '');
+
+                      //     for (int i = 0; i < position.length; i++) {
+                      //       final unit = state.units[i];
+                      //       final id = Uuid();
+
+                      //       String? localImagePath;
+                      //       try {
+                      //         final imgList =
+                      //             position[i]['image'] as List<dynamic>?;
+                      //         if (imgList != null && imgList.isNotEmpty) {
+                      //           final raw = imgList[0]
+                      //               as String; // format: "path|position"
+                      //           final parts = raw.split('|');
+                      //           if (parts.isNotEmpty) {
+                      //             localImagePath = parts[0];
+                      //           }
+                      //         }
+                      //       } catch (e) {
+                      //         log('parse image error: $e');
+                      //       }
+
+                      //       log('SAVE POSISI ${localImagePath}');
+                      //       log('SAVE POSISI ${position[i]['position']} '
+                      //           'IMAGE: ${position[i]['image']}');
+
+                      //       if (position[i]['pressure'] != '' ||
+                      //           position[i]['hm'] != '' ||
+                      //           position[i]['damageTire'] != [] ||
+                      //           position[i]['damageTire'][0] != damageType[0] ||
+                      //           position[i]['adjusmentPressure'] != '' ||
+                      //           position[i]['rtd1'] != '' ||
+                      //           position[i]['rtd2'] != '' ||
+                      //           position[i]['rating'] != '' ||
+                      //           position[i]['sn'] != '' ||
+                      //           position[i]['remarks'] != '') {
+                      //         final today = DateTime.now();
+                      //         final startOfDay =
+                      //             DateTime(today.year, today.month, today.day);
+                      //         final endOfDay = DateTime(today.year, today.month,
+                      //             today.day, 23, 59, 59);
+
+                      //         final querySnapshot = await firestore
+                      //             .collection('task')
+                      //             .where('kunci_unit',
+                      //                 isEqualTo: unit.kunciUnit)
+                      //             .where('kunci_tire',
+                      //                 isEqualTo: unit.kunciTire)
+                      //             .where('position',
+                      //                 isEqualTo: position[i]['position'])
+                      //             .where('last_update',
+                      //                 isGreaterThanOrEqualTo:
+                      //                     startOfDay.toIso8601String())
+                      //             .where('last_update',
+                      //                 isLessThanOrEqualTo:
+                      //                     endOfDay.toIso8601String())
+                      //             .get();
+
+                      //         log('adakah query : ${querySnapshot.docs.isNotEmpty}');
+
+                      //         final bool hasNewLocalImage =
+                      //             localImagePath != null;
+
+                      //         if (querySnapshot.docs.isNotEmpty) {
+                      //           // Update the existing document
+                      //           final docId = querySnapshot.docs.first.id;
+                      //           // try {
+                      //           //   log('kenapa gagal 3 ${position[i]['image'] as List<dynamic>}');
+                      //           // } catch (e) {
+                      //           //   log('kenapa gagal 4 ${e}');
+                      //           // }
+
+                      //           final Map<String, dynamic> updateData = {
+                      //             'id': id.v4(),
+                      //             'id_site': idSite,
+                      //             'user': user['username'] ?? 'username',
+                      //             'user_email': auth.currentUser!.email,
+                      //             'unit': unit.unitNumber,
+                      //             'serial_number': unit.sn,
+                      //             'condition': position[i]['condition']
+                      //                 .where((condition) =>
+                      //                     condition['checked'] == true)
+                      //                 .map((condition) =>
+                      //                     condition['name'].toString())
+                      //                 .toList(),
+                      //             'tire_size': unit.size,
+                      //             'hm': hmUnit.text,
+                      //             'position': position[i]['position'],
+                      //             'rating': position[i]['rating'],
+                      //             'brand': unit.brand,
+                      //             'tire_damage':
+                      //                 (position[i]['damageTire'].isEmpty)
+                      //                     ? damageType[0]
+                      //                     : position[i]['damageTire'],
+                      //             'remarks': position[i]['remarks'],
+                      //             'rtd':
+                      //                 '${position[i]['rtd1']}/${position[i]['rtd2']}',
+                      //             'pressure': position[i]['pressure'],
+                      //             'adjusmentPressure': position[i]
+                      //                 ['adjusmentPressure'],
+                      //             'last_update':
+                      //                 DateTime.now().toIso8601String(),
+                      //             'is_done': false,
+                      //             'sn': (position[i]['sn'] != null ||
+                      //                     position[i]['sn'] != '')
+                      //                 ? position[i]['sn']
+                      //                 : unit.sn,
+                      //             'kunci_unit': unit.kunciUnit,
+                      //             'kunci_tire': unit.kunciTire,
+                      //             'pit': (idSite == bmbsitarum.idSite ||
+                      //                     idSite == bmbhauling.idSite ||
+                      //                     idSite == bmbtabuhan.idSite ||
+                      //                     idSite == bibkgb.idSite)
+                      //                 ? pit[selectedPit]
+                      //                 : 'Default',
+                      //           };
+
+                      //           // Hanya kalau ada foto baru → kosongkan images & set pending
+                      //           if (hasNewLocalImage) {
+                      //             updateData['images'] = [];
+                      //             updateData['imagePending'] = true;
+                      //           }
+
+                      //           await firestore
+                      //               .collection('task')
+                      //               .doc(docId)
+                      //               .update(updateData);
+                      //           if (hasNewLocalImage) {
+                      //             UploadQueueService.to.addPending(
+                      //               docId: docId,
+                      //               filePath: localImagePath!,
+                      //             );
+                      //           }
+                      //         } else {
+                      //           final Map<String, dynamic> newData = {
+                      //             'id': id.v4(),
+                      //             'id_site': idSite,
+                      //             'user': user['username'] ?? 'username',
+                      //             'user_email': auth.currentUser!.email,
+                      //             'unit': unit.unitNumber,
+                      //             'serial_number': unit.sn,
+                      //             'condition': position[i]['condition']
+                      //                 .where((condition) =>
+                      //                     condition['checked'] == true)
+                      //                 .map((condition) =>
+                      //                     condition['name'].toString())
+                      //                 .toList(),
+                      //             'tire_size': unit.size,
+                      //             'hm': hmUnit.text,
+                      //             'position': position[i]['position'],
+                      //             'rating': position[i]['rating'],
+                      //             'brand': unit.brand,
+                      //             'tire_damage':
+                      //                 (position[i]['damageTire'].isEmpty)
+                      //                     ? damageType[0]
+                      //                     : position[i]['damageTire'],
+                      //             'remarks': position[i]['remarks'],
+                      //             'rtd':
+                      //                 '${position[i]['rtd1']}/${position[i]['rtd2']}',
+                      //             'pressure': position[i]['pressure'],
+                      //             'adjusmentPressure': position[i]
+                      //                 ['adjusmentPressure'],
+                      //             'last_update':
+                      //                 DateTime.now().toIso8601String(),
+                      //             'is_done': false,
+                      //             'sn': (position[i]['sn'] != '')
+                      //                 ? position[i]['sn']
+                      //                 : unit.sn,
+                      //             'kunci_unit': unit.kunciUnit,
+                      //             'kunci_tire': unit.kunciTire,
+                      //             'pit': (idSite == bmbsitarum.idSite ||
+                      //                     idSite == bmbhauling.idSite ||
+                      //                     idSite == bmbtabuhan.idSite ||
+                      //                     idSite == bibkgb.idSite)
+                      //                 ? pit[selectedPit]
+                      //                 : 'Default',
+                      //           };
+
+                      //           newData['images'] = [];
+                      //           newData['imagePending'] = hasNewLocalImage;
+
+                      //           final docRef = await firestore
+                      //               .collection('task')
+                      //               .add(newData);
+
+                      //           if (hasNewLocalImage) {
+                      //             UploadQueueService.to.addPending(
+                      //               docId: docRef.id,
+                      //               filePath: localImagePath!,
+                      //             );
+                      //           }
+                      //         }
+                      //       }
+                      //     }
+
+                      //     // input ke daily check pressure
+                      //     try {
+                      //       final today = DateTime.now();
+                      //       final startOfDay =
+                      //           DateTime(today.year, today.month, today.day);
+                      //       final endOfDay = DateTime(
+                      //           today.year, today.month, today.day, 23, 59, 59);
+                      //       final formattedToday =
+                      //           '${today.month.toString().padLeft(2, '0')}' // MM
+                      //           '${today.day.toString().padLeft(2, '0')}' // DD
+                      //           '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
+
+                      //       final querySnapshot = await FirebaseFirestore
+                      //           .instance
+                      //           .collection('daily_pressure')
+                      //           .where('unit',
+                      //               isEqualTo: dataUnit['unitNumber'])
+                      //           .where('tanggal',
+                      //               isGreaterThanOrEqualTo:
+                      //                   startOfDay.toIso8601String())
+                      //           .where('tanggal',
+                      //               isLessThanOrEqualTo:
+                      //                   endOfDay.toIso8601String())
+                      //           .get();
+
+                      //       print(
+                      //           'Documents found: ${querySnapshot.docs.length}');
+
+                      //       if (querySnapshot.docs.isNotEmpty) {
+                      //         final docId = querySnapshot.docs.first.id;
+
+                      //         // revisi data
+                      //         await firestore
+                      //             .collection('daily_pressure')
+                      //             .doc(docId)
+                      //             .update({
+                      //           'idSite': idSite,
+                      //           'user':
+                      //               user['username'] ?? auth.currentUser!.email,
+                      //           'tanggal': DateTime.now().toIso8601String(),
+                      //           'unit': idUnit.text,
+                      //           'hm': hmUnit.text,
+                      //           'posisi': position.map((p) {
+                      //             final pIndex = position.indexOf(p);
+
+                      //             log('tekanan angin : ${p['pressure']}');
+                      //             return {
+                      //               'pos': '${pIndex + 1}',
+                      //               'pressure': (p['pressure']) ?? '0',
+                      //               'rating': (p['rating']) ?? '',
+                      //               'adjusmentPressure':
+                      //                   (p['adjusmentPressure']) ?? '0',
+                      //               'luka': p['damageTire'],
+                      //               'idUnit': p['idUnit'],
+                      //               'idInventory': p['idInventory'],
+                      //               'tireSize': p['tireSize'],
+                      //               'idDaily':
+                      //                   '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
+                      //               'tireAccessories': []
+                      //             };
+                      //           }),
+                      //           'pit': (idSite == bmbsitarum.idSite ||
+                      //                   idSite == bmbhauling.idSite ||
+                      //                   idSite == bmbtabuhan.idSite ||
+                      //                   idSite == bibkgb.idSite)
+                      //               ? pit[selectedPit]
+                      //               : 'Default'
+                      //         });
+                      //       } else {
+                      //         // tambah data
+                      //         await firestore.collection('daily_pressure').add({
+                      //           // 'nama': (user),
+                      //           'idSite': idSite,
+                      //           'user':
+                      //               user['username'] ?? auth.currentUser!.email,
+                      //           'tanggal': DateTime.now().toIso8601String(),
+                      //           'unit': idUnit.text,
+                      //           'hm': hmUnit.text,
+                      //           'posisi': position.map((p) {
+                      //             final pIndex = position.indexOf(p);
+                      //             log('tekanan angin : ${p['pressure']}');
+
+                      //             return {
+                      //               'pos': '${pIndex + 1}',
+                      //               'pressure': (p['pressure']) ?? '0',
+                      //               'rating': (p['rating']) ?? '0',
+                      //               'adjusmentPressure':
+                      //                   (p['adjusmentPressure']) ?? '0',
+                      //               'luka': p['damageTire'],
+                      //               'idUnit': p['idUnit'],
+                      //               'idInventory': p['idInventory'],
+                      //               'tireSize': p['tireSize'],
+                      //               'idDaily':
+                      //                   '${p['idUnit']}${pIndex + 1}${formattedToday}${idSite}',
+                      //               'tireAccessories': []
+                      //             };
+                      //           }),
+                      //           'pit': (idSite == bmbsitarum.idSite ||
+                      //                   idSite == bmbhauling.idSite ||
+                      //                   idSite == bmbtabuhan.idSite ||
+                      //                   idSite == bibkgb.idSite)
+                      //               ? pit[selectedPit]
+                      //               : 'Default'
+                      //         });
+                      //       }
+                      //     } catch (e) {
+                      //       print('error bmb : $e');
+                      //     }
+                      //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      //     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      //       content: Text(
+                      //         'Successful save data, please check in home page',
+                      //         style: getWhiteTextStyle(),
+                      //       ),
+                      //       backgroundColor: green00968A,
+                      //     ));
+                      //     Navigator.pop(context);
+                      //   } catch (e) {
+                      //     log('kenapa gagal : $e');
+                      //   }
+                      // }
                       function: () async {
                         // input ke tire inspection
                         try {
                           position.removeWhere((element) =>
                               element['pressure'] == '' &&
-                              element['temperatureStatus'] == '' &&
                               (element['damageTire'] as List<dynamic>)
                                   .isEmpty &&
                               element['adjusmentPressure'] == '' &&
-                              element['adjusmentTemperatureStatus'] == '' &&
                               element['rtd1'] == '' &&
                               element['rtd2'] == '' &&
                               element['rating'] == '' &&
@@ -3106,15 +3351,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                             posisiList.add({
                               'position': position[i]['position'],
                               'pressure': position[i]['pressure'],
-                              'temperatureStatus': position[i]
-                                  ['temperatureStatus'],
                               'adjusmentPressure': position[i]
                                   ['adjusmentPressure'],
-                              'adjusmentTemperatureStatus':
-                                  (position[i]['adjusmentPressure'] != '')
-                                      ? position[i]
-                                          ['adjusmentTemperatureStatus']
-                                      : '',
                               'rating': position[i]['rating'],
                               'rtd1': position[i]['rtd1'],
                               'rtd2': position[i]['rtd2'],
@@ -3325,15 +3563,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   return {
                                     'pos': '${pIndex + 1}',
                                     'pressure': (p['pressure']) ?? '0',
-                                    'temperatureStatus':
-                                        (p['temperatureStatus']) ?? 'HOT',
                                     'rating': (p['rating']) ?? '',
                                     'adjusmentPressure':
                                         (p['adjusmentPressure']) ?? '0',
-                                    'adjusmentTemperatureStatus':
-                                        (p['adjusmentPressure'] != '')
-                                            ? (p['adjusmentTemperatureStatus'])
-                                            : '',
                                     'luka': p['damageTire'],
                                     'idUnit': p['idUnit'],
                                     'idInventory': p['idInventory'],
@@ -3367,15 +3599,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                   return {
                                     'pos': '${pIndex + 1}',
                                     'pressure': (p['pressure']) ?? '0',
-                                    'temperatureStatus':
-                                        (p['temperatureStatus']) ?? 'HOT',
                                     'rating': (p['rating']) ?? '0',
                                     'adjusmentPressure':
                                         (p['adjusmentPressure']) ?? '0',
-                                    'adjusmentTemperatureStatus':
-                                        (p['adjusmentPressure'] != '')
-                                            ? (p['adjusmentTemperatureStatus'])
-                                            : '',
                                     'luka': p['damageTire'],
                                     'idUnit': p['idUnit'],
                                     'idInventory': p['idInventory'],

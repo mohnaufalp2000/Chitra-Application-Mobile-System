@@ -876,9 +876,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                   const SizedBox(
                                                                     width: 6,
                                                                   ),
-                                                                  TemperatureStatusBadgeWidget(
-                                                                      status: pl[
-                                                                          'temperatureStatus']),
+                                                                  (pl['temperatureStatus'] !=
+                                                                          null)
+                                                                      ? TemperatureStatusBadgeWidget(
+                                                                          status:
+                                                                              pl['temperatureStatus'])
+                                                                      : Container()
                                                                   // Text(
                                                                   //   // '${(pl['temperatureStatus'] == '' || pl['temperatureStatus'] == null) ? 'HOT' : pl['temperatureStatus']}',
                                                                   //   '${(pl['temperatureStatus'])}',
