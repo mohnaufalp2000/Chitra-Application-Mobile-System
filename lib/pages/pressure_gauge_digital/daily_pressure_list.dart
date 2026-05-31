@@ -75,7 +75,16 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     log('init page terpanggil : ${homeState.currentSiteId}');
     initializePage();
 
+    getUnitBefore7AM();
+
     super.initState();
+  }
+
+  getUnitBefore7AM() {
+    if (DateTime.now().hour < 7) {
+      print('buka halaman sebelum jam 7');
+      getUnits();
+    }
   }
 
   Future<void> initializePage() async {
