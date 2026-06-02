@@ -14,11 +14,13 @@ class UnitLoadingState extends UnitState {}
 
 class UnitLoadedState extends UnitState {
   final List<UnitTire> units;
+  List<UnitTire>? totalActualUnits;
   final List<Map<String, dynamic>> reccPress;
   final int countAllTire;
   final Map<String, dynamic> allTireSize;
   UnitLoadedState({
     required this.units,
+    this.totalActualUnits,
     required this.reccPress,
     required this.countAllTire,
     required this.allTireSize,

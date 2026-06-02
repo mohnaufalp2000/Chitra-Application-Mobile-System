@@ -47,6 +47,7 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
 
         // return;
       } else {
+        final totalActualUnits = await ApiService.getUnits(event.idSite);
         final cachedData =
             await ApiService.getCachedUnits(idSite: event.idSite);
         final cachedDataReccPress = await ApiService.getCachedReccPress();
@@ -57,6 +58,7 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
 
         emit(UnitLoadedState(
             units: cachedData,
+            totalActualUnits: totalActualUnits,
             reccPress: cachedDataReccPress,
             countAllTire: cachedCountAllTire,
             allTireSize: allTireSize));
