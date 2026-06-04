@@ -77,7 +77,7 @@ class NewTireInspectionPage extends StatelessWidget {
                         ElevatedButton.styleFrom(backgroundColor: Colors.green),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: ntController.isExporting.value
+                      child: ntController.isSending.value
                           ? Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [

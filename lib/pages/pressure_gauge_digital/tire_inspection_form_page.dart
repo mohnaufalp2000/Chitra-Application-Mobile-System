@@ -2829,18 +2829,24 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: InputFormWidget(
-                                                      onChng: (value) {
-                                                        position[index]
-                                                            ['rtd1'] = value;
-                                                      },
-                                                      controller:
-                                                          rtd1Controllers[
-                                                              index],
-                                                      hint: ''),
-                                                ),
+                                                Builder(builder: (context) {
+                                                  rtd1Controllers[index].text =
+                                                      unit.rtd ?? '';
+                                                  position[index]['rtd1'] =
+                                                      unit.rtd;
+                                                  return SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                        onChng: (value) {
+                                                          position[index]
+                                                              ['rtd1'] = value;
+                                                        },
+                                                        controller:
+                                                            rtd1Controllers[
+                                                                index],
+                                                        hint: ''),
+                                                  );
+                                                }),
                                               ],
                                             ),
                                           ),
@@ -2860,18 +2866,24 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: InputFormWidget(
-                                                      onChng: (value) {
-                                                        position[index]
-                                                            ['rtd2'] = value;
-                                                      },
-                                                      controller:
-                                                          rtd2Controllers[
-                                                              index],
-                                                      hint: ''),
-                                                ),
+                                                Builder(builder: (context) {
+                                                  rtd2Controllers[index].text =
+                                                      unit.otd ?? '';
+                                                  position[index]['rtd2'] =
+                                                      unit.otd;
+                                                  return SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                        onChng: (value) {
+                                                          position[index]
+                                                              ['rtd2'] = value;
+                                                        },
+                                                        controller:
+                                                            rtd2Controllers[
+                                                                index],
+                                                        hint: ''),
+                                                  );
+                                                }),
                                               ],
                                             ),
                                           ),

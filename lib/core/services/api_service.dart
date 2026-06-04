@@ -91,8 +91,13 @@ class ApiService {
           'inspects': inspections.map((e) => e.toJson()).toList(),
         }),
       );
+      log('Successful send tire inspection : $response');
+      log('URL : ${response.request?.url}');
+      log('Status Code : ${response.statusCode}');
+      log('Headers : ${response.headers}');
+      log('Body : ${response.body}');
     } catch (e) {
-      print('error send tire inspection : $e');
+      log('Error send tire inspection : $e');
     }
   }
 
