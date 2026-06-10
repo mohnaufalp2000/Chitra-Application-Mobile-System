@@ -873,18 +873,21 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                   const SizedBox(
                                                                     width: 6,
                                                                   ),
-                                                                  // TemperatureStatusBadgeWidget(
-                                                                  //     status: pl[
-                                                                  //         'temperatureStatus']),
-                                                                  Text(
-                                                                    // '${(pl['temperatureStatus'] == '' || pl['temperatureStatus'] == null) ? 'HOT' : pl['temperatureStatus']}',
-                                                                    '${(pl['temperatureStatus'])}',
-                                                                    style: getWhiteTextStyle(
-                                                                        fontWeight:
-                                                                            w700,
-                                                                        fontSize:
-                                                                            18),
-                                                                  ),
+                                                                  (pl['temperatureStatus'] !=
+                                                                          null)
+                                                                      ? TemperatureStatusBadgeWidget(
+                                                                          status:
+                                                                              pl['temperatureStatus'])
+                                                                      : Container()
+                                                                  // Text(
+                                                                  //   // '${(pl['temperatureStatus'] == '' || pl['temperatureStatus'] == null) ? 'HOT' : pl['temperatureStatus']}',
+                                                                  //   '${(pl['temperatureStatus'])}',
+                                                                  //   style: getWhiteTextStyle(
+                                                                  //       fontWeight:
+                                                                  //           w700,
+                                                                  //       fontSize:
+                                                                  //           18),
+                                                                  // ),
                                                                 ],
                                                               ),
                                                               (pl['adjusmentPressure'] != null &&

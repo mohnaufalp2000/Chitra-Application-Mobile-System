@@ -90,36 +90,38 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     'Valve Protector',
     'Stud and Nut',
   ];
-  List<String> damageType = [
-    'Accident',
-    'Bead Crack',
-    'Block Valve',
-    'Boulder',
-    'Bulging',
-    'Bead Damage',
-    'Chaffer Separation',
-    'Dog Bound',
-    'Foreign Object',
-    'Heat Separation',
-    'Inner Linner Separation',
-    'Impact',
-    'Repair Failure',
-    'Radial Crack',
-    'Run Flat',
-    'Sidewall Crack',
-    'Sidewall Cut',
-    'Sidewall Cut 2',
-    'Sidewall Cut 3',
-    'Sidewall Separation',
-    'Shoulder Cut',
-    'Shoulder Separation',
-    'Tread Chipping',
-    'Tread Chunking',
-    'Tread Lifting',
-    'Tread Cut',
-    'Tread Cut Separation',
-    'Worn Out',
-  ];
+  // List<String> damageType = [
+  //   'Accident',
+  //   'Bead Crack',
+  //   'Block Valve',
+  //   'Boulder',
+  //   'Bulging',
+  //   'Bead Damage',
+  //   'Chaffer Separation',
+  //   'Dog Bound',
+  //   'Foreign Object',
+  //   'Heat Separation',
+  //   'Inner Linner Separation',
+  //   'Impact',
+  //   'Repair Failure',
+  //   'Radial Crack',
+  //   'Run Flat',
+  //   'Sidewall Crack',
+  //   'Sidewall Cut',
+  //   'Sidewall Cut 2',
+  //   'Sidewall Cut 3',
+  //   'Sidewall Separation',
+  //   'Shoulder Cut',
+  //   'Shoulder Separation',
+  //   'Tread Chipping',
+  //   'Tread Chunking',
+  //   'Tread Lifting',
+  //   'Tread Cut',
+  //   'Tread Cut Separation',
+  //   'Worn Out',
+  // ];
+  List<Map<String, dynamic>> damageType = [];
+  bool loadingDamages = true;
   List<List<int>> inspectRoute = [
     [0, 1, 2, 3, 4, 5],
     [0, 2, 3, 4, 5, 1],
@@ -147,6 +149,60 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   Map<String, dynamic> user = {};
 
   final ImagePicker _picker = ImagePicker();
+
+  Future<void> _loadDamages() async {
+    try {
+      final query =
+          await firestore.collection('list_tire_damage_inspection').get();
+
+      final docs = query.docs.where((doc) {
+        return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
+      }).toList();
+
+      docs.sort((a, b) => b.id.compareTo(a.id));
+
+      final latestDoc = docs.first;
+
+      final data = latestDoc.data();
+
+      if (data != null && data['damages'] != null) {
+        final List<dynamic> raw = data['damages'];
+
+        List<Map<String, dynamic>> sortedList =
+            raw.map<Map<String, dynamic>>((e) {
+          return Map<String, dynamic>.from(e);
+        }).toList();
+
+        sortedList.sort((a, b) {
+          final aRemark = (a['remark'] ?? '').toString().toLowerCase();
+          final bRemark = (b['remark'] ?? '').toString().toLowerCase();
+
+          final aGood = aRemark.contains('good');
+          final bGood = bRemark.contains('good');
+
+          if (aGood && !bGood) return -1;
+          if (!aGood && bGood) return 1;
+
+          return aRemark.compareTo(bRemark);
+        });
+
+        setState(() {
+          damageType = sortedList;
+          loadingDamages = false;
+        });
+      } else {
+        setState(() {
+          loadingDamages = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error load damages: $e');
+
+      setState(() {
+        loadingDamages = false;
+      });
+    }
+  }
 
   void applyPressureData(String pressureValue) {
     setState(() {
@@ -611,6 +667,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   @override
   void initState() {
     super.initState();
+    _loadDamages();
     context.read<BluetoothOnOffCubit>().checkBluetoothStatus();
     final connectedCubit = context.read<ConnectedDevicesCubit>();
     log('connected cubit : $connectedCubit');
@@ -1302,7 +1359,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                       mainAxisSize:
                                                           MainAxisSize.min,
                                                       children: <Widget>[
-                                                        Text(
+                                                        const Text(
                                                           'Choose Rating',
                                                           style: TextStyle(
                                                             fontSize: 24.0,
@@ -1388,21 +1445,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             )),
-                                        // child: (position[posIndex]
-                                        //             ['rating'] ==
-                                        //         '')
                                         child: (position[posIndex].rating == '')
                                             ? Text(
                                                 'Rating',
                                                 style: getWhiteTextStyle(),
                                               )
-                                            // : Text(
-                                            //     'Rating ${position[posIndex]['rating']}',
-                                            //     style: getWhiteTextStyle(
-                                            //       fontSize: 16,
-                                            //       fontWeight: w700,
-                                            //     ),
-                                            //   ),
                                             : Text(
                                                 'Rating ${position[posIndex].rating}',
                                                 style: getWhiteTextStyle(
@@ -1436,7 +1483,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                   i++) {
                                                 if (position[posIndex]
                                                     .luka
-                                                    .contains(damageType[i])) {
+                                                    .contains(damageType[i]
+                                                        ['remark'])) {
                                                   checkedDamageValues[i] = true;
                                                 }
                                               }
@@ -1459,7 +1507,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                       mainAxisSize:
                                                           MainAxisSize.min,
                                                       children: <Widget>[
-                                                        Text(
+                                                        const Text(
                                                           'Choose Damage Tire',
                                                           style: TextStyle(
                                                             fontSize: 24.0,
@@ -1467,7 +1515,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                 FontWeight.bold,
                                                           ),
                                                         ),
-                                                        SizedBox(height: 12.0),
+                                                        const SizedBox(
+                                                            height: 12.0),
                                                         Expanded(
                                                           child:
                                                               SingleChildScrollView(
@@ -1485,7 +1534,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                             setState) {
                                                                   return CheckboxListTile(
                                                                     title: Text(
-                                                                        damage),
+                                                                        damage[
+                                                                            'remark']),
                                                                     value: checkedDamageValues[
                                                                         dmgIndex],
                                                                     onChanged:
@@ -1579,14 +1629,16 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                       i++) {
                                                                     if (checkedDamageValues[
                                                                         i]) {
-                                                                      tmp.add(
-                                                                          damageType[
-                                                                              i]);
+                                                                      tmp.add(damageType[
+                                                                              i]
+                                                                          [
+                                                                          'remark']);
                                                                     } else {
                                                                       tmp.removeWhere((element) =>
                                                                           element ==
-                                                                          damageType[
-                                                                              i]);
+                                                                          damageType[i]
+                                                                              [
+                                                                              'remark']);
                                                                     }
                                                                   }
                                                                   log('idx luka ban : $posIndex');
@@ -3148,13 +3200,14 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                             i++) {
                                                           if (position[posIndex]
                                                               .luka
-                                                              .contains(
-                                                                  damageType[
-                                                                      i])) {
+                                                              .contains(damageType[
+                                                                      i]
+                                                                  ['remark'])) {
                                                             checkedDamageValues[
                                                                 i] = true;
                                                           }
                                                         }
+
                                                         damageCtrl
                                                             .text = position[
                                                                     posIndex]
@@ -3206,7 +3259,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                           return StatefulBuilder(builder:
                                                                               (context, setState) {
                                                                             return CheckboxListTile(
-                                                                              title: Text(damage),
+                                                                              title: Text(damage['remark']),
                                                                               value: checkedDamageValues[dmgIndex],
                                                                               onChanged: (bool? value) {
                                                                                 setState(() {
@@ -3271,14 +3324,27 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                               () {
                                                                             setState(() {});
 
-                                                                            final List<String>
+                                                                            Map<String, int>
+                                                                                ratingPriority =
+                                                                                {
+                                                                              '': 1,
+                                                                              'A': 1,
+                                                                              'B': 2,
+                                                                              'C': 3,
+                                                                              'X': 4,
+                                                                            };
+
+                                                                            final List<Map<String, dynamic>>
                                                                                 tmp =
                                                                                 [];
 
                                                                             // isi damage dengan ketikan
                                                                             if (damageCtrl.text == '' ||
                                                                                 damageCtrl.text.isNotEmpty) {
-                                                                              tmp.add(damageCtrl.text);
+                                                                              tmp.add({
+                                                                                'remark': damageCtrl.text,
+                                                                                'rating': ''
+                                                                              });
                                                                             }
 
                                                                             for (int i = 0;
@@ -3293,14 +3359,32 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                             log('idx luka ban : $posIndex');
 
                                                                             if (tmp.isNotEmpty) {
-                                                                              // position[posIndex]
-                                                                              //     [
-                                                                              //     'damage'] = [];
                                                                               position[posIndex] = position[posIndex].copyWith(luka: []);
 
-                                                                              position[posIndex].luka.addAll(tmp);
+                                                                              position[posIndex].luka.addAll(
+                                                                                    tmp.map((e) => e['remark'].toString()),
+                                                                                  );
+
+                                                                              // PENETUAN RATING DARI LUKA BAN
+                                                                              String worstRating = '';
+
+                                                                              if (tmp.isNotEmpty) {
+                                                                                worstRating = tmp.fold(
+                                                                                  '',
+                                                                                  (worst, item) {
+                                                                                    final current = item['rating'] ?? '';
+
+                                                                                    return ratingPriority[current]! > ratingPriority[worst]! ? current : worst;
+                                                                                  },
+                                                                                );
+                                                                              }
+
+                                                                              position[posIndex] = position[posIndex].copyWith(
+                                                                                rating: worstRating,
+                                                                              );
 
                                                                               log('hasil luka ban : ${position}');
+                                                                              log('hasil rating dari luka ban : ${worstRating}');
                                                                             }
 
                                                                             // jika hapus damage hari kemarin
