@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:camos/core/utils/data/id_site.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/not_update_warning_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_badge_widget.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -74,8 +75,20 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   void initState() {
     log('init page terpanggil : ${homeState.currentSiteId}');
     initializePage();
+    getUnitBefore7AM();
 
     super.initState();
+  }
+
+  getUnitBefore7AM() {
+    if (DateTime.now().hour < 7) {
+      print('buka halaman sebelum jam 7');
+      setState(() {
+        isOnline = !isOnline;
+
+        getUnits();
+      });
+    }
   }
 
   Future<void> initializePage() async {
@@ -419,10 +432,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                 }
                 return Container();
               }),
-
-              const SizedBox(
-                height: 16,
-              ),
+              if (selectedMenu == 0)
+                const SizedBox(
+                  height: 12,
+                )
+              else
+                Container(),
               SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -540,12 +555,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                   // untuk data export excel
                                   filteredItemTask.clear();
                                   filteredItemTask.clear();
-                                  // dailyData.forEach((item) {
-                                  //   Map<String, dynamic> cast =
-                                  //       item.data() as Map<String, dynamic>;
 
-                                  //   filteredItemTask.add(cast);
-                                  // });
                                   dailyData.forEach((item) {
                                     Map<String, dynamic> cast =
                                         item.toFirestore();
@@ -555,24 +565,11 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                   return Column(
                                     children: [
                                       Text(
-                                        // 'Total Unit : ${dailyData.length ?? 0}',
                                         'Total Unit : ${distinctDaily.length ?? 0}',
                                         style: getBlackTextStyle(
                                           fontSize: 20,
                                         ),
                                       ),
-                                      // if (homeState.selectedSite?.idCompany ==
-                                      //     '2')
-                                      //   Text(
-                                      //     // 'Total Unit : ${dailyData.length ?? 0}',
-                                      //     'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
-
-                                      //     style: getBlackTextStyle(
-                                      //       fontSize: 14,
-                                      //     ),
-                                      //   )
-                                      // else
-                                      //   Container(),
                                       const SizedBox(
                                         height: 12,
                                       ),
@@ -1669,8 +1666,30 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                             style: getBlackTextStyle(fontSize: 20),
                           ),
                           const SizedBox(
-                            height: 12,
+                            height: 6,
                           ),
+                          Builder(builder: (context) {
+                            if (state.totalActualUnits?.length == null) {
+                              return Container();
+                            }
+
+                            if (state.totalActualUnits?.length !=
+                                state.units.length) {
+                              return Column(
+                                children: [
+                                  NotUpdateWarningWidget(
+                                      totalActual:
+                                          state.totalActualUnits?.length ?? 0),
+                                  SizedBox(
+                                    height: 12,
+                                  ),
+                                ],
+                              );
+                            } else {
+                              Container();
+                            }
+                            return Container();
+                          }),
                           (state.units == null || state.units.isEmpty)
                               ? Text(
                                   'Empty!',

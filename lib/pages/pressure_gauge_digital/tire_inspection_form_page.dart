@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -100,6 +101,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   Map<int, bool> loadingAI = {};
   Map<int, double> imageWidths = {};
   Map<int, double> imageHeights = {};
+
+  List<String>? _ratingCache;
+  List<dynamic>? _damageCache;
 
   String selectedUnit = '';
   List<String> checkedCategories = [];
@@ -439,6 +443,47 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     getUser();
   }
 
+  Future<void> loadPreviousRating(
+      int index, String unit, String kunciTire) async {
+    print('load previous rating unit : $unit');
+    try {
+      final snapshot = await firestore
+          .collection('tire_inspection')
+          .where('unit', isEqualTo: unit) // ✅ FILTER UNIT
+          .orderBy('tanggal', descending: true)
+          .limit(1) // ✅ hanya dokumen terbaru unit itu
+          .get();
+
+      log('load previous rating : ${snapshot.docs}');
+
+      if (snapshot.docs.isEmpty) return;
+
+      final doc = snapshot.docs.first;
+
+      final List<dynamic> posisiList = doc['posisi'];
+
+      for (final pos in posisiList) {
+        if (pos['kunci_tire'] == kunciTire) {
+          final prevRating = pos['rating'];
+
+          if (prevRating != null) {
+            setState(() {
+              position[index]['rating'] =
+                  prevRating is String ? prevRating : [prevRating];
+              position[index]['prevRating'] =
+                  prevRating is String ? prevRating : [prevRating];
+            });
+
+            log('AUTO RATING FOUND: $prevRating');
+            return;
+          }
+        }
+      }
+    } catch (e) {
+      log('loadPreviousRating error: $e');
+    }
+  }
+
   Future<void> loadPreviousDamage(
       int index, String unit, String kunciTire) async {
     print('load previous damage unit : $unit');
@@ -748,6 +793,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                 final unit = state.units[i];
 
                 if (unit.kunciTire != null) {
+                  loadPreviousRating(
+                      i, unit.unitNumber ?? '', unit.kunciTire ?? '');
                   loadPreviousDamage(
                       i, unit.unitNumber ?? '', unit.kunciTire ?? '');
                 }
@@ -767,6 +814,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                 'remarks': '',
                 'sn': unit.sn,
                 'rating': '',
+                'prevRating': '',
                 'image': [],
                 'idInventory': unit.idinventory,
                 'idUnit': unit.idUnit,
@@ -1653,7 +1701,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                             Navigator.of(context).pop();
                                                                           });
                                                                         },
-                                                                        child: Text(
+                                                                        child: const Text(
                                                                             'Submit'))
                                                                   ],
                                                                 ),
@@ -2710,18 +2758,25 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: InputFormWidget(
-                                                      onChng: (value) {
-                                                        position[index]
-                                                            ['rtd1'] = value;
-                                                      },
-                                                      controller:
-                                                          rtd1Controllers[
-                                                              index],
-                                                      hint: ''),
-                                                ),
+                                                Builder(builder: (context) {
+                                                  rtd1Controllers[index] =
+                                                      TextEditingController(
+                                                          text: unit.rtd);
+                                                  position[index]['rtd1'] =
+                                                      unit.rtd;
+                                                  return SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                        onChng: (value) {
+                                                          position[index]
+                                                              ['rtd1'] = value;
+                                                        },
+                                                        controller:
+                                                            rtd1Controllers[
+                                                                index],
+                                                        hint: ''),
+                                                  );
+                                                }),
                                               ],
                                             ),
                                           ),
@@ -2741,18 +2796,25 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: InputFormWidget(
-                                                      onChng: (value) {
-                                                        position[index]
-                                                            ['rtd2'] = value;
-                                                      },
-                                                      controller:
-                                                          rtd2Controllers[
-                                                              index],
-                                                      hint: ''),
-                                                ),
+                                                Builder(builder: (context) {
+                                                  rtd2Controllers[index] =
+                                                      TextEditingController(
+                                                          text: unit.otd);
+                                                  position[index]['rtd2'] =
+                                                      unit.otd;
+                                                  return SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                        onChng: (value) {
+                                                          position[index]
+                                                              ['rtd2'] = value;
+                                                        },
+                                                        controller:
+                                                            rtd2Controllers[
+                                                                index],
+                                                        hint: ''),
+                                                  );
+                                                }),
                                               ],
                                             ),
                                           ),
@@ -3301,6 +3363,128 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                       //   }
                       // }
                       function: () async {
+                        //// Validasi Tire Inspection
+                        final currentHm =
+                            double.tryParse(state.units[0].hm ?? '0') ?? 0;
+                        final newHm = double.tryParse(hmUnit.text ?? '0') ?? 0;
+
+                        // SMU/HM tidak boleh turun
+                        if (currentHm > newHm) {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                            content: Text(
+                              'SMU/HM tidak bisa berkurang',
+                              style: getWhiteTextStyle(),
+                            ),
+                            backgroundColor: Colors.red,
+                          ));
+                          return;
+                        }
+
+                        // SMU/HM tidak boleh nambah terlalu banyak
+                        if ((newHm - currentHm) > 1000) {
+                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Perubahan SMU/HM tidak bisa lebih dari 1000',
+                                style: getWhiteTextStyle(),
+                              ),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+
+                        final List<String> errorsRtd = [];
+                        final List<String> errorsRating = [];
+
+                        for (int i = 0; i < state.units.length; i++) {
+                          final unit = state.units[i];
+
+                          // RTD tidak boleh naik
+                          final actualRtd =
+                              double.tryParse(unit.rtd.toString()) ?? 0;
+                          final actualOtd =
+                              double.tryParse(unit.otd.toString()) ?? 0;
+
+                          final inputRtd =
+                              double.tryParse(rtd1Controllers[i].text) ?? 0;
+                          final inputOtd =
+                              double.tryParse(rtd2Controllers[i].text) ?? 0;
+
+                          if (inputRtd > actualRtd) {
+                            errorsRtd.add(
+                              'Posisi ${unit.posisi}: RTD input ($inputRtd) melebihi RTD aktual ($actualRtd).',
+                            );
+                          }
+
+                          if (inputOtd > actualOtd) {
+                            errorsRtd.add(
+                              'Posisi ${unit.posisi}: OTD input ($inputOtd) melebihi OTD aktual ($actualOtd).',
+                            );
+                          }
+
+                          // Jika sudah rating x, tidak boleh kembali ke rating A,B,C
+                          const ratingScore = {
+                            'A': 4,
+                            'B': 3,
+                            'C': 2,
+                            'X': 1,
+                          };
+                          final actualRating = position[i]['prevRating']
+                              .toString()
+                              .toUpperCase()
+                              .trim();
+                          log('apakah rating membaik 1 : ${actualRating}');
+                          final inputRating = position[i]['rating']
+                              .toString()
+                              .toUpperCase()
+                              .trim();
+                          log('apakah rating membaik 2 : ${inputRating}');
+
+                          final actualScore = ratingScore[actualRating] ?? 0;
+                          final inputScore = ratingScore[inputRating] ?? 0;
+
+                          log('apakah rating membaik 3 : ${inputScore > actualScore}');
+
+                          if (inputScore > actualScore) {
+                            errorsRating.add(
+                              'Posisi ${unit.posisi}: Rating tidak boleh meningkat dari $actualRating menjadi $inputRating.',
+                            );
+                          }
+                        }
+
+                        if (errorsRtd.isNotEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 6),
+                              content: Text(
+                                errorsRtd.join('\n'),
+                                style: getWhiteTextStyle(),
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (errorsRating.isNotEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 6),
+                              content: Text(
+                                errorsRating.join('\n'),
+                                style: getWhiteTextStyle(),
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        return;
+
                         // input ke tire inspection
                         try {
                           position.removeWhere((element) =>
