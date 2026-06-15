@@ -2759,9 +2759,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                   height: 12,
                                                 ),
                                                 Builder(builder: (context) {
-                                                  rtd1Controllers[index] =
-                                                      TextEditingController(
-                                                          text: unit.rtd);
+                                                  rtd1Controllers[index].text =
+                                                      unit.rtd ?? '';
                                                   position[index]['rtd1'] =
                                                       unit.rtd;
                                                   return SizedBox(
@@ -2797,9 +2796,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                   height: 12,
                                                 ),
                                                 Builder(builder: (context) {
-                                                  rtd2Controllers[index] =
-                                                      TextEditingController(
-                                                          text: unit.otd);
+                                                  rtd2Controllers[index].text =
+                                                      unit.otd ?? '';
                                                   position[index]['rtd2'] =
                                                       unit.otd;
                                                   return SizedBox(

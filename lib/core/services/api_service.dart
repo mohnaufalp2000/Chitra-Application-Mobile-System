@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/core/services/model/send_tire_inspection.dart';
 import 'package:camos/core/services/model/tire_damage_ai.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -73,6 +74,30 @@ class ApiService {
     } catch (e) {
       log('🔥 Error ambil Key Firestore ($docId): $e');
       return null;
+    }
+  }
+
+  /// 🔹 POST: Send Data Tire Inspection
+  static Future<void> sendTireInspection(
+    List<SendTireInspection> inspections,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${postUrl}post_inspect'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'inspects': inspections.map((e) => e.toJson()).toList(),
+        }),
+      );
+      log('Successful send tire inspection : $response');
+      log('URL : ${response.request?.url}');
+      log('Status Code : ${response.statusCode}');
+      log('Headers : ${response.headers}');
+      log('Body : ${response.body}');
+    } catch (e) {
+      log('Error send tire inspection : $e');
     }
   }
 
