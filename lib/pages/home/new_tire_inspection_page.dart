@@ -1028,8 +1028,10 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                             const SizedBox(
                               width: 6,
                             ),
-                            TemperatureStatusBadgeWidget(
-                                status: posisi['temperatureStatus'])
+                            (posisi['temperatureStatus'] != null)
+                                ? TemperatureStatusBadgeWidget(
+                                    status: posisi['temperatureStatus'])
+                                : Container()
                           ],
                         ),
                         _row('Adj Pressure',
@@ -1042,7 +1044,13 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                             (posisi['damageTire'] is List)
                                 ? (posisi['damageTire'] as List).join(', ')
                                 : posisi['damageTire']?.toString() ?? '-'),
-                        _row('Remarks', posisi['remarks'] ?? '-'),
+                        Builder(builder: (context) {
+                          if (posisi['remarks'] is Map<String, dynamic>) {
+                            return _row(
+                                'Remarks', posisi['remarks']['remark'] ?? '-');
+                          }
+                          return _row('Remarks', posisi['remarks'] ?? '-');
+                        }),
                         if (posisi['rimCondition'] != null &&
                             posisi['rimCondition'] is List &&
                             (posisi['rimCondition'] as List).isNotEmpty) ...[

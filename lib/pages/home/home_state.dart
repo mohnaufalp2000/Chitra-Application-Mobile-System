@@ -64,12 +64,14 @@ class HomeState extends GetxController {
   String get siteName => selectedSite?.site ?? 'Loading Site...';
 
   bool get isUserOffice =>
-      userAccessId.value == '1' || userAccessId.value == '2';
+      // userAccessId.value == '1' || userAccessId.value == '2';
+      userAccessId.value == officeChitra.idSite || userAccessId.value == '2';
 
   bool get isSingleSiteUser =>
       !isUserOffice &&
       userAccessId.value.isNotEmpty &&
-      userAccessId.value != '1' &&
+      // userAccessId.value != '1' &&
+      userAccessId.value != officeChitra.idSite &&
       userAccessId.value != '2';
 
   bool get hasSingleClusterSite => clusterSites.length == 1;
@@ -109,8 +111,12 @@ class HomeState extends GetxController {
   bool get shouldShowSiteWarning {
     // Jika user access adalah 1 atau 2 (Office / All-CK)
     // dan site yang aktif belum dipilih (masih kosong atau sama dengan idSite awal)
-    return (userAccessId.value == '1' || userAccessId.value == '2') &&
-        (currentSiteIdRx.value == '1' || currentSiteIdRx.value == '2');
+    // return (userAccessId.value == '1' || userAccessId.value == '2') &&
+    //     (currentSiteIdRx.value == '1' || currentSiteIdRx.value == '2');
+    return (userAccessId.value == officeChitra.idSite ||
+            userAccessId.value == '2') &&
+        (currentSiteIdRx.value == officeChitra.idSite ||
+            currentSiteIdRx.value == '2');
   }
 
   // 🚀 Metode baru untuk memuat ID awal dan data ban setelah sites siap
@@ -120,7 +126,8 @@ class HomeState extends GetxController {
     userAccessId.value = initialId;
     // 2. Jika ID awal adalah '1' (Office) atau '2' (All-CK), kita hanya tampilkan Dropdown.
     // Data ban tidak akan dimuat sampai pengguna memilih site dari Dropdown.
-    if (initialId == '1' || initialId == '2') {
+    // if (initialId == '1' || initialId == '2') {
+    if (initialId == officeChitra.idSite || initialId == '2') {
       currentSiteIdRx.value =
           initialId; // Set current ID agar Dropdown tahu defaultnya
       // *Tire data tidak di-fetch di sini.*
@@ -142,7 +149,8 @@ class HomeState extends GetxController {
     String idToFetch = selectedSite?.idSite ?? idSite;
 
     // 3. Hanya fetch data ban/kondisi jika ID Site bukan ID yang non-Site (Office/All-CK)
-    if (idToFetch != '1' && idToFetch != '2') {
+    // if (idToFetch != '1' && idToFetch != '2') {
+    if (idToFetch != officeChitra.idSite && idToFetch != '2') {
       await Future.wait([
         fetchTireInventory(idToFetch),
         fetchTireCondition(idToFetch),
@@ -169,7 +177,9 @@ class HomeState extends GetxController {
     inventLoadingPercent.value = 0;
 
     // Jika userAccessId adalah 1 atau 2, skip cache total
-    if (userAccessId.value == '1' || userAccessId.value == '2') {
+    // if (userAccessId.value == '1' || userAccessId.value == '2') {
+    if (userAccessId.value == officeChitra.idSite ||
+        userAccessId.value == '2') {
       log('⚡ User $userAccessId → skip cache, ambil langsung dari API');
       try {
         if (Platform.isAndroid) {
@@ -334,7 +344,9 @@ class HomeState extends GetxController {
     conditionErrorMessage.value = '';
     conditionLoadingPercent.value = 0;
 
-    if (userAccessId.value == '1' || userAccessId.value == '2') {
+    // if (userAccessId.value == '1' || userAccessId.value == '2') {
+    if (userAccessId.value == officeChitra.idSite ||
+        userAccessId.value == '2') {
       log('⚡ User $userAccessId → skip cache, ambil langsung dari API');
       try {
         final listSize = await ApiService.getTireCondition(idSite);

@@ -1,6 +1,10 @@
 import 'dart:developer';
 
 import 'package:bloc/bloc.dart';
+import 'package:camos/core/services/model/site.dart';
+import 'package:camos/core/utils/data/id_site.dart';
+import 'package:camos/pages/dashboard/dashboard_page.dart';
+import 'package:camos/pages/home/trial/home_page_trial.dart';
 import '../../services/api_service.dart';
 import '../../services/shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -19,18 +23,139 @@ class AuthenticationBloc
     FirebaseFirestore fireStore = FirebaseFirestore.instance;
     CollectionReference users = fireStore.collection('users');
 
+    // on<AuthenticationEventLogin>((event, emit) async {
+    //   // login
+    //   try {
+    //     emit(AuthenticatioLoadingState());
+    //     await ApiService.getAllSite();
+    //     await auth.signInWithEmailAndPassword(
+    //         email: event.email, password: event.password);
+    //     emit(AuthenticatioLoginState());
+    //   } on FirebaseAuthException catch (e) {
+    //     emit(AuthenticationErrorState(errorMessage: e.message ?? ''));
+    //   } catch (e) {
+    //     emit(AuthenticationErrorState(errorMessage: e.toString()));
+    //   }
+    // });
     on<AuthenticationEventLogin>((event, emit) async {
-      // login
       try {
         emit(AuthenticatioLoadingState());
-        await ApiService.getAllSite();
+
         await auth.signInWithEmailAndPassword(
-            email: event.email, password: event.password);
-        emit(AuthenticatioLoginState());
+          email: event.email,
+          password: event.password,
+        );
+
+        if (!auth.currentUser!.emailVerified) {
+          emit(AuthenticationEmailNotVerifiedState());
+          return;
+        }
+
+        final userQuery = await fireStore
+            .collection('users')
+            .where('email', isEqualTo: auth.currentUser!.email)
+            .get();
+
+        if (userQuery.docs.isEmpty) {
+          emit(AuthenticationErrorState(errorMessage: 'User tidak ditemukan'));
+          return;
+        }
+
+        final userData = userQuery.docs.first.data();
+
+        // save preference dulu
+        saveIdSitePreferences(userData['id_site']);
+        saveManpowerShiftPreferences(shift: 'morning');
+        saveUserPreferences(userData);
+
+        final listCustPgDigital =
+            await fireStore.collection('list_site_pgdigital').get();
+
+        final listCustPgDigitalData =
+            listCustPgDigital.docs.map((e) => e.data()).toList();
+
+        await saveListCustomer(listCustPgDigitalData);
+
+        final String userIdSite = userData['id_site'];
+
+        // sekarang idSite sudah ada
+        List<Site> allSites = await ApiService.getCachedAllSites();
+
+        if (allSites.isEmpty) {
+          allSites = await ApiService.getAllSite();
+        }
+
+        final isCTS = allSites
+            .firstWhere(
+              (site) => site.idSite == userIdSite,
+              orElse: () => Site(
+                idSite: userIdSite,
+                cts: '0',
+              ),
+            )
+            .cts;
+
+        final isSPM = allSites
+            .firstWhere(
+              (site) => site.idSite == userIdSite,
+              orElse: () => Site(
+                idSite: userIdSite,
+                spm: '0',
+              ),
+            )
+            .spm;
+
+        log('isCTS : $isCTS isSPM : $isSPM');
+
+        final isSitePGInList =
+            listCustPgDigitalData.any((e) => e['id_site'] == userIdSite);
+
+        if (isCTS == '0') {
+          if (userIdSite == '15') {
+            emit(AuthenticationSuccessState(
+              targetRoute: DashboardPage.routeName,
+            ));
+            return;
+          }
+
+          final targetRoute = (userIdSite == officeChitra.idSite)
+              ? DashboardPage.routeName
+              : HomePageTrial.routeName;
+
+          final arguments = (userIdSite == officeChitra.idSite)
+              ? null
+              : {
+                  'idSite': userIdSite,
+                  'isSPM': isSPM == '1',
+                  'isCTS': isCTS == '1',
+                  'isPG': isSitePGInList,
+                };
+
+          emit(
+            AuthenticationSuccessState(
+              targetRoute: targetRoute,
+              arguments: arguments,
+            ),
+          );
+        } else {
+          emit(
+            AuthenticationSuccessState(
+              targetRoute: DashboardPage.routeName,
+            ),
+          );
+        }
       } on FirebaseAuthException catch (e) {
-        emit(AuthenticationErrorState(errorMessage: e.message ?? ''));
+        emit(
+          AuthenticationErrorState(
+            errorMessage: e.message ?? '',
+          ),
+        );
       } catch (e) {
-        emit(AuthenticationErrorState(errorMessage: e.toString()));
+        emit(
+          AuthenticationErrorState(
+            errorMessage: e.toString(),
+          ),
+        );
       }
     });
     on<AuthenticationEventLogout>((event, emit) async {

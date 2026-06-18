@@ -125,7 +125,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     log('🔄 getUnits() dipanggil untuk site: $currentIdSite (online=$isOnline)');
 
     // jika user bukan office site (bukan 1 atau 2)
-    if (userAccessId != '1' && userAccessId != '2') {
+    // if (userAccessId != '1' && userAccessId != '2') {
+    if (userAccessId != 'officeChitra') {
       if (!isOnline) {
         // Offline Mode
         log('📴 Load data dari cache untuk site $currentIdSite');
@@ -262,9 +263,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                     final data = snapshot.data;
                     log('id site future builder : $data');
 
-                    if (userAccessId != '1' &&
-                        userAccessId != '2' &&
-                        userAccessId != '3') {
+                    // if (userAccessId != '1' &&
+                    //     userAccessId != '2' &&
+                    //     userAccessId != '3') {
+                    if (userAccessId != 'officeChitra') {
                       return Column(
                         children: [
                           SizedBox(
@@ -1708,9 +1710,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                       return Container();
                                     }
                                     return InkWell(
-                                      onTap: (userAccessId == '1' ||
-                                              userAccessId == '2' ||
-                                              userAccessId == '3')
+                                      // onTap: (userAccessId == '1' ||
+                                      //         userAccessId == '2' ||
+                                      //         userAccessId == '3')
+                                      onTap: (userAccessId == 'officeChitra')
                                           ? () {}
                                           : () {
                                               Navigator.pushNamed(context,
@@ -1779,7 +1782,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                           const SizedBox(
                             height: 12,
                           ),
-                          (userAccessId == '1' || userAccessId == '2')
+                          // (userAccessId == '1' || userAccessId == '2')
+                          (userAccessId == 'officeChitra')
                               ? Container()
                               : SizedBox(
                                   width: double.infinity,
@@ -2229,9 +2233,11 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                   return Container();
                                                 }
                                                 return InkWell(
-                                                  onTap: (userAccessId == '1' ||
-                                                          userAccessId == '2' ||
-                                                          userAccessId == '3')
+                                                  // onTap: (userAccessId == '1' ||
+                                                  //         userAccessId == '2' ||
+                                                  //         userAccessId == '3')
+                                                  onTap: (userAccessId ==
+                                                          'officeChitra')
                                                       ? () {}
                                                       : () {
                                                           Navigator.pushNamed(

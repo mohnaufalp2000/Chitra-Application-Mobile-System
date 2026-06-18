@@ -1,3 +1,15 @@
+IdSite officeChitra = IdSite(nameSite: 'Office', idSite: 'officeChitra');
+IdSite allCK = IdSite(nameSite: 'All-CK', idSite: 'allCK');
+
+IdSite admoMining =
+    IdSite(nameSite: 'ADMO Mining', idSite: '1', idCompany: '1');
+IdSite admoHauling =
+    IdSite(nameSite: 'ADMO Hauling', idSite: '2', idCompany: '1');
+IdSite seraMining =
+    IdSite(nameSite: 'SERA Mining', idSite: '3', idCompany: '1');
+IdSite macoMining =
+    IdSite(nameSite: 'MACO Mining', idSite: '4', idCompany: '1');
+
 IdSite bmbsitarum = IdSite(nameSite: 'CK-BMB Sitarum', idSite: '52');
 IdSite bmbtabuhan = IdSite(nameSite: 'CK-BMB Tabuhan', idSite: '35');
 IdSite bmbhauling = IdSite(nameSite: 'CK-BMB Hauling', idSite: '137');
@@ -34,6 +46,7 @@ IdSite pama = IdSite(nameSite: 'PAMA,', idSite: '3');
 class IdSite {
   final String nameSite;
   final String idSite;
+  String idCompany;
 
-  IdSite({required this.nameSite, required this.idSite});
+  IdSite({required this.nameSite, required this.idSite, this.idCompany = '0'});
 }
