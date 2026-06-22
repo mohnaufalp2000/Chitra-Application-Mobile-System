@@ -651,12 +651,12 @@ class HomePage extends GetView<HomeState> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            HomeFunction.buildMenuItem(
-                                menus[0], context, controller.currentSiteId),
-                            HomeFunction.buildMenuItem(
-                                menus[1], context, controller.currentSiteId),
-                            HomeFunction.buildMenuItem(
-                                menus[2], context, controller.currentSiteId),
+                            HomeFunction.buildMenuItem(menus[0], context,
+                                controller.currentSiteCompanyId),
+                            HomeFunction.buildMenuItem(menus[1], context,
+                                controller.currentSiteCompanyId),
+                            HomeFunction.buildMenuItem(menus[2], context,
+                                controller.currentSiteCompanyId),
                           ],
                         ),
 
@@ -664,14 +664,23 @@ class HomePage extends GetView<HomeState> {
 
                         // Baris kedua
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          mainAxisAlignment:
+                              (controller.userAccessCompanyId.value ==
+                                      admoMining.idCompany)
+                                  ? MainAxisAlignment.center
+                                  : MainAxisAlignment.spaceEvenly,
                           children: [
-                            HomeFunction.buildMenuItem(
-                                menus[3], context, controller.currentSiteId),
-                            HomeFunction.buildMenuItem(
-                                menus[4], context, controller.currentSiteId),
-                            HomeFunction.buildMenuItem(
-                                menus[5], context, controller.currentSiteId),
+                            HomeFunction.buildMenuItem(menus[3], context,
+                                controller.userAccessCompanyId.value),
+                            (controller.userAccessCompanyId.value ==
+                                    admoMining.idCompany)
+                                ? Container(
+                                    width: 30,
+                                  )
+                                : HomeFunction.buildMenuItem(menus[4], context,
+                                    controller.userAccessCompanyId.value),
+                            HomeFunction.buildMenuItem(menus[5], context,
+                                controller.userAccessCompanyId.value)
                           ],
                         ),
                       ],

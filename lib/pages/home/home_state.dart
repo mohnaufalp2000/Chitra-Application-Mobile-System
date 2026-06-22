@@ -31,8 +31,10 @@ class HomeState extends GetxController {
   final RxList<Site> listSite = <Site>[].obs;
   final RxString siteError = ''.obs;
   final RxString currentSiteIdRx = ''.obs;
+  final RxString currentSiteCompanyIdRx = ''.obs;
 
   final RxString userAccessId = ''.obs;
+  final RxString userAccessCompanyId = ''.obs;
 
   // === STATE INVENTORY BAN (TireInventBloc) ===
   final RxBool isInventLoading = false.obs;
@@ -59,8 +61,12 @@ class HomeState extends GetxController {
   Map<String, dynamic> get user => rxUser.value;
 
   String get currentSiteId => currentSiteIdRx.value;
+  String get currentSiteCompanyId => currentSiteCompanyIdRx.value;
+
   Site? get selectedSite =>
       listSite.firstWhereOrNull((site) => site.idSite == currentSiteId);
+  Site? get selectedCompany => listSite
+      .firstWhereOrNull((site) => site.idCompany == currentSiteCompanyId);
   String get siteName => selectedSite?.site ?? 'Loading Site...';
 
   bool get isUserOffice =>
@@ -123,13 +129,16 @@ class HomeState extends GetxController {
   Future<void> _loadInitialDataAfterSitesReady() async {
     // 1. Ambil ID awal dari SharedPreferences
     String initialId = await getIdSitePreferences();
+    Map<String, dynamic> initialCompanyId = await getUserPreferences();
+    userAccessCompanyId.value = initialCompanyId['id_company'];
     userAccessId.value = initialId;
     // 2. Jika ID awal adalah '1' (Office) atau '2' (All-CK), kita hanya tampilkan Dropdown.
     // Data ban tidak akan dimuat sampai pengguna memilih site dari Dropdown.
     // if (initialId == '1' || initialId == '2') {
     if (initialId == officeChitra.idSite || initialId == '2') {
-      currentSiteIdRx.value =
-          initialId; // Set current ID agar Dropdown tahu defaultnya
+      currentSiteIdRx.value = initialId;
+      currentSiteCompanyIdRx.value = initialCompanyId['id_company'];
+      // Set current ID agar Dropdown tahu defaultnya
       // *Tire data tidak di-fetch di sini.*
     } else {
       // 3. Jika ID adalah Site biasa (misal: '52'), fetch data ban.
