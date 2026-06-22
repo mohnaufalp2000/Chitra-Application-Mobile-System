@@ -143,6 +143,7 @@ class HomeState extends GetxController {
   Future<void> fetchAllHomeData({required String idSite}) async {
     // 1. Set ID Site sebagai sumber kebenaran utama. Ini memicu Obx.
     currentSiteIdRx.value = idSite;
+    print('current id site home state : ${currentSiteIdRx.value}');
     // inventLoadingPercent.value = 0;
 
     // 2. Ambil Site object yang sedang aktif (melalui getter)

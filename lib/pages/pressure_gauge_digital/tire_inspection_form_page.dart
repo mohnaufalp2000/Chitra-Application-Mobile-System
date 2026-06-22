@@ -1958,10 +1958,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               )),
                                           child: (position[index]['rating'] ==
                                                   '')
-                                              ? Text(
-                                                  'Rating',
-                                                  style: getWhiteTextStyle(),
-                                                )
+                                              ? Builder(builder: (context) {
+                                                  position[index]['rating'] =
+                                                      'A';
+                                                  return Text(
+                                                    'Rating A',
+                                                    style: getWhiteTextStyle(),
+                                                  );
+                                                })
                                               : Text(
                                                   'Rating ${position[index]['rating']}',
                                                   style: getWhiteTextStyle(
@@ -1998,6 +2002,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             MediaQuery.of(context).size.width,
                                         child: ElevatedButton(
                                           onPressed: () {
+                                            if (index == 0)
+                                              log('luka map : ${position[index]['damageTire']}');
                                             FocusScope.of(context).unfocus();
 
                                             if (loadingDamages) {
@@ -3630,7 +3636,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       : position[i]['damageTire'][0],
                               'damageTire':
                                   (position[i]['damageTire'] as List).isEmpty
-                                      ? damageType[0]
+                                      ? (damageType is List<String>)
+                                          ? damageType[0]
+                                          : damageType[0]['remark']
                                       : position[i]['damageTire'],
                               // 'condition': (position[i]['condition'] as List)
                               //     .where((c) => c['checked'] == true)

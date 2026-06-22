@@ -3898,7 +3898,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                       return {
                         'pos': '${pIndex + 1}',
-                        'rating': (p.rating) ?? '',
+                        'rating': (p.rating == '' || p.rating.isEmpty)
+                            ? 'A'
+                            : (p.rating),
                         'pressure': (p.pressure) ?? '0',
                         'temperatureStatus': (p.temperatureStatus),
                         'adjusmentPressure': (p.adjusmentPressure) ?? '0',
@@ -3906,7 +3908,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             (position[0].adjusmentPressure != '')
                                 ? (position[0].adjustmentTemperatureStatus)
                                 : '',
-                        'luka': (selectedType == 0) ? '' : p.luka,
+                        'luka': (selectedType == 0)
+                            ? ''
+                            : (p.luka.isEmpty)
+                                ? ['Good Condition']
+                                : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
                         'tireSize': (p.size ?? ''),
@@ -3971,13 +3977,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             'pos': '${pIndex + 1}',
                             'pressure': (p.pressure) ?? '0',
                             'temperatureStatus': (p.temperatureStatus),
-                            'rating': (p.rating) ?? '',
+                            'rating': (p.rating == '' || p.rating.isEmpty)
+                                ? 'A'
+                                : (p.rating),
                             'adjusmentPressure': (p.adjusmentPressure) ?? '0',
                             'adjusmentTemperatureStatus':
                                 (position[0].adjusmentPressure != '')
                                     ? (position[0].adjustmentTemperatureStatus)
                                     : '',
-                            'luka': (selectedType == 0) ? '' : p.luka,
+                            'luka': (selectedType == 0)
+                                ? ''
+                                : (p.luka.isEmpty)
+                                    ? ['Good Condition']
+                                    : p.luka,
                             'image': (listImage[pIndex] != '')
                                 ? listImage[pIndex]
                                 : '',
@@ -4021,13 +4033,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'pos': '${pIndex + 1}',
                         'pressure': (p.pressure) ?? '0',
                         'temperatureStatus': (p.temperatureStatus),
-                        'rating': (p.rating) ?? '',
+                        'rating': (p.rating == '' || p.rating.isEmpty)
+                            ? 'A'
+                            : (p.rating),
                         'adjusmentPressure': (p.adjusmentPressure) ?? '0',
                         'adjusmentTemperatureStatus':
                             (position[0].adjusmentPressure != '')
                                 ? (position[0].adjustmentTemperatureStatus)
                                 : '',
-                        'luka': (selectedType == 0) ? '' : p.luka,
+                        'luka': (selectedType == 0)
+                            ? ''
+                            : (p.luka.isEmpty)
+                                ? ['Good Condition']
+                                : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
                         'tireSize': (p.size ?? ''),

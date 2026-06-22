@@ -39,7 +39,29 @@ final List<IdSite> mhuSites = [
   IdSite(nameSite: 'CK-MHU HAULING', idSite: '130'),
 ];
 
-IdSite office = IdSite(nameSite: 'Office,', idSite: '1');
+final List<IdSite> allSites = [
+  officeChitra,
+  allCK,
+  admoMining,
+  admoHauling,
+  seraMining,
+  macoMining,
+  bmbsitarum,
+  bmbtabuhan,
+  bmbhauling,
+  bibkgb,
+  bibgh,
+  bibkgbhauling,
+  bibghhauling,
+  mhumining,
+  mhuhauling,
+  amn,
+  office,
+  ck,
+  pama,
+];
+
+IdSite office = IdSite(nameSite: 'Office,', idSite: 'officeChitra');
 IdSite ck = IdSite(nameSite: 'All-CK,', idSite: '2');
 IdSite pama = IdSite(nameSite: 'PAMA,', idSite: '3');
 

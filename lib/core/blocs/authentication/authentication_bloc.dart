@@ -63,6 +63,20 @@ class AuthenticationBloc
 
         final userData = userQuery.docs.first.data();
 
+        final bool isDeleted = userData['isDelete'] == true;
+
+        // user yang sudah didelete tidak bisa login
+        if (isDeleted) {
+          await auth.signOut();
+
+          emit(
+            AuthenticationErrorState(
+              errorMessage: 'Account is no longer active',
+            ),
+          );
+          return;
+        }
+
         // save preference dulu
         saveIdSitePreferences(userData['id_site']);
         saveManpowerShiftPreferences(shift: 'morning');

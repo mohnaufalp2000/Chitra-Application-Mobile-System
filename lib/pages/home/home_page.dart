@@ -10,6 +10,7 @@ import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/utils/data/menu.dart';
 import 'package:camos/core/widgets/contact_developer_widget.dart';
 import 'package:camos/objectbox.g.dart';
+import 'package:camos/pages/admin/admin_page.dart';
 import 'package:camos/pages/authentication/login_page.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/home/widget/home_function.dart';
@@ -157,7 +158,51 @@ class HomePage extends GetView<HomeState> {
                     height: 12,
                   ),
                   ContactDeveloperWidget(),
-
+                  const SizedBox(
+                    height: 12,
+                  ),
+                  Container(
+                    height: 55,
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pushNamed(context, AdminPage.routeName);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            const Color(0xFFF8F1E7), // cream background
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          side: const BorderSide(
+                            color: Color(0xFFE6C79C), // border color
+                            width: 1.5,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.account_circle,
+                            color: Color(0xFFD98A2B),
+                            size: 22,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            "CAMOS Administrator",
+                            style: getWhiteTextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ).copyWith(
+                              color: const Color(0xFFD98A2B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   // --- PENGGANTIAN SITE DROPDOWN ---
 
                   Container(
@@ -248,6 +293,7 @@ class HomePage extends GetView<HomeState> {
                                       );
                                     }).toList(),
                                     onChanged: (newValue) {
+                                      print('newValue : $newValue');
                                       if (newValue != null) {
                                         controller.fetchAllHomeData(
                                             idSite: newValue);
@@ -314,6 +360,8 @@ class HomePage extends GetView<HomeState> {
                                     );
                                   }).toList(),
                                   onChanged: (newValue) {
+                                    print('newValue non-office: $newValue');
+
                                     if (newValue != null) {
                                       controller.fetchAllHomeData(
                                           idSite: newValue);
@@ -917,6 +965,7 @@ class HomePage extends GetView<HomeState> {
           ),
         ),
       ),
+
       // NOTE: BottomNavigationBar dan logika navigasi di sini
       // masih perlu disesuaikan karena HomePage kini StatelessWidget
       // dan tidak memiliki _selectedIndex.
