@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/core/services/model/auto_tapping_model.dart';
 import 'package:camos/core/services/model/send_tire_inspection.dart';
 import 'package:camos/core/services/model/tire_damage_ai.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -74,6 +75,34 @@ class ApiService {
     } catch (e) {
       log('🔥 Error ambil Key Firestore ($docId): $e');
       return null;
+    }
+  }
+
+  // GET: Auto Tapping SPM
+  static Future<List<AutoTappingModel>> getAutoTappingSPM() async {
+    final urll = await _getUrlFromFirestore('url_camos', 'get_auto_tapping');
+    if (urll == null) return [];
+    print('auto tapping url : $urll');
+
+    try {
+      final response = await http.get(Uri.parse(urll));
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        log('result auto tapping (${result['data']} )');
+
+        final List<AutoTappingModel> autoTappingList =
+            List<AutoTappingModel>.from(
+          result['data'].map((e) => AutoTappingModel.fromMap(e)),
+        );
+        log('✅ Berhasil ambil auto tapping (${autoTappingList} item)');
+        return autoTappingList;
+      } else {
+        throw Exception('Gagal load data: ${response.statusCode}');
+      }
+    } catch (e) {
+      log('❌ Error ambil auto tapping : $e');
+      return [];
     }
   }
 
