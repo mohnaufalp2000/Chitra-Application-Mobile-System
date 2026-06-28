@@ -209,7 +209,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       Map<String, dynamic>? data;
       idSite = homeState.currentSiteId;
 
-      if (idSite.toString() == admoMining.idSite) {
+      if (idSite.toString() == '1') {
         final doc = await firestore
             .collection('list_tire_damage_inspection')
             .doc('sis062026')

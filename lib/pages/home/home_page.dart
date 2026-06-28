@@ -665,15 +665,13 @@ class HomePage extends GetView<HomeState> {
                         // Baris kedua
                         Row(
                           mainAxisAlignment:
-                              (controller.userAccessCompanyId.value ==
-                                      admoMining.idCompany)
+                              (controller.userAccessCompanyId.value == '1')
                                   ? MainAxisAlignment.center
                                   : MainAxisAlignment.spaceEvenly,
                           children: [
                             HomeFunction.buildMenuItem(menus[3], context,
                                 controller.userAccessCompanyId.value),
-                            (controller.userAccessCompanyId.value ==
-                                    admoMining.idCompany)
+                            (controller.userAccessCompanyId.value == '1')
                                 ? Container(
                                     width: 30,
                                   )

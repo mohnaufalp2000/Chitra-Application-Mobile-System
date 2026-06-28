@@ -156,8 +156,8 @@ class AdminState extends GetxController {
             .where((user) =>
                 user['id_company'] ==
                 allSites
-                    .firstWhere(
-                        (site) => site.idSite == homeState.userAccessId.value)
+                    .firstWhere((site) =>
+                        site.idCompany == homeState.userAccessCompanyId.value)
                     .idCompany)
             .toList();
 

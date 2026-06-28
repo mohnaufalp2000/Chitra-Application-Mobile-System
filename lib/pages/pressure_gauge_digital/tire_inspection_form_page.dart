@@ -592,11 +592,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   Future<void> _loadDamages() async {
     try {
       Map<String, dynamic>? data;
+      final sisIdSite = await getIdSiteSIS();
+      final isSisIdSite = sisIdSite.any((site) => site.idSite == idSite);
 
-      if (idSite == admoMining.idSite ||
-          idSite == admoHauling.idSite ||
-          idSite == seraMining.idSite ||
-          idSite == macoMining.idSite) {
+      if (isSisIdSite) {
         final doc = await firestore
             .collection('list_tire_damage_inspection')
             .doc('sis062026')
