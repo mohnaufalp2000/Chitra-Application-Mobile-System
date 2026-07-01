@@ -533,20 +533,93 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
   }
 
+  // Future<void> _loadDamages() async {
+  //   try {
+  //     final query =
+  //         await firestore.collection('list_tire_damage_inspection').get();
+
+  //     final docs = query.docs.where((doc) {
+  //       return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
+  //     }).toList();
+
+  //     docs.sort((a, b) => b.id.compareTo(a.id));
+
+  //     final latestDoc = docs.first;
+
+  //     final data = latestDoc.data();
+
+  //     log('docs luka ban : $data');
+
+  //     if (data != null && data['damages'] != null) {
+  //       final List<dynamic> raw = data['damages'];
+
+  //       List<Map<String, dynamic>> sortedList =
+  //           raw.map<Map<String, dynamic>>((e) {
+  //         return Map<String, dynamic>.from(e);
+  //       }).toList();
+
+  //       sortedList.sort((a, b) {
+  //         final aRemark = (a['remark'] ?? '').toString().toLowerCase();
+  //         final bRemark = (b['remark'] ?? '').toString().toLowerCase();
+
+  //         final aGood = aRemark.contains('good');
+  //         final bGood = bRemark.contains('good');
+
+  //         if (aGood && !bGood) return -1;
+  //         if (!aGood && bGood) return 1;
+
+  //         return aRemark.compareTo(bRemark);
+  //       });
+
+  //       setState(() {
+  //         damageType = sortedList;
+  //         loadingDamages = false;
+  //       });
+  //     } else {
+  //       setState(() {
+  //         loadingDamages = false;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error load damages: $e');
+
+  //     setState(() {
+  //       loadingDamages = false;
+  //     });
+  //   }
+  // }
+
   Future<void> _loadDamages() async {
     try {
-      final query =
-          await firestore.collection('list_tire_damage_inspection').get();
+      Map<String, dynamic>? data;
+      final sisIdSite = await getIdSiteSIS();
+      final isSisIdSite = sisIdSite.any((site) => site.idSite == idSite);
 
-      final docs = query.docs.where((doc) {
-        return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
-      }).toList();
+      if (isSisIdSite) {
+        final doc = await firestore
+            .collection('list_tire_damage_inspection')
+            .doc('sis062026')
+            .get();
 
-      docs.sort((a, b) => b.id.compareTo(a.id));
+        if (doc.exists) {
+          data = doc.data();
+        }
+      } else {
+        final query =
+            await firestore.collection('list_tire_damage_inspection').get();
 
-      final latestDoc = docs.first;
+        final docs = query.docs.where((doc) {
+          return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
+        }).toList();
 
-      final data = latestDoc.data();
+        docs.sort((a, b) => b.id.compareTo(a.id));
+
+        if (docs.isNotEmpty) {
+          data = docs.first.data();
+        }
+      }
+
+      log('docs luka ban : $data');
 
       if (data != null && data['damages'] != null) {
         final List<dynamic> raw = data['damages'];
@@ -1884,10 +1957,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               )),
                                           child: (position[index]['rating'] ==
                                                   '')
-                                              ? Text(
-                                                  'Rating',
-                                                  style: getWhiteTextStyle(),
-                                                )
+                                              ? Builder(builder: (context) {
+                                                  position[index]['rating'] =
+                                                      'A';
+                                                  return Text(
+                                                    'Rating A',
+                                                    style: getWhiteTextStyle(),
+                                                  );
+                                                })
                                               : Text(
                                                   'Rating ${position[index]['rating']}',
                                                   style: getWhiteTextStyle(
@@ -1924,6 +2001,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             MediaQuery.of(context).size.width,
                                         child: ElevatedButton(
                                           onPressed: () {
+                                            if (index == 0)
+                                              log('luka map : ${position[index]['damageTire']}');
                                             FocusScope.of(context).unfocus();
 
                                             if (loadingDamages) {
@@ -2602,7 +2681,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                 detections: aiResults[
                                                                             index]
                                                                         ?.data
-                                                                        .tireDamageResult ??
+                                                                        ?.tireDamageResult ??
                                                                     [],
                                                                 imageWidth:
                                                                     imageWidths[
@@ -3434,23 +3513,33 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               .toString()
                               .toUpperCase()
                               .trim();
-                          log('apakah rating membaik 1 : ${actualRating}');
                           final inputRating = position[i]['rating']
                               .toString()
                               .toUpperCase()
                               .trim();
-                          log('apakah rating membaik 2 : ${inputRating}');
 
                           final actualScore = ratingScore[actualRating] ?? 0;
                           final inputScore = ratingScore[inputRating] ?? 0;
 
-                          log('apakah rating membaik 3 : ${inputScore > actualScore}');
+                          // Skip pengecekan jika prevRating kosong
+                          if (actualRating.isNotEmpty) {
+                            final actualScore = ratingScore[actualRating] ?? 0;
+                            final inputScore = ratingScore[inputRating] ?? 0;
 
-                          if (inputScore > actualScore) {
-                            errorsRating.add(
-                              'Posisi ${unit.posisi}: Rating tidak boleh meningkat dari $actualRating menjadi $inputRating.',
-                            );
+                            log('apakah rating membaik 3 : ${inputScore > actualScore}');
+
+                            if (inputScore > actualScore) {
+                              errorsRating.add(
+                                'Posisi ${unit.posisi}: Rating tidak boleh meningkat dari $actualRating menjadi $inputRating.',
+                              );
+                            }
                           }
+
+                          // if (inputScore > actualScore) {
+                          //   errorsRating.add(
+                          //     'Posisi ${unit.posisi}: Rating tidak boleh meningkat dari $actualRating menjadi $inputRating.',
+                          //   );
+                          // }
                         }
 
                         if (errorsRtd.isNotEmpty) {
@@ -3480,8 +3569,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                           );
                           return;
                         }
-
-                        return;
 
                         // input ke tire inspection
                         try {
@@ -3548,7 +3635,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       : position[i]['damageTire'][0],
                               'damageTire':
                                   (position[i]['damageTire'] as List).isEmpty
-                                      ? damageType[0]
+                                      ? (damageType is List<String>)
+                                          ? damageType[0]
+                                          : damageType[0]['remark']
                                       : position[i]['damageTire'],
                               // 'condition': (position[i]['condition'] as List)
                               //     .where((c) => c['checked'] == true)

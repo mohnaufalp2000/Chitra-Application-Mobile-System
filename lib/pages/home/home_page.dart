@@ -10,6 +10,7 @@ import 'package:camos/core/styles/asset_path.dart';
 import 'package:camos/core/utils/data/menu.dart';
 import 'package:camos/core/widgets/contact_developer_widget.dart';
 import 'package:camos/objectbox.g.dart';
+import 'package:camos/pages/admin/admin_page.dart';
 import 'package:camos/pages/authentication/login_page.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/home/widget/home_function.dart';
@@ -51,12 +52,6 @@ class HomePage extends GetView<HomeState> {
           child: Padding(
             padding: const EdgeInsets.only(top: 24.0),
             child: Obx(() {
-              final String activeId = controller.currentSiteId;
-              final bool isUserOffice = controller.userAccessId.value == '1' ||
-                  controller.userAccessId.value == '2';
-              // 🚀 Menentukan apakah ID aktif adalah ID Site reguler (BUKAN '1' atau '2')
-              final bool isActiveSiteRegular =
-                  activeId != '1' && activeId != '2';
               return Column(
                 children: [
                   Padding(
@@ -157,7 +152,55 @@ class HomePage extends GetView<HomeState> {
                     height: 12,
                   ),
                   ContactDeveloperWidget(),
-
+                  const SizedBox(
+                    height: 12,
+                  ),
+                  // CAMOS Administrator
+                  (controller.userAccessCompanyId.value == '1')
+                      ? Container(
+                          height: 55,
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              Navigator.pushNamed(context, AdminPage.routeName);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color(0xFFF8F1E7), // cream background
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                side: const BorderSide(
+                                  color: Color(0xFFE6C79C), // border color
+                                  width: 1.5,
+                                ),
+                              ),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 24),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.account_circle,
+                                  color: Color(0xFFD98A2B),
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  "CAMOS Administrator",
+                                  style: getWhiteTextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                  ).copyWith(
+                                    color: const Color(0xFFD98A2B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Container(),
                   // --- PENGGANTIAN SITE DROPDOWN ---
 
                   Container(
@@ -217,7 +260,10 @@ class HomePage extends GetView<HomeState> {
                                 // }
 
                                 // === USER OFFICE ===
-                                if (controller.isUserOffice) {
+                                if (controller.isUserOffice &&
+                                    controller.userAccessCompanyId.value ==
+                                        '') {
+                                  print('apakah berasal dari user office');
                                   // final List<Site> displayList =
                                   //     controller.listSite.length > 4
                                   //         ? controller.listSite.sublist(4)
@@ -248,6 +294,7 @@ class HomePage extends GetView<HomeState> {
                                       );
                                     }).toList(),
                                     onChanged: (newValue) {
+                                      print('newValue : $newValue');
                                       if (newValue != null) {
                                         controller.fetchAllHomeData(
                                             idSite: newValue);
@@ -314,6 +361,8 @@ class HomePage extends GetView<HomeState> {
                                     );
                                   }).toList(),
                                   onChanged: (newValue) {
+                                    print('newValue non-office: $newValue');
+
                                     if (newValue != null) {
                                       controller.fetchAllHomeData(
                                           idSite: newValue);
@@ -603,12 +652,12 @@ class HomePage extends GetView<HomeState> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            HomeFunction.buildMenuItem(
-                                menus[0], context, controller.currentSiteId),
-                            HomeFunction.buildMenuItem(
-                                menus[1], context, controller.currentSiteId),
-                            HomeFunction.buildMenuItem(
-                                menus[2], context, controller.currentSiteId),
+                            HomeFunction.buildMenuItem(menus[0], context,
+                                controller.currentSiteCompanyId),
+                            HomeFunction.buildMenuItem(menus[1], context,
+                                controller.currentSiteCompanyId),
+                            HomeFunction.buildMenuItem(menus[2], context,
+                                controller.currentSiteCompanyId),
                           ],
                         ),
 
@@ -616,14 +665,21 @@ class HomePage extends GetView<HomeState> {
 
                         // Baris kedua
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          mainAxisAlignment:
+                              (controller.userAccessCompanyId.value == '1')
+                                  ? MainAxisAlignment.center
+                                  : MainAxisAlignment.spaceEvenly,
                           children: [
-                            HomeFunction.buildMenuItem(
-                                menus[3], context, controller.currentSiteId),
-                            HomeFunction.buildMenuItem(
-                                menus[4], context, controller.currentSiteId),
-                            HomeFunction.buildMenuItem(
-                                menus[5], context, controller.currentSiteId),
+                            HomeFunction.buildMenuItem(menus[3], context,
+                                controller.userAccessCompanyId.value),
+                            (controller.userAccessCompanyId.value == '1')
+                                ? Container(
+                                    width: 30,
+                                  )
+                                : HomeFunction.buildMenuItem(menus[4], context,
+                                    controller.userAccessCompanyId.value),
+                            HomeFunction.buildMenuItem(menus[5], context,
+                                controller.userAccessCompanyId.value)
                           ],
                         ),
                       ],
@@ -917,6 +973,7 @@ class HomePage extends GetView<HomeState> {
           ),
         ),
       ),
+
       // NOTE: BottomNavigationBar dan logika navigasi di sini
       // masih perlu disesuaikan karena HomePage kini StatelessWidget
       // dan tidak memiliki _selectedIndex.

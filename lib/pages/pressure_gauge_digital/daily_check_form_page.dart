@@ -150,20 +150,88 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
   final ImagePicker _picker = ImagePicker();
 
+  // Future<void> _loadDamages() async {
+  //   try {
+  //     final query =
+  //         await firestore.collection('list_tire_damage_inspection').get();
+
+  //     final docs = query.docs.where((doc) {
+  //       return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
+  //     }).toList();
+
+  //     docs.sort((a, b) => b.id.compareTo(a.id));
+
+  //     final latestDoc = docs.first;
+
+  //     final data = latestDoc.data();
+
+  //     if (data != null && data['damages'] != null) {
+  //       final List<dynamic> raw = data['damages'];
+
+  //       List<Map<String, dynamic>> sortedList =
+  //           raw.map<Map<String, dynamic>>((e) {
+  //         return Map<String, dynamic>.from(e);
+  //       }).toList();
+
+  //       sortedList.sort((a, b) {
+  //         final aRemark = (a['remark'] ?? '').toString().toLowerCase();
+  //         final bRemark = (b['remark'] ?? '').toString().toLowerCase();
+
+  //         final aGood = aRemark.contains('good');
+  //         final bGood = bRemark.contains('good');
+
+  //         if (aGood && !bGood) return -1;
+  //         if (!aGood && bGood) return 1;
+
+  //         return aRemark.compareTo(bRemark);
+  //       });
+
+  //       setState(() {
+  //         damageType = sortedList;
+  //         loadingDamages = false;
+  //       });
+  //     } else {
+  //       setState(() {
+  //         loadingDamages = false;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error load damages: $e');
+
+  //     setState(() {
+  //       loadingDamages = false;
+  //     });
+  //   }
+  // }
+
   Future<void> _loadDamages() async {
     try {
-      final query =
-          await firestore.collection('list_tire_damage_inspection').get();
+      Map<String, dynamic>? data;
+      idSite = homeState.currentSiteId;
 
-      final docs = query.docs.where((doc) {
-        return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
-      }).toList();
+      if (idSite.toString() == '1') {
+        final doc = await firestore
+            .collection('list_tire_damage_inspection')
+            .doc('sis062026')
+            .get();
 
-      docs.sort((a, b) => b.id.compareTo(a.id));
+        if (doc.exists) {
+          data = doc.data();
+        }
+      } else {
+        final query =
+            await firestore.collection('list_tire_damage_inspection').get();
 
-      final latestDoc = docs.first;
+        final docs = query.docs.where((doc) {
+          return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
+        }).toList();
 
-      final data = latestDoc.data();
+        docs.sort((a, b) => b.id.compareTo(a.id));
+
+        if (docs.isNotEmpty) {
+          data = docs.first.data();
+        }
+      }
 
       if (data != null && data['damages'] != null) {
         final List<dynamic> raw = data['damages'];
@@ -3830,7 +3898,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                       return {
                         'pos': '${pIndex + 1}',
-                        'rating': (p.rating) ?? '',
+                        'rating': (p.rating == '' || p.rating.isEmpty)
+                            ? 'A'
+                            : (p.rating),
                         'pressure': (p.pressure) ?? '0',
                         'temperatureStatus': (p.temperatureStatus),
                         'adjusmentPressure': (p.adjusmentPressure) ?? '0',
@@ -3838,7 +3908,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             (position[0].adjusmentPressure != '')
                                 ? (position[0].adjustmentTemperatureStatus)
                                 : '',
-                        'luka': (selectedType == 0) ? '' : p.luka,
+                        'luka': (selectedType == 0)
+                            ? ''
+                            : (p.luka.isEmpty)
+                                ? ['Good Condition']
+                                : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
                         'tireSize': (p.size ?? ''),
@@ -3903,13 +3977,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             'pos': '${pIndex + 1}',
                             'pressure': (p.pressure) ?? '0',
                             'temperatureStatus': (p.temperatureStatus),
-                            'rating': (p.rating) ?? '',
+                            'rating': (p.rating == '' || p.rating.isEmpty)
+                                ? 'A'
+                                : (p.rating),
                             'adjusmentPressure': (p.adjusmentPressure) ?? '0',
                             'adjusmentTemperatureStatus':
                                 (position[0].adjusmentPressure != '')
                                     ? (position[0].adjustmentTemperatureStatus)
                                     : '',
-                            'luka': (selectedType == 0) ? '' : p.luka,
+                            'luka': (selectedType == 0)
+                                ? ''
+                                : (p.luka.isEmpty)
+                                    ? ['Good Condition']
+                                    : p.luka,
                             'image': (listImage[pIndex] != '')
                                 ? listImage[pIndex]
                                 : '',
@@ -3953,13 +4033,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'pos': '${pIndex + 1}',
                         'pressure': (p.pressure) ?? '0',
                         'temperatureStatus': (p.temperatureStatus),
-                        'rating': (p.rating) ?? '',
+                        'rating': (p.rating == '' || p.rating.isEmpty)
+                            ? 'A'
+                            : (p.rating),
                         'adjusmentPressure': (p.adjusmentPressure) ?? '0',
                         'adjusmentTemperatureStatus':
                             (position[0].adjusmentPressure != '')
                                 ? (position[0].adjustmentTemperatureStatus)
                                 : '',
-                        'luka': (selectedType == 0) ? '' : p.luka,
+                        'luka': (selectedType == 0)
+                            ? ''
+                            : (p.luka.isEmpty)
+                                ? ['Good Condition']
+                                : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
                         'tireSize': (p.size ?? ''),

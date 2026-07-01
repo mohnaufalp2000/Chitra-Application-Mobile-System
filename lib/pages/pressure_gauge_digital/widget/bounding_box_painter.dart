@@ -43,6 +43,10 @@ class BoundingBoxPainter extends CustomPainter {
 
       final color = _getColor(i);
 
+      if (bbox == null || bbox.length < 4) {
+        return;
+      }
+
       double x1 = bbox[0] * scaleX;
       double y1 = bbox[1] * scaleY;
       double x2 = bbox[2] * scaleX;
@@ -70,7 +74,7 @@ class BoundingBoxPainter extends CustomPainter {
       // === Text
       final textSpan = TextSpan(
         text:
-            "${item.label} ${(item.confidenceLevel * 100).toStringAsFixed(1)}%",
+            "${item.label ?? '-'} ${((item.confidenceLevel ?? 0.0) * 100).toStringAsFixed(1)}%",
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,

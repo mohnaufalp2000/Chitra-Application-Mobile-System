@@ -6,6 +6,16 @@ abstract class AuthenticationState {}
 
 class AuthenticatioLoginState extends AuthenticationState {}
 
+class AuthenticationSuccessState extends AuthenticationState {
+  final String targetRoute;
+  final Map<String, dynamic>? arguments;
+
+  AuthenticationSuccessState({
+    required this.targetRoute,
+    this.arguments,
+  });
+}
+
 class AuthenticatioRegisterState extends AuthenticationState {}
 
 class AuthenticatioLoadingState extends AuthenticationState {}
@@ -23,5 +33,7 @@ class AuthenticationErrorState extends AuthenticationState {
     required this.errorMessage,
   });
 }
+
+class AuthenticationEmailNotVerifiedState extends AuthenticationState {}
 
 class AuthenticationCompleteProfileState extends AuthenticationState {}

@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/dashboard/dashboard_page.dart';
 
 import '../../core/blocs/authentication/authentication_bloc.dart';
@@ -345,142 +346,136 @@ class _LoginPageState extends State<LoginPage> {
                       height: 24,
                     ),
                     BlocConsumer<AuthenticationBloc, AuthenticationState>(
-                      listener: (context, state) async {
-                        if (state is AuthenticatioLoginState) {
-                          // check email is verify or not
-                          if (auth.currentUser!.emailVerified) {
-                            final col =
-                                FirebaseFirestore.instance.collection('users');
-                            final query = await col
-                                .where('email',
-                                    isEqualTo: auth.currentUser?.email)
-                                .get();
-                            if (query.docs.isNotEmpty) {
-                              print('login dengan sharedprefrences');
-                              DocumentSnapshot documentSnapshot = query.docs[0];
-                              if (documentSnapshot.data()
-                                  is Map<String, dynamic>) {
-                                Map<String, dynamic> data = documentSnapshot
-                                    .data() as Map<String, dynamic>;
+                      listener: (context, state) {
+                        if (state is AuthenticationSuccessState) {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            state.targetRoute,
+                            arguments: state.arguments,
+                          );
+                        }
 
-                                saveIdSitePreferences(data['id_site']);
-                                saveManpowerShiftPreferences(shift: 'morning');
-                                saveUserPreferences(data);
-                              }
-                            }
-
-                            final user = await firestore
-                                .collection('users')
-                                .where('email',
-                                    isEqualTo: auth.currentUser?.email)
-                                .get();
-
-                            final listCustPgDigital = await firestore
-                                .collection('list_site_pgdigital')
-                                .get();
-                            final listCustPgDigitalData = listCustPgDigital.docs
-                                .map((e) => e.data() as Map<String, dynamic>)
-                                .toList();
-
-                            print('user docs : ${listCustPgDigitalData}');
-
-                            saveListCustomer(listCustPgDigitalData);
-
-                            List<Site> allSites =
-                                await ApiService.getCachedAllSites();
-                            String userIdSite = user.docs[0]['id_site'];
-
-                            if (allSites.isEmpty || allSites == null) {
-                              allSites = await ApiService.getAllSite();
-                            }
-
-                            // cek apakah menggunakan cts atau tidak
-                            final isCTS = allSites
-                                .firstWhere((site) => site.idSite == userIdSite,
-                                    orElse: () =>
-                                        Site(idSite: userIdSite, cts: '0'))
-                                .cts;
-
-                            final isSPM = allSites
-                                .firstWhere((site) => site.idSite == userIdSite,
-                                    orElse: () =>
-                                        Site(idSite: userIdSite, spm: '0'))
-                                .spm;
-
-                            bool isSitePGInList = listCustPgDigitalData
-                                .any((e) => e['id_site'] == userIdSite);
-
-                            // user tidak beli CTS
-                            log('isCTS : $isCTS');
-                            if (isCTS == '0' || isCTS == null) {
-                              if (userIdSite == '15') {
-                                Navigator.pushReplacementNamed(
-                                    context, DashboardPage.routeName);
-                                return;
-                              }
-                              String targetRoute = (userIdSite == '1')
-                                  ? DashboardPage.routeName
-                                  : HomePageTrial.routeName;
-
-                              Map<String, dynamic>? arguments =
-                                  (userIdSite == '1')
-                                      ? null
-                                      : {
-                                          'idSite': userIdSite,
-                                          'isSPM': isSPM == '1',
-                                          'isCTS': isCTS == '1',
-                                          'isPG': isSitePGInList,
-                                        };
-
-                              Navigator.pushReplacementNamed(
-                                  context, targetRoute,
-                                  arguments: arguments);
-                            } else {
-                              Navigator.pushReplacementNamed(
-                                  context, DashboardPage.routeName);
-                            }
-
-                            // apakah user PAMA-TRIAL? Jika iya arahkan ke home page trial
-                            // if ((listCustPgDigitalData).any((e) =>
-                            //     e['id_site'] == user.docs[0]['id_site'])) {
-                            //   pushReplace(context, HomePageTrial.routeName);
-                            // } else {
-                            //   // cek apakah menggunakan cts atau tidak
-                            //   log('all sites : ${user.docs[0]['id_site']}');
-                            //   final isCTS = allSites
-                            //       .firstWhere(
-                            //           (site) =>
-                            //               site.idSite ==
-                            //               user.docs[0]['id_site'],
-                            //           orElse: () => Site(
-                            //               idSite: user.docs[0]['id_site'],
-                            //               cts: '1'))
-                            //       .cts;
-
-                            //   if (isCTS == '0') {
-                            //     Navigator.pushReplacementNamed(
-                            //         context, TpmsPage.routeName,
-                            //         arguments: {
-                            //       'idSite': user.docs[0]['id_site'],
-                            //       'isCTS': false
-                            //     });
-                            //   } else {
-                            //     pushReplace(context, HomePage.routeName);
-                            //   }
-                            // }
-                          } else {
-                            push(context, EmailVerificationPage.routeName);
-                          }
+                        if (state is AuthenticationEmailNotVerifiedState) {
+                          push(context, EmailVerificationPage.routeName);
                         }
 
                         if (state is AuthenticationErrorState) {
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          FocusManager.instance.primaryFocus?.unfocus();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(state.errorMessage)),
                           );
                         }
                       },
+                      // listener: (context, state) async {
+                      //   if (state is AuthenticatioLoginState) {
+                      //     // check email is verify or not
+                      //     if (auth.currentUser!.emailVerified) {
+                      //       final col =
+                      //           FirebaseFirestore.instance.collection('users');
+                      //       final query = await col
+                      //           .where('email',
+                      //               isEqualTo: auth.currentUser?.email)
+                      //           .get();
+                      //       if (query.docs.isNotEmpty) {
+                      //         print('login dengan sharedprefrences');
+                      //         DocumentSnapshot documentSnapshot = query.docs[0];
+                      //         if (documentSnapshot.data()
+                      //             is Map<String, dynamic>) {
+                      //           Map<String, dynamic> data = documentSnapshot
+                      //               .data() as Map<String, dynamic>;
+                      //           print('login data : $data');
+
+                      //           saveIdSitePreferences(data['id_site']);
+                      //           saveManpowerShiftPreferences(shift: 'morning');
+                      //           saveUserPreferences(data);
+                      //         }
+                      //       }
+
+                      //       final user = await firestore
+                      //           .collection('users')
+                      //           .where('email',
+                      //               isEqualTo: auth.currentUser?.email)
+                      //           .get();
+
+                      //       final listCustPgDigital = await firestore
+                      //           .collection('list_site_pgdigital')
+                      //           .get();
+                      //       final listCustPgDigitalData = listCustPgDigital.docs
+                      //           .map((e) => e.data() as Map<String, dynamic>)
+                      //           .toList();
+
+                      //       print('user docs : ${listCustPgDigitalData}');
+
+                      //       saveListCustomer(listCustPgDigitalData);
+
+                      //       List<Site> allSites =
+                      //           await ApiService.getCachedAllSites();
+                      //       String userIdSite = user.docs[0]['id_site'];
+
+                      //       if (allSites.isEmpty || allSites == null) {
+                      //         allSites = await ApiService.getAllSite();
+                      //       }
+
+                      //       // cek apakah menggunakan cts atau tidak
+                      //       final isCTS = allSites
+                      //           .firstWhere((site) => site.idSite == userIdSite,
+                      //               orElse: () =>
+                      //                   Site(idSite: userIdSite, cts: '0'))
+                      //           .cts;
+
+                      //       final isSPM = allSites
+                      //           .firstWhere((site) => site.idSite == userIdSite,
+                      //               orElse: () =>
+                      //                   Site(idSite: userIdSite, spm: '0'))
+                      //           .spm;
+
+                      //       bool isSitePGInList = listCustPgDigitalData
+                      //           .any((e) => e['id_site'] == userIdSite);
+
+                      //       // user tidak beli CTS
+                      //       log('isCTS : $isCTS');
+                      //       if (isCTS == '0' || isCTS == null) {
+                      //         if (userIdSite == '15') {
+                      //           Navigator.pushReplacementNamed(
+                      //               context, DashboardPage.routeName);
+                      //           return;
+                      //         }
+                      //         // String targetRoute = (userIdSite == '1')
+                      //         String targetRoute =
+                      //             (userIdSite == officeChitra.idSite)
+                      //                 ? DashboardPage.routeName
+                      //                 : HomePageTrial.routeName;
+
+                      //         Map<String, dynamic>? arguments =
+                      //             // (userIdSite == '1')
+                      //             (userIdSite == officeChitra.idSite)
+                      //                 ? null
+                      //                 : {
+                      //                     'idSite': userIdSite,
+                      //                     'isSPM': isSPM == '1',
+                      //                     'isCTS': isCTS == '1',
+                      //                     'isPG': isSitePGInList,
+                      //                   };
+
+                      //         Navigator.pushReplacementNamed(
+                      //             context, targetRoute,
+                      //             arguments: arguments);
+                      //       } else {
+                      //         Navigator.pushReplacementNamed(
+                      //             context, DashboardPage.routeName);
+                      //       }
+                      //     } else {
+                      //       push(context, EmailVerificationPage.routeName);
+                      //     }
+                      //   }
+
+                      //   if (state is AuthenticationErrorState) {
+                      //     ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      //     FocusManager.instance.primaryFocus?.unfocus();
+                      //     ScaffoldMessenger.of(context).showSnackBar(
+                      //       SnackBar(content: Text(state.errorMessage)),
+                      //     );
+                      //   }
+                      // },
                       builder: (context, state) {
                         return ButtonWidget(
                           function: () {

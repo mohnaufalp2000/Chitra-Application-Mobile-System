@@ -1,2 +1,16 @@
-plugins/
+# Flutter
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/App.framework
+ios/build/
+
+# macOS
+.DS_Store
 .vscode/templates
