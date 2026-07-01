@@ -164,8 +164,13 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode == 201) {
+      log("RESPONSE AI CODE API: ${response.statusCode}");
+      log("RESPONSE AI BODY API: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final result = TireDamageAi.fromJson(response.body);
+
+        log("RESPONSE AI RESULT API: ${result}");
 
         return result;
       } else {

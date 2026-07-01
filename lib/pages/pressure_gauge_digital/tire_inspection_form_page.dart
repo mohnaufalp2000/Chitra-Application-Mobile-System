@@ -2681,7 +2681,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                 detections: aiResults[
                                                                             index]
                                                                         ?.data
-                                                                        .tireDamageResult ??
+                                                                        ?.tireDamageResult ??
                                                                     [],
                                                                 imageWidth:
                                                                     imageWidths[
