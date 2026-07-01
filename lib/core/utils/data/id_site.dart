@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-IdSite officeChitra = IdSite(nameSite: 'Office', idSite: 'officeChitra');
-IdSite allCK = IdSite(nameSite: 'All-CK', idSite: 'allCK');
+IdSite officeChitra = IdSite(nameSite: 'Office', idSite: '1');
+IdSite allCK = IdSite(nameSite: 'All-CK', idSite: '2');
 
 // ID Site Lama
 // IdSite admoMining =
@@ -78,7 +78,7 @@ final List<IdSite> allSites = [
   pama,
 ];
 
-IdSite office = IdSite(nameSite: 'Office,', idSite: 'officeChitra');
+IdSite office = IdSite(nameSite: 'Office,', idSite: '1');
 IdSite ck = IdSite(nameSite: 'All-CK,', idSite: '2');
 IdSite pama = IdSite(nameSite: 'PAMA,', idSite: '3');
 

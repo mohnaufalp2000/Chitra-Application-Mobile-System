@@ -29,10 +29,8 @@ class ApiService {
 
     log('selected url user : ${user}');
 
-    if (user['id_site'] == '1' ||
-        user['id_site'] == '2' ||
-        user['id_site'] == '3' ||
-        user['id_site'] == '4') {
+    if (user['id_company'] == '1') {
+      print('id company if');
       switch (api) {
         case 'post_tire_inspection':
           return await _getUrlFromFirestore(
@@ -49,6 +47,7 @@ class ApiService {
       }
       '';
     } else {
+      print('id company else');
       switch (api) {
         case 'post_tire_inspection':
           return '${postUrl}post_inspect';

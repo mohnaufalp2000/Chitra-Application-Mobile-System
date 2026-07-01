@@ -154,11 +154,7 @@ class AdminState extends GetxController {
             })
             .where((user) => user['isDelete'] != true)
             .where((user) =>
-                user['id_company'] ==
-                allSites
-                    .firstWhere((site) =>
-                        site.idCompany == homeState.userAccessCompanyId.value)
-                    .idCompany)
+                user['id_company'] == homeState.userAccessCompanyId.value)
             .toList();
 
         log('user baru $data');

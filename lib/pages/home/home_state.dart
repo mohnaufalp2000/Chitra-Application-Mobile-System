@@ -70,17 +70,15 @@ class HomeState extends GetxController {
   String get siteName => selectedSite?.site ?? 'Loading Site...';
 
   bool get isUserOffice =>
-      // userAccessId.value == '1' || userAccessId.value == '2';
-      // userAccessId.value == officeChitra.idSite || userAccessId.value == '2';
-      userAccessId.value == officeChitra.idSite;
+      userAccessId.value == '1' ||
+      userAccessId.value == '2' && userAccessCompanyId.value == '';
 
   bool get isSingleSiteUser =>
       !isUserOffice &&
       userAccessId.value.isNotEmpty &&
-      // userAccessId.value != '1' &&
-      // userAccessId.value != officeChitra.idSite &&
-      // userAccessId.value != '2';
-      userAccessId.value != officeChitra.idSite;
+      userAccessId.value != '1' &&
+      userAccessId.value != '2' &&
+      userAccessCompanyId.value != '';
 
   bool get hasSingleClusterSite => clusterSites.length == 1;
 
@@ -92,6 +90,7 @@ class HomeState extends GetxController {
     fetchSites().then((_) async {
       await _loadInitialDataAfterSitesReady();
     });
+    print('is user office : $isUserOffice');
   }
 
   Future<void> retrieveUser() async {
@@ -119,14 +118,9 @@ class HomeState extends GetxController {
   bool get shouldShowSiteWarning {
     // Jika user access adalah 1 atau 2 (Office / All-CK)
     // dan site yang aktif belum dipilih (masih kosong atau sama dengan idSite awal)
-    // return (userAccessId.value == '1' || userAccessId.value == '2') &&
-    //     (currentSiteIdRx.value == '1' || currentSiteIdRx.value == '2');
-    // return (userAccessId.value == officeChitra.idSite ||
-    //         userAccessId.value == '2') &&
-    return (userAccessId.value == officeChitra.idSite) &&
-        // (currentSiteIdRx.value == officeChitra.idSite ||
-        //     currentSiteIdRx.value == '2');
-        (currentSiteIdRx.value == officeChitra.idSite);
+    return (userAccessId.value == '1' || userAccessId.value == '2') &&
+        (currentSiteIdRx.value == '1' || currentSiteIdRx.value == '2') &&
+        userAccessCompanyId.value == '';
   }
 
   // 🚀 Metode baru untuk memuat ID awal dan data ban setelah sites siap
@@ -134,13 +128,14 @@ class HomeState extends GetxController {
     // 1. Ambil ID awal dari SharedPreferences
     String initialId = await getIdSitePreferences();
     Map<String, dynamic> initialCompanyId = await getUserPreferences();
-    userAccessCompanyId.value = initialCompanyId['id_company'];
+    print('data id company : ${initialCompanyId['id_company'] ?? ''}');
+    userAccessCompanyId.value = initialCompanyId['id_company'] ?? '';
     userAccessId.value = initialId;
     // 2. Jika ID awal adalah '1' (Office) atau '2' (All-CK), kita hanya tampilkan Dropdown.
     // Data ban tidak akan dimuat sampai pengguna memilih site dari Dropdown.
     // if (initialId == '1' || initialId == '2') {
     // if (initialId == officeChitra.idSite || initialId == '2') {
-    if (initialId == officeChitra.idSite) {
+    if (initialId == officeChitra.idSite && userAccessCompanyId.value == '') {
       print('benar 1');
       currentSiteIdRx.value = initialId;
       currentSiteCompanyIdRx.value = initialCompanyId['id_company'];
@@ -166,15 +161,17 @@ class HomeState extends GetxController {
     String idToFetch = selectedSite?.idSite ?? idSite;
 
     // 3. Hanya fetch data ban/kondisi jika ID Site bukan ID yang non-Site (Office/All-CK)
-    // if (idToFetch != '1' && idToFetch != '2') {
-    // if (idToFetch != officeChitra.idSite && idToFetch != '2') {
-    if (idToFetch != officeChitra.idSite) {
+    if (idToFetch != '1' && idToFetch != '2' ||
+        userAccessCompanyId.value != '') {
+      print('terfetch 1');
+
       await Future.wait([
         fetchTireInventory(idToFetch),
         fetchTireCondition(idToFetch),
       ]);
     } else {
       // Jika idToFetch adalah '1' atau '2', reset data ban/kondisi.
+      print('not terfetch');
       tireInventData.clear();
       mapRating.clear();
       inventErrorMessage.value = '';
@@ -190,15 +187,15 @@ class HomeState extends GetxController {
     log('print userAccessId Invent: $userAccessId');
     log('print currentId Invent : $currentSiteId');
     log('print selectedId Invent : $selectedSite');
+    log("print hauling nih : ${userAccessId.value == '1' || userAccessId.value == '2'}");
+
     isInventLoading.value = true;
     inventErrorMessage.value = '';
     inventLoadingPercent.value = 0;
 
     // Jika userAccessId adalah 1 atau 2, skip cache total
-    // if (userAccessId.value == '1' || userAccessId.value == '2') {
-    if (userAccessId.value == officeChitra.idSite) {
-      // if (userAccessId.value == officeChitra.idSite ||
-      //     userAccessId.value == '2') {
+    if (userAccessId.value == '1' ||
+        userAccessId.value == '2' && userAccessCompanyId.value == '') {
       log('⚡ User $userAccessId → skip cache, ambil langsung dari API');
       try {
         if (Platform.isAndroid) {
@@ -266,8 +263,10 @@ class HomeState extends GetxController {
       }));
 
       tireInventData.value = count;
+      print('terpanggil atau engga');
+      log('tire invent data terbaru : ${tireInventData.value}');
 
-      // Simpan cache hanya untuk user selain 1 & 2
+      // Simpan cache hanya untuk user selain 1 & 2 (kecualis sis)
       await _cacheInventData(idSite, count);
 
       // Simpan waktu sync (saat ini)
@@ -363,10 +362,8 @@ class HomeState extends GetxController {
     conditionErrorMessage.value = '';
     conditionLoadingPercent.value = 0;
 
-    // if (userAccessId.value == '1' || userAccessId.value == '2') {
-    // if (userAccessId.value == officeChitra.idSite ||
-    //     userAccessId.value == '2') {
-    if (userAccessId.value == officeChitra.idSite) {
+    if (userAccessId.value == '1' ||
+        userAccessId.value == '2' && userAccessCompanyId.value == '') {
       log('⚡ User $userAccessId → skip cache, ambil langsung dari API');
       try {
         final listSize = await ApiService.getTireCondition(idSite);

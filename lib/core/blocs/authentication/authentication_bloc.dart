@@ -136,6 +136,8 @@ class AuthenticationBloc
               ? DashboardPage.routeName
               : HomePageTrial.routeName;
 
+          print('route name : $targetRoute');
+
           final arguments = (userIdSite == officeChitra.idSite)
               ? null
               : {
