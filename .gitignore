@@ -14,3 +14,4 @@ ios/build/
 # macOS
 .DS_Store
 .vscode/templates
+.DS_Store

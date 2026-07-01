@@ -213,39 +213,40 @@ class _SelectInspectionPageState extends State<SelectInspectionPage> {
               ),
               const SizedBox(height: 12),
               // === Pre-Assembly Tire ===
-              Expanded(
-                child: Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 2,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => controller.openPreAssemblyTire(context),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            '${iconPath}/rim.png',
-                            width: MediaQuery.of(context).size.width * 0.12,
-                            height: MediaQuery.of(context).size.height * 0.12,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Pre-Assembly Tire',
-                            textAlign: TextAlign.center,
-                            style: getBlackTextStyle(
-                                fontSize: 18, fontWeight: w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+
+              // Expanded(
+              //   child: Card(
+              //     shape: RoundedRectangleBorder(
+              //       borderRadius: BorderRadius.circular(12),
+              //     ),
+              //     elevation: 2,
+              //     child: InkWell(
+              //       borderRadius: BorderRadius.circular(12),
+              //       onTap: () => controller.openPreAssemblyTire(context),
+              //       child: Container(
+              //         width: double.infinity,
+              //         padding: const EdgeInsets.all(12),
+              //         child: Column(
+              //           mainAxisAlignment: MainAxisAlignment.center,
+              //           children: [
+              //             Image.asset(
+              //               '${iconPath}/rim.png',
+              //               width: MediaQuery.of(context).size.width * 0.12,
+              //               height: MediaQuery.of(context).size.height * 0.12,
+              //             ),
+              //             const SizedBox(height: 8),
+              //             Text(
+              //               'Pre-Assembly Tire',
+              //               textAlign: TextAlign.center,
+              //               style: getBlackTextStyle(
+              //                   fontSize: 18, fontWeight: w600),
+              //             ),
+              //           ],
+              //         ),
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),
