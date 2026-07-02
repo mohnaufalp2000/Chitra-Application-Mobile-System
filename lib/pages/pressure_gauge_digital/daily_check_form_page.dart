@@ -122,11 +122,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   // ];
   List<Map<String, dynamic>> damageType = [];
   bool loadingDamages = true;
-  List<List<int>> inspectRoute = [
-    [0, 1, 2, 3, 4, 5],
-    [0, 2, 3, 4, 5, 1],
-    [1, 5, 4, 3, 2, 0],
-  ];
+  List<List<int>> inspectRoute = [];
   List<String> pit = [];
 
   List<String>? _ratingCache;
@@ -139,6 +135,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   int selectedPit = -1;
   int selectedPosIndex = -1;
   int selectedType = 1;
+  int selectedRecheckPosIndex = -1;
   String selectedTemperature = 'HOT';
   int selectedRoute = 0;
   int checkAmount = 0;
@@ -272,38 +269,123 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     }
   }
 
+  List<List<int>> generateInspectRoute(int tireCount) {
+    final Map<int, List<List<int>>> routesByTireCount = {
+      6: [
+        [1, 3, 4, 5, 6, 2],
+        [2, 6, 5, 3, 4, 1],
+        [6, 5, 4, 3, 1, 2],
+      ],
+      10: [
+        [1, 3, 4, 7, 8, 9, 10, 5, 6, 2],
+        [2, 6, 5, 10, 9, 8, 7, 4, 3, 1],
+      ],
+      12: [
+        [1, 3, 5, 6, 9, 10, 11, 12, 7, 8, 4, 2],
+        [2, 4, 8, 7, 12, 11, 10, 9, 6, 5, 3, 1],
+      ],
+    };
+
+    final selectedRoutes = routesByTireCount[tireCount];
+
+    if (selectedRoutes == null) {
+      // fallback kalau jumlah ban belum didaftarkan
+      return [
+        List.generate(tireCount, (index) => index),
+      ];
+    }
+
+    // convert dari posisi ban 1-based ke index 0-based
+    return selectedRoutes
+        .map((route) => route.map((pos) => pos - 1).toList())
+        .toList();
+  }
+
   void applyPressureData(String pressureValue) {
     setState(() {
       pressureDigitalCtrl.text = pressureValue;
-      final firstNumber = pressureValue; // Karena diasumsikan sudah angka saja
+      final firstNumber = pressureValue;
 
       switch (selectedType) {
-        // PG DIGITAL Type
         case 0:
-          // Logic auto-fill untuk PG Digital
-          if (checkAmount < position.length) {
-            position[inspectRoute[selectedRoute][checkAmount]] =
-                position[inspectRoute[selectedRoute][checkAmount]]
-                    .copyWith(pressure: firstNumber);
+          // Kalau user memilih posisi untuk re-check,
+          // data PG Digital berikutnya masuk ke posisi itu.
+          if (selectedRecheckPosIndex != -1) {
+            position[selectedRecheckPosIndex] =
+                position[selectedRecheckPosIndex].copyWith(
+              pressure: firstNumber,
+            );
+
+            log('Re-check pressure masuk ke Pos. ${selectedRecheckPosIndex + 1}: $firstNumber');
+
+            selectedRecheckPosIndex = -1;
+            break;
+          }
+
+          // Kalau tidak ada posisi re-check, lanjut auto route seperti biasa.
+          final route = inspectRoute[selectedRoute];
+
+          if (checkAmount < route.length) {
+            final targetIndex = route[checkAmount];
+
+            position[targetIndex] = position[targetIndex].copyWith(
+              pressure: firstNumber,
+            );
+
             checkAmount++;
+
+            log('Auto pressure masuk ke Pos. ${targetIndex + 1}: $firstNumber');
+          } else {
+            log('Semua posisi route sudah terisi');
           }
           break;
+
         case 1:
-          // Manual Type - Logic ini mungkin perlu diubah karena tombol 'Pressure'
-          // sekarang membuka dialog, bukan menunggu input Bluetooth
           if (selectedPosIndex != -1) {
             position[selectedPosIndex] =
                 position[selectedPosIndex].copyWith(pressure: firstNumber);
             pressureDigitalCtrl.clear();
             selectedPosIndex = -1;
-            // Jika ada dialog yang terbuka untuk input manual, tutup.
-            // Anda perlu menyesuaikan alur UI untuk membedakan input manual dan BT.
           }
           break;
       }
+
       log('tekanan angin dari BT: ${pressureDigitalCtrl.text}');
     });
   }
+
+  // void applyPressureData(String pressureValue) {
+  //   setState(() {
+  //     pressureDigitalCtrl.text = pressureValue;
+  //     final firstNumber = pressureValue; // Karena diasumsikan sudah angka saja
+
+  //     switch (selectedType) {
+  //       // PG DIGITAL Type
+  //       case 0:
+  //         // Logic auto-fill untuk PG Digital
+  //         if (checkAmount < position.length) {
+  //           position[inspectRoute[selectedRoute][checkAmount]] =
+  //               position[inspectRoute[selectedRoute][checkAmount]]
+  //                   .copyWith(pressure: firstNumber);
+  //           checkAmount++;
+  //         }
+  //         break;
+  //       case 1:
+  //         // Manual Type - Logic ini mungkin perlu diubah karena tombol 'Pressure'
+  //         // sekarang membuka dialog, bukan menunggu input Bluetooth
+  //         if (selectedPosIndex != -1) {
+  //           position[selectedPosIndex] =
+  //               position[selectedPosIndex].copyWith(pressure: firstNumber);
+  //           pressureDigitalCtrl.clear();
+  //           selectedPosIndex = -1;
+  //           // Jika ada dialog yang terbuka untuk input manual, tutup.
+  //           // Anda perlu menyesuaikan alur UI untuk membedakan input manual dan BT.
+  //         }
+  //         break;
+  //     }
+  //     log('tekanan angin dari BT: ${pressureDigitalCtrl.text}');
+  //   });
+  // }
 
   Future<List<String>> fetchLatestRatingData(String unit) async {
     final ratingQuery = await firestore
@@ -1887,6 +1969,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             );
                           }
                         }
+                        inspectRoute = generateInspectRoute(position.length);
                       }
 
                       final results = await Future.wait([
@@ -2426,46 +2509,157 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                         },
                                       ),
                                     ),
-
                                     Column(
-                                        children: position.map((pos) {
-                                      final posIndex = position.indexOf(pos);
-                                      return Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Pos. ${posIndex + 1}',
-                                            style: getBlackTextStyle(
-                                                fontSize: 16, fontWeight: w700),
-                                          ),
-                                          const SizedBox(
-                                            height: 6,
-                                          ),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: ElevatedButton(
-                                              onPressed: () {},
-                                              style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.blue,
+                                      children: position.map((pos) {
+                                        final posIndex = position.indexOf(pos);
+                                        final isSelectedRecheck =
+                                            selectedRecheckPosIndex == posIndex;
+
+                                        return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Pos. ${posIndex + 1}',
+                                              style: getBlackTextStyle(
+                                                fontSize: 16,
+                                                fontWeight: w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: ElevatedButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    selectedRecheckPosIndex =
+                                                        selectedRecheckPosIndex ==
+                                                                posIndex
+                                                            ? -1
+                                                            : posIndex;
+                                                  });
+
+                                                  ScaffoldMessenger.of(context)
+                                                      .hideCurrentSnackBar();
+
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                      backgroundColor:
+                                                          Colors.orange,
+                                                      content: Text(
+                                                        selectedRecheckPosIndex ==
+                                                                -1
+                                                            ? 'Re-check position dibatalkan'
+                                                            : 'Pos. ${posIndex + 1} dipilih. Tekan/send PG Digital untuk update pressure posisi ini.',
+                                                        style: const TextStyle(
+                                                            color:
+                                                                Colors.white),
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor:
+                                                      isSelectedRecheck
+                                                          ? Colors.orange
+                                                          : Colors.blue,
                                                   shape: RoundedRectangleBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             12),
-                                                  )),
-                                              child: Text(
-                                                // '${position[posIndex]['pressure']} Psi',
-                                                '${position[posIndex].pressure} Psi',
-                                                style: getWhiteTextStyle(
-                                                  fontSize: 24,
-                                                  fontWeight: w700,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  position[posIndex]
+                                                          .pressure
+                                                          .isEmpty
+                                                      ? 'Select Pos. ${posIndex + 1}'
+                                                      : '${position[posIndex].pressure} Psi',
+                                                  style: getWhiteTextStyle(
+                                                    fontSize: 24,
+                                                    fontWeight: w700,
+                                                  ),
                                                 ),
                                               ),
                                             ),
-                                          )
-                                        ],
-                                      );
-                                    }).toList())
+                                            const SizedBox(height: 6),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: OutlinedButton.icon(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    selectedRecheckPosIndex =
+                                                        selectedRecheckPosIndex ==
+                                                                posIndex
+                                                            ? -1
+                                                            : posIndex;
+                                                  });
+                                                },
+                                                icon: Icon(
+                                                  isSelectedRecheck
+                                                      ? Icons.check_circle
+                                                      : Icons
+                                                          .radio_button_unchecked,
+                                                  color: isSelectedRecheck
+                                                      ? Colors.orange
+                                                      : Colors.grey,
+                                                ),
+                                                label: Text(
+                                                  isSelectedRecheck
+                                                      ? 'Selected for Re-check'
+                                                      : 'Select Re-check',
+                                                  style: getBlackTextStyle(
+                                                    fontWeight: w700,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
+
+                                    // Column(
+                                    //     children: position.map((pos) {
+                                    //   final posIndex = position.indexOf(pos);
+                                    //   return Column(
+                                    //     crossAxisAlignment:
+                                    //         CrossAxisAlignment.start,
+                                    //     children: [
+                                    //       Text(
+                                    //         'Pos. ${posIndex + 1}',
+                                    //         style: getBlackTextStyle(
+                                    //             fontSize: 16, fontWeight: w700),
+                                    //       ),
+                                    //       const SizedBox(
+                                    //         height: 6,
+                                    //       ),
+                                    //       SizedBox(
+                                    //         width: double.infinity,
+                                    //         child: ElevatedButton(
+                                    //           onPressed: () {},
+                                    //           style: ElevatedButton.styleFrom(
+                                    //               backgroundColor: Colors.blue,
+                                    //               shape: RoundedRectangleBorder(
+                                    //                 borderRadius:
+                                    //                     BorderRadius.circular(
+                                    //                         12),
+                                    //               )),
+                                    //           child: Text(
+                                    //             // '${position[posIndex]['pressure']} Psi',
+                                    //             '${position[posIndex].pressure} Psi',
+                                    //             style: getWhiteTextStyle(
+                                    //               fontSize: 24,
+                                    //               fontWeight: w700,
+                                    //             ),
+                                    //           ),
+                                    //         ),
+                                    //       )
+                                    //     ],
+                                    //   );
+                                    // }).toList())
                                   ],
                                 )
                               // Manual Inspect
