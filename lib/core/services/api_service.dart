@@ -277,12 +277,16 @@ class ApiService {
 
     try {
       final response = await http.post(
-        Uri.parse(url),
+        Uri.parse(url.trim()),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(newTireMap),
       );
       log('✅ Berhasil kirim New Tire Repair');
-      log('Response status: ${response.statusCode}');
+      log('Response new tire post URL : ${url.trim()}');
+      log('Response new tire post status: ${response.statusCode}');
+      log('Response new tire post bodu: ${response.body}');
+      log('Response new tire postHeaders: ${response.headers}');
+      log('Response new tire post Redirect Location: ${response.headers['location'] ?? ''}');
     } catch (e) {
       log('❌ Error kirim New Tire Repair: $e');
     }
