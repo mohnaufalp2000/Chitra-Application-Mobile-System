@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'dart:developer';
+import 'package:camos/core/services/api_service.dart';
+import 'package:camos/core/services/model/send_tire_inspection.dart';
 import 'package:camos/core/utils/functions/functions.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,9 +18,14 @@ class NewTireInspectionState extends GetxController {
 
   var tasks = <Map<String, dynamic>>[].obs;
   var filteredTasks = <Map<String, dynamic>>[].obs;
+
   var isLoading = false.obs;
   var isExporting = false.obs;
+  var isSending = false.obs;
+
   var exportProgress = 0.0.obs;
+  var sendTireInspectionProgress = 0.0.obs;
+
   var selectedDateRange = Rxn<DateTimeRange>();
   var searchQuery = ''.obs;
 
@@ -121,6 +129,85 @@ class NewTireInspectionState extends GetxController {
     selectedDateRange.value = null;
     searchQuery.value = '';
     fetchTasks();
+  }
+
+  Future<void> sendTireInspection(BuildContext context) async {
+    try {
+      isSending.value = true;
+      sendTireInspectionProgress.value = 0.1;
+
+      await Future.delayed(const Duration(milliseconds: 300));
+      sendTireInspectionProgress.value = 0.3;
+
+      final List<SendTireInspection> sendTireInspectionData = [];
+
+      for (final task in filteredTasks.value) {
+        final positions = task['posisi'] as List<dynamic>;
+
+        for (final tire in positions) {
+          sendTireInspectionData.add(
+            SendTireInspection(
+              date: task['hari'].toString(),
+              unitNumber: task['unit'].toString(),
+              tirePosition: tire['position'].toString(),
+              pressure: tire['pressure'].toString(),
+              rtd1: tire['rtd1'].toString(),
+              hmOnInspect: tire['hm'].toString(),
+              remark: tire['remarks'].toString(),
+              pics: '',
+              adjPress: tire['adjusmentPressure'].toString(),
+              inspectorLocation: task['pit'].toString(),
+              tireDamage: tire['damageTire'].toString(),
+              brokenComponent: '0',
+              snTire: tire['sn'].toString(),
+              rimBaseCondition: tire['rimCondition'][0]['condition'].toString(),
+              rimBaseRemark: tire['rimCondition'][0]['remark'].toString(),
+              flangeCondition: tire['rimCondition'][1]['condition'].toString(),
+              flangeRemark: tire['rimCondition'][1]['remark'].toString(),
+              lockRingCondition:
+                  tire['rimCondition'][2]['condition'].toString(),
+              lockRingRemark: tire['rimCondition'][2]['remark'].toString(),
+              valveCondition: tire['rimCondition'][3]['condition'].toString(),
+              valveRemark: tire['rimCondition'][3]['remark'].toString(),
+              coreValveCondition:
+                  tire['rimCondition'][4]['condition'].toString(),
+              coreValveRemark: tire['rimCondition'][4]['remark'].toString(),
+              nutStudCondition: tire['rimCondition'][5]['condition'].toString(),
+              nutStudRemark: tire['rimCondition'][5]['remark'].toString(),
+              temperatureStatus: tire['temperatureStatus']?.toString() ?? 'Hot',
+              site: task['id_site'].toString(),
+            ),
+          );
+        }
+      }
+
+      log(
+        'Payload Tire Inspection : ${jsonEncode({
+              'inspects':
+                  sendTireInspectionData.map((e) => e.toJson()).toList(),
+            })}',
+      );
+
+      await ApiService.sendTireInspection(sendTireInspectionData);
+
+      sendTireInspectionProgress.value = 1.0;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Color(0xFF009688),
+          content: Text(
+            'Send data berhasil!',
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
+      );
+    } catch (e) {
+      log('Error send tire inspection : $e');
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 500));
+      isSending.value = false;
+      sendTireInspectionProgress.value = 0.0;
+    }
   }
 
   Future<void> exportToExcel(BuildContext context) async {

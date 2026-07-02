@@ -90,36 +90,38 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     'Valve Protector',
     'Stud and Nut',
   ];
-  List<String> damageType = [
-    'Accident',
-    'Bead Crack',
-    'Block Valve',
-    'Boulder',
-    'Bulging',
-    'Bead Damage',
-    'Chaffer Separation',
-    'Dog Bound',
-    'Foreign Object',
-    'Heat Separation',
-    'Inner Linner Separation',
-    'Impact',
-    'Repair Failure',
-    'Radial Crack',
-    'Run Flat',
-    'Sidewall Crack',
-    'Sidewall Cut',
-    'Sidewall Cut 2',
-    'Sidewall Cut 3',
-    'Sidewall Separation',
-    'Shoulder Cut',
-    'Shoulder Separation',
-    'Tread Chipping',
-    'Tread Chunking',
-    'Tread Lifting',
-    'Tread Cut',
-    'Tread Cut Separation',
-    'Worn Out',
-  ];
+  // List<String> damageType = [
+  //   'Accident',
+  //   'Bead Crack',
+  //   'Block Valve',
+  //   'Boulder',
+  //   'Bulging',
+  //   'Bead Damage',
+  //   'Chaffer Separation',
+  //   'Dog Bound',
+  //   'Foreign Object',
+  //   'Heat Separation',
+  //   'Inner Linner Separation',
+  //   'Impact',
+  //   'Repair Failure',
+  //   'Radial Crack',
+  //   'Run Flat',
+  //   'Sidewall Crack',
+  //   'Sidewall Cut',
+  //   'Sidewall Cut 2',
+  //   'Sidewall Cut 3',
+  //   'Sidewall Separation',
+  //   'Shoulder Cut',
+  //   'Shoulder Separation',
+  //   'Tread Chipping',
+  //   'Tread Chunking',
+  //   'Tread Lifting',
+  //   'Tread Cut',
+  //   'Tread Cut Separation',
+  //   'Worn Out',
+  // ];
+  List<Map<String, dynamic>> damageType = [];
+  bool loadingDamages = true;
   List<List<int>> inspectRoute = [
     [0, 1, 2, 3, 4, 5],
     [0, 2, 3, 4, 5, 1],
@@ -147,6 +149,128 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   Map<String, dynamic> user = {};
 
   final ImagePicker _picker = ImagePicker();
+
+  // Future<void> _loadDamages() async {
+  //   try {
+  //     final query =
+  //         await firestore.collection('list_tire_damage_inspection').get();
+
+  //     final docs = query.docs.where((doc) {
+  //       return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
+  //     }).toList();
+
+  //     docs.sort((a, b) => b.id.compareTo(a.id));
+
+  //     final latestDoc = docs.first;
+
+  //     final data = latestDoc.data();
+
+  //     if (data != null && data['damages'] != null) {
+  //       final List<dynamic> raw = data['damages'];
+
+  //       List<Map<String, dynamic>> sortedList =
+  //           raw.map<Map<String, dynamic>>((e) {
+  //         return Map<String, dynamic>.from(e);
+  //       }).toList();
+
+  //       sortedList.sort((a, b) {
+  //         final aRemark = (a['remark'] ?? '').toString().toLowerCase();
+  //         final bRemark = (b['remark'] ?? '').toString().toLowerCase();
+
+  //         final aGood = aRemark.contains('good');
+  //         final bGood = bRemark.contains('good');
+
+  //         if (aGood && !bGood) return -1;
+  //         if (!aGood && bGood) return 1;
+
+  //         return aRemark.compareTo(bRemark);
+  //       });
+
+  //       setState(() {
+  //         damageType = sortedList;
+  //         loadingDamages = false;
+  //       });
+  //     } else {
+  //       setState(() {
+  //         loadingDamages = false;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     debugPrint('Error load damages: $e');
+
+  //     setState(() {
+  //       loadingDamages = false;
+  //     });
+  //   }
+  // }
+
+  Future<void> _loadDamages() async {
+    try {
+      Map<String, dynamic>? data;
+      idSite = homeState.currentSiteId;
+
+      if (idSite.toString() == '1') {
+        final doc = await firestore
+            .collection('list_tire_damage_inspection')
+            .doc('sis062026')
+            .get();
+
+        if (doc.exists) {
+          data = doc.data();
+        }
+      } else {
+        final query =
+            await firestore.collection('list_tire_damage_inspection').get();
+
+        final docs = query.docs.where((doc) {
+          return RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(doc.id);
+        }).toList();
+
+        docs.sort((a, b) => b.id.compareTo(a.id));
+
+        if (docs.isNotEmpty) {
+          data = docs.first.data();
+        }
+      }
+
+      if (data != null && data['damages'] != null) {
+        final List<dynamic> raw = data['damages'];
+
+        List<Map<String, dynamic>> sortedList =
+            raw.map<Map<String, dynamic>>((e) {
+          return Map<String, dynamic>.from(e);
+        }).toList();
+
+        sortedList.sort((a, b) {
+          final aRemark = (a['remark'] ?? '').toString().toLowerCase();
+          final bRemark = (b['remark'] ?? '').toString().toLowerCase();
+
+          final aGood = aRemark.contains('good');
+          final bGood = bRemark.contains('good');
+
+          if (aGood && !bGood) return -1;
+          if (!aGood && bGood) return 1;
+
+          return aRemark.compareTo(bRemark);
+        });
+
+        setState(() {
+          damageType = sortedList;
+          loadingDamages = false;
+        });
+      } else {
+        setState(() {
+          loadingDamages = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error load damages: $e');
+
+      setState(() {
+        loadingDamages = false;
+      });
+    }
+  }
 
   void applyPressureData(String pressureValue) {
     setState(() {
@@ -181,26 +305,30 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     });
   }
 
-  Future<List<String>> fetchRatingData(DateTime date, String unit) async {
-    final startOfDay = DateTime(date.year, date.month, date.day);
-    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
+  Future<List<String>> fetchLatestRatingData(String unit) async {
     final ratingQuery = await firestore
         .collection(
-            dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
+          dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure',
+        )
         .where('unit', isEqualTo: unit)
-        .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-        .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+        .orderBy('tanggal', descending: true)
+        .limit(1)
         .get();
 
     if (ratingQuery.docs.isNotEmpty) {
-      final ratingMap = ratingQuery.docs.first;
-      List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
+      final ratingDoc = ratingQuery.docs.first;
+      final data = ratingDoc.data();
 
-      return ratingList
-          .map((item) => item['rating'] ?? '')
-          .toList()
-          .cast<String>();
+      final posisi = data['posisi'];
+
+      if (posisi is List) {
+        return posisi.map((item) {
+          if (item is Map && item['rating'] != null) {
+            return item['rating'].toString();
+          }
+          return '';
+        }).toList();
+      }
     }
 
     return [];
@@ -208,16 +336,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
   Future<List<String>> receiveRatingTire(String unit) async {
     try {
-      final yesterday = DateTime.now().subtract(const Duration(days: 1));
-      var result = await fetchRatingData(yesterday, unit)
-          .timeout(const Duration(seconds: 5));
-
-      if (result.isEmpty) {
-        final dayBeforeYesterday =
-            DateTime.now().subtract(const Duration(days: 2));
-        result = await fetchRatingData(dayBeforeYesterday, unit)
-            .timeout(const Duration(seconds: 5));
-      }
+      final result =
+          await fetchLatestRatingData(unit).timeout(const Duration(seconds: 5));
 
       if (result.isNotEmpty) {
         _ratingCache = result;
@@ -234,63 +354,30 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     }
   }
 
-  // Future<List<String>> receiveRatingTire(String unit) async {
-  //   List<String> fixRating = [];
-
-  //   Future<List<String>> fetchRatingData(DateTime date) async {
-  //     final startOfDay = DateTime(date.year, date.month, date.day);
-  //     final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-  //     final ratingQuery = await firestore
-  //         .collection(
-  //             dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
-  //         .where('unit', isEqualTo: unit)
-  //         .where('tanggal',
-  //             isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-  //         .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
-  //         .get();
-
-  //     if (ratingQuery.docs.isNotEmpty) {
-  //       final ratingMap = ratingQuery.docs.first;
-  //       List<dynamic> ratingList = ratingMap.data()['posisi'] as List<dynamic>;
-  //       return ratingList
-  //           .map((item) => item['rating'] ?? '')
-  //           .toList()
-  //           .cast<String>();
-  //     }
-
-  //     return [];
-  //   }
-
-  //   // Coba ambil data untuk kemarin
-  //   final yesterday = DateTime.now().subtract(Duration(days: 1));
-  //   fixRating = await fetchRatingData(yesterday);
-
-  //   // Jika data kemarin kosong, coba ambil data untuk kemarin lusa
-  //   if (fixRating.isEmpty) {
-  //     final dayBeforeYesterday = DateTime.now().subtract(Duration(days: 2));
-  //     fixRating = await fetchRatingData(dayBeforeYesterday);
-  //   }
-
-  //   return fixRating;
-  // }
-
-  Future<List<dynamic>> fetchDamageData(DateTime date, String unit) async {
-    final startOfDay = DateTime(date.year, date.month, date.day);
-    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
-
+  Future<List<dynamic>> fetchLatestDamageData(String unit) async {
     final damageQuery = await firestore
         .collection(
-            dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure')
+          dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure',
+        )
         .where('unit', isEqualTo: unit)
-        .where('tanggal', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-        .where('tanggal', isLessThanOrEqualTo: endOfDay.toIso8601String())
+        .orderBy('tanggal', descending: true)
+        .limit(1)
         .get();
 
     if (damageQuery.docs.isNotEmpty) {
-      final damageMap = damageQuery.docs.first;
-      List<dynamic> damageList = damageMap.data()['posisi'] as List<dynamic>;
+      final damageDoc = damageQuery.docs.first;
+      final data = damageDoc.data();
 
-      return damageList.map((item) => item['luka'] ?? '').toList();
+      final posisi = data['posisi'];
+
+      if (posisi is List) {
+        return posisi.map((item) {
+          if (item is Map && item['luka'] != null) {
+            return item['luka'];
+          }
+          return '';
+        }).toList();
+      }
     }
 
     return [];
@@ -298,16 +385,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
   Future<List<dynamic>> receiveDamageTire(String unit) async {
     try {
-      final yesterday = DateTime.now().subtract(const Duration(days: 1));
-      var result = await fetchDamageData(yesterday, unit)
-          .timeout(const Duration(seconds: 5));
-
-      if (result.isEmpty) {
-        final dayBeforeYesterday =
-            DateTime.now().subtract(const Duration(days: 2));
-        result = await fetchDamageData(dayBeforeYesterday, unit)
-            .timeout(const Duration(seconds: 5));
-      }
+      final result =
+          await fetchLatestDamageData(unit).timeout(const Duration(seconds: 5));
 
       if (result.isNotEmpty) {
         _damageCache = result;
@@ -323,7 +402,6 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       return _damageCache ?? [];
     }
   }
-
   // Future<List<dynamic>> receiveDamageTire(String unit) async {
   //   List<dynamic> fixDamage = [];
 
@@ -611,6 +689,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   @override
   void initState() {
     super.initState();
+    _loadDamages();
     context.read<BluetoothOnOffCubit>().checkBluetoothStatus();
     final connectedCubit = context.read<ConnectedDevicesCubit>();
     log('connected cubit : $connectedCubit');
@@ -1302,7 +1381,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                       mainAxisSize:
                                                           MainAxisSize.min,
                                                       children: <Widget>[
-                                                        Text(
+                                                        const Text(
                                                           'Choose Rating',
                                                           style: TextStyle(
                                                             fontSize: 24.0,
@@ -1388,21 +1467,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             )),
-                                        // child: (position[posIndex]
-                                        //             ['rating'] ==
-                                        //         '')
                                         child: (position[posIndex].rating == '')
                                             ? Text(
                                                 'Rating',
                                                 style: getWhiteTextStyle(),
                                               )
-                                            // : Text(
-                                            //     'Rating ${position[posIndex]['rating']}',
-                                            //     style: getWhiteTextStyle(
-                                            //       fontSize: 16,
-                                            //       fontWeight: w700,
-                                            //     ),
-                                            //   ),
                                             : Text(
                                                 'Rating ${position[posIndex].rating}',
                                                 style: getWhiteTextStyle(
@@ -1436,7 +1505,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                   i++) {
                                                 if (position[posIndex]
                                                     .luka
-                                                    .contains(damageType[i])) {
+                                                    .contains(damageType[i]
+                                                        ['remark'])) {
                                                   checkedDamageValues[i] = true;
                                                 }
                                               }
@@ -1459,7 +1529,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                       mainAxisSize:
                                                           MainAxisSize.min,
                                                       children: <Widget>[
-                                                        Text(
+                                                        const Text(
                                                           'Choose Damage Tire',
                                                           style: TextStyle(
                                                             fontSize: 24.0,
@@ -1467,7 +1537,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                 FontWeight.bold,
                                                           ),
                                                         ),
-                                                        SizedBox(height: 12.0),
+                                                        const SizedBox(
+                                                            height: 12.0),
                                                         Expanded(
                                                           child:
                                                               SingleChildScrollView(
@@ -1485,7 +1556,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                             setState) {
                                                                   return CheckboxListTile(
                                                                     title: Text(
-                                                                        damage),
+                                                                        damage[
+                                                                            'remark']),
                                                                     value: checkedDamageValues[
                                                                         dmgIndex],
                                                                     onChanged:
@@ -1579,14 +1651,16 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                       i++) {
                                                                     if (checkedDamageValues[
                                                                         i]) {
-                                                                      tmp.add(
-                                                                          damageType[
-                                                                              i]);
+                                                                      tmp.add(damageType[
+                                                                              i]
+                                                                          [
+                                                                          'remark']);
                                                                     } else {
                                                                       tmp.removeWhere((element) =>
                                                                           element ==
-                                                                          damageType[
-                                                                              i]);
+                                                                          damageType[i]
+                                                                              [
+                                                                              'remark']);
                                                                     }
                                                                   }
                                                                   log('idx luka ban : $posIndex');
@@ -3148,13 +3222,14 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                             i++) {
                                                           if (position[posIndex]
                                                               .luka
-                                                              .contains(
-                                                                  damageType[
-                                                                      i])) {
+                                                              .contains(damageType[
+                                                                      i]
+                                                                  ['remark'])) {
                                                             checkedDamageValues[
                                                                 i] = true;
                                                           }
                                                         }
+
                                                         damageCtrl
                                                             .text = position[
                                                                     posIndex]
@@ -3206,7 +3281,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                           return StatefulBuilder(builder:
                                                                               (context, setState) {
                                                                             return CheckboxListTile(
-                                                                              title: Text(damage),
+                                                                              title: Text(damage['remark']),
                                                                               value: checkedDamageValues[dmgIndex],
                                                                               onChanged: (bool? value) {
                                                                                 setState(() {
@@ -3271,14 +3346,27 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                               () {
                                                                             setState(() {});
 
-                                                                            final List<String>
+                                                                            Map<String, int>
+                                                                                ratingPriority =
+                                                                                {
+                                                                              '': 1,
+                                                                              'A': 1,
+                                                                              'B': 2,
+                                                                              'C': 3,
+                                                                              'X': 4,
+                                                                            };
+
+                                                                            final List<Map<String, dynamic>>
                                                                                 tmp =
                                                                                 [];
 
                                                                             // isi damage dengan ketikan
                                                                             if (damageCtrl.text == '' ||
                                                                                 damageCtrl.text.isNotEmpty) {
-                                                                              tmp.add(damageCtrl.text);
+                                                                              tmp.add({
+                                                                                'remark': damageCtrl.text,
+                                                                                'rating': ''
+                                                                              });
                                                                             }
 
                                                                             for (int i = 0;
@@ -3293,14 +3381,32 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                             log('idx luka ban : $posIndex');
 
                                                                             if (tmp.isNotEmpty) {
-                                                                              // position[posIndex]
-                                                                              //     [
-                                                                              //     'damage'] = [];
                                                                               position[posIndex] = position[posIndex].copyWith(luka: []);
 
-                                                                              position[posIndex].luka.addAll(tmp);
+                                                                              position[posIndex].luka.addAll(
+                                                                                    tmp.map((e) => e['remark'].toString()),
+                                                                                  );
+
+                                                                              // PENETUAN RATING DARI LUKA BAN
+                                                                              String worstRating = '';
+
+                                                                              if (tmp.isNotEmpty) {
+                                                                                worstRating = tmp.fold(
+                                                                                  '',
+                                                                                  (worst, item) {
+                                                                                    final current = item['rating'] ?? '';
+
+                                                                                    return ratingPriority[current]! > ratingPriority[worst]! ? current : worst;
+                                                                                  },
+                                                                                );
+                                                                              }
+
+                                                                              position[posIndex] = position[posIndex].copyWith(
+                                                                                rating: worstRating,
+                                                                              );
 
                                                                               log('hasil luka ban : ${position}');
+                                                                              log('hasil rating dari luka ban : ${worstRating}');
                                                                             }
 
                                                                             // jika hapus damage hari kemarin
@@ -3746,7 +3852,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                       return {
                         'pos': '${pIndex + 1}',
-                        'rating': (p.rating) ?? '',
+                        'rating': (p.rating == '' || p.rating.isEmpty)
+                            ? 'A'
+                            : (p.rating),
                         'pressure': (p.pressure) ?? '0',
                         'temperatureStatus': (p.temperatureStatus),
                         'adjusmentPressure': (p.adjusmentPressure) ?? '0',
@@ -3754,7 +3862,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             (position[0].adjusmentPressure != '')
                                 ? (position[0].adjustmentTemperatureStatus)
                                 : '',
-                        'luka': (selectedType == 0) ? '' : p.luka,
+                        'luka': (selectedType == 0)
+                            ? ''
+                            : (p.luka.isEmpty)
+                                ? ['Good Condition']
+                                : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
                         'tireSize': (p.size ?? ''),
@@ -3819,13 +3931,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             'pos': '${pIndex + 1}',
                             'pressure': (p.pressure) ?? '0',
                             'temperatureStatus': (p.temperatureStatus),
-                            'rating': (p.rating) ?? '',
+                            'rating': (p.rating == '' || p.rating.isEmpty)
+                                ? 'A'
+                                : (p.rating),
                             'adjusmentPressure': (p.adjusmentPressure) ?? '0',
                             'adjusmentTemperatureStatus':
                                 (position[0].adjusmentPressure != '')
                                     ? (position[0].adjustmentTemperatureStatus)
                                     : '',
-                            'luka': (selectedType == 0) ? '' : p.luka,
+                            'luka': (selectedType == 0)
+                                ? ''
+                                : (p.luka.isEmpty)
+                                    ? ['Good Condition']
+                                    : p.luka,
                             'image': (listImage[pIndex] != '')
                                 ? listImage[pIndex]
                                 : '',
@@ -3869,13 +3987,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         'pos': '${pIndex + 1}',
                         'pressure': (p.pressure) ?? '0',
                         'temperatureStatus': (p.temperatureStatus),
-                        'rating': (p.rating) ?? '',
+                        'rating': (p.rating == '' || p.rating.isEmpty)
+                            ? 'A'
+                            : (p.rating),
                         'adjusmentPressure': (p.adjusmentPressure) ?? '0',
                         'adjusmentTemperatureStatus':
                             (position[0].adjusmentPressure != '')
                                 ? (position[0].adjustmentTemperatureStatus)
                                 : '',
-                        'luka': (selectedType == 0) ? '' : p.luka,
+                        'luka': (selectedType == 0)
+                            ? ''
+                            : (p.luka.isEmpty)
+                                ? ['Good Condition']
+                                : p.luka,
                         'image':
                             (listImage[pIndex] != '') ? listImage[pIndex] : '',
                         'tireSize': (p.size ?? ''),

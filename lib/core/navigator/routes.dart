@@ -1,6 +1,9 @@
+import 'package:camos/pages/admin/add_user_page.dart';
+import 'package:camos/pages/admin/admin_page.dart';
 import 'package:camos/pages/dashboard/dashboard_page.dart';
 import 'package:camos/pages/home/tire_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/pre_assembly_tire_page.dart';
+import 'package:camos/pages/tpms/auto_tapping_page.dart';
 
 import '../../pages/attendance/absence_page.dart';
 import '../../pages/attendance/all_presence_page.dart';
@@ -128,4 +131,7 @@ var routes = {
   DashboardPage.routeName: (context) => DashboardPage(),
   TireInspectionPage.routeName: (context) => TireInspectionPage(),
   PreAssemblyTirePage.routeName: (context) => PreAssemblyTirePage(),
+  AdminPage.routeName: (context) => AdminPage(),
+  AddUserPage.routeName: (context) => AddUserPage(),
+  AutoTappingPage.routeName: (context) => AutoTappingPage(),
 };

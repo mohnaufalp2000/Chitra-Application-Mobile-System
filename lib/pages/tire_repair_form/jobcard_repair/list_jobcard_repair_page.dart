@@ -354,6 +354,7 @@ class _OnProgressState extends State<OnProgress> {
         for (var doc in querySnapshot.docs) {
           final firestoreData = doc.data() as Map<String, dynamic>;
           final String firestoreId = firestoreData['id'];
+          log('wo id : $firestoreId');
 
           // Ambil data terkait dari API via Map yang sudah dibuat
           final apiData = _apiDataMap[firestoreId];

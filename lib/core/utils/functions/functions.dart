@@ -298,6 +298,10 @@ Future<File> createFolderPath(String id, String type,
           "${path?.path}/DailyTireCheck_${date}_${site}_${pit}_${email}_${id.substring(0, 8)}_CAMOS.xlsx");
       // final outputFile = File("${path?.path}/daily-check_${id}xlsx");
       return outputFile;
+    case 'auto-tapping-spm':
+      final outputFile = File(
+          "${path?.path}/DailyTireCheck_${date}_${site}_${pit}_${email}_${id.substring(0, 8)}_CAMOS.xlsx");
+      return outputFile;
     case 'tire_inspection':
       final outputFile = File(
           "${path?.path}/TireInspection_${site}_${email}_${id.substring(0, 8)}_CAMOS.xlsx");
@@ -1190,6 +1194,7 @@ Future<List<int>> createExcel(String type,
       // workbook.dispose();
       return bytes;
 
+    case 'auto-tapping-spm':
     case 'daily-check':
       final Workbook workbook = Workbook();
       final Worksheet sheet = workbook.worksheets[0];

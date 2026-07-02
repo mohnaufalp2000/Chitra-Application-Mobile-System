@@ -66,6 +66,52 @@ class NewTireInspectionPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
+            // Send Data
+            Obx(() => SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: ntController.isSending.value
+                        ? null
+                        : () => ntController.sendTireInspection(context),
+                    style:
+                        ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: ntController.isSending.value
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                LinearProgressIndicator(
+                                  value: ntController
+                                      .sendTireInspectionProgress.value,
+                                  minHeight: 6,
+                                  backgroundColor: Colors.grey.shade300,
+                                  color: Colors.black,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Sending ${(ntController.sendTireInspectionProgress.value * 100).toInt()}%',
+                                  style: getBlackTextStyle(),
+                                ),
+                              ],
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.send,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 12),
+                                Text('Send Data to CTS',
+                                    style: getWhiteTextStyle()),
+                              ],
+                            ),
+                    ),
+                  ),
+                )),
+
+            const SizedBox(height: 16),
             // Export Button
             Obx(() => SizedBox(
                   width: double.infinity,
@@ -982,8 +1028,10 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                             const SizedBox(
                               width: 6,
                             ),
-                            TemperatureStatusBadgeWidget(
-                                status: posisi['temperatureStatus'])
+                            (posisi['temperatureStatus'] != null)
+                                ? TemperatureStatusBadgeWidget(
+                                    status: posisi['temperatureStatus'])
+                                : Container()
                           ],
                         ),
                         _row('Adj Pressure',
@@ -996,7 +1044,13 @@ class _TireInspectionCardState extends State<_TireInspectionCard> {
                             (posisi['damageTire'] is List)
                                 ? (posisi['damageTire'] as List).join(', ')
                                 : posisi['damageTire']?.toString() ?? '-'),
-                        _row('Remarks', posisi['remarks'] ?? '-'),
+                        Builder(builder: (context) {
+                          if (posisi['remarks'] is Map<String, dynamic>) {
+                            return _row(
+                                'Remarks', posisi['remarks']['remark'] ?? '-');
+                          }
+                          return _row('Remarks', posisi['remarks'] ?? '-');
+                        }),
                         if (posisi['rimCondition'] != null &&
                             posisi['rimCondition'] is List &&
                             (posisi['rimCondition'] as List).isNotEmpty) ...[

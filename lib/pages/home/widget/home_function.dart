@@ -45,7 +45,8 @@ class HomeFunction {
     }
   }
 
-  static Widget buildMenuItem(Menu item, BuildContext context, String idSite) {
+  static Widget buildMenuItem(
+      Menu item, BuildContext context, String idCompany) {
     return Material(
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAliasWithSaveLayer,

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/core/services/model/auto_tapping_model.dart';
+import 'package:camos/core/services/model/send_tire_inspection.dart';
 import 'package:camos/core/services/model/tire_damage_ai.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -22,6 +24,44 @@ class ApiService {
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/api_get.php?function=';
   static const String postUrl =
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/getdatacamos.php?function=';
+
+  static Future<String?> selectedUrl(String api) async {
+    final user = await getUserPreferences();
+
+    log('selected url user : ${user}');
+
+    if (user['id_company'] == '1') {
+      print('id company if');
+      switch (api) {
+        case 'post_tire_inspection':
+          return await _getUrlFromFirestore(
+                  'url_sis', 'post_tire_inspection') ??
+              '';
+        case 'post_daily_pressure':
+          return await _getUrlFromFirestore('url_sis', 'post_daily_pressure') ??
+              '';
+        case 'get_site':
+          return await _getUrlFromFirestore('url_sis', 'get_site') ?? '';
+        case 'get_tire_running':
+          return await _getUrlFromFirestore('url_sis', 'get_tire_running') ??
+              '';
+      }
+      '';
+    } else {
+      print('id company else');
+      switch (api) {
+        case 'post_tire_inspection':
+          return '${postUrl}post_inspect';
+        case 'post_daily_pressure':
+          return '${postUrl}post_daily';
+        case 'get_site':
+          return '${url}get_site';
+        case 'get_tire_running':
+          return '${url}get_tire_running&idsite=';
+      }
+    }
+    return '';
+  }
 
   /// 🔹 Ambil URL dari Firestore
   static Future<String?> _getUrlFromFirestore(
@@ -76,6 +116,61 @@ class ApiService {
     }
   }
 
+  // GET: Auto Tapping SPM
+  static Future<List<AutoTappingModel>> getAutoTappingSPM() async {
+    final urll = await _getUrlFromFirestore('url_camos', 'get_auto_tapping');
+    if (urll == null) return [];
+    print('auto tapping url : $urll');
+
+    try {
+      final response = await http.get(Uri.parse(urll));
+
+      if (response.statusCode == 200) {
+        final result = jsonDecode(response.body);
+        log('result auto tapping (${result['data']} )');
+
+        final List<AutoTappingModel> autoTappingList =
+            List<AutoTappingModel>.from(
+          result['data'].map((e) => AutoTappingModel.fromMap(e)),
+        );
+        log('✅ Berhasil ambil auto tapping (${autoTappingList} item)');
+        return autoTappingList;
+      } else {
+        throw Exception('Gagal load data: ${response.statusCode}');
+      }
+    } catch (e) {
+      log('❌ Error ambil auto tapping : $e');
+      return [];
+    }
+  }
+
+  /// 🔹 POST: Send Data Tire Inspection
+  static Future<void> sendTireInspection(
+    List<SendTireInspection> inspections,
+  ) async {
+    try {
+      // Filter URL Customer
+      final url = await selectedUrl('post_tire_inspection') ?? '';
+
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'inspects': inspections.map((e) => e.toJson()).toList(),
+        }),
+      );
+      log('Successful send tire inspection : $response');
+      log('URL : ${response.request?.url}');
+      log('Status Code : ${response.statusCode}');
+      log('Headers : ${response.headers}');
+      log('Body : ${response.body}');
+    } catch (e) {
+      log('Error send tire inspection : $e');
+    }
+  }
+
   /// 🔹 POST: Predict Image AI
   static Future<TireDamageAi?> postPredictImageAI(
     String token,
@@ -98,8 +193,13 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode == 201) {
+      log("RESPONSE AI CODE API: ${response.statusCode}");
+      log("RESPONSE AI BODY API: ${response.body}");
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final result = TireDamageAi.fromJson(response.body);
+
+        log("RESPONSE AI RESULT API: ${result}");
 
         return result;
       } else {
@@ -318,8 +418,13 @@ class ApiService {
       List<Map<String, dynamic>> data2,
       List<Map<String, dynamic>> data3) async {
     try {
+      // Filter URL Customer
+      final url = await selectedUrl('post_daily_pressure') ?? '';
+
+      log('send daily url : $url');
+
       final response = await http.post(
-        Uri.parse('${postUrl}post_daily'),
+        Uri.parse(url),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "data1": data1,
@@ -346,9 +451,9 @@ class ApiService {
 
   // mendapatkan daftar unit di salah satu site
   static Future<List<UnitTire>> getUnits(String site) async {
-    log('id site from daily : $site');
-    final response =
-        await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
+    final urll = await selectedUrl('get_tire_running');
+    log('url get tire running : $urll$site');
+    final response = await http.get(Uri.parse('$urll$site'));
 
     // try {
     final body = response.body;
@@ -360,7 +465,16 @@ class ApiService {
     List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
       (unit) => UnitTire.fromJson(unit),
     ));
-    int countAllTire = result['total row'][0];
+    final totalRow = result['total row'];
+
+    int countAllTire = 0;
+
+    if (totalRow is List && totalRow.isNotEmpty) {
+      countAllTire = int.tryParse(totalRow[0].toString()) ?? 0;
+    } else {
+      countAllTire = int.tryParse(totalRow.toString()) ?? 0;
+    }
+    // int countAllTire = result['total row'][0];
     // log('ban all : ${result['total row']}');
 
     List<UnitTire> fixData = [];
@@ -554,8 +668,8 @@ class ApiService {
   }
 
   static Future<List<UnitTire>> getUniqueUnits(String site) async {
-    final response =
-        await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
+    final urll = await selectedUrl('get_tire_running');
+    final response = await http.get(Uri.parse('$urll$site'));
 
     try {
       final body = response.body;
@@ -575,8 +689,8 @@ class ApiService {
 
   // mendapatkan data tire condition di salah satu site
   static Future<List<UnitTire>> getTireCondition(String site) async {
-    final response =
-        await http.get(Uri.parse('${url}get_tire_running&idsite=$site'));
+    final urll = await selectedUrl('get_tire_running');
+    final response = await http.get(Uri.parse('$urll$site'));
 
     try {
       final body = response.body;
@@ -650,7 +764,11 @@ class ApiService {
 
   // mendapatkan daftar site CK, PPA, Vale, Petrosea
   static Future<List<Site>> getAllSite() async {
-    final response = await http.get(Uri.parse('${url}get_site'));
+    final urll = await selectedUrl('get_site') ?? '';
+
+    log('url get all site : $urll');
+
+    final response = await http.get(Uri.parse(urll));
 
     try {
       final body = response.body;

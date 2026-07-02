@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/main.dart';
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/home/home_state.dart';
@@ -86,11 +87,13 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     String currentSiteId = homeState.currentSiteId;
     String userAccessId = homeState.userAccessId.value;
 
-    log('test call units : $isOnline');
+    log('test call units 1 : $currentSiteId');
+    log('test call units 2 : $userAccessId');
     context.read<UnitBloc>().add(GetUnitsEvent(
         idSite: currentSiteId,
         isOnline:
-            (userAccessId == '1' || userAccessId == '2') ? true : isOnline));
+            // (userAccessId == '1' || userAccessId == '2') ? true : isOnline));
+            (userAccessId == officeChitra.idSite) ? true : isOnline));
   }
 
   Future<String> getActualIdSite() async {

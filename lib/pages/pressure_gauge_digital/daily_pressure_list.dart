@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:camos/core/utils/data/id_site.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/not_update_warning_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_badge_widget.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -74,8 +75,20 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   void initState() {
     log('init page terpanggil : ${homeState.currentSiteId}');
     initializePage();
+    getUnitBefore7AM();
 
     super.initState();
+  }
+
+  getUnitBefore7AM() {
+    if (DateTime.now().hour < 7) {
+      print('buka halaman sebelum jam 7');
+      setState(() {
+        isOnline = !isOnline;
+
+        getUnits();
+      });
+    }
   }
 
   Future<void> initializePage() async {
@@ -112,7 +125,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     log('🔄 getUnits() dipanggil untuk site: $currentIdSite (online=$isOnline)');
 
     // jika user bukan office site (bukan 1 atau 2)
-    if (userAccessId != '1' && userAccessId != '2') {
+    // if (userAccessId != '1' && userAccessId != '2') {
+    if (userAccessId != 'officeChitra') {
       if (!isOnline) {
         // Offline Mode
         log('📴 Load data dari cache untuk site $currentIdSite');
@@ -249,9 +263,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                     final data = snapshot.data;
                     log('id site future builder : $data');
 
-                    if (userAccessId != '1' &&
-                        userAccessId != '2' &&
-                        userAccessId != '3') {
+                    // if (userAccessId != '1' &&
+                    //     userAccessId != '2' &&
+                    //     userAccessId != '3') {
+                    if (userAccessId != 'officeChitra') {
                       return Column(
                         children: [
                           SizedBox(
@@ -419,10 +434,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                 }
                 return Container();
               }),
-
-              const SizedBox(
-                height: 16,
-              ),
+              if (selectedMenu == 0)
+                const SizedBox(
+                  height: 12,
+                )
+              else
+                Container(),
               SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -540,12 +557,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                   // untuk data export excel
                                   filteredItemTask.clear();
                                   filteredItemTask.clear();
-                                  // dailyData.forEach((item) {
-                                  //   Map<String, dynamic> cast =
-                                  //       item.data() as Map<String, dynamic>;
 
-                                  //   filteredItemTask.add(cast);
-                                  // });
                                   dailyData.forEach((item) {
                                     Map<String, dynamic> cast =
                                         item.toFirestore();
@@ -555,24 +567,11 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                   return Column(
                                     children: [
                                       Text(
-                                        // 'Total Unit : ${dailyData.length ?? 0}',
                                         'Total Unit : ${distinctDaily.length ?? 0}',
                                         style: getBlackTextStyle(
                                           fontSize: 20,
                                         ),
                                       ),
-                                      // if (homeState.selectedSite?.idCompany ==
-                                      //     '2')
-                                      //   Text(
-                                      //     // 'Total Unit : ${dailyData.length ?? 0}',
-                                      //     'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
-
-                                      //     style: getBlackTextStyle(
-                                      //       fontSize: 14,
-                                      //     ),
-                                      //   )
-                                      // else
-                                      //   Container(),
                                       const SizedBox(
                                         height: 12,
                                       ),
@@ -876,9 +875,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                   const SizedBox(
                                                                     width: 6,
                                                                   ),
-                                                                  TemperatureStatusBadgeWidget(
-                                                                      status: pl[
-                                                                          'temperatureStatus']),
+                                                                  (pl['temperatureStatus'] !=
+                                                                          null)
+                                                                      ? TemperatureStatusBadgeWidget(
+                                                                          status:
+                                                                              pl['temperatureStatus'])
+                                                                      : Container()
                                                                   // Text(
                                                                   //   // '${(pl['temperatureStatus'] == '' || pl['temperatureStatus'] == null) ? 'HOT' : pl['temperatureStatus']}',
                                                                   //   '${(pl['temperatureStatus'])}',
@@ -1666,8 +1668,30 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                             style: getBlackTextStyle(fontSize: 20),
                           ),
                           const SizedBox(
-                            height: 12,
+                            height: 6,
                           ),
+                          Builder(builder: (context) {
+                            if (state.totalActualUnits?.length == null) {
+                              return Container();
+                            }
+
+                            if (state.totalActualUnits?.length !=
+                                state.units.length) {
+                              return Column(
+                                children: [
+                                  NotUpdateWarningWidget(
+                                      totalActual:
+                                          state.totalActualUnits?.length ?? 0),
+                                  SizedBox(
+                                    height: 12,
+                                  ),
+                                ],
+                              );
+                            } else {
+                              Container();
+                            }
+                            return Container();
+                          }),
                           (state.units == null || state.units.isEmpty)
                               ? Text(
                                   'Empty!',
@@ -1686,9 +1710,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                       return Container();
                                     }
                                     return InkWell(
-                                      onTap: (userAccessId == '1' ||
-                                              userAccessId == '2' ||
-                                              userAccessId == '3')
+                                      // onTap: (userAccessId == '1' ||
+                                      //         userAccessId == '2' ||
+                                      //         userAccessId == '3')
+                                      onTap: (userAccessId == 'officeChitra')
                                           ? () {}
                                           : () {
                                               Navigator.pushNamed(context,
@@ -1757,7 +1782,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                           const SizedBox(
                             height: 12,
                           ),
-                          (userAccessId == '1' || userAccessId == '2')
+                          // (userAccessId == '1' || userAccessId == '2')
+                          (userAccessId == 'officeChitra')
                               ? Container()
                               : SizedBox(
                                   width: double.infinity,
@@ -2207,9 +2233,11 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                   return Container();
                                                 }
                                                 return InkWell(
-                                                  onTap: (userAccessId == '1' ||
-                                                          userAccessId == '2' ||
-                                                          userAccessId == '3')
+                                                  // onTap: (userAccessId == '1' ||
+                                                  //         userAccessId == '2' ||
+                                                  //         userAccessId == '3')
+                                                  onTap: (userAccessId ==
+                                                          'officeChitra')
                                                       ? () {}
                                                       : () {
                                                           Navigator.pushNamed(

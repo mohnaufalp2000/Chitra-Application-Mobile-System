@@ -2,7 +2,10 @@ import 'dart:developer';
 
 import 'package:camos/objectbox.g.dart';
 import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/pages/tpms/auto_tapping_page.dart';
 import 'package:camos/pages/tpms/spm_pressure_converter.dart';
+import 'package:camos/pages/tpms/tpms_state.dart';
+import 'package:camos/pages/tpms/widget/adjustment_detail_popup_widget.dart';
 import 'package:camos/pages/tpms/widget/spm_image_helper.dart';
 import 'package:get/get.dart';
 
@@ -42,6 +45,7 @@ class TpmsPage extends StatefulWidget {
 }
 
 class _TpmsPageState extends State<TpmsPage> {
+  final tpmsState = Get.put(TpmsState());
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
   WebViewController? webViewController;
@@ -62,11 +66,11 @@ class _TpmsPageState extends State<TpmsPage> {
   String siteName = '';
   // List<bool> isShowMore = [];
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   context.read<SpmBloc>().add(GetListSpmEvent());
-  // }
+  @override
+  void initState() {
+    super.initState();
+    tpmsState.loadAutoTappingOnce();
+  }
 
   void _loadAndFindSite(String idSite) async {
     // 1. Ambil semua data dari cache (cukup sekali saat widget pertama kali dibuat)
@@ -341,12 +345,103 @@ class _TpmsPageState extends State<TpmsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Map<String, dynamic> data =
-    //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-    // log('data before spm : ${data}');
+    // return Scaffold(
+    //   appBar: AppBar(title: Text('Auto Tapping')),
+    //   body: FutureBuilder(
+    //       future: ApiService.getAutoTappingSPM(),
+    //       builder: (context, snapshot) {
+    //         if (snapshot.hasData) {
+    //           final autoTappingList = snapshot.data
+    //               ?.where((element) => element.idSite == idSite)
+    //               .toList();
+    //           return ListView.builder(
+    //             itemCount: autoTappingList?.length,
+    //             itemBuilder: (context, index) {
+    //               final item = autoTappingList?[index];
+
+    //               return Card(
+    //                 margin: EdgeInsets.all(8),
+    //                 child: ListTile(
+    //                   title: Text(item?.devicename ?? ''),
+    //                   subtitle: Column(
+    //                     crossAxisAlignment: CrossAxisAlignment.start,
+    //                     children: [
+    //                       Text('Posisi: ${item?.posisi}'),
+    //                       Text('Before: ${item?.pressureBefore}'),
+    //                       Text('After: ${item?.pressureAfter}'),
+    //                       Text('Id Site: ${item?.idSite}'),
+    //                       Text('Timestamp Before: ${item?.timestampBefore}'),
+    //                       Text('Timestamp After: ${item?.timestampAfter}'),
+    //                     ],
+    //                   ),
+    //                 ),
+    //               );
+    //             },
+    //           );
+    //         }
+    //         return Container();
+    //       }),
+    // );
 
     return Scaffold(
-      appBar: appBarWidget('SPM Page', context),
+      // appBar: appBarWidget('SPM Page', context),
+      appBar: AppBar(
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(30),
+              onTap: () {
+                Navigator.pushNamed(
+                  context,
+                  AutoTappingPage.routeName,
+                  arguments: {
+                    'idSite': idSite,
+                    'siteName': siteName,
+                  },
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: green00968A.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: green00968A.withOpacity(0.3),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.history,
+                      size: 18,
+                      color: green00968A,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'History\nAdj. Pressure',
+                      style: TextStyle(
+                        color: green00968A,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+        centerTitle: true,
+        title: Text(
+          'SPM Page',
+          style: getBlackTextStyle(),
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -579,12 +674,52 @@ class _TpmsPageState extends State<TpmsPage> {
                                                           getBlackTextStyle(),
                                                     ),
                                                     SizedBox(
-                                                      height: 150,
+                                                      height: 130,
                                                       width: 100,
                                                       child: Image.asset(
                                                           SpmImageHelper
                                                               .getImageByModel(
                                                                   unit.model)),
+                                                    ),
+                                                    Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Text(
+                                                          'Last Update : ',
+                                                          style:
+                                                              getBlackTextStyle(
+                                                                  fontWeight:
+                                                                      w400,
+                                                                  fontSize: 12),
+                                                        ),
+                                                        Text(
+                                                          DateFormat(
+                                                                  'dd MMMM yyyy',
+                                                                  'id_ID')
+                                                              .format(DateTime
+                                                                  .parse(
+                                                                      unit.timestamp ??
+                                                                          '')),
+                                                          style:
+                                                              getBlackTextStyle(
+                                                                  fontWeight:
+                                                                      w600),
+                                                        ),
+                                                        Text(
+                                                          DateFormat('HH:mm:ss',
+                                                                  'id_ID')
+                                                              .format(DateTime
+                                                                  .parse(
+                                                                      unit.timestamp ??
+                                                                          '')),
+                                                          style:
+                                                              getBlackTextStyle(
+                                                                  fontWeight:
+                                                                      w600),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ],
                                                 ),
@@ -620,6 +755,125 @@ class _TpmsPageState extends State<TpmsPage> {
                                                                         0.23
                                                                     : 0),
                                                         child: PressureCard(
+                                                          onTap: () async {
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .hideCurrentSnackBar();
+                                                            final data = tpmsState
+                                                                .findAutoTapping(
+                                                              idSite: idSite,
+                                                              deviceName:
+                                                                  unit.devicename ??
+                                                                      '',
+                                                              position:
+                                                                  '${index + 1}',
+                                                            );
+
+                                                            if (data == null) {
+                                                              ScaffoldMessenger
+                                                                      .of(context)
+                                                                  .showSnackBar(
+                                                                SnackBar(
+                                                                  content:
+                                                                      const Row(
+                                                                    children: [
+                                                                      Icon(
+                                                                          Icons
+                                                                              .info_outline,
+                                                                          color:
+                                                                              Colors.white),
+                                                                      SizedBox(
+                                                                          width:
+                                                                              12),
+                                                                      Expanded(
+                                                                        child:
+                                                                            Text(
+                                                                          'Data adjustment belum tersedia untuk posisi ini',
+                                                                        ),
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .orange
+                                                                          .shade700,
+                                                                  behavior:
+                                                                      SnackBarBehavior
+                                                                          .floating,
+                                                                  margin:
+                                                                      const EdgeInsets
+                                                                          .all(
+                                                                          16),
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            12),
+                                                                  ),
+                                                                  duration:
+                                                                      const Duration(
+                                                                          seconds:
+                                                                              2),
+                                                                ),
+                                                              );
+                                                              return;
+                                                            }
+
+                                                            await showDialog(
+                                                              context: context,
+                                                              builder: (_) =>
+                                                                  AdjustmentDetailPopupWidget(
+                                                                unit:
+                                                                    unit.devicename ??
+                                                                        '',
+                                                                position: int
+                                                                    .parse(data
+                                                                        .posisi
+                                                                        .toString()),
+                                                                beforePsi: int
+                                                                    .parse(data
+                                                                        .pressureBefore),
+                                                                afterPsi: int
+                                                                    .parse(data
+                                                                        .pressureAfter),
+                                                                beforeBar: 8.3,
+                                                                afterBar: 8.8,
+                                                                changePsi: int
+                                                                        .parse(data
+                                                                            .pressureAfter) -
+                                                                    int.parse(data
+                                                                        .pressureBefore),
+                                                                startTime: data
+                                                                    .timestampBefore,
+                                                                endTime: data
+                                                                    .timestampAfter,
+                                                                durationMinute:
+                                                                    (() {
+                                                                  final minutes = DateTime
+                                                                          .parse(
+                                                                    data.timestampAfter
+                                                                        .replaceAll(
+                                                                            ' ',
+                                                                            'T'),
+                                                                  )
+                                                                      .difference(
+                                                                        DateTime
+                                                                            .parse(
+                                                                          data.timestampBefore.replaceAll(
+                                                                              ' ',
+                                                                              'T'),
+                                                                        ),
+                                                                      )
+                                                                      .inMinutes;
+
+                                                                  return minutes ==
+                                                                          0
+                                                                      ? 1
+                                                                      : minutes;
+                                                                })(),
+                                                              ),
+                                                            );
+                                                          },
                                                           position:
                                                               '${index + 1}',
                                                           temperature: allUnits[
@@ -685,9 +939,92 @@ class _TpmsPageState extends State<TpmsPage> {
                                                 allUnits[indexUnit][0].length -
                                                     2, (index) {
                                               final dataIndex = index + 2;
-                                              log('unit pressure spm : ${allUnits[indexUnit]}');
                                               return Expanded(
                                                 child: PressureCard(
+                                                  onTap: () async {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .hideCurrentSnackBar();
+                                                    final data = tpmsState
+                                                        .findAutoTapping(
+                                                      idSite: idSite,
+                                                      deviceName:
+                                                          unit.devicename ?? '',
+                                                      position:
+                                                          '${dataIndex + 1}',
+                                                    );
+
+                                                    if (data == null) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: const Row(
+                                                            children: [
+                                                              Icon(
+                                                                  Icons
+                                                                      .info_outline,
+                                                                  color: Colors
+                                                                      .white),
+                                                              SizedBox(
+                                                                  width: 12),
+                                                              Expanded(
+                                                                child: Text(
+                                                                  'Data adjustment belum tersedia untuk posisi ini',
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          backgroundColor:
+                                                              Colors.orange
+                                                                  .shade700,
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .all(16),
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                          ),
+                                                          duration:
+                                                              const Duration(
+                                                                  seconds: 2),
+                                                        ),
+                                                      );
+                                                      return;
+                                                    }
+                                                    await showDialog(
+                                                      context: context,
+                                                      builder: (_) =>
+                                                          AdjustmentDetailPopupWidget(
+                                                        unit: unit.devicename ??
+                                                            '',
+                                                        position: int.parse(data
+                                                            .posisi
+                                                            .toString()),
+                                                        beforePsi: int.parse(
+                                                            data.pressureBefore),
+                                                        afterPsi: int.parse(
+                                                            data.pressureAfter),
+                                                        beforeBar: 8.3,
+                                                        afterBar: 8.8,
+                                                        changePsi: int.parse(data
+                                                                .pressureAfter) -
+                                                            int.parse(data
+                                                                .pressureBefore),
+                                                        startTime: data
+                                                            .timestampBefore,
+                                                        endTime:
+                                                            data.timestampAfter,
+                                                        durationMinute: 2,
+                                                      ),
+                                                    );
+                                                  },
                                                   position: '${dataIndex + 1}',
                                                   index: index,
                                                   temperature: allUnits[
@@ -736,24 +1073,6 @@ class _TpmsPageState extends State<TpmsPage> {
                                             children: [
                                               Column(
                                                 children: [
-                                                  Row(
-                                                    children: [
-                                                      Icon(Icons.schedule),
-                                                      const SizedBox(
-                                                        width: 12,
-                                                      ),
-                                                      Text(
-                                                        DateFormat(
-                                                                'dd MMMM yyyy  HH:mm:ss',
-                                                                'id_ID')
-                                                            .format(DateTime.parse(
-                                                                unit.timestamp ??
-                                                                    '')),
-                                                        style:
-                                                            getBlackTextStyle(),
-                                                      ),
-                                                    ],
-                                                  ),
                                                   const SizedBox(
                                                     height: 12,
                                                   ),
@@ -1077,18 +1396,22 @@ class _TpmsPageState extends State<TpmsPage> {
                                           ),
                                         ],
                                       ),
-                                      SizedBox(
-                                        height:
-                                            MediaQuery.of(context).size.height *
-                                                0.6,
-                                        width:
-                                            MediaQuery.of(context).size.height *
-                                                0.9,
-                                        child: Opacity(
-                                          opacity:
-                                              0.06, // Nilai dari 0.0 (transparan) sampai 1.0 (penuh)
-                                          child: Image.asset(
-                                              '${imagePath}/cp_logo_vertical_image.png'),
+                                      IgnorePointer(
+                                        child: SizedBox(
+                                          height: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.6,
+                                          width: MediaQuery.of(context)
+                                                  .size
+                                                  .height *
+                                              0.9,
+                                          child: Opacity(
+                                            opacity:
+                                                0.06, // Nilai dari 0.0 (transparan) sampai 1.0 (penuh)
+                                            child: Image.asset(
+                                                '${imagePath}/cp_logo_vertical_image.png'),
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1113,9 +1436,10 @@ class _TpmsPageState extends State<TpmsPage> {
   }
 }
 
-class PressureCard extends StatelessWidget {
+class PressureCard extends StatefulWidget {
   const PressureCard({
     super.key,
+    this.onTap,
     required this.position,
     this.index = -1,
     required this.pressure,
@@ -1126,6 +1450,8 @@ class PressureCard extends StatelessWidget {
     required this.reccAdj,
     required this.pressureUnit,
   });
+
+  final Future<void> Function()? onTap;
 
   final String position;
   final int index;
@@ -1138,12 +1464,48 @@ class PressureCard extends StatelessWidget {
   final String pressureUnit;
 
   @override
+  State<PressureCard> createState() => _PressureCardState();
+}
+
+class _PressureCardState extends State<PressureCard> {
+  bool isPressed = false;
+  bool isLoading = false;
+
+  Future<void> _handleTap() async {
+    if (widget.onTap == null) return;
+    if (isLoading) return;
+
+    setState(() {
+      isPressed = true;
+    });
+
+    await Future.delayed(const Duration(milliseconds: 120));
+
+    if (!mounted) return;
+
+    setState(() {
+      isPressed = false;
+      isLoading = true;
+    });
+
+    try {
+      await widget.onTap!();
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     late final Color thermalColor;
     late final IconData thermalIcon;
     late final String thermalLabel;
 
-    switch (temperatureStatus) {
+    switch (widget.temperatureStatus) {
       case '0':
         thermalColor = Colors.blue;
         thermalIcon = Icons.ac_unit;
@@ -1170,119 +1532,213 @@ class PressureCard extends StatelessWidget {
         thermalLabel = '-';
     }
 
-    final psi = spmConvertPressure(double.parse(pressure), pressureUnit)['psi'];
-    final bar = spmConvertPressure(double.parse(pressure), pressureUnit)['bar'];
-    final reccPsi =
-        spmConvertPressure(double.parse(reccAdj), pressureUnit)['psi'];
-    final reccBar =
-        spmConvertPressure(double.parse(reccAdj), pressureUnit)['bar'];
+    final psi = spmConvertPressure(
+      double.parse(widget.pressure),
+      widget.pressureUnit,
+    )['psi'];
 
-    return Card(
-      elevation: 5,
-      child: SizedBox(
-        height: 280,
-        child: Column(
-          children: [
-            // ================= HEADER =================
-            Container(
-              padding: const EdgeInsets.all(12),
-              height: 70,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: (pressureStatus == '2')
-                    ? const Color(0xff9C27B0)
-                    : (pressureStatus == '1')
-                        ? green00968A
-                        : (pressureStatus == '0' && pressure != '0')
-                            ? Colors.red
-                            : black,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
+    final bar = spmConvertPressure(
+      double.parse(widget.pressure),
+      widget.pressureUnit,
+    )['bar'];
+
+    final reccPsi = spmConvertPressure(
+      double.parse(widget.reccAdj),
+      widget.pressureUnit,
+    )['psi'];
+
+    final reccBar = spmConvertPressure(
+      double.parse(widget.reccAdj),
+      widget.pressureUnit,
+    )['bar'];
+
+    return AnimatedScale(
+      scale: isPressed ? 0.96 : 1,
+      duration: const Duration(milliseconds: 120),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          splashColor: green00968A.withOpacity(0.15),
+          highlightColor: green00968A.withOpacity(0.06),
+          onTap: _handleTap,
+          child: Stack(
+            children: [
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: widget.onTap != null
+                        ? green00968A.withOpacity(0.5)
+                        : Colors.transparent,
+                    width: 1.3,
+                  ),
+                ),
+                child: SizedBox(
+                  height: 300,
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            height: 75,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: (widget.pressureStatus == '2')
+                                  ? const Color(0xff9C27B0)
+                                  : (widget.pressureStatus == '1')
+                                      ? green00968A
+                                      : (widget.pressureStatus == '0' &&
+                                              widget.pressure != '0')
+                                          ? Colors.red
+                                          : black,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  widget.position,
+                                  style: getWhiteTextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (widget.pressureStatus == '2')
+                                  Text(
+                                    'Over',
+                                    style: getWhiteTextStyle(
+                                      fontSize: 10,
+                                      fontWeight: w700,
+                                    ),
+                                  )
+                                else if (widget.pressureStatus == '0' &&
+                                    widget.pressure != '0')
+                                  Text(
+                                    'Low',
+                                    style: getWhiteTextStyle(fontSize: 10),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          if (widget.onTap != null)
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.touch_app,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                children: [
+                                  Text(
+                                    '$psi Psi',
+                                    style: getBlackTextStyle(
+                                      fontSize: 18,
+                                      fontWeight: w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$bar BAR',
+                                    style: getBlackTextStyle(fontSize: 14),
+                                  ),
+                                  const Divider(),
+                                  Text(
+                                    (widget.pressureStatus != '1' &&
+                                            widget.pressure != '0')
+                                        ? 'Recc :$reccPsi Psi / $reccBar BAR'
+                                        : '-',
+                                    style: getRedTextStyle(fontSize: 10),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                              const Divider(),
+                              Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '${widget.temperature} °C',
+                                        style: getBlackTextStyle(fontSize: 14)
+                                            .copyWith(color: thermalColor),
+                                      ),
+                                      Icon(
+                                        thermalIcon,
+                                        color: thermalColor,
+                                        size: 20,
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    thermalLabel,
+                                    style: getBlackTextStyle(fontSize: 10)
+                                        .copyWith(
+                                      color: thermalColor,
+                                      fontWeight: w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(),
+                              Text(
+                                (widget.rating != 'N/A' &&
+                                        widget.rating.isNotEmpty)
+                                    ? 'Rat. ${widget.rating}'
+                                    : '-',
+                                style: getBlackTextStyle(fontSize: 20),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    position,
-                    style: getWhiteTextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
+              if (isLoading)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.28),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.6,
+                      ),
                     ),
                   ),
-                  if (pressureStatus == '2')
-                    Text('Over',
-                        style:
-                            getWhiteTextStyle(fontSize: 10, fontWeight: w700))
-                  else if (pressureStatus == '0' && pressure != '0')
-                    Text('Low', style: getWhiteTextStyle(fontSize: 10)),
-                ],
-              ),
-            ),
-
-            // ================= BODY =================
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // ===== PRESSURE =====
-                    Column(
-                      children: [
-                        Text('$psi Psi',
-                            style: getBlackTextStyle(
-                                fontSize: 18, fontWeight: w700)),
-                        Text('$bar BAR',
-                            style: getBlackTextStyle(fontSize: 14)),
-                        const Divider(),
-                        // Rec selalu ada (biar tinggi konsisten)
-                        Text(
-                          (pressureStatus != '1' && pressure != '0')
-                              ? 'Recc :$reccPsi Psi / $reccBar BAR'
-                              : '-',
-                          style: getRedTextStyle(fontSize: 10),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                    const Divider(),
-                    // ===== TEMPERATURE =====
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '$temperature °C',
-                              style: getBlackTextStyle(fontSize: 16)
-                                  .copyWith(color: thermalColor),
-                            ),
-                            Icon(thermalIcon, color: thermalColor, size: 20),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          thermalLabel,
-                          style: getBlackTextStyle(fontSize: 10)
-                              .copyWith(color: thermalColor, fontWeight: w600),
-                        ),
-                      ],
-                    ),
-                    const Divider(),
-                    // ===== RATING (selalu ada) =====
-                    Text(
-                      (rating != 'N/A' && rating.isNotEmpty)
-                          ? 'Rat. $rating'
-                          : '-',
-                      style: getBlackTextStyle(fontSize: 20),
-                    ),
-                  ],
                 ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
