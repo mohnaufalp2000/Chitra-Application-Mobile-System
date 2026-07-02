@@ -45,8 +45,6 @@ class _ListJobcardRepairState extends State<ListJobcardRepair> {
       List.generate(10, (_) => false); // Sesuaikan jumlah item
 
   void _onHistoryPressed() {
-    // Navigator.pushNamed(context, JobcardQCPage.routeName);
-    // Navigator.pushNamed(context, HistoryJobcardRepairPage.routeName);
     Navigator.pushNamed(context, HistoryJobcardRepairPage.routeName);
   }
 
@@ -1325,7 +1323,7 @@ class _JobcardCardState extends State<JobcardCard> {
   }
 }
 
-class ItemJob extends StatelessWidget {
+class ItemJob extends StatefulWidget {
   const ItemJob({
     super.key,
     required this.jobName,
@@ -1340,6 +1338,13 @@ class ItemJob extends StatelessWidget {
   final int cardIndex;
   final String wo;
   final String woDate;
+
+  @override
+  State<ItemJob> createState() => _ItemJobState();
+}
+
+class _ItemJobState extends State<ItemJob> {
+  bool isSkipLoading = false;
 
   bool containsAnyMatch({
     required List<String> listA,
@@ -1358,20 +1363,20 @@ class ItemJob extends StatelessWidget {
     String existingJob = '';
 
     String processRepairCount = '';
-    int indexCount = cardIndex + 1;
+    int indexCount = widget.cardIndex + 1;
     processRepairCount = '$indexCount';
 
     print('process : ${processRepairCount}');
 
-    if (data['jobcard$processRepairCount'].isEmpty) {
+    if (widget.data['jobcard$processRepairCount'].isEmpty) {
       existingJob = 'Skiving';
     } else {
-      final lastName = data['jobcard$processRepairCount'].last['name'];
+      final lastName = widget.data['jobcard$processRepairCount'].last['name'];
 
       final jobList = JobcardRepair.jobName;
       final currentIndex = jobList.indexWhere((job) => job['name'] == lastName);
 
-      existingJob = data['jobcard$processRepairCount'].last['name'];
+      existingJob = widget.data['jobcard$processRepairCount'].last['name'];
       if (currentIndex != -1 && currentIndex < jobList.length - 1) {
         existingJob = jobList[currentIndex + 1]['name'];
       } else {
@@ -1392,7 +1397,7 @@ class ItemJob extends StatelessWidget {
               width: 6,
             ),
             Text(
-              'Process Repair (${cardIndex + 1})',
+              'Process Repair (${widget.cardIndex + 1})',
               style: getBlackTextStyle(
                 fontSize: 16,
                 fontWeight: w700,
@@ -1404,9 +1409,10 @@ class ItemJob extends StatelessWidget {
           height: 6,
         ),
         Column(
-          children: List.generate(jobName.length, (index) {
-            final jobcardItem = data['jobcard$processRepairCount'].firstWhere(
-              (item) => item['name'] == jobName[index],
+          children: List.generate(widget.jobName.length, (index) {
+            final jobcardItem =
+                widget.data['jobcard$processRepairCount'].firstWhere(
+              (item) => item['name'] == widget.jobName[index],
               orElse: () => null,
             );
             return Column(
@@ -1416,9 +1422,9 @@ class ItemJob extends StatelessWidget {
                     await Navigator.pushNamed(
                         context, JobcardSelectedJobPage.routeName,
                         arguments: {
-                          'tireDetail': data,
-                          'wo': wo,
-                          'woDate': woDate,
+                          'tireDetail': widget.data,
+                          'wo': widget.wo,
+                          'woDate': widget.woDate,
                           'processRepairCount': processRepairCount,
                           'isFromListJobcard': true,
                         });
@@ -1443,7 +1449,7 @@ class ItemJob extends StatelessWidget {
                               jobcardItem['hours'] == '0' &&
                               jobcardItem['minutes'] == '0')
                             Text(
-                              jobName[index],
+                              widget.jobName[index],
                               style: getBlackTextStyle().copyWith(
                                   decoration: TextDecoration.lineThrough,
                                   decorationThickness: 3.0),
@@ -1451,8 +1457,9 @@ class ItemJob extends StatelessWidget {
                           else
                             Row(
                               children: [
-                                if (data['jobcard$processRepairCount'].any(
-                                    (item) => item['name'] == jobName[index]))
+                                if (widget.data['jobcard$processRepairCount']
+                                    .any((item) =>
+                                        item['name'] == widget.jobName[index]))
                                   SizedBox(
                                     width: 20,
                                     height: 20,
@@ -1471,14 +1478,15 @@ class ItemJob extends StatelessWidget {
                                   width: 6,
                                 ),
                                 Text(
-                                  jobName[index],
+                                  widget.jobName[index],
                                   style: getBlackTextStyle(),
                                 )
                               ],
                             ),
-                          if (!data['jobcard$processRepairCount'].any(
-                                  (item) => item['name'] == jobName[index]) &&
-                              existingJob == jobName[index])
+                          if (!widget.data['jobcard$processRepairCount'].any(
+                                  (item) =>
+                                      item['name'] == widget.jobName[index]) &&
+                              existingJob == widget.jobName[index])
                             SizedBox(
                               width: 60,
                               height: 25,
@@ -1489,11 +1497,11 @@ class ItemJob extends StatelessWidget {
                                     builder: (BuildContext context) {
                                       return AlertDialog(
                                         title: Text(
-                                          'Confirmation Skip (${jobName[index]})',
+                                          'Confirmation Skip (${widget.jobName[index]})',
                                           style: getBlackTextStyle(),
                                         ),
                                         content: Text(
-                                          'Are you sure you want to skip this process (${jobName[index]})?',
+                                          'Are you sure you want to skip this process (${widget.jobName[index]})?',
                                           style: getBlackTextStyle(),
                                         ),
                                         actions: [
@@ -1504,51 +1512,65 @@ class ItemJob extends StatelessWidget {
                                             child: const Text('Cancel'),
                                           ),
                                           ElevatedButton(
-                                            onPressed: () async {
-                                              final oldData = await firestore
-                                                  .collection(FirestoreKey
-                                                      .tireRepairInspectionReport)
-                                                  .where('id',
-                                                      isEqualTo: data['id'])
-                                                  .get();
-                                              final jobcardData = {
-                                                'name': jobName[index],
-                                                'fulldate': DateTime.now()
-                                                    .toIso8601String(),
-                                                'date': DateFormat('dd-MM-yyyy')
-                                                    .format(DateTime.now()),
-                                                'material': [
-                                                  {
-                                                    'id_matstock': '',
-                                                    'name': '',
-                                                    'qty': '',
-                                                  }
-                                                ],
-                                                'hours': '0',
-                                                'minutes': '0',
-                                                'bywhom': '',
-                                                'remarks': '',
-                                                'process_repair_count': 1,
-                                                'id_wo': data['id'],
-                                                'dimensi': '',
-                                                'created_at': DateTime.now()
-                                                    .toIso8601String(),
-                                              };
+                                            onPressed: (isSkipLoading)
+                                                ? null
+                                                : () async {
+                                                    setState(() {
+                                                      isSkipLoading = true;
+                                                    });
+                                                    final oldData = await firestore
+                                                        .collection(FirestoreKey
+                                                            .tireRepairInspectionReport)
+                                                        .where('id',
+                                                            isEqualTo: widget
+                                                                .data['id'])
+                                                        .get();
+                                                    final jobcardData = {
+                                                      'name':
+                                                          widget.jobName[index],
+                                                      'fulldate': DateTime.now()
+                                                          .toIso8601String(),
+                                                      'date': DateFormat(
+                                                              'dd-MM-yyyy')
+                                                          .format(
+                                                              DateTime.now()),
+                                                      'material': [
+                                                        {
+                                                          'id_matstock': '',
+                                                          'name': '',
+                                                          'qty': '',
+                                                        }
+                                                      ],
+                                                      'hours': '0',
+                                                      'minutes': '0',
+                                                      'bywhom': '',
+                                                      'remarks': '',
+                                                      'process_repair_count': 1,
+                                                      'id_wo':
+                                                          widget.data['id'],
+                                                      'dimensi': '',
+                                                      'created_at': DateTime
+                                                              .now()
+                                                          .toIso8601String(),
+                                                    };
 
-                                              await oldData.docs[0].reference
-                                                  .update({
-                                                'jobcard$processRepairCount':
-                                                    FieldValue.arrayUnion(
-                                                        [jobcardData]),
-                                              });
+                                                    await oldData
+                                                        .docs[0].reference
+                                                        .update({
+                                                      'jobcard$processRepairCount':
+                                                          FieldValue.arrayUnion(
+                                                              [jobcardData]),
+                                                    });
 
-                                              await ApiService
-                                                  .postJobJobcardRepair(
-                                                      jobcardData);
-                                              Navigator.of(context)
-                                                  .pop(); // Tutup dialog
-                                            },
-                                            child: const Text('Yes'),
+                                                    await ApiService
+                                                        .postJobJobcardRepair(
+                                                            jobcardData);
+                                                    Navigator.of(context)
+                                                        .pop(); // Tutup dialog
+                                                  },
+                                            child: (isSkipLoading)
+                                                ? const CircularProgressIndicator()
+                                                : const Text('Yes'),
                                           ),
                                         ],
                                       );

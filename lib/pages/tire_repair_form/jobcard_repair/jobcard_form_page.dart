@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:camos/pages/tire_repair_form/jobcard_repair/list_jobcard_repair_page.dart';
+import 'package:camos/pages/tire_repair_form/jobcard_repair/widget/decimal_text_input_formatter.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/blocs/process_jobcard/process_jobcard_bloc.dart';
 import '../../../core/styles/color.dart';
@@ -558,8 +560,16 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                                     initialValue:
                                                                         currentQty,
                                                                     keyboardType:
-                                                                        TextInputType
-                                                                            .number,
+                                                                        const TextInputType
+                                                                            .numberWithOptions(
+                                                                      decimal:
+                                                                          true,
+                                                                      signed:
+                                                                          false,
+                                                                    ),
+                                                                    inputFormatters: [
+                                                                      DecimalTextInputFormatter(),
+                                                                    ],
                                                                     decoration:
                                                                         const InputDecoration(
                                                                       labelText:
@@ -572,6 +582,10 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                                     ),
                                                                     onChanged:
                                                                         (value) {
+                                                                      final qtyValue =
+                                                                          value.replaceAll(
+                                                                              ',',
+                                                                              '.');
                                                                       setModalState(
                                                                           () {
                                                                         final index =
@@ -583,7 +597,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                                         if (index !=
                                                                             -1) {
                                                                           selectedMaterials[index]['qty'] =
-                                                                              value;
+                                                                              qtyValue;
                                                                         }
                                                                       });
                                                                       setState(
