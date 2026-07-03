@@ -87,13 +87,15 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     String currentSiteId = homeState.currentSiteId;
     String userAccessId = homeState.userAccessId.value;
 
+    bool isSis = homeState.userAccessCompanyId.value == '1';
+
     log('test call units 1 : $currentSiteId');
     log('test call units 2 : $userAccessId');
     context.read<UnitBloc>().add(GetUnitsEvent(
         idSite: currentSiteId,
         isOnline:
             // (userAccessId == '1' || userAccessId == '2') ? true : isOnline));
-            (userAccessId == officeChitra.idSite) ? true : isOnline));
+            (userAccessId == '1' && !isSis) ? true : isOnline));
   }
 
   Future<String> getActualIdSite() async {
@@ -208,7 +210,11 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                           final data = snapshot.data;
                           log('id site future builder : $data');
 
-                          if (data != '1' && data != '2' && data != '3') {
+                          final isSis =
+                              homeState.userAccessCompanyId.value == '1';
+
+                          if (data != '1' ||
+                              isSis && data != '2' && data != '3') {
                             return FutureBuilder(
                                 future: getActualIdSite(),
                                 builder: (context, snapshot) {
@@ -220,9 +226,8 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                   final data = snapshot.data;
                                   log('id site future builder : $data');
 
-                                  if (data != '1' &&
-                                      data != '2' &&
-                                      data != '3') {
+                                  if (data != '1' ||
+                                      isSis && data != '2' && data != '3') {
                                     return SizedBox(
                                       width: double.infinity,
                                       child: ElevatedButton(

@@ -123,10 +123,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   // ────────────────────────────────
   Future<void> getUnits() async {
     log('🔄 getUnits() dipanggil untuk site: $currentIdSite (online=$isOnline)');
-
+    final isSis = homeState.userAccessCompanyId.value == '1';
     // jika user bukan office site (bukan 1 atau 2)
     // if (userAccessId != '1' && userAccessId != '2') {
-    if (userAccessId != 'officeChitra') {
+    if (userAccessId != '1' || isSis) {
       if (!isOnline) {
         // Offline Mode
         log('📴 Load data dari cache untuk site $currentIdSite');
@@ -262,11 +262,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
 
                     final data = snapshot.data;
                     log('id site future builder : $data');
+                    bool isSis = homeState.userAccessCompanyId.value == '1';
 
                     // if (userAccessId != '1' &&
                     //     userAccessId != '2' &&
                     //     userAccessId != '3') {
-                    if (userAccessId != 'officeChitra') {
+                    if (userAccessId != '1' || isSis) {
                       return Column(
                         children: [
                           SizedBox(
@@ -1670,28 +1671,28 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                           const SizedBox(
                             height: 6,
                           ),
-                          Builder(builder: (context) {
-                            if (state.totalActualUnits?.length == null) {
-                              return Container();
-                            }
+                          // Builder(builder: (context) {
+                          //   if (state.totalActualUnits?.length == null) {
+                          //     return Container();
+                          //   }
 
-                            if (state.totalActualUnits?.length !=
-                                state.units.length) {
-                              return Column(
-                                children: [
-                                  NotUpdateWarningWidget(
-                                      totalActual:
-                                          state.totalActualUnits?.length ?? 0),
-                                  SizedBox(
-                                    height: 12,
-                                  ),
-                                ],
-                              );
-                            } else {
-                              Container();
-                            }
-                            return Container();
-                          }),
+                          //   if (state.totalActualUnits?.length !=
+                          //       state.units.length) {
+                          //     return Column(
+                          //       children: [
+                          //         NotUpdateWarningWidget(
+                          //             totalActual:
+                          //                 state.totalActualUnits?.length ?? 0),
+                          //         SizedBox(
+                          //           height: 12,
+                          //         ),
+                          //       ],
+                          //     );
+                          //   } else {
+                          //     Container();
+                          //   }
+                          //   return Container();
+                          // }),
                           (state.units == null || state.units.isEmpty)
                               ? Text(
                                   'Empty!',
@@ -1713,7 +1714,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                       // onTap: (userAccessId == '1' ||
                                       //         userAccessId == '2' ||
                                       //         userAccessId == '3')
-                                      onTap: (userAccessId == 'officeChitra')
+                                      onTap: (userAccessId != '1' ||
+                                              homeState.userAccessCompanyId
+                                                      .value ==
+                                                  '1')
                                           ? () {}
                                           : () {
                                               Navigator.pushNamed(context,
@@ -1783,9 +1787,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                             height: 12,
                           ),
                           // (userAccessId == '1' || userAccessId == '2')
-                          (userAccessId == 'officeChitra')
-                              ? Container()
-                              : SizedBox(
+                          (userAccessId != '1' &&
+                                  homeState.userAccessCompanyId.value == '')
+                              ? SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
                                       onPressed: () async {
@@ -2130,7 +2134,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                             ),
                                           ],
                                         ),
-                                      ))),
+                                      )))
+                              : Container(),
+
                           const SizedBox(
                             height: 12,
                           ),
@@ -2236,10 +2242,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                   // onTap: (userAccessId == '1' ||
                                                   //         userAccessId == '2' ||
                                                   //         userAccessId == '3')
-                                                  onTap: (userAccessId ==
-                                                          'officeChitra')
-                                                      ? () {}
-                                                      : () {
+                                                  onTap: (userAccessId != '1' ||
+                                                          homeState
+                                                                  .userAccessCompanyId
+                                                                  .value ==
+                                                              '1')
+                                                      ? () {
                                                           Navigator.pushNamed(
                                                               context,
                                                               DailyCheckFormPage
@@ -2250,7 +2258,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                 'reccPress': state
                                                                     .reccPress,
                                                               });
-                                                        },
+                                                        }
+                                                      : () {},
                                                   child: Container(
                                                     margin:
                                                         EdgeInsets.symmetric(
