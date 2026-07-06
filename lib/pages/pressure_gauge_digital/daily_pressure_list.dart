@@ -1714,21 +1714,14 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                       // onTap: (userAccessId == '1' ||
                                       //         userAccessId == '2' ||
                                       //         userAccessId == '3')
-                                      onTap: (userAccessId != '1' ||
-                                              homeState.userAccessCompanyId
-                                                      .value ==
-                                                  '1')
-                                          ? () {}
-                                          : () {
-                                              Navigator.pushNamed(context,
-                                                  DailyCheckFormPage.routeName,
-                                                  arguments: {
-                                                    'unitNumber':
-                                                        unit.unitNumber,
-                                                    'reccPress':
-                                                        state.reccPress,
-                                                  });
-                                            },
+                                      onTap: () {
+                                        Navigator.pushNamed(context,
+                                            DailyCheckFormPage.routeName,
+                                            arguments: {
+                                              'unitNumber': unit.unitNumber,
+                                              'reccPress': state.reccPress,
+                                            });
+                                      },
                                       child: Container(
                                         margin:
                                             EdgeInsets.symmetric(vertical: 8.0),
