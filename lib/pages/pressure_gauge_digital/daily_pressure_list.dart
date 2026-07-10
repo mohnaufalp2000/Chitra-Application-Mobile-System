@@ -2658,10 +2658,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
 
                     // All Unit
                     case 2:
-                      // log('kendaraanku: ${state.units.map((unit) => 'unitNumber: ${unit.unitNumber}, sn: ${unit.sn}').toList()}');
-                      final filteredUnits = state.units.where((unit) {
-                        final keyword = searchQuery.toLowerCase();
+                      final keyword = searchQuery.toLowerCase();
 
+                      final filteredUnits = state.units.where((unit) {
                         if (keyword.isEmpty) return true;
 
                         final unitNumber = unit.unitNumber?.toLowerCase() ?? '';
@@ -2678,171 +2677,272 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                             height: 12,
                           ),
                           Text(
-                            'Total Unit : ${state.units.length.toString()}',
+                            'Total Unit : ${filteredUnits.length}',
                             style: getBlackTextStyle(fontSize: 20),
                           ),
                           const SizedBox(
                             height: 6,
                           ),
-                          // Builder(builder: (context) {
-                          //   if (state.totalActualUnits?.length == null) {
-                          //     return Container();
-                          //   }
+                          if (state.units.isEmpty)
+                            Text(
+                              'Empty!',
+                              textAlign: TextAlign.center,
+                              style: getBlackTextStyle(fontSize: 18),
+                            )
+                          else
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.62,
+                              child: ListView.builder(
+                                itemCount: filteredUnits.length,
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
+                                itemBuilder: (context, index) {
+                                  final unit = filteredUnits[index];
 
-                          //   if (state.totalActualUnits?.length !=
-                          //       state.units.length) {
-                          //     return Column(
-                          //       children: [
-                          //         NotUpdateWarningWidget(
-                          //             totalActual:
-                          //                 state.totalActualUnits?.length ?? 0),
-                          //         SizedBox(
-                          //           height: 12,
-                          //         ),
-                          //       ],
-                          //     );
-                          //   } else {
-                          //     Container();
-                          //   }
-                          //   return Container();
-                          // }),
-                          (state.units == null || state.units.isEmpty)
-                              ? Text(
-                                  'Empty!',
-                                  textAlign: TextAlign.center,
-                                  style: getBlackTextStyle(fontSize: 18),
-                                )
-                              : ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: filteredUnits.length,
-                                  itemBuilder: (context, index) {
-                                    final unit = filteredUnits[index];
-
-                                    return InkWell(
-                                      onTap: () {
-                                        Navigator.pushNamed(
-                                          context,
-                                          DailyCheckFormPage.routeName,
-                                          arguments: {
-                                            'unitNumber': unit.unitNumber,
-                                            'reccPress': state.reccPress,
-                                          },
-                                        );
-                                      },
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(
-                                            vertical: 8.0),
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.1),
-                                              spreadRadius: 2,
-                                              blurRadius: 5,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: ListTile(
-                                          leading: const Icon(
-                                            Icons.front_loader,
-                                            color: Colors.orange,
+                                  return InkWell(
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        DailyCheckFormPage.routeName,
+                                        arguments: {
+                                          'unitNumber': unit.unitNumber,
+                                          'reccPress': state.reccPress,
+                                        },
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 8.0),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.1),
+                                            spreadRadius: 2,
+                                            blurRadius: 5,
+                                            offset: const Offset(0, 2),
                                           ),
-                                          title: Padding(
-                                            padding: const EdgeInsets.only(
-                                                bottom: 4.0),
-                                            child: Text(
-                                              unit.unitNumber ?? '',
-                                              style: getBlackTextStyle(
-                                                  fontWeight: FontWeight.w700),
-                                            ),
-                                          ),
-                                          subtitle: Text(
-                                            unit.model ?? '',
-                                            style: getGreyTextStyle(grey6A707C),
-                                          ),
-                                          trailing: const Icon(
-                                              Icons.arrow_forward_ios),
-                                        ),
+                                        ],
                                       ),
-                                    );
-                                  },
-                                ),
-                          // : Column(
-                          //     children: state.units.map((unit) {
-                          //       if (searchQuery.isNotEmpty &&
-                          //           !unit.unitNumber!
-                          //               .toLowerCase()
-                          //               .contains(searchQuery) &&
-                          //           !unit.model!
-                          //               .toLowerCase()
-                          //               .contains(searchQuery)) {
-                          //         return Container();
-                          //       }
-                          //       return InkWell(
-                          //         // onTap: (userAccessId == '1' ||
-                          //         //         userAccessId == '2' ||
-                          //         //         userAccessId == '3')
-                          //         onTap: () {
-                          //           Navigator.pushNamed(context,
-                          //               DailyCheckFormPage.routeName,
-                          //               arguments: {
-                          //                 'unitNumber': unit.unitNumber,
-                          //                 'reccPress': state.reccPress,
-                          //               });
-                          //         },
-                          //         child: Container(
-                          //           margin:
-                          //               EdgeInsets.symmetric(vertical: 8.0),
-                          //           padding:
-                          //               EdgeInsets.symmetric(vertical: 6),
-                          //           decoration: BoxDecoration(
-                          //             color: Colors.white,
-                          //             borderRadius:
-                          //                 BorderRadius.circular(12),
-                          //             boxShadow: [
-                          //               BoxShadow(
-                          //                 color:
-                          //                     Colors.black.withOpacity(0.1),
-                          //                 spreadRadius: 2,
-                          //                 blurRadius: 5,
-                          //                 offset: Offset(0, 2),
-                          //               ),
-                          //             ],
-                          //           ),
-                          //           child: ListTile(
-                          //             leading: Icon(
-                          //               Icons.front_loader,
-                          //               color: Colors.orange,
-                          //             ),
-                          //             title: Padding(
-                          //               padding: const EdgeInsets.only(
-                          //                   bottom: 4.0),
-                          //               child: Text(
-                          //                 '${unit.unitNumber}',
-                          //                 style: getBlackTextStyle(
-                          //                     fontWeight: FontWeight.w700),
-                          //               ),
-                          //             ),
-                          //             subtitle: Text(
-                          //               '${unit.model}',
-                          //               style: getGreyTextStyle(grey6A707C),
-                          //             ),
-                          //             trailing:
-                          //                 Icon(Icons.arrow_forward_ios),
-                          //           ),
-                          //         ),
-                          //       );
-                          //     }).toList(),
-                          //   ),
+                                      child: ListTile(
+                                        leading: const Icon(
+                                          Icons.front_loader,
+                                          color: Colors.orange,
+                                        ),
+                                        title: Padding(
+                                          padding: const EdgeInsets.only(
+                                              bottom: 4.0),
+                                          child: Text(
+                                            unit.unitNumber ?? '',
+                                            style: getBlackTextStyle(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          unit.model ?? '',
+                                          style: getGreyTextStyle(grey6A707C),
+                                        ),
+                                        trailing:
+                                            const Icon(Icons.arrow_forward_ios),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                         ],
                       );
+                    // case 2:
+                    //   // log('kendaraanku: ${state.units.map((unit) => 'unitNumber: ${unit.unitNumber}, sn: ${unit.sn}').toList()}');
+                    //   final filteredUnits = state.units.where((unit) {
+                    //     final keyword = searchQuery.toLowerCase();
+
+                    //     if (keyword.isEmpty) return true;
+
+                    //     final unitNumber = unit.unitNumber?.toLowerCase() ?? '';
+                    //     final model = unit.model?.toLowerCase() ?? '';
+
+                    //     return unitNumber.contains(keyword) ||
+                    //         model.contains(keyword);
+                    //   }).toList();
+
+                    //   return Column(
+                    //     crossAxisAlignment: CrossAxisAlignment.start,
+                    //     children: [
+                    //       const SizedBox(
+                    //         height: 12,
+                    //       ),
+                    //       Text(
+                    //         'Total Unit : ${state.units.length.toString()}',
+                    //         style: getBlackTextStyle(fontSize: 20),
+                    //       ),
+                    //       const SizedBox(
+                    //         height: 6,
+                    //       ),
+                    //       // Builder(builder: (context) {
+                    //       //   if (state.totalActualUnits?.length == null) {
+                    //       //     return Container();
+                    //       //   }
+
+                    //       //   if (state.totalActualUnits?.length !=
+                    //       //       state.units.length) {
+                    //       //     return Column(
+                    //       //       children: [
+                    //       //         NotUpdateWarningWidget(
+                    //       //             totalActual:
+                    //       //                 state.totalActualUnits?.length ?? 0),
+                    //       //         SizedBox(
+                    //       //           height: 12,
+                    //       //         ),
+                    //       //       ],
+                    //       //     );
+                    //       //   } else {
+                    //       //     Container();
+                    //       //   }
+                    //       //   return Container();
+                    //       // }),
+                    //       (state.units == null || state.units.isEmpty)
+                    //           ? Text(
+                    //               'Empty!',
+                    //               textAlign: TextAlign.center,
+                    //               style: getBlackTextStyle(fontSize: 18),
+                    //             )
+                    //           : ListView.builder(
+                    //               shrinkWrap: true,
+                    //               physics: const NeverScrollableScrollPhysics(),
+                    //               itemCount: filteredUnits.length,
+                    //               itemBuilder: (context, index) {
+                    //                 final unit = filteredUnits[index];
+
+                    //                 return InkWell(
+                    //                   onTap: () {
+                    //                     Navigator.pushNamed(
+                    //                       context,
+                    //                       DailyCheckFormPage.routeName,
+                    //                       arguments: {
+                    //                         'unitNumber': unit.unitNumber,
+                    //                         'reccPress': state.reccPress,
+                    //                       },
+                    //                     );
+                    //                   },
+                    //                   child: Container(
+                    //                     margin: const EdgeInsets.symmetric(
+                    //                         vertical: 8.0),
+                    //                     padding: const EdgeInsets.symmetric(
+                    //                         vertical: 6),
+                    //                     decoration: BoxDecoration(
+                    //                       color: Colors.white,
+                    //                       borderRadius:
+                    //                           BorderRadius.circular(12),
+                    //                       boxShadow: [
+                    //                         BoxShadow(
+                    //                           color:
+                    //                               Colors.black.withOpacity(0.1),
+                    //                           spreadRadius: 2,
+                    //                           blurRadius: 5,
+                    //                           offset: const Offset(0, 2),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     child: ListTile(
+                    //                       leading: const Icon(
+                    //                         Icons.front_loader,
+                    //                         color: Colors.orange,
+                    //                       ),
+                    //                       title: Padding(
+                    //                         padding: const EdgeInsets.only(
+                    //                             bottom: 4.0),
+                    //                         child: Text(
+                    //                           unit.unitNumber ?? '',
+                    //                           style: getBlackTextStyle(
+                    //                               fontWeight: FontWeight.w700),
+                    //                         ),
+                    //                       ),
+                    //                       subtitle: Text(
+                    //                         unit.model ?? '',
+                    //                         style: getGreyTextStyle(grey6A707C),
+                    //                       ),
+                    //                       trailing: const Icon(
+                    //                           Icons.arrow_forward_ios),
+                    //                     ),
+                    //                   ),
+                    //                 );
+                    //               },
+                    //             ),
+                    //       // : Column(
+                    //       //     children: state.units.map((unit) {
+                    //       //       if (searchQuery.isNotEmpty &&
+                    //       //           !unit.unitNumber!
+                    //       //               .toLowerCase()
+                    //       //               .contains(searchQuery) &&
+                    //       //           !unit.model!
+                    //       //               .toLowerCase()
+                    //       //               .contains(searchQuery)) {
+                    //       //         return Container();
+                    //       //       }
+                    //       //       return InkWell(
+                    //       //         // onTap: (userAccessId == '1' ||
+                    //       //         //         userAccessId == '2' ||
+                    //       //         //         userAccessId == '3')
+                    //       //         onTap: () {
+                    //       //           Navigator.pushNamed(context,
+                    //       //               DailyCheckFormPage.routeName,
+                    //       //               arguments: {
+                    //       //                 'unitNumber': unit.unitNumber,
+                    //       //                 'reccPress': state.reccPress,
+                    //       //               });
+                    //       //         },
+                    //       //         child: Container(
+                    //       //           margin:
+                    //       //               EdgeInsets.symmetric(vertical: 8.0),
+                    //       //           padding:
+                    //       //               EdgeInsets.symmetric(vertical: 6),
+                    //       //           decoration: BoxDecoration(
+                    //       //             color: Colors.white,
+                    //       //             borderRadius:
+                    //       //                 BorderRadius.circular(12),
+                    //       //             boxShadow: [
+                    //       //               BoxShadow(
+                    //       //                 color:
+                    //       //                     Colors.black.withOpacity(0.1),
+                    //       //                 spreadRadius: 2,
+                    //       //                 blurRadius: 5,
+                    //       //                 offset: Offset(0, 2),
+                    //       //               ),
+                    //       //             ],
+                    //       //           ),
+                    //       //           child: ListTile(
+                    //       //             leading: Icon(
+                    //       //               Icons.front_loader,
+                    //       //               color: Colors.orange,
+                    //       //             ),
+                    //       //             title: Padding(
+                    //       //               padding: const EdgeInsets.only(
+                    //       //                   bottom: 4.0),
+                    //       //               child: Text(
+                    //       //                 '${unit.unitNumber}',
+                    //       //                 style: getBlackTextStyle(
+                    //       //                     fontWeight: FontWeight.w700),
+                    //       //               ),
+                    //       //             ),
+                    //       //             subtitle: Text(
+                    //       //               '${unit.model}',
+                    //       //               style: getGreyTextStyle(grey6A707C),
+                    //       //             ),
+                    //       //             trailing:
+                    //       //                 Icon(Icons.arrow_forward_ios),
+                    //       //           ),
+                    //       //         ),
+                    //       //       );
+                    //       //     }).toList(),
+                    //       //   ),
+                    //     ],
+                    //   );
 
                     // Not Checked Unit
                     case 3:
