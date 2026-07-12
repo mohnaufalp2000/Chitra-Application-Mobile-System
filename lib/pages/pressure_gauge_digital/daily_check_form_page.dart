@@ -62,6 +62,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   List<String> tireCondition = ['Normal', 'Low Pressure'];
   List<Position> position = [];
   String idSite = '';
+  bool isLoadingSave = false;
   List<String> pressure = [
     '0',
     '95',
@@ -3848,6 +3849,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
             //   log('position temperature : ${temp}');
             // },
             onPressed: () async {
+              setState(() {
+                isLoadingSave = true;
+              });
+
               DateTime? selectedDateTimeSPM = DateTime.now();
 
               // POP UP input time event low pressure (hanya adjustment tapping spm)
@@ -3982,6 +3987,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                     ),
                   ),
                 );
+                setState(() {
+                  isLoadingSave = false;
+                });
                 return;
               }
 
@@ -4001,6 +4009,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       ),
                     ),
                   );
+                  setState(() {
+                    isLoadingSave = false;
+                  });
                   return;
                 }
               }
@@ -4225,20 +4236,30 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       style: getWhiteTextStyle(),
                     )));
                 Navigator.pop(context);
+                setState(() {
+                  isLoadingSave = false;
+                });
               } catch (e) {
                 print('error bmb : $e');
+                setState(() {
+                  isLoadingSave = false;
+                });
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
             ),
-            child: Text(
-              'Save',
-              style: getWhiteTextStyle(
-                fontSize: 16,
-                fontWeight: w700,
-              ),
-            ),
+            child: (isLoadingSave)
+                ? Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : Text(
+                    'Save',
+                    style: getWhiteTextStyle(
+                      fontSize: 16,
+                      fontWeight: w700,
+                    ),
+                  ),
           ),
         ),
       ),

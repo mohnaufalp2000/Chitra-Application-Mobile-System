@@ -48,6 +48,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
       ? Get.find<HomeState>()
       : Get.put(HomeState());
 
+  Future<QuerySnapshot<Map<String, dynamic>>>? checkedFuture;
+  Future<QuerySnapshot<Map<String, dynamic>>>? notCheckedFuture;
+
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   String currentIdSite = '';
   String userAccessId = '';
@@ -95,6 +98,67 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     log('initialize page terpanggil');
     await getUser();
     await setupSite();
+    setupPit();
+    await getCount();
+
+    checkedFuture = getCheckedTodayFuture();
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> getCheckedTodayFuture() {
+    final todayString = DateTime.now().toIso8601String().substring(0, 10);
+
+    if (selectedPit == 0) {
+      return firestore
+          .collection('daily_pressure')
+          .where('hari', isEqualTo: todayString)
+          .where('idSite', isEqualTo: currentIdSite)
+          .get();
+    }
+
+    return firestore
+        .collection('daily_pressure')
+        .where('hari', isEqualTo: todayString)
+        .where('idSite', isEqualTo: currentIdSite)
+        .where('pit', isEqualTo: pit[selectedPit])
+        .get();
+  }
+
+  void refreshCheckedData() {
+    setState(() {
+      checkedFuture = getCheckedTodayFuture();
+    });
+  }
+
+  void setupPit() {
+    pit.clear();
+
+    switch (currentIdSite) {
+      case '52':
+        pit.addAll(['All', 'Utara', 'Selatan', 'RML', 'WS']);
+        break;
+      case '137':
+        pit.addAll(['All', 'Japun', 'PCE']);
+        break;
+      case '35':
+        pit.addAll(['All', 'Tabuhan', 'EBL', 'Workshop']);
+        break;
+      case '65':
+        pit.addAll([
+          'All',
+          'Room B1 Selatan',
+          'TIA',
+          'Serongga',
+          'CSA Bagaspati',
+          'CSA Selatan',
+          'WS',
+        ]);
+        break;
+      case '166':
+        pit.addAll(['All', 'WS', 'Pondok Operator', 'Pit Stop Toll']);
+        break;
+      default:
+        pit.add('All');
+    }
   }
 
   // ────────────────────────────────
@@ -207,44 +271,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   @override
   Widget build(BuildContext context) {
     log('tanggal sekarang : ${DateTime(now.year, now.month, now.day).toIso8601String()}');
-    getCount();
-    pit.clear();
+    // getCount();
+    // pit.clear();
+    setupPit();
 
-    switch (currentIdSite) {
-      case '52':
-        pit.add('All');
-        pit.add('Utara');
-        pit.add('Selatan');
-        pit.add('RML');
-        pit.add('WS');
-        break;
-      case '137':
-        pit.add('All');
-        pit.add('Japun');
-        pit.add('PCE');
-        break;
-      case '35':
-        pit.add('All');
-        pit.add('Tabuhan');
-        pit.add('EBL');
-        pit.add('Workshop');
-        break;
-      case '65':
-        pit.add('All');
-        pit.add('Room B1 Selatan');
-        pit.add('TIA');
-        pit.add('Serongga');
-        pit.add('CSA Bagaspati');
-        pit.add('CSA Selatan');
-        pit.add('WS');
-        break;
-      case '166':
-        pit.add('All');
-        pit.add('WS');
-        pit.add('Pondok Operator');
-        pit.add('Pit Stop Toll');
-        break;
-    }
     return Scaffold(
       appBar: appBarWidget('Daily Pressure List', context),
       body: SafeArea(
@@ -489,201 +519,1215 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                   switch (selectedMenu) {
                     // Checked Unit
                     case 0:
+                      checkedFuture ??= getCheckedTodayFuture();
+
                       return Column(
                         children: [
-                          const SizedBox(
-                            height: 12,
-                          ),
+                          const SizedBox(height: 12),
                           SelectPitButton(
-                              pit: pit,
-                              selectedPit: selectedPit,
-                              onSelectedPitChanged: (index) {
-                                setState(() {
-                                  selectedPit = index;
-                                });
-                              }),
-                          const SizedBox(
-                            height: 12,
+                            pit: pit,
+                            selectedPit: selectedPit,
+                            onSelectedPitChanged: (index) {
+                              setState(() {
+                                selectedPit = index;
+                                checkedFuture = getCheckedTodayFuture();
+                              });
+                            },
                           ),
-                          StreamBuilder(
-                              stream: firestore
-                                  .collection('daily_pressure')
-                                  .where('tanggal',
-                                      isGreaterThanOrEqualTo:
-                                          DateTime(now.year, now.month, now.day)
-                                              .toIso8601String())
-                                  .where('tanggal',
-                                      isLessThanOrEqualTo: DateTime(now.year,
-                                              now.month, now.day, 23, 59, 59)
-                                          .toIso8601String())
-                                  .where('idSite', isEqualTo: currentIdSite)
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return CircularProgressIndicator.adaptive();
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: refreshCheckedData,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueGrey,
+                              ),
+                              child: Text(
+                                'Refresh Checked Data',
+                                style: getWhiteTextStyle(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                            future: checkedFuture,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator.adaptive(),
+                                );
+                              }
+
+                              if (snapshot.hasError) {
+                                return Text(
+                                  'Error load checked data: ${snapshot.error}',
+                                  style: getBlackTextStyle(fontSize: 14),
+                                );
+                              }
+
+                              final docs = snapshot.data?.docs ?? [];
+
+                              final allData = docs.map((doc) {
+                                return doc.data();
+                              }).toList();
+
+                              allData.sort((a, b) {
+                                final aTanggal = a['tanggal']?.toString() ?? '';
+                                final bTanggal = b['tanggal']?.toString() ?? '';
+                                return bTanggal.compareTo(aTanggal);
+                              });
+
+                              final keyword = searchQuery.toLowerCase();
+
+                              final filteredData = allData.where((data) {
+                                final unit =
+                                    data['unit']?.toString().toLowerCase() ??
+                                        '';
+
+                                if (keyword.isEmpty) return true;
+
+                                return unit.contains(keyword);
+                              }).toList();
+
+                              filteredItemTask.clear();
+
+                              for (final item in filteredData) {
+                                filteredItemTask
+                                    .add(Map<String, dynamic>.from(item));
+                              }
+
+                              DateTime? lastUpdate;
+
+                              if (allData.isNotEmpty) {
+                                final tanggal =
+                                    allData.first['tanggal']?.toString();
+
+                                if (tanggal != null && tanggal.isNotEmpty) {
+                                  lastUpdate = DateTime.tryParse(tanggal);
                                 }
-                                if (snapshot.connectionState ==
-                                    ConnectionState.active) {
-                                  final allData = snapshot.data?.docs
-                                      .map((doc) => DailyPress.fromFirestore(
-                                          doc.data() as Map<String, dynamic>))
-                                      .toList();
+                              }
 
-                                  final distinctDaily =
-                                      Set<DailyPress>.from(allData ?? [])
-                                          .toList();
-
-                                  final tmpDailyData =
-                                      snapshot.data?.docs ?? [];
-
-                                  final dailyData = distinctDaily.where((doc) {
-                                    // pilih all pit
-                                    if (pit.isNotEmpty) {
-                                      if (pit[selectedPit] == 'All') {
-                                        return doc.idSite == currentIdSite;
-                                      }
-
-                                      // ada pit
-                                      if (doc.pit != 'Default') {
-                                        return doc.idSite == currentIdSite &&
-                                            doc.pit == pit[selectedPit];
-                                      }
-                                    }
-
-                                    // tidak ada pit
-                                    return doc.idSite == currentIdSite;
-                                  }).toList();
-
-                                  // untuk data export excel
-                                  filteredItemTask.clear();
-                                  filteredItemTask.clear();
-
-                                  dailyData.forEach((item) {
-                                    Map<String, dynamic> cast =
-                                        item.toFirestore();
-                                    filteredItemTask.add(cast);
-                                  });
-
-                                  return Column(
-                                    children: [
-                                      Text(
-                                        'Total Unit : ${distinctDaily.length ?? 0}',
-                                        style: getBlackTextStyle(
-                                          fontSize: 20,
+                              return Column(
+                                children: [
+                                  Text(
+                                    'Total Unit : ${filteredData.length}',
+                                    style: getBlackTextStyle(fontSize: 20),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  if (lastUpdate != null)
+                                    Column(
+                                      children: [
+                                        Text(
+                                          'Last Update : ${DateFormat('HH:mm:ss dd-MM-yyyy').format(lastUpdate)}',
+                                          textAlign: TextAlign.center,
+                                          style:
+                                              getBlackTextStyle(fontSize: 14),
                                         ),
-                                      ),
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
-                                      (snapshot.data?.size != 0)
-                                          ? Column(
-                                              children: [
-                                                Builder(builder: (context) {
-                                                  // Parsing string to DateTime object
-                                                  DateTime parsedDate =
-                                                      DateTime.parse(snapshot
-                                                          .data
-                                                          ?.docs[snapshot
-                                                                  .data!.size -
-                                                              1]
-                                                          .data()['tanggal']);
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ),
+                                  filteredData.isEmpty
+                                      ? Text(
+                                          'Empty!',
+                                          textAlign: TextAlign.center,
+                                          style:
+                                              getBlackTextStyle(fontSize: 18),
+                                        )
+                                      : ListView.builder(
+                                          itemCount: filteredData.length,
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemBuilder: (context, index) {
+                                            final dailyMap =
+                                                filteredData[index];
+                                            final positionList =
+                                                dailyMap['posisi']
+                                                        as List<dynamic>? ??
+                                                    [];
 
-                                                  // Formatting DateTime to the desired format
-                                                  String formattedDate = DateFormat(
-                                                          'HH:mm:ss dd-MM-yyyy')
-                                                      .format(parsedDate);
-                                                  return Text(
-                                                    'Last Update : ${formattedDate}',
-                                                    textAlign: TextAlign.center,
-                                                    style: getBlackTextStyle(
-                                                      fontSize: 14,
-                                                    ),
-                                                  );
-                                                }),
-                                                const SizedBox(
-                                                  height: 12,
+                                            return Card(
+                                              elevation: 2,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              color: green00968A,
+                                              child: Container(
+                                                width: double.infinity,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 24,
                                                 ),
-                                              ],
-                                            )
-                                          : Container(),
-                                    ],
-                                  );
-                                }
+                                                decoration: BoxDecoration(
+                                                  color: green00968A,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                child: ExpansionTile(
+                                                  tilePadding: EdgeInsets.zero,
+                                                  childrenPadding:
+                                                      EdgeInsets.zero,
+                                                  title: Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.task,
+                                                        color: white,
+                                                        size: 36,
+                                                      ),
+                                                      const SizedBox(width: 12),
+                                                      Expanded(
+                                                        child: Text(
+                                                          '${dailyMap['unit'] ?? ''}${((dailyMap['pit'] != 'Default') ? '\n${dailyMap['pit']}' : '')}',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontWeight: w700,
+                                                            fontSize: 18,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  trailing: const SizedBox(
+                                                    width: 90,
+                                                    child: Icon(
+                                                        Icons.arrow_drop_down),
+                                                  ),
+                                                  children: [
+                                                    const SizedBox(height: 12),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          'Name',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontSize: 18),
+                                                        ),
+                                                        SizedBox(
+                                                          width: 250,
+                                                          child: Text(
+                                                            dailyMap['user'] ??
+                                                                'No Name',
+                                                            textAlign:
+                                                                TextAlign.end,
+                                                            style:
+                                                                getWhiteTextStyle(
+                                                              fontWeight: w700,
+                                                              fontSize: 18,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          'Tanggal',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontSize: 18),
+                                                        ),
+                                                        Text(
+                                                          dailyMap['tanggal']
+                                                                  ?.toString()
+                                                                  .split('T')
+                                                                  .first ??
+                                                              '',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontWeight: w700,
+                                                            fontSize: 18,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          'Waktu',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontSize: 18),
+                                                        ),
+                                                        Text(
+                                                          dailyMap['tanggal'] !=
+                                                                  null
+                                                              ? dailyMap[
+                                                                      'tanggal']
+                                                                  .toString()
+                                                                  .split('T')[1]
+                                                                  .substring(
+                                                                      0, 5)
+                                                              : '',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontWeight: w700,
+                                                            fontSize: 18,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          (currentIdSite ==
+                                                                  bmbhauling
+                                                                      .idSite)
+                                                              ? 'KM Unit'
+                                                              : 'HM Unit',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontSize: 18),
+                                                        ),
+                                                        Text(
+                                                          dailyMap['hm'] ?? '',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontWeight: w700,
+                                                            fontSize: 18,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          'Pit',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontSize: 18),
+                                                        ),
+                                                        Text(
+                                                          dailyMap['pit'] ?? '',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontWeight: w700,
+                                                            fontSize: 18,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    const SizedBox(height: 12),
+                                                    ListView.builder(
+                                                      itemCount:
+                                                          positionList.length,
+                                                      shrinkWrap: true,
+                                                      physics:
+                                                          const NeverScrollableScrollPhysics(),
+                                                      itemBuilder:
+                                                          (context, posIndex) {
+                                                        final pl = positionList[
+                                                            posIndex];
+                                                        List<dynamic> luka = [];
 
-                                return Container();
-                              }),
-                          PaginateFirestore(
-                              query: selectedPit == 0
-                                  ? firestore
-                                      .collection('daily_pressure')
-                                      .where('tanggal',
-                                          isGreaterThanOrEqualTo:
-                                              DateTime(now.year, now.month, now.day)
-                                                  .toIso8601String())
-                                      .where('tanggal',
-                                          isLessThanOrEqualTo:
-                                              DateTime(now.year, now.month, now.day, 23, 59, 59)
-                                                  .toIso8601String())
-                                      .where('idSite', isEqualTo: currentIdSite)
-                                      .orderBy('tanggal', descending: true)
-                                  : firestore
-                                      .collection('daily_pressure')
-                                      .where('tanggal',
-                                          isGreaterThanOrEqualTo:
-                                              DateTime(now.year, now.month, now.day)
-                                                  .toIso8601String())
-                                      .where('tanggal',
-                                          isLessThanOrEqualTo:
-                                              DateTime(now.year, now.month, now.day, 23, 59, 59)
-                                                  .toIso8601String())
-                                      .where('idSite', isEqualTo: currentIdSite)
-                                      .where('pit', isEqualTo: pit[selectedPit])
-                                      .orderBy('tanggal', descending: true),
-                              itemBuilderType: PaginateBuilderType.listView,
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemsPerPage: 10,
-                              isLive: true,
-                              initialLoader: const Center(child: CircularProgressIndicator.adaptive()),
-                              bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
-                              itemBuilder: (context, snapshot, firebaseIndex) {
-                                final Map<String, dynamic> dailyMap =
-                                    snapshot[firebaseIndex].data()
-                                        as Map<String, dynamic>;
-                                final positionList =
-                                    dailyMap['posisi'] as List<dynamic>;
+                                                        if (pl['luka'] !=
+                                                                null &&
+                                                            pl['luka']
+                                                                is! String) {
+                                                          luka = pl['luka']
+                                                              as List<dynamic>;
+                                                        }
 
-                                if (selectedPit != 0) {
-                                  if (dailyMap['pit'] != pit[selectedPit]) {
-                                    return Container();
+                                                        return Column(
+                                                          children: [
+                                                            Row(
+                                                              mainAxisAlignment:
+                                                                  MainAxisAlignment
+                                                                      .spaceBetween,
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .center,
+                                                              children: [
+                                                                Text(
+                                                                  'Pos. ${pl['pos']}',
+                                                                  style:
+                                                                      getWhiteTextStyle(
+                                                                    fontSize:
+                                                                        18,
+                                                                  ),
+                                                                ),
+                                                                Column(
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .end,
+                                                                  children: [
+                                                                    Row(
+                                                                      children: [
+                                                                        Text(
+                                                                          '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
+                                                                          style:
+                                                                              getWhiteTextStyle(
+                                                                            fontWeight:
+                                                                                w700,
+                                                                            fontSize:
+                                                                                18,
+                                                                          ),
+                                                                        ),
+                                                                        const SizedBox(
+                                                                            width:
+                                                                                6),
+                                                                        (pl['temperatureStatus'] !=
+                                                                                null)
+                                                                            ? TemperatureStatusBadgeWidget(
+                                                                                status: pl['temperatureStatus'],
+                                                                              )
+                                                                            : Container(),
+                                                                      ],
+                                                                    ),
+                                                                    if (pl['adjusmentPressure'] != null &&
+                                                                        pl['adjusmentPressure'] !=
+                                                                            '0' &&
+                                                                        pl['adjusmentPressure'] !=
+                                                                            '')
+                                                                      Text(
+                                                                        '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
+                                                                        style:
+                                                                            getWhiteTextStyle(
+                                                                          fontWeight:
+                                                                              w700,
+                                                                          fontSize:
+                                                                              18,
+                                                                        ),
+                                                                      ),
+                                                                    if (luka
+                                                                        .isNotEmpty)
+                                                                      Text(
+                                                                        luka.join(
+                                                                            '\n'),
+                                                                        textAlign:
+                                                                            TextAlign.end,
+                                                                        style:
+                                                                            getWhiteTextStyle(
+                                                                          fontWeight:
+                                                                              w700,
+                                                                          fontSize:
+                                                                              18,
+                                                                        ),
+                                                                      ),
+                                                                    Text(
+                                                                      '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
+                                                                      style:
+                                                                          getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                        fontSize:
+                                                                            18,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                        height:
+                                                                            12),
+                                                                  ],
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            Divider(
+                                                              color: white,
+                                                              thickness: 1.5,
+                                                            ),
+                                                          ],
+                                                        );
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      );
+                    // return Column(
+                    //   children: [
+                    //     const SizedBox(
+                    //       height: 12,
+                    //     ),
+                    //     SelectPitButton(
+                    //         pit: pit,
+                    //         selectedPit: selectedPit,
+                    //         onSelectedPitChanged: (index) {
+                    //           setState(() {
+                    //             selectedPit = index;
+                    //           });
+                    //         }),
+                    //     const SizedBox(
+                    //       height: 12,
+                    //     ),
+                    //     StreamBuilder(
+                    //         stream: firestore
+                    //             .collection('daily_pressure')
+                    //             .where('tanggal',
+                    //                 isGreaterThanOrEqualTo:
+                    //                     DateTime(now.year, now.month, now.day)
+                    //                         .toIso8601String())
+                    //             .where('tanggal',
+                    //                 isLessThanOrEqualTo: DateTime(now.year,
+                    //                         now.month, now.day, 23, 59, 59)
+                    //                     .toIso8601String())
+                    //             .where('idSite', isEqualTo: currentIdSite)
+                    //             .snapshots(),
+                    //         builder: (context, snapshot) {
+                    //           if (snapshot.connectionState ==
+                    //               ConnectionState.waiting) {
+                    //             return CircularProgressIndicator.adaptive();
+                    //           }
+                    //           if (snapshot.connectionState ==
+                    //               ConnectionState.active) {
+                    //             final allData = snapshot.data?.docs
+                    //                 .map((doc) => DailyPress.fromFirestore(
+                    //                     doc.data() as Map<String, dynamic>))
+                    //                 .toList();
+
+                    //             final distinctDaily =
+                    //                 Set<DailyPress>.from(allData ?? [])
+                    //                     .toList();
+
+                    //             final tmpDailyData =
+                    //                 snapshot.data?.docs ?? [];
+
+                    //             final dailyData = distinctDaily.where((doc) {
+                    //               // pilih all pit
+                    //               if (pit.isNotEmpty) {
+                    //                 if (pit[selectedPit] == 'All') {
+                    //                   return doc.idSite == currentIdSite;
+                    //                 }
+
+                    //                 // ada pit
+                    //                 if (doc.pit != 'Default') {
+                    //                   return doc.idSite == currentIdSite &&
+                    //                       doc.pit == pit[selectedPit];
+                    //                 }
+                    //               }
+
+                    //               // tidak ada pit
+                    //               return doc.idSite == currentIdSite;
+                    //             }).toList();
+
+                    //             // untuk data export excel
+                    //             filteredItemTask.clear();
+                    //             filteredItemTask.clear();
+
+                    //             dailyData.forEach((item) {
+                    //               Map<String, dynamic> cast =
+                    //                   item.toFirestore();
+                    //               filteredItemTask.add(cast);
+                    //             });
+
+                    //             return Column(
+                    //               children: [
+                    //                 Text(
+                    //                   'Total Unit : ${distinctDaily.length ?? 0}',
+                    //                   style: getBlackTextStyle(
+                    //                     fontSize: 20,
+                    //                   ),
+                    //                 ),
+                    //                 const SizedBox(
+                    //                   height: 12,
+                    //                 ),
+                    //                 (snapshot.data?.size != 0)
+                    //                     ? Column(
+                    //                         children: [
+                    //                           Builder(builder: (context) {
+                    //                             // Parsing string to DateTime object
+                    //                             DateTime parsedDate =
+                    //                                 DateTime.parse(snapshot
+                    //                                     .data
+                    //                                     ?.docs[snapshot
+                    //                                             .data!.size -
+                    //                                         1]
+                    //                                     .data()['tanggal']);
+
+                    //                             // Formatting DateTime to the desired format
+                    //                             String formattedDate = DateFormat(
+                    //                                     'HH:mm:ss dd-MM-yyyy')
+                    //                                 .format(parsedDate);
+                    //                             return Text(
+                    //                               'Last Update : ${formattedDate}',
+                    //                               textAlign: TextAlign.center,
+                    //                               style: getBlackTextStyle(
+                    //                                 fontSize: 14,
+                    //                               ),
+                    //                             );
+                    //                           }),
+                    //                           const SizedBox(
+                    //                             height: 12,
+                    //                           ),
+                    //                         ],
+                    //                       )
+                    //                     : Container(),
+                    //               ],
+                    //             );
+                    //           }
+
+                    //           return Container();
+                    //         }),
+                    //     PaginateFirestore(
+                    //         query: selectedPit == 0
+                    //             ? firestore
+                    //                 .collection('daily_pressure')
+                    //                 .where('tanggal',
+                    //                     isGreaterThanOrEqualTo:
+                    //                         DateTime(now.year, now.month, now.day)
+                    //                             .toIso8601String())
+                    //                 .where('tanggal',
+                    //                     isLessThanOrEqualTo:
+                    //                         DateTime(now.year, now.month, now.day, 23, 59, 59)
+                    //                             .toIso8601String())
+                    //                 .where('idSite', isEqualTo: currentIdSite)
+                    //                 .orderBy('tanggal', descending: true)
+                    //             : firestore
+                    //                 .collection('daily_pressure')
+                    //                 .where('tanggal',
+                    //                     isGreaterThanOrEqualTo:
+                    //                         DateTime(now.year, now.month, now.day)
+                    //                             .toIso8601String())
+                    //                 .where('tanggal',
+                    //                     isLessThanOrEqualTo:
+                    //                         DateTime(now.year, now.month, now.day, 23, 59, 59)
+                    //                             .toIso8601String())
+                    //                 .where('idSite', isEqualTo: currentIdSite)
+                    //                 .where('pit', isEqualTo: pit[selectedPit])
+                    //                 .orderBy('tanggal', descending: true),
+                    //         itemBuilderType: PaginateBuilderType.listView,
+                    //         shrinkWrap: true,
+                    //         physics: NeverScrollableScrollPhysics(),
+                    //         itemsPerPage: 10,
+                    //         // isLive: true,
+                    //         isLive: false,
+                    //         initialLoader: const Center(child: CircularProgressIndicator.adaptive()),
+                    //         bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
+                    //         itemBuilder: (context, snapshot, firebaseIndex) {
+                    //           final Map<String, dynamic> dailyMap =
+                    //               snapshot[firebaseIndex].data()
+                    //                   as Map<String, dynamic>;
+                    //           final positionList =
+                    //               dailyMap['posisi'] as List<dynamic>;
+
+                    //           if (selectedPit != 0) {
+                    //             if (dailyMap['pit'] != pit[selectedPit]) {
+                    //               return Container();
+                    //             }
+                    //           }
+
+                    //           if (searchQuery.isNotEmpty &&
+                    //               !dailyMap['unit']!
+                    //                   .toLowerCase()
+                    //                   .contains(searchQuery)) {
+                    //             return Container();
+                    //           }
+
+                    //           return Card(
+                    //               elevation: 2,
+                    //               shape: RoundedRectangleBorder(
+                    //                 borderRadius: BorderRadius.circular(12),
+                    //               ),
+                    //               color: green00968A,
+                    //               child: Container(
+                    //                 width: double.infinity,
+                    //                 padding: EdgeInsets.symmetric(
+                    //                     horizontal: 12, vertical: 24),
+                    //                 decoration: BoxDecoration(
+                    //                   color: green00968A,
+                    //                   borderRadius: BorderRadius.circular(12),
+                    //                 ),
+                    //                 child: ExpansionTile(
+                    //                   tilePadding: EdgeInsets.zero,
+                    //                   childrenPadding: EdgeInsets.all(0),
+                    //                   title: Row(
+                    //                     children: [
+                    //                       Icon(
+                    //                         Icons.task,
+                    //                         color: white,
+                    //                         size: 36,
+                    //                       ),
+                    //                       const SizedBox(
+                    //                         width: 12,
+                    //                       ),
+                    //                       Text(
+                    //                         dailyMap['unit'] +
+                    //                             '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
+                    //                         style: getWhiteTextStyle(
+                    //                             fontWeight: w700,
+                    //                             fontSize: 18),
+                    //                       )
+                    //                     ],
+                    //                   ),
+                    //                   trailing: SizedBox(
+                    //                     width: 90,
+                    //                     child: Icon(Icons.arrow_drop_down),
+                    //                   ),
+                    //                   children: [
+                    //                     const SizedBox(
+                    //                       height: 12,
+                    //                     ),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'Name',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Container(
+                    //                           width: 250,
+                    //                           child: Text(
+                    //                             dailyMap['user'] ?? 'No Name',
+                    //                             textAlign: TextAlign.end,
+                    //                             style: getWhiteTextStyle(
+                    //                                 fontWeight: w700,
+                    //                                 fontSize: 18),
+                    //                           ),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(
+                    //                       height: 12,
+                    //                     ),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'Tanggal',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Text(
+                    //                           dailyMap['tanggal']
+                    //                                   .split('T')[0] ??
+                    //                               '',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontWeight: w700,
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(
+                    //                       height: 12,
+                    //                     ),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'Waktu',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Text(
+                    //                           dailyMap['tanggal']
+                    //                               .split('T')[1]
+                    //                               .substring(0, 5),
+                    //                           style: getWhiteTextStyle(
+                    //                               fontWeight: w700,
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(
+                    //                       height: 12,
+                    //                     ),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           (currentIdSite ==
+                    //                                   bmbhauling.idSite)
+                    //                               ? 'KM Unit'
+                    //                               : 'HM Unit',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Text(
+                    //                           dailyMap['hm'] ?? '',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontWeight: w700,
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(
+                    //                       height: 12,
+                    //                     ),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'Pit',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Text(
+                    //                           dailyMap['pit'],
+                    //                           style: getWhiteTextStyle(
+                    //                               fontWeight: w700,
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(
+                    //                       height: 12,
+                    //                     ),
+                    //                     Column(
+                    //                       children: positionList.map((pl) {
+                    //                         final plIndex =
+                    //                             positionList.indexOf(pl);
+                    //                         List<dynamic> luka = [];
+
+                    //                         if (pl['luka'] != null &&
+                    //                             pl['luka'] is! String) {
+                    //                           luka =
+                    //                               pl['luka'] as List<dynamic>;
+                    //                         }
+
+                    //                         return Column(
+                    //                           children: [
+                    //                             Row(
+                    //                               mainAxisAlignment:
+                    //                                   MainAxisAlignment
+                    //                                       .spaceBetween,
+                    //                               crossAxisAlignment:
+                    //                                   CrossAxisAlignment
+                    //                                       .center,
+                    //                               children: [
+                    //                                 Text(
+                    //                                   'Pos. ${pl['pos']}',
+                    //                                   style:
+                    //                                       getWhiteTextStyle(
+                    //                                           fontSize: 18),
+                    //                                 ),
+                    //                                 Column(
+                    //                                   crossAxisAlignment:
+                    //                                       CrossAxisAlignment
+                    //                                           .end,
+                    //                                   mainAxisAlignment:
+                    //                                       MainAxisAlignment
+                    //                                           .center,
+                    //                                   children: [
+                    //                                     Column(
+                    //                                       crossAxisAlignment:
+                    //                                           CrossAxisAlignment
+                    //                                               .end,
+                    //                                       children: [
+                    //                                         Row(
+                    //                                           children: [
+                    //                                             Text(
+                    //                                               '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
+                    //                                               style: getWhiteTextStyle(
+                    //                                                   fontWeight:
+                    //                                                       w700,
+                    //                                                   fontSize:
+                    //                                                       18),
+                    //                                             ),
+                    //                                             const SizedBox(
+                    //                                               width: 6,
+                    //                                             ),
+                    //                                             (pl['temperatureStatus'] !=
+                    //                                                     null)
+                    //                                                 ? TemperatureStatusBadgeWidget(
+                    //                                                     status:
+                    //                                                         pl['temperatureStatus'])
+                    //                                                 : Container()
+                    //                                             // Text(
+                    //                                             //   // '${(pl['temperatureStatus'] == '' || pl['temperatureStatus'] == null) ? 'HOT' : pl['temperatureStatus']}',
+                    //                                             //   '${(pl['temperatureStatus'])}',
+                    //                                             //   style: getWhiteTextStyle(
+                    //                                             //       fontWeight:
+                    //                                             //           w700,
+                    //                                             //       fontSize:
+                    //                                             //           18),
+                    //                                             // ),
+                    //                                           ],
+                    //                                         ),
+                    //                                         (pl['adjusmentPressure'] != null &&
+                    //                                                 pl['adjusmentPressure'] !=
+                    //                                                     '0' &&
+                    //                                                 pl['adjusmentPressure'] !=
+                    //                                                     '')
+                    //                                             ? Text(
+                    //                                                 '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
+                    //                                                 style: getWhiteTextStyle(
+                    //                                                     fontWeight:
+                    //                                                         w700,
+                    //                                                     fontSize:
+                    //                                                         18),
+                    //                                               )
+                    //                                             : Container(),
+                    //                                       ],
+                    //                                     ),
+                    //                                     (luka.isEmpty ||
+                    //                                             luka == null)
+                    //                                         ? Container()
+                    //                                         : Text(
+                    //                                             pl['luka']
+                    //                                                 .join(
+                    //                                                     '\n'),
+                    //                                             textAlign:
+                    //                                                 TextAlign
+                    //                                                     .end,
+                    //                                             style: getWhiteTextStyle(
+                    //                                                 fontWeight:
+                    //                                                     w700,
+                    //                                                 fontSize:
+                    //                                                     18),
+                    //                                           ),
+                    //                                     Text(
+                    //                                         '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
+                    //                                         style:
+                    //                                             getWhiteTextStyle(
+                    //                                                 fontWeight:
+                    //                                                     w700,
+                    //                                                 fontSize:
+                    //                                                     18)),
+                    //                                     // Jangan lupa tambahkan IDSite 33
+                    //                                     if (pl['tireAccessories'] !=
+                    //                                             null &&
+                    //                                         pl['tireAccessories']
+                    //                                             .isNotEmpty &&
+                    //                                         currentIdSite ==
+                    //                                             '33')
+                    //                                       Column(
+                    //                                         crossAxisAlignment:
+                    //                                             CrossAxisAlignment
+                    //                                                 .end,
+                    //                                         children: [
+                    //                                           Text(
+                    //                                               'Tire Accessories',
+                    //                                               style: getWhiteTextStyle(
+                    //                                                   fontWeight:
+                    //                                                       w700,
+                    //                                                   fontSize:
+                    //                                                       14)),
+                    //                                           const SizedBox(
+                    //                                             height: 6,
+                    //                                           ),
+                    //                                           Column(
+                    //                                             crossAxisAlignment:
+                    //                                                 CrossAxisAlignment
+                    //                                                     .end,
+                    //                                             children: pl[
+                    //                                                     'tireAccessories']
+                    //                                                 .map<Widget>(
+                    //                                                     (acc) {
+                    //                                               return Column(
+                    //                                                 crossAxisAlignment:
+                    //                                                     CrossAxisAlignment
+                    //                                                         .end,
+                    //                                                 children: [
+                    //                                                   Row(
+                    //                                                     children: [
+                    //                                                       Text(acc['name'] + ' (' + acc['condition'] + '${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})',
+                    //                                                           textAlign: TextAlign.right,
+                    //                                                           style: getWhiteTextStyle(fontWeight: w500, fontSize: 14)),
+                    //                                                     ],
+                    //                                                   ),
+                    //                                                   const SizedBox(
+                    //                                                     height:
+                    //                                                         6,
+                    //                                                   ),
+                    //                                                   if (acc['image'].isNotEmpty &&
+                    //                                                       acc['image'] !=
+                    //                                                           'image.png' &&
+                    //                                                       acc['image'] !=
+                    //                                                           '')
+                    //                                                     InkWell(
+                    //                                                       onTap:
+                    //                                                           () async {
+                    //                                                         await showDialog(
+                    //                                                           context: context,
+                    //                                                           barrierDismissible: true,
+                    //                                                           builder: (_) {
+                    //                                                             return Dialog(
+                    //                                                               backgroundColor: Colors.transparent,
+                    //                                                               elevation: 0,
+                    //                                                               child: Center(
+                    //                                                                 child: Column(
+                    //                                                                   mainAxisSize: MainAxisSize.min,
+                    //                                                                   children: [
+                    //                                                                     // === GAMBAR + TOMBOL CLOSE ===
+                    //                                                                     Stack(
+                    //                                                                       children: [
+                    //                                                                         Container(
+                    //                                                                           width: MediaQuery.of(context).size.width * 0.6,
+                    //                                                                           height: MediaQuery.of(context).size.height * 0.6,
+                    //                                                                           decoration: BoxDecoration(
+                    //                                                                             borderRadius: BorderRadius.circular(12),
+                    //                                                                           ),
+                    //                                                                           clipBehavior: Clip.antiAlias,
+                    //                                                                           child: Image.network(
+                    //                                                                             acc['image'],
+                    //                                                                             fit: BoxFit.contain,
+                    //                                                                           ),
+                    //                                                                         ),
+                    //                                                                         Positioned(
+                    //                                                                           right: 8,
+                    //                                                                           top: 8,
+                    //                                                                           child: InkWell(
+                    //                                                                             onTap: () => Navigator.of(context).pop(),
+                    //                                                                             borderRadius: BorderRadius.circular(20),
+                    //                                                                             child: Container(
+                    //                                                                               padding: const EdgeInsets.all(6),
+                    //                                                                               decoration: BoxDecoration(
+                    //                                                                                 color: Colors.black45,
+                    //                                                                                 shape: BoxShape.circle,
+                    //                                                                               ),
+                    //                                                                               child: const Icon(
+                    //                                                                                 LucideIcons.x,
+                    //                                                                                 color: Colors.white,
+                    //                                                                                 size: 20,
+                    //                                                                               ),
+                    //                                                                             ),
+                    //                                                                           ),
+                    //                                                                         ),
+                    //                                                                       ],
+                    //                                                                     ),
+
+                    //                                                                     const SizedBox(height: 12),
+
+                    //                                                                     // === TEKS KETERANGAN ===
+                    //                                                                     Container(
+                    //                                                                       padding: const EdgeInsets.all(8),
+                    //                                                                       decoration: BoxDecoration(
+                    //                                                                         color: Colors.white,
+                    //                                                                         borderRadius: BorderRadius.circular(16),
+                    //                                                                       ),
+                    //                                                                       child: Text(
+                    //                                                                         '#${dailyMap['unit']} Pos. ${pl['pos']} | ${acc['name']} ${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''}',
+                    //                                                                         style: getBlackTextStyle(
+                    //                                                                           fontWeight: w700,
+                    //                                                                         ),
+                    //                                                                         textAlign: TextAlign.center,
+                    //                                                                       ),
+                    //                                                                     ),
+                    //                                                                   ],
+                    //                                                                 ),
+                    //                                                               ),
+                    //                                                             );
+                    //                                                           },
+                    //                                                         );
+                    //                                                       },
+                    //                                                       child:
+                    //                                                           SizedBox(
+                    //                                                         width: 150,
+                    //                                                         height: 100,
+                    //                                                         child: Image.network(
+                    //                                                           acc['image'],
+                    //                                                           fit: BoxFit.cover,
+                    //                                                         ),
+                    //                                                       ),
+                    //                                                     )
+                    //                                                 ],
+                    //                                               );
+                    //                                             }).toList(),
+                    //                                           ),
+                    //                                         ],
+                    //                                       ),
+                    //                                     const SizedBox(
+                    //                                       height: 12,
+                    //                                     ),
+                    //                                   ],
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                             Divider(
+                    //                               color: white,
+                    //                               thickness: 1.5,
+                    //                             ),
+                    //                           ],
+                    //                         );
+                    //                       }).toList(),
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //               ));
+
+                    //           ;
+                    //         }),
+                    //   ],
+                    // );
+
+                    // Unit Low Pressure
+                    case 1:
+                      checkedFuture ??= getCheckedTodayFuture();
+
+                      final reccPressMap = <String, int>{};
+
+                      for (final item in state.reccPress) {
+                        item.forEach((key, value) {
+                          reccPressMap[key.toString()] =
+                              int.tryParse(value.toString()) ?? 0;
+                        });
+                      }
+
+                      return Column(
+                        children: [
+                          const SizedBox(height: 12),
+                          SelectPitButton(
+                            pit: pit,
+                            selectedPit: selectedPit,
+                            onSelectedPitChanged: (index) {
+                              setState(() {
+                                selectedPit = index;
+                                checkedFuture = getCheckedTodayFuture();
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          if (homeState.selectedSite?.idCompany == '2')
+                            Text(
+                              'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
+                              style: getBlackTextStyle(fontSize: 14),
+                            )
+                          else
+                            Container(),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: refreshCheckedData,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueGrey,
+                              ),
+                              child: Text(
+                                'Refresh Low Pressure Data',
+                                style: getWhiteTextStyle(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                            future: checkedFuture,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator.adaptive(),
+                                );
+                              }
+
+                              if (snapshot.hasError) {
+                                return Text(
+                                  'Error load low pressure data: ${snapshot.error}',
+                                  style: getBlackTextStyle(fontSize: 14),
+                                );
+                              }
+
+                              final docs = snapshot.data?.docs ?? [];
+
+                              final allData = docs.map((doc) {
+                                final data = doc.data();
+                                return DailyPress.fromFirestore(data);
+                              }).toList();
+
+                              allData.sort((a, b) {
+                                return b.tanggal.compareTo(a.tanggal);
+                              });
+
+                              final keyword = searchQuery.toLowerCase();
+
+                              final lowPressureData = allData.where((data) {
+                                if (keyword.isNotEmpty) {
+                                  final unit = data.unit.toLowerCase();
+
+                                  if (!unit.contains(keyword)) {
+                                    return false;
                                   }
                                 }
 
-                                if (searchQuery.isNotEmpty &&
-                                    !dailyMap['unit']!
-                                        .toLowerCase()
-                                        .contains(searchQuery)) {
-                                  return Container();
-                                }
+                                return data.posisi.any((position) {
+                                  final tireSize = position.size;
 
-                                return Card(
+                                  if (tireSize == null || tireSize.isEmpty) {
+                                    return false;
+                                  }
+
+                                  final pressure =
+                                      int.tryParse(position.pressure ?? '0') ??
+                                          0;
+
+                                  if (pressure == 0) {
+                                    return false;
+                                  }
+
+                                  final adjustedPressure =
+                                      position.adjusmentPressure;
+
+                                  if (adjustedPressure.isNotEmpty &&
+                                      adjustedPressure != '0') {
+                                    return false;
+                                  }
+
+                                  final recommendedPressure =
+                                      reccPressMap[tireSize] ?? 0;
+
+                                  if (recommendedPressure == 0) {
+                                    return false;
+                                  }
+
+                                  return pressure < recommendedPressure;
+                                });
+                              }).toList();
+
+                              if (lowPressureData.isEmpty) {
+                                return Text(
+                                  'There is no low pressure data!',
+                                  style: getBlackTextStyle(),
+                                );
+                              }
+
+                              return ListView.builder(
+                                itemCount: lowPressureData.length,
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemBuilder: (context, index) {
+                                  final data = lowPressureData[index];
+
+                                  return Card(
                                     elevation: 2,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
-                                    color: green00968A,
                                     child: Container(
                                       width: double.infinity,
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 24),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 24,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: green00968A,
+                                        color: Colors.red,
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: ExpansionTile(
                                         tilePadding: EdgeInsets.zero,
-                                        childrenPadding: EdgeInsets.all(0),
+                                        childrenPadding: EdgeInsets.zero,
                                         title: Row(
                                           children: [
                                             Icon(
@@ -691,26 +1735,38 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                               color: white,
                                               size: 36,
                                             ),
-                                            const SizedBox(
-                                              width: 12,
+                                            const SizedBox(width: 12),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    data.unit +
+                                                        '${((data.pit != 'Default') ? '\n${data.pit}' : '')}',
+                                                    style: getWhiteTextStyle(
+                                                      fontWeight: w700,
+                                                      fontSize: 18,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    'LOW PRESSURE!',
+                                                    style: getWhiteTextStyle(
+                                                      fontWeight: w700,
+                                                      fontSize: 18,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
-                                            Text(
-                                              dailyMap['unit'] +
-                                                  '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
-                                              style: getWhiteTextStyle(
-                                                  fontWeight: w700,
-                                                  fontSize: 18),
-                                            )
                                           ],
                                         ),
-                                        trailing: SizedBox(
+                                        trailing: const SizedBox(
                                           width: 90,
                                           child: Icon(Icons.arrow_drop_down),
                                         ),
                                         children: [
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
+                                          const SizedBox(height: 12),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
@@ -720,21 +1776,22 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                 style: getWhiteTextStyle(
                                                     fontSize: 18),
                                               ),
-                                              Container(
+                                              SizedBox(
                                                 width: 250,
                                                 child: Text(
-                                                  dailyMap['user'] ?? 'No Name',
+                                                  data.user == ''
+                                                      ? 'No Name'
+                                                      : data.user,
                                                   textAlign: TextAlign.end,
                                                   style: getWhiteTextStyle(
-                                                      fontWeight: w700,
-                                                      fontSize: 18),
+                                                    fontWeight: w700,
+                                                    fontSize: 18,
+                                                  ),
                                                 ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
+                                          const SizedBox(height: 12),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
@@ -745,18 +1802,15 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                     fontSize: 18),
                                               ),
                                               Text(
-                                                dailyMap['tanggal']
-                                                        .split('T')[0] ??
-                                                    '',
+                                                data.tanggal.split('T')[0],
                                                 style: getWhiteTextStyle(
-                                                    fontWeight: w700,
-                                                    fontSize: 18),
+                                                  fontWeight: w700,
+                                                  fontSize: 18,
+                                                ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
+                                          const SizedBox(height: 12),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
@@ -767,41 +1821,36 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                     fontSize: 18),
                                               ),
                                               Text(
-                                                dailyMap['tanggal']
+                                                data.tanggal
                                                     .split('T')[1]
                                                     .substring(0, 5),
                                                 style: getWhiteTextStyle(
-                                                    fontWeight: w700,
-                                                    fontSize: 18),
+                                                  fontWeight: w700,
+                                                  fontSize: 18,
+                                                ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
+                                          const SizedBox(height: 12),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
-                                                (currentIdSite ==
-                                                        bmbhauling.idSite)
-                                                    ? 'KM Unit'
-                                                    : 'HM Unit',
+                                                'HM Unit',
                                                 style: getWhiteTextStyle(
                                                     fontSize: 18),
                                               ),
                                               Text(
-                                                dailyMap['hm'] ?? '',
+                                                data.hm,
                                                 style: getWhiteTextStyle(
-                                                    fontWeight: w700,
-                                                    fontSize: 18),
+                                                  fontWeight: w700,
+                                                  fontSize: 18,
+                                                ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
+                                          const SizedBox(height: 12),
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
@@ -812,27 +1861,51 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                     fontSize: 18),
                                               ),
                                               Text(
-                                                dailyMap['pit'],
+                                                data.pit,
                                                 style: getWhiteTextStyle(
-                                                    fontWeight: w700,
-                                                    fontSize: 18),
+                                                  fontWeight: w700,
+                                                  fontSize: 18,
+                                                ),
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          Column(
-                                            children: positionList.map((pl) {
-                                              final plIndex =
-                                                  positionList.indexOf(pl);
+                                          const SizedBox(height: 12),
+                                          ListView.builder(
+                                            itemCount: data.posisi.length,
+                                            shrinkWrap: true,
+                                            physics:
+                                                const NeverScrollableScrollPhysics(),
+                                            itemBuilder: (context, posIndex) {
+                                              final pl = data.posisi[posIndex];
+
                                               List<dynamic> luka = [];
 
-                                              if (pl['luka'] != null &&
-                                                  pl['luka'] is! String) {
-                                                luka =
-                                                    pl['luka'] as List<dynamic>;
+                                              if (pl.luka != null &&
+                                                  pl.luka is! String) {
+                                                luka = pl.luka as List<dynamic>;
                                               }
+
+                                              final tireSize = pl.size;
+                                              final pressure = int.tryParse(
+                                                      pl.pressure ?? '0') ??
+                                                  0;
+                                              final recommendedPressure =
+                                                  reccPressMap[tireSize] ?? 0;
+
+                                              final adjustedPressure =
+                                                  pl.adjusmentPressure;
+
+                                              final isThisPositionLow =
+                                                  tireSize != null &&
+                                                      tireSize.isNotEmpty &&
+                                                      pressure > 0 &&
+                                                      recommendedPressure > 0 &&
+                                                      pressure <
+                                                          recommendedPressure &&
+                                                      (adjustedPressure
+                                                              .isEmpty ||
+                                                          adjustedPressure ==
+                                                              '0');
 
                                               return Column(
                                                 children: [
@@ -845,7 +1918,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                             .center,
                                                     children: [
                                                       Text(
-                                                        'Pos. ${pl['pos']}',
+                                                        'Pos. ${pl.pos}',
                                                         style:
                                                             getWhiteTextStyle(
                                                                 fontSize: 18),
@@ -854,231 +1927,159 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                         crossAxisAlignment:
                                                             CrossAxisAlignment
                                                                 .end,
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
                                                         children: [
-                                                          Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .end,
-                                                            children: [
-                                                              Row(
-                                                                children: [
-                                                                  Text(
-                                                                    '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
-                                                                    style: getWhiteTextStyle(
-                                                                        fontWeight:
-                                                                            w700,
-                                                                        fontSize:
-                                                                            18),
-                                                                  ),
-                                                                  const SizedBox(
-                                                                    width: 6,
-                                                                  ),
-                                                                  (pl['temperatureStatus'] !=
-                                                                          null)
-                                                                      ? TemperatureStatusBadgeWidget(
-                                                                          status:
-                                                                              pl['temperatureStatus'])
-                                                                      : Container()
-                                                                  // Text(
-                                                                  //   // '${(pl['temperatureStatus'] == '' || pl['temperatureStatus'] == null) ? 'HOT' : pl['temperatureStatus']}',
-                                                                  //   '${(pl['temperatureStatus'])}',
-                                                                  //   style: getWhiteTextStyle(
-                                                                  //       fontWeight:
-                                                                  //           w700,
-                                                                  //       fontSize:
-                                                                  //           18),
-                                                                  // ),
-                                                                ],
-                                                              ),
-                                                              (pl['adjusmentPressure'] != null &&
-                                                                      pl['adjusmentPressure'] !=
-                                                                          '0' &&
-                                                                      pl['adjusmentPressure'] !=
-                                                                          '')
-                                                                  ? Text(
-                                                                      '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
-                                                                      style: getWhiteTextStyle(
-                                                                          fontWeight:
-                                                                              w700,
-                                                                          fontSize:
-                                                                              18),
-                                                                    )
-                                                                  : Container(),
-                                                            ],
-                                                          ),
-                                                          (luka.isEmpty ||
-                                                                  luka == null)
-                                                              ? Container()
-                                                              : Text(
-                                                                  pl['luka']
-                                                                      .join(
-                                                                          '\n'),
-                                                                  textAlign:
-                                                                      TextAlign
-                                                                          .end,
-                                                                  style: getWhiteTextStyle(
-                                                                      fontWeight:
-                                                                          w700,
-                                                                      fontSize:
-                                                                          18),
-                                                                ),
                                                           Text(
-                                                              '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
+                                                            '${(pl.pressure == '' || pl.pressure == null) ? 0 : pl.pressure} Psi',
+                                                            style:
+                                                                getWhiteTextStyle(
+                                                              fontWeight: w700,
+                                                              fontSize: 18,
+                                                            ),
+                                                          ),
+                                                          if (isThisPositionLow)
+                                                            Text(
+                                                              'Recc: $recommendedPressure Psi',
                                                               style:
                                                                   getWhiteTextStyle(
-                                                                      fontWeight:
-                                                                          w700,
-                                                                      fontSize:
-                                                                          18)),
-                                                          // Jangan lupa tambahkan IDSite 33
-                                                          if (pl['tireAccessories'] !=
-                                                                  null &&
-                                                              pl['tireAccessories']
-                                                                  .isNotEmpty &&
-                                                              currentIdSite ==
-                                                                  '33')
-                                                            Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .end,
-                                                              children: [
-                                                                Text(
-                                                                    'Tire Accessories',
-                                                                    style: getWhiteTextStyle(
-                                                                        fontWeight:
-                                                                            w700,
-                                                                        fontSize:
-                                                                            14)),
-                                                                const SizedBox(
-                                                                  height: 6,
-                                                                ),
-                                                                Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .end,
-                                                                  children: pl[
-                                                                          'tireAccessories']
-                                                                      .map<Widget>(
-                                                                          (acc) {
-                                                                    return Column(
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment
-                                                                              .end,
-                                                                      children: [
-                                                                        Row(
-                                                                          children: [
-                                                                            Text(acc['name'] + ' (' + acc['condition'] + '${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})',
-                                                                                textAlign: TextAlign.right,
-                                                                                style: getWhiteTextStyle(fontWeight: w500, fontSize: 14)),
-                                                                          ],
-                                                                        ),
-                                                                        const SizedBox(
-                                                                          height:
-                                                                              6,
-                                                                        ),
-                                                                        if (acc['image'].isNotEmpty &&
-                                                                            acc['image'] !=
-                                                                                'image.png' &&
-                                                                            acc['image'] !=
-                                                                                '')
-                                                                          InkWell(
-                                                                            onTap:
-                                                                                () async {
-                                                                              await showDialog(
-                                                                                context: context,
-                                                                                barrierDismissible: true,
-                                                                                builder: (_) {
-                                                                                  return Dialog(
-                                                                                    backgroundColor: Colors.transparent,
-                                                                                    elevation: 0,
-                                                                                    child: Center(
-                                                                                      child: Column(
-                                                                                        mainAxisSize: MainAxisSize.min,
-                                                                                        children: [
-                                                                                          // === GAMBAR + TOMBOL CLOSE ===
-                                                                                          Stack(
-                                                                                            children: [
-                                                                                              Container(
-                                                                                                width: MediaQuery.of(context).size.width * 0.6,
-                                                                                                height: MediaQuery.of(context).size.height * 0.6,
-                                                                                                decoration: BoxDecoration(
-                                                                                                  borderRadius: BorderRadius.circular(12),
-                                                                                                ),
-                                                                                                clipBehavior: Clip.antiAlias,
-                                                                                                child: Image.network(
-                                                                                                  acc['image'],
-                                                                                                  fit: BoxFit.contain,
-                                                                                                ),
-                                                                                              ),
-                                                                                              Positioned(
-                                                                                                right: 8,
-                                                                                                top: 8,
-                                                                                                child: InkWell(
-                                                                                                  onTap: () => Navigator.of(context).pop(),
-                                                                                                  borderRadius: BorderRadius.circular(20),
-                                                                                                  child: Container(
-                                                                                                    padding: const EdgeInsets.all(6),
-                                                                                                    decoration: BoxDecoration(
-                                                                                                      color: Colors.black45,
-                                                                                                      shape: BoxShape.circle,
-                                                                                                    ),
-                                                                                                    child: const Icon(
-                                                                                                      LucideIcons.x,
-                                                                                                      color: Colors.white,
-                                                                                                      size: 20,
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ),
-                                                                                            ],
-                                                                                          ),
-
-                                                                                          const SizedBox(height: 12),
-
-                                                                                          // === TEKS KETERANGAN ===
-                                                                                          Container(
-                                                                                            padding: const EdgeInsets.all(8),
-                                                                                            decoration: BoxDecoration(
-                                                                                              color: Colors.white,
-                                                                                              borderRadius: BorderRadius.circular(16),
-                                                                                            ),
-                                                                                            child: Text(
-                                                                                              '#${dailyMap['unit']} Pos. ${pl['pos']} | ${acc['name']} ${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''}',
-                                                                                              style: getBlackTextStyle(
-                                                                                                fontWeight: w700,
-                                                                                              ),
-                                                                                              textAlign: TextAlign.center,
-                                                                                            ),
-                                                                                          ),
-                                                                                        ],
-                                                                                      ),
-                                                                                    ),
-                                                                                  );
-                                                                                },
-                                                                              );
-                                                                            },
-                                                                            child:
-                                                                                SizedBox(
-                                                                              width: 150,
-                                                                              height: 100,
-                                                                              child: Image.network(
-                                                                                acc['image'],
-                                                                                fit: BoxFit.cover,
-                                                                              ),
-                                                                            ),
-                                                                          )
-                                                                      ],
-                                                                    );
-                                                                  }).toList(),
-                                                                ),
-                                                              ],
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 14,
+                                                              ),
                                                             ),
-                                                          const SizedBox(
-                                                            height: 12,
+                                                          if (isThisPositionLow)
+                                                            Container(
+                                                              width: 120,
+                                                              height: 60,
+                                                              margin:
+                                                                  const EdgeInsets
+                                                                      .only(
+                                                                top: 12,
+                                                                bottom: 12,
+                                                              ),
+                                                              child:
+                                                                  ButtonWidget(
+                                                                name: Text(
+                                                                  'Adjust',
+                                                                  style:
+                                                                      getWhiteTextStyle(),
+                                                                ),
+                                                                color:
+                                                                    green00968A,
+                                                                function: () {
+                                                                  List<Position>
+                                                                      position =
+                                                                      [];
+
+                                                                  for (int i =
+                                                                          0;
+                                                                      i <
+                                                                          data.posisi
+                                                                              .length;
+                                                                      i++) {
+                                                                    final p =
+                                                                        data.posisi[
+                                                                            i];
+
+                                                                    position
+                                                                        .add(
+                                                                      Position(
+                                                                        pos: p
+                                                                            .pos,
+                                                                        pressure:
+                                                                            p.pressure,
+                                                                        temperatureStatus:
+                                                                            p.temperatureStatus,
+                                                                        rating:
+                                                                            p.rating,
+                                                                        adjusmentPressure:
+                                                                            p.adjusmentPressure,
+                                                                        adjustmentTemperatureStatus:
+                                                                            p.adjustmentTemperatureStatus,
+                                                                        luka: p
+                                                                            .luka,
+                                                                        image: p
+                                                                            .image,
+                                                                        size: p
+                                                                            .size,
+                                                                        idInventory:
+                                                                            p.idInventory,
+                                                                        idUnit:
+                                                                            p.idUnit,
+                                                                        idDaily:
+                                                                            p.idDaily,
+                                                                        kondisi:
+                                                                            p.kondisi,
+                                                                      ),
+                                                                    );
+                                                                  }
+
+                                                                  final dataUnit =
+                                                                      {
+                                                                    'unitNumber':
+                                                                        data.unit,
+                                                                    'hm':
+                                                                        data.hm,
+                                                                    'pit': data
+                                                                        .pit,
+                                                                    'position':
+                                                                        position,
+                                                                    'reccPress':
+                                                                        state
+                                                                            .reccPress,
+                                                                  };
+
+                                                                  Navigator
+                                                                      .pushNamed(
+                                                                    context,
+                                                                    DailyCheckFormPage
+                                                                        .routeName,
+                                                                    arguments:
+                                                                        dataUnit,
+                                                                  );
+                                                                },
+                                                              ),
+                                                            ),
+                                                          if (pl.adjusmentPressure !=
+                                                                  null &&
+                                                              pl.adjusmentPressure !=
+                                                                  '0' &&
+                                                              pl.adjusmentPressure !=
+                                                                  '')
+                                                            Text(
+                                                              '${pl.adjusmentPressure} Psi (Adj. Pressure)',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18,
+                                                              ),
+                                                            ),
+                                                          if (luka.isNotEmpty)
+                                                            SizedBox(
+                                                              width: 200,
+                                                              child: Text(
+                                                                luka.join('\n'),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .end,
+                                                                style:
+                                                                    getWhiteTextStyle(
+                                                                  fontWeight:
+                                                                      w700,
+                                                                  fontSize: 18,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          Text(
+                                                            '${(pl.rating == '' || pl.rating == null) ? '' : 'Rating ${pl.rating}'}',
+                                                            style:
+                                                                getWhiteTextStyle(
+                                                              fontWeight: w700,
+                                                              fontSize: 18,
+                                                            ),
                                                           ),
+                                                          const SizedBox(
+                                                              height: 12),
                                                         ],
                                                       ),
                                                     ],
@@ -1089,574 +2090,585 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                   ),
                                                 ],
                                               );
-                                            }).toList(),
+                                            },
                                           ),
                                         ],
                                       ),
-                                    ));
-
-                                ;
-                              }),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
                         ],
                       );
+                    // case 1:
+                    //   return Column(
+                    //     children: [
+                    //       const SizedBox(
+                    //         height: 12,
+                    //       ),
+                    //       SelectPitButton(
+                    //           pit: pit,
+                    //           selectedPit: selectedPit,
+                    //           onSelectedPitChanged: (index) {
+                    //             setState(() {
+                    //               selectedPit = index;
+                    //             });
+                    //           }),
+                    //       const SizedBox(
+                    //         height: 12,
+                    //       ),
+                    //       if (homeState.selectedSite?.idCompany == '2')
+                    //         Text(
+                    //           // 'Total Unit : ${dailyData.length ?? 0}',
+                    //           'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
 
-                    // Unit Low Pressure
-                    case 1:
-                      return Column(
-                        children: [
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          SelectPitButton(
-                              pit: pit,
-                              selectedPit: selectedPit,
-                              onSelectedPitChanged: (index) {
-                                setState(() {
-                                  selectedPit = index;
-                                });
-                              }),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          if (homeState.selectedSite?.idCompany == '2')
-                            Text(
-                              // 'Total Unit : ${dailyData.length ?? 0}',
-                              'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
+                    //           style: getBlackTextStyle(
+                    //             fontSize: 14,
+                    //           ),
+                    //         )
+                    //       else
+                    //         Container(),
+                    //       const SizedBox(
+                    //         height: 12,
+                    //       ),
+                    //       PaginateFirestore(
+                    //           query: selectedPit == 0
+                    //               ? firestore
+                    //                   .collection('daily_pressure')
+                    //                   .where('tanggal',
+                    //                       isGreaterThanOrEqualTo:
+                    //                           DateTime(now.year, now.month, now.day)
+                    //                               .toIso8601String())
+                    //                   .where('tanggal',
+                    //                       isLessThanOrEqualTo:
+                    //                           DateTime(now.year, now.month, now.day, 23, 59, 59)
+                    //                               .toIso8601String())
+                    //                   .where('idSite', isEqualTo: currentIdSite)
+                    //                   .orderBy('tanggal', descending: true)
+                    //               : firestore
+                    //                   .collection('daily_pressure')
+                    //                   .where('tanggal',
+                    //                       isGreaterThanOrEqualTo:
+                    //                           DateTime(now.year, now.month, now.day)
+                    //                               .toIso8601String())
+                    //                   .where('tanggal',
+                    //                       isLessThanOrEqualTo:
+                    //                           DateTime(now.year, now.month, now.day, 23, 59, 59)
+                    //                               .toIso8601String())
+                    //                   .where('idSite', isEqualTo: currentIdSite)
+                    //                   .where('pit', isEqualTo: pit[selectedPit])
+                    //                   .orderBy('tanggal', descending: true),
+                    //           itemBuilderType: PaginateBuilderType.listView,
+                    //           shrinkWrap: true,
+                    //           physics: NeverScrollableScrollPhysics(),
+                    //           itemsPerPage: 10,
+                    //           // isLive: true,
+                    //           isLive: false,
+                    //           onEmpty: Text(
+                    //             'There is no low pressure data!',
+                    //             style: getBlackTextStyle(),
+                    //           ),
+                    //           initialLoader: const Center(child: CircularProgressIndicator.adaptive()),
+                    //           bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
+                    //           itemBuilder: (context, snapshot, firebaseIndex) {
+                    //             // log('snapshot : $snapshot');
+                    //             final allData = snapshot
+                    //                 .map((doc) => DailyPress.fromFirestore(
+                    //                     doc.data() as Map<String, dynamic>))
+                    //                 .toList();
 
-                              style: getBlackTextStyle(
-                                fontSize: 14,
-                              ),
-                            )
-                          else
-                            Container(),
-                          const SizedBox(
-                            height: 12,
-                          ),
-                          PaginateFirestore(
-                              query: selectedPit == 0
-                                  ? firestore
-                                      .collection('daily_pressure')
-                                      .where('tanggal',
-                                          isGreaterThanOrEqualTo:
-                                              DateTime(now.year, now.month, now.day)
-                                                  .toIso8601String())
-                                      .where('tanggal',
-                                          isLessThanOrEqualTo:
-                                              DateTime(now.year, now.month, now.day, 23, 59, 59)
-                                                  .toIso8601String())
-                                      .where('idSite', isEqualTo: currentIdSite)
-                                      .orderBy('tanggal', descending: true)
-                                  : firestore
-                                      .collection('daily_pressure')
-                                      .where('tanggal',
-                                          isGreaterThanOrEqualTo:
-                                              DateTime(now.year, now.month, now.day)
-                                                  .toIso8601String())
-                                      .where('tanggal',
-                                          isLessThanOrEqualTo:
-                                              DateTime(now.year, now.month, now.day, 23, 59, 59)
-                                                  .toIso8601String())
-                                      .where('idSite', isEqualTo: currentIdSite)
-                                      .where('pit', isEqualTo: pit[selectedPit])
-                                      .orderBy('tanggal', descending: true),
-                              itemBuilderType: PaginateBuilderType.listView,
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemsPerPage: 10,
-                              isLive: true,
-                              onEmpty: Text(
-                                'There is no low pressure data!',
-                                style: getBlackTextStyle(),
-                              ),
-                              initialLoader: const Center(child: CircularProgressIndicator.adaptive()),
-                              bottomLoader: const Center(child: CircularProgressIndicator.adaptive()),
-                              itemBuilder: (context, snapshot, firebaseIndex) {
-                                // log('snapshot : $snapshot');
-                                final allData = snapshot
-                                    .map((doc) => DailyPress.fromFirestore(
-                                        doc.data() as Map<String, dynamic>))
-                                    .toList();
+                    //             final distinctDaily =
+                    //                 Set<DailyPress>.from(allData).toList();
 
-                                final distinctDaily =
-                                    Set<DailyPress>.from(allData).toList();
+                    //             return ListView.builder(
+                    //                 itemCount: distinctDaily.length,
+                    //                 physics: NeverScrollableScrollPhysics(),
+                    //                 shrinkWrap: true,
+                    //                 itemBuilder: (context, index) {
+                    //                   if (firebaseIndex +
+                    //                           (distinctDaily.length) >
+                    //                       distinctDaily.length) {
+                    //                     return Container();
+                    //                   }
+                    //                   final data = distinctDaily[index];
 
-                                return ListView.builder(
-                                    itemCount: distinctDaily.length,
-                                    physics: NeverScrollableScrollPhysics(),
-                                    shrinkWrap: true,
-                                    itemBuilder: (context, index) {
-                                      if (firebaseIndex +
-                                              (distinctDaily.length) >
-                                          distinctDaily.length) {
-                                        return Container();
-                                      }
-                                      final data = distinctDaily[index];
+                    //                   if (searchQuery.isNotEmpty &&
+                    //                       !data.unit!
+                    //                           .toLowerCase()
+                    //                           .contains(searchQuery)) {
+                    //                     return Container();
+                    //                   }
 
-                                      if (searchQuery.isNotEmpty &&
-                                          !data.unit!
-                                              .toLowerCase()
-                                              .contains(searchQuery)) {
-                                        return Container();
-                                      }
+                    //                   if (selectedPit != 0) {
+                    //                     if (data.pit != pit[selectedPit]) {
+                    //                       return Container();
+                    //                     }
+                    //                   }
 
-                                      if (selectedPit != 0) {
-                                        if (data.pit != pit[selectedPit]) {
-                                          return Container();
-                                        }
-                                      }
+                    //                   bool isLowPressure =
+                    //                       data.posisi.any((position) {
+                    //                     final tireSize = position.size;
 
-                                      bool isLowPressure =
-                                          data.posisi.any((position) {
-                                        final tireSize = position.size;
+                    //                     final pressure = int.tryParse(
+                    //                             position.pressure ?? '0') ??
+                    //                         0;
 
-                                        final pressure = int.tryParse(
-                                                position.pressure ?? '0') ??
-                                            0;
+                    //                     if (tireSize == null ||
+                    //                         tireSize.isEmpty) return false;
 
-                                        if (tireSize == null ||
-                                            tireSize.isEmpty) return false;
+                    //                     // Cari data reccPress berdasarkan ukuran ban (tireSize)
+                    //                     final recommended =
+                    //                         state.reccPress.firstWhere(
+                    //                       (rec) => rec.containsKey(tireSize),
+                    //                       orElse: () => {},
+                    //                     );
 
-                                        // Cari data reccPress berdasarkan ukuran ban (tireSize)
-                                        final recommended =
-                                            state.reccPress.firstWhere(
-                                          (rec) => rec.containsKey(tireSize),
-                                          orElse: () => {},
-                                        );
+                    //                     if (recommended != {} &&
+                    //                         recommended[tireSize] != null) {
+                    //                       final recommendedPressure =
+                    //                           int.parse(recommended[tireSize]);
 
-                                        if (recommended != {} &&
-                                            recommended[tireSize] != null) {
-                                          final recommendedPressure =
-                                              int.parse(recommended[tireSize]);
+                    //                       final adjustedPressure =
+                    //                           position.adjusmentPressure;
 
-                                          final adjustedPressure =
-                                              position.adjusmentPressure;
+                    //                       if (pressure == 0) return false;
+                    //                       if (adjustedPressure != '') {
+                    //                         return false;
+                    //                       }
 
-                                          if (pressure == 0) return false;
-                                          if (adjustedPressure != '') {
-                                            return false;
-                                          }
+                    //                       return pressure < recommendedPressure;
+                    //                     }
+                    //                     return false;
+                    //                   });
 
-                                          return pressure < recommendedPressure;
-                                        }
-                                        return false;
-                                      });
+                    //                   if (!isLowPressure) {
+                    //                     return Container();
+                    //                   }
 
-                                      if (!isLowPressure) {
-                                        return Container();
-                                      }
+                    //                   return Card(
+                    //                       elevation: 2,
+                    //                       shape: RoundedRectangleBorder(
+                    //                         borderRadius:
+                    //                             BorderRadius.circular(12),
+                    //                       ),
+                    //                       child: Container(
+                    //                         width: double.infinity,
+                    //                         padding: EdgeInsets.symmetric(
+                    //                             horizontal: 12, vertical: 24),
+                    //                         decoration: BoxDecoration(
+                    //                           color: (isLowPressure
+                    //                               ? Colors.red
+                    //                               : green00968A),
+                    //                           // color: green00968A,
+                    //                           borderRadius:
+                    //                               BorderRadius.circular(12),
+                    //                         ),
+                    //                         child: ExpansionTile(
+                    //                           tilePadding: EdgeInsets.zero,
+                    //                           childrenPadding:
+                    //                               EdgeInsets.all(0),
+                    //                           title: Column(
+                    //                             crossAxisAlignment:
+                    //                                 CrossAxisAlignment.start,
+                    //                             children: [
+                    //                               Row(
+                    //                                 children: [
+                    //                                   Icon(
+                    //                                     Icons.task,
+                    //                                     color: white,
+                    //                                     size: 36,
+                    //                                   ),
+                    //                                   const SizedBox(
+                    //                                     width: 12,
+                    //                                   ),
+                    //                                   Column(
+                    //                                     crossAxisAlignment:
+                    //                                         CrossAxisAlignment
+                    //                                             .start,
+                    //                                     children: [
+                    //                                       Text(
+                    //                                         // dailyMap['unit'] +
+                    //                                         //     '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
+                    //                                         data.unit +
+                    //                                             '${((data.pit != 'Default') ? '\n' + data.pit : '')}',
+                    //                                         style:
+                    //                                             getWhiteTextStyle(
+                    //                                                 fontWeight:
+                    //                                                     w700,
+                    //                                                 fontSize:
+                    //                                                     18),
+                    //                                       ),
+                    //                                       (isLowPressure)
+                    //                                           ? Text(
+                    //                                               // dailyMap['unit'] +
+                    //                                               //     '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
+                    //                                               'LOW PRESSURE!',
+                    //                                               style: getWhiteTextStyle(
+                    //                                                   fontWeight:
+                    //                                                       w700,
+                    //                                                   fontSize:
+                    //                                                       18),
+                    //                                             )
+                    //                                           : Container()
+                    //                                     ],
+                    //                                   ),
+                    //                                 ],
+                    //                               ),
+                    //                             ],
+                    //                           ),
+                    //                           trailing: SizedBox(
+                    //                             width: 90,
+                    //                             child:
+                    //                                 Icon(Icons.arrow_drop_down),
+                    //                           ),
+                    //                           children: [
+                    //                             const SizedBox(
+                    //                               height: 12,
+                    //                             ),
+                    //                             Row(
+                    //                               mainAxisAlignment:
+                    //                                   MainAxisAlignment
+                    //                                       .spaceBetween,
+                    //                               children: [
+                    //                                 Text(
+                    //                                   'Name',
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                                 Container(
+                    //                                   width: 250,
+                    //                                   child: Text(
+                    //                                     // dailyMap['user'] ??
+                    //                                     //     'No Name',
+                    //                                     data.user == ''
+                    //                                         ? 'No Name'
+                    //                                         : data.user,
+                    //                                     textAlign:
+                    //                                         TextAlign.end,
+                    //                                     style:
+                    //                                         getWhiteTextStyle(
+                    //                                             fontWeight:
+                    //                                                 w700,
+                    //                                             fontSize: 18),
+                    //                                   ),
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                             const SizedBox(
+                    //                               height: 12,
+                    //                             ),
+                    //                             Row(
+                    //                               mainAxisAlignment:
+                    //                                   MainAxisAlignment
+                    //                                       .spaceBetween,
+                    //                               children: [
+                    //                                 Text(
+                    //                                   'Tanggal',
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                                 Text(
+                    //                                   // dailyMap['tanggal']
+                    //                                   //     .split('T')[0],
+                    //                                   data.tanggal
+                    //                                       .split('T')[0],
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontWeight: w700,
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                             const SizedBox(
+                    //                               height: 12,
+                    //                             ),
+                    //                             Row(
+                    //                               mainAxisAlignment:
+                    //                                   MainAxisAlignment
+                    //                                       .spaceBetween,
+                    //                               children: [
+                    //                                 Text(
+                    //                                   'Waktu',
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                                 Text(
+                    //                                   // dailyMap['tanggal']
+                    //                                   //     .split('T')[1]
+                    //                                   data.tanggal
+                    //                                       .split('T')[1]
+                    //                                       .substring(0, 5),
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontWeight: w700,
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                             const SizedBox(
+                    //                               height: 12,
+                    //                             ),
+                    //                             Row(
+                    //                               mainAxisAlignment:
+                    //                                   MainAxisAlignment
+                    //                                       .spaceBetween,
+                    //                               children: [
+                    //                                 Text(
+                    //                                   'HM Unit',
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                                 Text(
+                    //                                   // dailyMap['hm'],
+                    //                                   data.hm,
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontWeight: w700,
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                             const SizedBox(
+                    //                               height: 12,
+                    //                             ),
+                    //                             Row(
+                    //                               mainAxisAlignment:
+                    //                                   MainAxisAlignment
+                    //                                       .spaceBetween,
+                    //                               children: [
+                    //                                 Text(
+                    //                                   'Pit',
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                                 Text(
+                    //                                   // dailyMap['pit'],
+                    //                                   data.pit,
+                    //                                   style: getWhiteTextStyle(
+                    //                                       fontWeight: w700,
+                    //                                       fontSize: 18),
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                             const SizedBox(
+                    //                               height: 12,
+                    //                             ),
+                    //                             Column(
+                    //                               children:
+                    //                                   // positionList.map((pl) {
+                    //                                   data.posisi.map((pl) {
+                    //                                 // final plIndex = positionList
+                    //                                 //     .indexOf(pl);
+                    //                                 List<dynamic> luka = [];
 
-                                      return Card(
-                                          elevation: 2,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: Container(
-                                            width: double.infinity,
-                                            padding: EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 24),
-                                            decoration: BoxDecoration(
-                                              color: (isLowPressure
-                                                  ? Colors.red
-                                                  : green00968A),
-                                              // color: green00968A,
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
-                                            ),
-                                            child: ExpansionTile(
-                                              tilePadding: EdgeInsets.zero,
-                                              childrenPadding:
-                                                  EdgeInsets.all(0),
-                                              title: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.task,
-                                                        color: white,
-                                                        size: 36,
-                                                      ),
-                                                      const SizedBox(
-                                                        width: 12,
-                                                      ),
-                                                      Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            // dailyMap['unit'] +
-                                                            //     '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
-                                                            data.unit +
-                                                                '${((data.pit != 'Default') ? '\n' + data.pit : '')}',
-                                                            style:
-                                                                getWhiteTextStyle(
-                                                                    fontWeight:
-                                                                        w700,
-                                                                    fontSize:
-                                                                        18),
-                                                          ),
-                                                          (isLowPressure)
-                                                              ? Text(
-                                                                  // dailyMap['unit'] +
-                                                                  //     '${((dailyMap['pit'] != 'Default') ? '\n' + dailyMap['pit'] : '')}',
-                                                                  'LOW PRESSURE!',
-                                                                  style: getWhiteTextStyle(
-                                                                      fontWeight:
-                                                                          w700,
-                                                                      fontSize:
-                                                                          18),
-                                                                )
-                                                              : Container()
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ),
-                                              trailing: SizedBox(
-                                                width: 90,
-                                                child:
-                                                    Icon(Icons.arrow_drop_down),
-                                              ),
-                                              children: [
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'Name',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Container(
-                                                      width: 250,
-                                                      child: Text(
-                                                        // dailyMap['user'] ??
-                                                        //     'No Name',
-                                                        data.user == ''
-                                                            ? 'No Name'
-                                                            : data.user,
-                                                        textAlign:
-                                                            TextAlign.end,
-                                                        style:
-                                                            getWhiteTextStyle(
-                                                                fontWeight:
-                                                                    w700,
-                                                                fontSize: 18),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'Tanggal',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Text(
-                                                      // dailyMap['tanggal']
-                                                      //     .split('T')[0],
-                                                      data.tanggal
-                                                          .split('T')[0],
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'Waktu',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Text(
-                                                      // dailyMap['tanggal']
-                                                      //     .split('T')[1]
-                                                      data.tanggal
-                                                          .split('T')[1]
-                                                          .substring(0, 5),
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'HM Unit',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Text(
-                                                      // dailyMap['hm'],
-                                                      data.hm,
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'Pit',
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 18),
-                                                    ),
-                                                    Text(
-                                                      // dailyMap['pit'],
-                                                      data.pit,
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Column(
-                                                  children:
-                                                      // positionList.map((pl) {
-                                                      data.posisi.map((pl) {
-                                                    // final plIndex = positionList
-                                                    //     .indexOf(pl);
-                                                    List<dynamic> luka = [];
+                    //                                 // if (pl['luka'] != null &&
+                    //                                 //     pl['luka'] is! String) {
+                    //                                 //   luka = pl['luka']
+                    //                                 //       as List<dynamic>;
+                    //                                 // }
+                    //                                 if (pl.luka != null &&
+                    //                                     pl.luka is! String) {
+                    //                                   luka = pl.luka
+                    //                                       as List<dynamic>;
+                    //                                 }
 
-                                                    // if (pl['luka'] != null &&
-                                                    //     pl['luka'] is! String) {
-                                                    //   luka = pl['luka']
-                                                    //       as List<dynamic>;
-                                                    // }
-                                                    if (pl.luka != null &&
-                                                        pl.luka is! String) {
-                                                      luka = pl.luka
-                                                          as List<dynamic>;
-                                                    }
+                    //                                 return Column(
+                    //                                   children: [
+                    //                                     Row(
+                    //                                       mainAxisAlignment:
+                    //                                           MainAxisAlignment
+                    //                                               .spaceBetween,
+                    //                                       crossAxisAlignment:
+                    //                                           CrossAxisAlignment
+                    //                                               .center,
+                    //                                       children: [
+                    //                                         Text(
+                    //                                           // 'Pos. ${pl['pos']}',
+                    //                                           'Pos. ${pl.pos}',
+                    //                                           style:
+                    //                                               getWhiteTextStyle(
+                    //                                                   fontSize:
+                    //                                                       18),
+                    //                                         ),
+                    //                                         Column(
+                    //                                           crossAxisAlignment:
+                    //                                               CrossAxisAlignment
+                    //                                                   .end,
+                    //                                           mainAxisAlignment:
+                    //                                               MainAxisAlignment
+                    //                                                   .center,
+                    //                                           children: [
+                    //                                             Column(
+                    //                                               crossAxisAlignment:
+                    //                                                   CrossAxisAlignment
+                    //                                                       .end,
+                    //                                               children: [
+                    //                                                 Column(
+                    //                                                   crossAxisAlignment:
+                    //                                                       CrossAxisAlignment
+                    //                                                           .end,
+                    //                                                   children: [
+                    //                                                     Builder(builder:
+                    //                                                         (context) {
+                    //                                                       return Text(
+                    //                                                         // '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
+                    //                                                         '${(pl.pressure == '' || pl.pressure == null) ? 0 : pl.pressure} Psi',
+                    //                                                         style:
+                    //                                                             getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+                    //                                                       );
+                    //                                                     }),
+                    //                                                     Builder(
+                    //                                                       builder:
+                    //                                                           (context) {
+                    //                                                         // Cek jika pl.size null atau kosong
+                    //                                                         if (pl.size == null ||
+                    //                                                             pl.size.isEmpty)
+                    //                                                           return Container();
 
-                                                    return Column(
-                                                      children: [
-                                                        Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Text(
-                                                              // 'Pos. ${pl['pos']}',
-                                                              'Pos. ${pl.pos}',
-                                                              style:
-                                                                  getWhiteTextStyle(
-                                                                      fontSize:
-                                                                          18),
-                                                            ),
-                                                            Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .end,
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .center,
-                                                              children: [
-                                                                Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .end,
-                                                                  children: [
-                                                                    Column(
-                                                                      crossAxisAlignment:
-                                                                          CrossAxisAlignment
-                                                                              .end,
-                                                                      children: [
-                                                                        Builder(builder:
-                                                                            (context) {
-                                                                          return Text(
-                                                                            // '${(pl['pressure'] == '' || pl['pressure'] == null) ? 0 : pl['pressure']} Psi',
-                                                                            '${(pl.pressure == '' || pl.pressure == null) ? 0 : pl.pressure} Psi',
-                                                                            style:
-                                                                                getWhiteTextStyle(fontWeight: w700, fontSize: 18),
-                                                                          );
-                                                                        }),
-                                                                        Builder(
-                                                                          builder:
-                                                                              (context) {
-                                                                            // Cek jika pl.size null atau kosong
-                                                                            if (pl.size == null ||
-                                                                                pl.size.isEmpty)
-                                                                              return Container();
+                    //                                                         // Ambil data recommended pressure
+                    //                                                         final recommendedMap =
+                    //                                                             state.reccPress.firstWhere(
+                    //                                                           (map) => map.containsKey(pl.size),
+                    //                                                           orElse: () => {},
+                    //                                                         );
 
-                                                                            // Ambil data recommended pressure
-                                                                            final recommendedMap =
-                                                                                state.reccPress.firstWhere(
-                                                                              (map) => map.containsKey(pl.size),
-                                                                              orElse: () => {},
-                                                                            );
+                    //                                                         // Cek apakah recommendedMap valid dan pl.size ada di dalamnya
+                    //                                                         final recommendedPressure = recommendedMap.isNotEmpty && recommendedMap[pl.size] != null
+                    //                                                             ? int.tryParse(recommendedMap[pl.size]) ?? 0
+                    //                                                             : 0;
 
-                                                                            // Cek apakah recommendedMap valid dan pl.size ada di dalamnya
-                                                                            final recommendedPressure = recommendedMap.isNotEmpty && recommendedMap[pl.size] != null
-                                                                                ? int.tryParse(recommendedMap[pl.size]) ?? 0
-                                                                                : 0;
+                    //                                                         // Cek jika pl.pressure null atau bukan angka
+                    //                                                         final pressure =
+                    //                                                             int.tryParse(pl.pressure ?? '0') ?? 0;
 
-                                                                            // Cek jika pl.pressure null atau bukan angka
-                                                                            final pressure =
-                                                                                int.tryParse(pl.pressure ?? '0') ?? 0;
+                    //                                                         // Jika tekanan = 0, tidak ditampilkan
+                    //                                                         if (pressure ==
+                    //                                                             0)
+                    //                                                           return Container();
 
-                                                                            // Jika tekanan = 0, tidak ditampilkan
-                                                                            if (pressure ==
-                                                                                0)
-                                                                              return Container();
+                    //                                                         // Jika low pressure dan belum di-adjust, tidak ditampilkan
+                    //                                                         if (recommendedPressure < pressure ||
+                    //                                                             pl.adjusmentPressure.isNotEmpty) {
+                    //                                                           return Container();
+                    //                                                         }
 
-                                                                            // Jika low pressure dan belum di-adjust, tidak ditampilkan
-                                                                            if (recommendedPressure < pressure ||
-                                                                                pl.adjusmentPressure.isNotEmpty) {
-                                                                              return Container();
-                                                                            }
+                    //                                                         return Container(
+                    //                                                           width: 120,
+                    //                                                           height: 60,
+                    //                                                           margin: EdgeInsets.only(top: 12, bottom: 12),
+                    //                                                           child: ButtonWidget(
+                    //                                                             name: Text(
+                    //                                                               'Adjust',
+                    //                                                               style: getWhiteTextStyle(),
+                    //                                                             ),
+                    //                                                             color: green00968A,
+                    //                                                             function: () {
+                    //                                                               List<Position> position = [];
+                    //                                                               for (int i = 0; i < data.posisi.length; i++) {
+                    //                                                                 final p = data.posisi[i];
+                    //                                                                 // ADD COT HOLD PRESSURE
+                    //                                                                 position.add(Position(pos: p.pos, pressure: p.pressure, temperatureStatus: p.temperatureStatus, rating: p.rating, adjusmentPressure: p.adjusmentPressure, adjustmentTemperatureStatus: p.adjustmentTemperatureStatus, luka: p.luka, image: p.image, size: p.size, idInventory: p.idInventory, idUnit: p.idUnit, idDaily: p.idDaily, kondisi: p.kondisi));
+                    //                                                               }
 
-                                                                            return Container(
-                                                                              width: 120,
-                                                                              height: 60,
-                                                                              margin: EdgeInsets.only(top: 12, bottom: 12),
-                                                                              child: ButtonWidget(
-                                                                                name: Text(
-                                                                                  'Adjust',
-                                                                                  style: getWhiteTextStyle(),
-                                                                                ),
-                                                                                color: green00968A,
-                                                                                function: () {
-                                                                                  List<Position> position = [];
-                                                                                  for (int i = 0; i < data.posisi.length; i++) {
-                                                                                    final p = data.posisi[i];
-                                                                                    // ADD COT HOLD PRESSURE
-                                                                                    position.add(Position(pos: p.pos, pressure: p.pressure, temperatureStatus: p.temperatureStatus, rating: p.rating, adjusmentPressure: p.adjusmentPressure, adjustmentTemperatureStatus: p.adjustmentTemperatureStatus, luka: p.luka, image: p.image, size: p.size, idInventory: p.idInventory, idUnit: p.idUnit, idDaily: p.idDaily, kondisi: p.kondisi));
-                                                                                  }
+                    //                                                               final dataUnit = {
+                    //                                                                 'unitNumber': data.unit,
+                    //                                                                 'hm': data.hm,
+                    //                                                                 'pit': data.pit,
+                    //                                                                 'position': position,
+                    //                                                                 'reccPress': state.reccPress,
+                    //                                                               };
 
-                                                                                  final dataUnit = {
-                                                                                    'unitNumber': data.unit,
-                                                                                    'hm': data.hm,
-                                                                                    'pit': data.pit,
-                                                                                    'position': position,
-                                                                                    'reccPress': state.reccPress,
-                                                                                  };
+                    //                                                               Navigator.pushNamed(context, DailyCheckFormPage.routeName, arguments: dataUnit);
+                    //                                                             },
+                    //                                                           ),
+                    //                                                         );
+                    //                                                       },
+                    //                                                     ),
+                    //                                                   ],
+                    //                                                 ),
+                    //                                                 // (pl['adjusmentPressure'] != null &&
+                    //                                                 //         pl['adjusmentPressure'] !=
+                    //                                                 //             '0' &&
+                    //                                                 //         pl['adjusmentPressure'] !=
+                    //                                                 //             '')
+                    //                                                 (pl.adjusmentPressure != null &&
+                    //                                                         pl.adjusmentPressure !=
+                    //                                                             '0' &&
+                    //                                                         pl.adjusmentPressure !=
+                    //                                                             '')
+                    //                                                     ? Text(
+                    //                                                         // '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
+                    //                                                         '${pl.adjusmentPressure} Psi (Adj. Pressure)',
+                    //                                                         style:
+                    //                                                             getWhiteTextStyle(fontWeight: w700, fontSize: 18),
+                    //                                                       )
+                    //                                                     : Container(),
+                    //                                               ],
+                    //                                             ),
+                    //                                             (luka.isEmpty ||
+                    //                                                     luka ==
+                    //                                                         null)
+                    //                                                 ? Container()
+                    //                                                 : Container(
+                    //                                                     width:
+                    //                                                         200,
+                    //                                                     child:
+                    //                                                         Text(
+                    //                                                       // pl['luka']
+                    //                                                       pl.luka
+                    //                                                           .join('\n'),
+                    //                                                       textAlign:
+                    //                                                           TextAlign.end,
+                    //                                                       style: getWhiteTextStyle(
+                    //                                                           fontWeight: w700,
+                    //                                                           fontSize: 18),
+                    //                                                     ),
+                    //                                                   ),
+                    //                                             Text(
+                    //                                                 // '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
+                    //                                                 '${(pl.rating == '' || pl.rating == null) ? '' : 'Rating ${pl.rating}'}',
+                    //                                                 style: getWhiteTextStyle(
+                    //                                                     fontWeight:
+                    //                                                         w700,
+                    //                                                     fontSize:
+                    //                                                         18)),
+                    //                                             const SizedBox(
+                    //                                               height: 12,
+                    //                                             ),
+                    //                                           ],
+                    //                                         ),
+                    //                                       ],
+                    //                                     ),
+                    //                                     Divider(
+                    //                                       color: white,
+                    //                                       thickness: 1.5,
+                    //                                     ),
+                    //                                   ],
+                    //                                 );
+                    //                               }).toList(),
+                    //                             ),
+                    //                           ],
+                    //                         ),
+                    //                       ));
+                    //                 });
 
-                                                                                  Navigator.pushNamed(context, DailyCheckFormPage.routeName, arguments: dataUnit);
-                                                                                },
-                                                                              ),
-                                                                            );
-                                                                          },
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                    // (pl['adjusmentPressure'] != null &&
-                                                                    //         pl['adjusmentPressure'] !=
-                                                                    //             '0' &&
-                                                                    //         pl['adjusmentPressure'] !=
-                                                                    //             '')
-                                                                    (pl.adjusmentPressure != null &&
-                                                                            pl.adjusmentPressure !=
-                                                                                '0' &&
-                                                                            pl.adjusmentPressure !=
-                                                                                '')
-                                                                        ? Text(
-                                                                            // '${pl['adjusmentPressure']} Psi (Adj. Pressure)',
-                                                                            '${pl.adjusmentPressure} Psi (Adj. Pressure)',
-                                                                            style:
-                                                                                getWhiteTextStyle(fontWeight: w700, fontSize: 18),
-                                                                          )
-                                                                        : Container(),
-                                                                  ],
-                                                                ),
-                                                                (luka.isEmpty ||
-                                                                        luka ==
-                                                                            null)
-                                                                    ? Container()
-                                                                    : Container(
-                                                                        width:
-                                                                            200,
-                                                                        child:
-                                                                            Text(
-                                                                          // pl['luka']
-                                                                          pl.luka
-                                                                              .join('\n'),
-                                                                          textAlign:
-                                                                              TextAlign.end,
-                                                                          style: getWhiteTextStyle(
-                                                                              fontWeight: w700,
-                                                                              fontSize: 18),
-                                                                        ),
-                                                                      ),
-                                                                Text(
-                                                                    // '${(pl['rating'] == '' || pl['rating'] == null) ? '' : 'Rating ${pl['rating']}'}',
-                                                                    '${(pl.rating == '' || pl.rating == null) ? '' : 'Rating ${pl.rating}'}',
-                                                                    style: getWhiteTextStyle(
-                                                                        fontWeight:
-                                                                            w700,
-                                                                        fontSize:
-                                                                            18)),
-                                                                const SizedBox(
-                                                                  height: 12,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Divider(
-                                                          color: white,
-                                                          thickness: 1.5,
-                                                        ),
-                                                      ],
-                                                    );
-                                                  }).toList(),
-                                                ),
-                                              ],
-                                            ),
-                                          ));
-                                    });
-
-                                ;
-                              }),
-                        ],
-                      );
+                    //             ;
+                    //           }),
+                    //     ],
+                    //   );
 
                     // All Unit
                     case 2:
-                      // log('kendaraanku: ${state.units.map((unit) => 'unitNumber: ${unit.unitNumber}, sn: ${unit.sn}').toList()}');
+                      final keyword = searchQuery.toLowerCase();
+
+                      final filteredUnits = state.units.where((unit) {
+                        if (keyword.isEmpty) return true;
+
+                        final unitNumber = unit.unitNumber?.toLowerCase() ?? '';
+                        final model = unit.model?.toLowerCase() ?? '';
+
+                        return unitNumber.contains(keyword) ||
+                            model.contains(keyword);
+                      }).toList();
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1665,659 +2677,2010 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                             height: 12,
                           ),
                           Text(
-                            'Total Unit : ${state.units.length.toString()}',
+                            'Total Unit : ${filteredUnits.length}',
                             style: getBlackTextStyle(fontSize: 20),
                           ),
                           const SizedBox(
                             height: 6,
                           ),
-                          // Builder(builder: (context) {
-                          //   if (state.totalActualUnits?.length == null) {
-                          //     return Container();
-                          //   }
+                          if (state.units.isEmpty)
+                            Text(
+                              'Empty!',
+                              textAlign: TextAlign.center,
+                              style: getBlackTextStyle(fontSize: 18),
+                            )
+                          else
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.62,
+                              child: ListView.builder(
+                                itemCount: filteredUnits.length,
+                                keyboardDismissBehavior:
+                                    ScrollViewKeyboardDismissBehavior.onDrag,
+                                itemBuilder: (context, index) {
+                                  final unit = filteredUnits[index];
 
-                          //   if (state.totalActualUnits?.length !=
-                          //       state.units.length) {
-                          //     return Column(
-                          //       children: [
-                          //         NotUpdateWarningWidget(
-                          //             totalActual:
-                          //                 state.totalActualUnits?.length ?? 0),
-                          //         SizedBox(
-                          //           height: 12,
-                          //         ),
-                          //       ],
-                          //     );
-                          //   } else {
-                          //     Container();
-                          //   }
-                          //   return Container();
-                          // }),
-                          (state.units == null || state.units.isEmpty)
-                              ? Text(
-                                  'Empty!',
-                                  textAlign: TextAlign.center,
-                                  style: getBlackTextStyle(fontSize: 18),
-                                )
-                              : Column(
-                                  children: state.units.map((unit) {
-                                    if (searchQuery.isNotEmpty &&
-                                        !unit.unitNumber!
-                                            .toLowerCase()
-                                            .contains(searchQuery) &&
-                                        !unit.model!
-                                            .toLowerCase()
-                                            .contains(searchQuery)) {
-                                      return Container();
-                                    }
-                                    return InkWell(
-                                      // onTap: (userAccessId == '1' ||
-                                      //         userAccessId == '2' ||
-                                      //         userAccessId == '3')
-                                      onTap: () {
-                                        Navigator.pushNamed(context,
-                                            DailyCheckFormPage.routeName,
-                                            arguments: {
-                                              'unitNumber': unit.unitNumber,
-                                              'reccPress': state.reccPress,
-                                            });
-                                      },
-                                      child: Container(
-                                        margin:
-                                            EdgeInsets.symmetric(vertical: 8.0),
-                                        padding:
-                                            EdgeInsets.symmetric(vertical: 6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.1),
-                                              spreadRadius: 2,
-                                              blurRadius: 5,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: ListTile(
-                                          leading: Icon(
-                                            Icons.front_loader,
-                                            color: Colors.orange,
+                                  return InkWell(
+                                    onTap: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        DailyCheckFormPage.routeName,
+                                        arguments: {
+                                          'unitNumber': unit.unitNumber,
+                                          'reccPress': state.reccPress,
+                                        },
+                                      );
+                                    },
+                                    child: Container(
+                                      margin: const EdgeInsets.symmetric(
+                                          vertical: 8.0),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                Colors.black.withOpacity(0.1),
+                                            spreadRadius: 2,
+                                            blurRadius: 5,
+                                            offset: const Offset(0, 2),
                                           ),
-                                          title: Padding(
-                                            padding: const EdgeInsets.only(
-                                                bottom: 4.0),
-                                            child: Text(
-                                              '${unit.unitNumber}',
-                                              style: getBlackTextStyle(
-                                                  fontWeight: FontWeight.w700),
-                                            ),
-                                          ),
-                                          subtitle: Text(
-                                            '${unit.model}',
-                                            style: getGreyTextStyle(grey6A707C),
-                                          ),
-                                          trailing:
-                                              Icon(Icons.arrow_forward_ios),
-                                        ),
+                                        ],
                                       ),
-                                    );
-                                  }).toList(),
-                                ),
+                                      child: ListTile(
+                                        leading: const Icon(
+                                          Icons.front_loader,
+                                          color: Colors.orange,
+                                        ),
+                                        title: Padding(
+                                          padding: const EdgeInsets.only(
+                                              bottom: 4.0),
+                                          child: Text(
+                                            unit.unitNumber ?? '',
+                                            style: getBlackTextStyle(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                          unit.model ?? '',
+                                          style: getGreyTextStyle(grey6A707C),
+                                        ),
+                                        trailing:
+                                            const Icon(Icons.arrow_forward_ios),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                         ],
                       );
+                    // case 2:
+                    //   // log('kendaraanku: ${state.units.map((unit) => 'unitNumber: ${unit.unitNumber}, sn: ${unit.sn}').toList()}');
+                    //   final filteredUnits = state.units.where((unit) {
+                    //     final keyword = searchQuery.toLowerCase();
+
+                    //     if (keyword.isEmpty) return true;
+
+                    //     final unitNumber = unit.unitNumber?.toLowerCase() ?? '';
+                    //     final model = unit.model?.toLowerCase() ?? '';
+
+                    //     return unitNumber.contains(keyword) ||
+                    //         model.contains(keyword);
+                    //   }).toList();
+
+                    //   return Column(
+                    //     crossAxisAlignment: CrossAxisAlignment.start,
+                    //     children: [
+                    //       const SizedBox(
+                    //         height: 12,
+                    //       ),
+                    //       Text(
+                    //         'Total Unit : ${state.units.length.toString()}',
+                    //         style: getBlackTextStyle(fontSize: 20),
+                    //       ),
+                    //       const SizedBox(
+                    //         height: 6,
+                    //       ),
+                    //       // Builder(builder: (context) {
+                    //       //   if (state.totalActualUnits?.length == null) {
+                    //       //     return Container();
+                    //       //   }
+
+                    //       //   if (state.totalActualUnits?.length !=
+                    //       //       state.units.length) {
+                    //       //     return Column(
+                    //       //       children: [
+                    //       //         NotUpdateWarningWidget(
+                    //       //             totalActual:
+                    //       //                 state.totalActualUnits?.length ?? 0),
+                    //       //         SizedBox(
+                    //       //           height: 12,
+                    //       //         ),
+                    //       //       ],
+                    //       //     );
+                    //       //   } else {
+                    //       //     Container();
+                    //       //   }
+                    //       //   return Container();
+                    //       // }),
+                    //       (state.units == null || state.units.isEmpty)
+                    //           ? Text(
+                    //               'Empty!',
+                    //               textAlign: TextAlign.center,
+                    //               style: getBlackTextStyle(fontSize: 18),
+                    //             )
+                    //           : ListView.builder(
+                    //               shrinkWrap: true,
+                    //               physics: const NeverScrollableScrollPhysics(),
+                    //               itemCount: filteredUnits.length,
+                    //               itemBuilder: (context, index) {
+                    //                 final unit = filteredUnits[index];
+
+                    //                 return InkWell(
+                    //                   onTap: () {
+                    //                     Navigator.pushNamed(
+                    //                       context,
+                    //                       DailyCheckFormPage.routeName,
+                    //                       arguments: {
+                    //                         'unitNumber': unit.unitNumber,
+                    //                         'reccPress': state.reccPress,
+                    //                       },
+                    //                     );
+                    //                   },
+                    //                   child: Container(
+                    //                     margin: const EdgeInsets.symmetric(
+                    //                         vertical: 8.0),
+                    //                     padding: const EdgeInsets.symmetric(
+                    //                         vertical: 6),
+                    //                     decoration: BoxDecoration(
+                    //                       color: Colors.white,
+                    //                       borderRadius:
+                    //                           BorderRadius.circular(12),
+                    //                       boxShadow: [
+                    //                         BoxShadow(
+                    //                           color:
+                    //                               Colors.black.withOpacity(0.1),
+                    //                           spreadRadius: 2,
+                    //                           blurRadius: 5,
+                    //                           offset: const Offset(0, 2),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     child: ListTile(
+                    //                       leading: const Icon(
+                    //                         Icons.front_loader,
+                    //                         color: Colors.orange,
+                    //                       ),
+                    //                       title: Padding(
+                    //                         padding: const EdgeInsets.only(
+                    //                             bottom: 4.0),
+                    //                         child: Text(
+                    //                           unit.unitNumber ?? '',
+                    //                           style: getBlackTextStyle(
+                    //                               fontWeight: FontWeight.w700),
+                    //                         ),
+                    //                       ),
+                    //                       subtitle: Text(
+                    //                         unit.model ?? '',
+                    //                         style: getGreyTextStyle(grey6A707C),
+                    //                       ),
+                    //                       trailing: const Icon(
+                    //                           Icons.arrow_forward_ios),
+                    //                     ),
+                    //                   ),
+                    //                 );
+                    //               },
+                    //             ),
+                    //       // : Column(
+                    //       //     children: state.units.map((unit) {
+                    //       //       if (searchQuery.isNotEmpty &&
+                    //       //           !unit.unitNumber!
+                    //       //               .toLowerCase()
+                    //       //               .contains(searchQuery) &&
+                    //       //           !unit.model!
+                    //       //               .toLowerCase()
+                    //       //               .contains(searchQuery)) {
+                    //       //         return Container();
+                    //       //       }
+                    //       //       return InkWell(
+                    //       //         // onTap: (userAccessId == '1' ||
+                    //       //         //         userAccessId == '2' ||
+                    //       //         //         userAccessId == '3')
+                    //       //         onTap: () {
+                    //       //           Navigator.pushNamed(context,
+                    //       //               DailyCheckFormPage.routeName,
+                    //       //               arguments: {
+                    //       //                 'unitNumber': unit.unitNumber,
+                    //       //                 'reccPress': state.reccPress,
+                    //       //               });
+                    //       //         },
+                    //       //         child: Container(
+                    //       //           margin:
+                    //       //               EdgeInsets.symmetric(vertical: 8.0),
+                    //       //           padding:
+                    //       //               EdgeInsets.symmetric(vertical: 6),
+                    //       //           decoration: BoxDecoration(
+                    //       //             color: Colors.white,
+                    //       //             borderRadius:
+                    //       //                 BorderRadius.circular(12),
+                    //       //             boxShadow: [
+                    //       //               BoxShadow(
+                    //       //                 color:
+                    //       //                     Colors.black.withOpacity(0.1),
+                    //       //                 spreadRadius: 2,
+                    //       //                 blurRadius: 5,
+                    //       //                 offset: Offset(0, 2),
+                    //       //               ),
+                    //       //             ],
+                    //       //           ),
+                    //       //           child: ListTile(
+                    //       //             leading: Icon(
+                    //       //               Icons.front_loader,
+                    //       //               color: Colors.orange,
+                    //       //             ),
+                    //       //             title: Padding(
+                    //       //               padding: const EdgeInsets.only(
+                    //       //                   bottom: 4.0),
+                    //       //               child: Text(
+                    //       //                 '${unit.unitNumber}',
+                    //       //                 style: getBlackTextStyle(
+                    //       //                     fontWeight: FontWeight.w700),
+                    //       //               ),
+                    //       //             ),
+                    //       //             subtitle: Text(
+                    //       //               '${unit.model}',
+                    //       //               style: getGreyTextStyle(grey6A707C),
+                    //       //             ),
+                    //       //             trailing:
+                    //       //                 Icon(Icons.arrow_forward_ios),
+                    //       //           ),
+                    //       //         ),
+                    //       //       );
+                    //       //     }).toList(),
+                    //       //   ),
+                    //     ],
+                    //   );
 
                     // Not Checked Unit
                     case 3:
-                      final notChecked = [];
-                      notChecked.clear();
-                      notChecked.addAll(state.units);
+                      final today = DateTime.now();
+                      final todayString =
+                          today.toIso8601String().substring(0, 10);
+
+                      checkedFuture ??= getCheckedTodayFuture();
+
                       return Column(
                         children: [
                           const SizedBox(
                             height: 12,
                           ),
-                          // (userAccessId == '1' || userAccessId == '2')
+
+                          // Tombol Get SPM Unit Tire Pressure
                           (userAccessId != '1' &&
                                   homeState.userAccessCompanyId.value == '')
                               ? SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
-                                      onPressed: () async {
-                                        showDialog<bool>(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (context) {
-                                              return AlertDialog(
-                                                title: const Text("Konfirmasi"),
-                                                content: const Text(
-                                                    "Apakah Anda yakin?"),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed: () => Navigator
-                                                            .of(context)
-                                                        .pop(false), // pilih No
-                                                    child: const Text("No"),
-                                                  ),
-                                                  ElevatedButton(
-                                                    onPressed: () async {
-                                                      showDialog(
-                                                        context: context,
-                                                        barrierDismissible:
-                                                            false,
-                                                        builder: (context) {
-                                                          return const AlertDialog(
-                                                            content: Row(
-                                                              children: [
-                                                                CircularProgressIndicator(),
-                                                                SizedBox(
-                                                                    width: 20),
-                                                                Text(
-                                                                    "Submitting data, please wait..."),
-                                                              ],
-                                                            ),
-                                                          );
-                                                        },
+                                    onPressed: () async {
+                                      showDialog<bool>(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text("Konfirmasi"),
+                                            content: const Text(
+                                                "Apakah Anda yakin?"),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () =>
+                                                    Navigator.of(context)
+                                                        .pop(false),
+                                                child: const Text("No"),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () async {
+                                                  showDialog(
+                                                    context: context,
+                                                    barrierDismissible: false,
+                                                    builder: (context) {
+                                                      return const AlertDialog(
+                                                        content: Row(
+                                                          children: [
+                                                            CircularProgressIndicator(),
+                                                            SizedBox(width: 20),
+                                                            Text(
+                                                                "Submitting data, please wait..."),
+                                                          ],
+                                                        ),
                                                       );
-                                                      try {
-                                                        final dataSPMJam7 =
-                                                            await ApiService
-                                                                .getJam7SPM(
-                                                                    currentIdSite);
-
-                                                        final List<UnitTire>
-                                                            dataTireCondition =
-                                                            await ApiService
-                                                                .getTireCondition(
-                                                                    currentIdSite);
-
-                                                        final ratingMap =
-                                                            <String, String>{};
-                                                        final tireSizeMap =
-                                                            <String, String>{};
-                                                        final hmMap =
-                                                            <String, String>{};
-                                                        final idInventoryMap =
-                                                            <String, String>{};
-                                                        final idUnitMap =
-                                                            <String, String>{};
-                                                        final idDailyMap =
-                                                            <String, String>{};
-                                                        final today =
-                                                            DateTime.now();
-                                                        final startOfDay =
-                                                            DateTime(
-                                                                today.year,
-                                                                today.month,
-                                                                today.day);
-                                                        final endOfDay =
-                                                            DateTime(
-                                                                today.year,
-                                                                today.month,
-                                                                today.day,
-                                                                23,
-                                                                59,
-                                                                59);
-                                                        final formattedToday =
-                                                            '${today.month.toString().padLeft(2, '0')}' // MM
-                                                            '${today.day.toString().padLeft(2, '0')}' // DD
-                                                            '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
-
-                                                        for (final unit
-                                                            in dataTireCondition) {
-                                                          if (unit.unitNumber!
-                                                                  .isNotEmpty &&
-                                                              unit.posisi!
-                                                                  .isNotEmpty) {
-                                                            final key =
-                                                                '${unit.unitNumber}-${unit.posisi}';
-                                                            ratingMap[key] =
-                                                                unit.rating ??
-                                                                    '';
-                                                            tireSizeMap[key] =
-                                                                unit.size ?? '';
-                                                            hmMap[key] =
-                                                                unit.hm ?? '';
-                                                            idInventoryMap[
-                                                                    key] =
-                                                                unit.idinventory ??
-                                                                    '';
-                                                            idUnitMap[key] =
-                                                                unit.idUnit ??
-                                                                    '';
-                                                            idDailyMap[key] =
-                                                                '${unit.unitNumber}${unit.posisi}$formattedToday$currentIdSite';
-                                                          }
-                                                        }
-
-                                                        final batch =
-                                                            firestore.batch();
-                                                        final collection =
-                                                            firestore.collection(
-                                                                'daily_pressure');
-
-                                                        for (int i = 0;
-                                                            i <
-                                                                dataSPMJam7
-                                                                    .length;
-                                                            i++) {
-                                                          final dataUnit =
-                                                              dataSPMJam7[i];
-
-                                                          // tire count
-                                                          final tireCount = dataUnit
-                                                              .toJson()
-                                                              .keys
-                                                              .where((k) =>
-                                                                  k.startsWith(
-                                                                      'max_p'))
-                                                              .length;
-
-                                                          bool hasZeroPressure =
-                                                              false;
-                                                          for (int pos = 1;
-                                                              pos <= tireCount;
-                                                              pos++) {
-                                                            final pressure =
-                                                                double.tryParse(
-                                                                      dataUnit
-                                                                          .toJson()[
-                                                                              'avg_p$pos']
-                                                                          .toString(),
-                                                                    ) ??
-                                                                    0;
-                                                            if (pressure == 0) {
-                                                              hasZeroPressure =
-                                                                  true;
-                                                              break; // stop pengecekan
-                                                            }
-                                                          }
-
-                                                          if (hasZeroPressure) {
-                                                            continue;
-                                                          }
-
-                                                          final snapshot = await collection
-                                                              .where('unit',
-                                                                  isEqualTo:
-                                                                      dataUnit
-                                                                          .devicename)
-                                                              .where('tanggal',
-                                                                  isGreaterThanOrEqualTo:
-                                                                      startOfDay
-                                                                          .toIso8601String())
-                                                              .where('tanggal',
-                                                                  isLessThanOrEqualTo:
-                                                                      endOfDay
-                                                                          .toIso8601String())
-                                                              .get();
-
-                                                          // Kalau ada snapshot → pakai doc lama, kalau tidak → bikin baru
-                                                          final docRef = snapshot
-                                                                  .docs
-                                                                  .isNotEmpty
-                                                              ? collection.doc(
-                                                                  snapshot
-                                                                      .docs
-                                                                      .first
-                                                                      .id) // overwrite dok lama
-                                                              : collection
-                                                                  .doc(); // bikin dok baru
-
-                                                          batch.set(docRef, {
-                                                            'idSite':
-                                                                currentIdSite ??
-                                                                    '',
-                                                            'user': user[
-                                                                    'username'] ??
-                                                                'Username',
-                                                            'tanggal': DateTime
-                                                                        .now()
-                                                                    .toIso8601String() ??
-                                                                '',
-                                                            'hari': DateTime
-                                                                        .now()
-                                                                    .toIso8601String()
-                                                                    .substring(
-                                                                        0,
-                                                                        10) ??
-                                                                '',
-                                                            'jam': DateTime
-                                                                        .now()
-                                                                    .toIso8601String()
-                                                                    .substring(
-                                                                        11,
-                                                                        19) ??
-                                                                '',
-                                                            'unit': dataUnit
-                                                                    .devicename ??
-                                                                '',
-                                                            'hm': hmMap[
-                                                                    '${dataUnit.devicename}-${i + 1}'] ??
-                                                                '',
-                                                            'posisi':
-                                                                List.generate(
-                                                                    tireCount,
-                                                                    (pIndex) {
-                                                              final pos =
-                                                                  pIndex + 1;
-                                                              return {
-                                                                'pos': '$pos',
-                                                                // 'pressure': dataUnit
-                                                                //         .toJson()['avg_p$pos'] ??
-                                                                //     '0',
-                                                                'pressure': (double.tryParse(dataUnit
-                                                                            .toJson()[
-                                                                                'avg_p$pos']
-                                                                            .toString()) ??
-                                                                        0)
-                                                                    .toStringAsFixed(
-                                                                        0),
-                                                                'rating': ratingMap[
-                                                                    '${dataUnit.devicename}-$pos'],
-                                                                'adjusmentPressure':
-                                                                    '0',
-                                                                'luka': '',
-                                                                'image': '',
-                                                                'tireSize':
-                                                                    tireSizeMap[
-                                                                        '${dataUnit.devicename}-$pos'],
-                                                                'idInventory':
-                                                                    idInventoryMap[
-                                                                        '${dataUnit.devicename}-$pos'],
-                                                                'idUnit': idUnitMap[
-                                                                    '${dataUnit.devicename}-$pos'],
-                                                                'idDaily':
-                                                                    idDailyMap[
-                                                                        '${dataUnit.devicename}-$pos'],
-                                                                'kondisi': '',
-                                                                'min_press': (double.tryParse(dataUnit
-                                                                            .toJson()[
-                                                                                'min_p$pos']
-                                                                            .toString()) ??
-                                                                        0)
-                                                                    .toStringAsFixed(
-                                                                        0),
-                                                                'max_press': (double.tryParse(dataUnit
-                                                                            .toJson()[
-                                                                                'max_p$pos']
-                                                                            .toString()) ??
-                                                                        0)
-                                                                    .toStringAsFixed(
-                                                                        0),
-                                                                'avg_press': (double.tryParse(dataUnit
-                                                                            .toJson()[
-                                                                                'avg_p$pos']
-                                                                            .toString()) ??
-                                                                        0)
-                                                                    .toStringAsFixed(
-                                                                        0),
-                                                                'temp': (double.tryParse(dataUnit
-                                                                        .toJson()[
-                                                                            'avg_t$pos']
-                                                                        .toString()) ??
-                                                                    0),
-                                                              };
-                                                            }),
-                                                            'pit': 'Default',
-                                                            'timeLowPressureSPM':
-                                                                '',
-                                                          });
-                                                        }
-
-                                                        await batch.commit();
-
-                                                        Navigator.pop(context);
-                                                        Navigator.pop(context);
-                                                        ScaffoldMessenger.of(
-                                                                context)
-                                                            .showSnackBar(
-                                                                const SnackBar(
-                                                          content: Text(
-                                                              "Success! Please open menu 'Checked'"),
-                                                          backgroundColor:
-                                                              Colors.green,
-                                                        ));
-                                                      } catch (e) {
-                                                        // Tutup semua dialog
-                                                        Navigator.pop(
-                                                            context); // close submitting
-                                                        Navigator.pop(
-                                                            context); // close konfirmasi
-
-                                                        ScaffoldMessenger.of(
-                                                                context)
-                                                            .showSnackBar(
-                                                          SnackBar(
-                                                            content: Text(
-                                                                "Error (Data Null) : Please Try Again"),
-                                                            backgroundColor:
-                                                                Colors.red,
-                                                          ),
-                                                        );
-                                                      }
                                                     },
-                                                    child: const Text("Yes"),
-                                                  ),
-                                                ],
-                                              );
-                                            });
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red),
-                                      child: Container(
-                                        padding:
-                                            EdgeInsets.symmetric(vertical: 12),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(
-                                              Icons.send,
-                                              color: Colors.white,
-                                            ),
-                                            const SizedBox(
-                                              width: 12,
-                                            ),
-                                            Text(
-                                              'Get SPM Unit Tire Pressure',
-                                              style: getWhiteTextStyle(),
-                                            ),
-                                          ],
-                                        ),
-                                      )))
+                                                  );
+
+                                                  try {
+                                                    final dataSPMJam7 =
+                                                        await ApiService
+                                                            .getJam7SPM(
+                                                                currentIdSite);
+
+                                                    final List<UnitTire>
+                                                        dataTireCondition =
+                                                        await ApiService
+                                                            .getTireCondition(
+                                                      currentIdSite,
+                                                    );
+
+                                                    final ratingMap =
+                                                        <String, String>{};
+                                                    final tireSizeMap =
+                                                        <String, String>{};
+                                                    final hmMap =
+                                                        <String, String>{};
+                                                    final idInventoryMap =
+                                                        <String, String>{};
+                                                    final idUnitMap =
+                                                        <String, String>{};
+                                                    final idDailyMap =
+                                                        <String, String>{};
+
+                                                    final today =
+                                                        DateTime.now();
+
+                                                    final formattedToday =
+                                                        '${today.month.toString().padLeft(2, '0')}'
+                                                        '${today.day.toString().padLeft(2, '0')}'
+                                                        '${(today.year % 100).toString().padLeft(2, '0')}';
+
+                                                    for (final unit
+                                                        in dataTireCondition) {
+                                                      final unitNumber =
+                                                          unit.unitNumber ?? '';
+                                                      final posisi =
+                                                          unit.posisi ?? '';
+
+                                                      if (unitNumber
+                                                              .isNotEmpty &&
+                                                          posisi.isNotEmpty) {
+                                                        final key =
+                                                            '$unitNumber-$posisi';
+
+                                                        ratingMap[key] =
+                                                            unit.rating ?? '';
+                                                        tireSizeMap[key] =
+                                                            unit.size ?? '';
+                                                        hmMap[key] =
+                                                            unit.hm ?? '';
+                                                        idInventoryMap[key] =
+                                                            unit.idinventory ??
+                                                                '';
+                                                        idUnitMap[key] =
+                                                            unit.idUnit ?? '';
+                                                        idDailyMap[key] =
+                                                            '$unitNumber$posisi$formattedToday$currentIdSite';
+                                                      }
+                                                    }
+
+                                                    final batch =
+                                                        firestore.batch();
+                                                    final collection =
+                                                        firestore.collection(
+                                                            'daily_pressure');
+
+                                                    // Ambil semua data checked hari ini sekali saja,
+                                                    // supaya tidak query Firebase di dalam loop.
+                                                    final todaySnapshot =
+                                                        await collection
+                                                            .where('hari',
+                                                                isEqualTo:
+                                                                    todayString)
+                                                            .where('idSite',
+                                                                isEqualTo:
+                                                                    currentIdSite)
+                                                            .get();
+
+                                                    final existingDocMap =
+                                                        <String, String>{};
+
+                                                    for (final doc
+                                                        in todaySnapshot.docs) {
+                                                      final data = doc.data();
+                                                      final unit = data['unit']
+                                                              ?.toString() ??
+                                                          '';
+
+                                                      if (unit.isNotEmpty) {
+                                                        existingDocMap[unit] =
+                                                            doc.id;
+                                                      }
+                                                    }
+
+                                                    for (final dataUnit
+                                                        in dataSPMJam7) {
+                                                      final jsonData =
+                                                          dataUnit.toJson();
+                                                      final unitNumber =
+                                                          dataUnit.devicename ??
+                                                              '';
+
+                                                      if (unitNumber.isEmpty) {
+                                                        continue;
+                                                      }
+
+                                                      final tireCount = jsonData
+                                                          .keys
+                                                          .where((k) =>
+                                                              k.startsWith(
+                                                                  'max_p'))
+                                                          .length;
+
+                                                      bool hasZeroPressure =
+                                                          false;
+
+                                                      for (int pos = 1;
+                                                          pos <= tireCount;
+                                                          pos++) {
+                                                        final pressure =
+                                                            double.tryParse(
+                                                                  jsonData[
+                                                                          'avg_p$pos']
+                                                                      .toString(),
+                                                                ) ??
+                                                                0;
+
+                                                        if (pressure == 0) {
+                                                          hasZeroPressure =
+                                                              true;
+                                                          break;
+                                                        }
+                                                      }
+
+                                                      if (hasZeroPressure) {
+                                                        continue;
+                                                      }
+
+                                                      final existingDocId =
+                                                          existingDocMap[
+                                                              unitNumber];
+
+                                                      final docRef =
+                                                          existingDocId != null
+                                                              ? collection.doc(
+                                                                  existingDocId)
+                                                              : collection
+                                                                  .doc();
+
+                                                      batch.set(docRef, {
+                                                        'idSite': currentIdSite,
+                                                        'user':
+                                                            user['username'] ??
+                                                                'Username',
+                                                        'tanggal': DateTime
+                                                                .now()
+                                                            .toIso8601String(),
+                                                        'hari': todayString,
+                                                        'jam': DateTime.now()
+                                                            .toIso8601String()
+                                                            .substring(11, 19),
+                                                        'unit': unitNumber,
+                                                        'hm': hmMap[
+                                                                '$unitNumber-1'] ??
+                                                            '',
+                                                        'posisi': List.generate(
+                                                          tireCount,
+                                                          (pIndex) {
+                                                            final pos =
+                                                                pIndex + 1;
+                                                            final key =
+                                                                '$unitNumber-$pos';
+
+                                                            return {
+                                                              'pos': '$pos',
+                                                              'pressure': (double
+                                                                          .tryParse(
+                                                                        jsonData['avg_p$pos']
+                                                                            .toString(),
+                                                                      ) ??
+                                                                      0)
+                                                                  .toStringAsFixed(
+                                                                      0),
+                                                              'rating':
+                                                                  ratingMap[
+                                                                          key] ??
+                                                                      '',
+                                                              'adjusmentPressure':
+                                                                  '0',
+                                                              'luka': '',
+                                                              'image': '',
+                                                              'tireSize':
+                                                                  tireSizeMap[
+                                                                          key] ??
+                                                                      '',
+                                                              'idInventory':
+                                                                  idInventoryMap[
+                                                                          key] ??
+                                                                      '',
+                                                              'idUnit':
+                                                                  idUnitMap[
+                                                                          key] ??
+                                                                      '',
+                                                              'idDaily':
+                                                                  idDailyMap[
+                                                                          key] ??
+                                                                      '',
+                                                              'kondisi': '',
+                                                              'min_press': (double
+                                                                          .tryParse(
+                                                                        jsonData['min_p$pos']
+                                                                            .toString(),
+                                                                      ) ??
+                                                                      0)
+                                                                  .toStringAsFixed(
+                                                                      0),
+                                                              'max_press': (double
+                                                                          .tryParse(
+                                                                        jsonData['max_p$pos']
+                                                                            .toString(),
+                                                                      ) ??
+                                                                      0)
+                                                                  .toStringAsFixed(
+                                                                      0),
+                                                              'avg_press': (double
+                                                                          .tryParse(
+                                                                        jsonData['avg_p$pos']
+                                                                            .toString(),
+                                                                      ) ??
+                                                                      0)
+                                                                  .toStringAsFixed(
+                                                                      0),
+                                                              'temp': double
+                                                                      .tryParse(
+                                                                    jsonData[
+                                                                            'avg_t$pos']
+                                                                        .toString(),
+                                                                  ) ??
+                                                                  0,
+                                                            };
+                                                          },
+                                                        ),
+                                                        'pit': 'Default',
+                                                        'timeLowPressureSPM':
+                                                            '',
+                                                      });
+                                                    }
+
+                                                    await batch.commit();
+
+                                                    Navigator.pop(
+                                                        context); // close loading
+                                                    Navigator.pop(
+                                                        context); // close confirmation
+
+                                                    // Setelah submit, refresh data FutureBuilder.
+                                                    setState(() {
+                                                      checkedFuture =
+                                                          getCheckedTodayFuture();
+                                                    });
+
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          "Success! Please open menu 'Checked'",
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                      ),
+                                                    );
+                                                  } catch (e) {
+                                                    Navigator.pop(
+                                                        context); // close loading
+                                                    Navigator.pop(
+                                                        context); // close confirmation
+
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          "Error (Data Null) : Please Try Again\n$e",
+                                                        ),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                                child: const Text("Yes"),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 12),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.send,
+                                            color: Colors.white,
+                                          ),
+                                          const SizedBox(
+                                            width: 12,
+                                          ),
+                                          Text(
+                                            'Get SPM Unit Tire Pressure',
+                                            style: getWhiteTextStyle(),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                )
                               : Container(),
 
                           const SizedBox(
                             height: 12,
                           ),
-                          StreamBuilder(
-                              stream: firestore
-                                  .collection('daily_pressure')
-                                  .where('tanggal',
-                                      isGreaterThanOrEqualTo:
-                                          DateTime(now.year, now.month, now.day)
-                                              .toIso8601String())
-                                  .where('tanggal',
-                                      isLessThanOrEqualTo: DateTime(now.year,
-                                              now.month, now.day, 23, 59, 59)
-                                          .toIso8601String())
-                                  .where('idSite', isEqualTo: currentIdSite)
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return CircularProgressIndicator.adaptive();
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: refreshCheckedData,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueGrey,
+                              ),
+                              child: Text(
+                                'Refresh Not Checked Data',
+                                style: getWhiteTextStyle(),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(
+                            height: 12,
+                          ),
+
+                          FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                            future: checkedFuture,
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                  child: CircularProgressIndicator.adaptive(),
+                                );
+                              }
+
+                              if (snapshot.hasError) {
+                                return Text(
+                                  'Error load data: ${snapshot.error}',
+                                  style: getBlackTextStyle(fontSize: 14),
+                                );
+                              }
+
+                              final dailyData = snapshot.data?.docs ?? [];
+
+                              final checkedUnitSet = dailyData
+                                  .map((doc) {
+                                    final data = doc.data();
+                                    return data['unit']?.toString() ?? '';
+                                  })
+                                  .where((unit) => unit.isNotEmpty)
+                                  .toSet();
+
+                              final notChecked = state.units.where((unit) {
+                                final unitNumber = unit.unitNumber ?? '';
+                                return !checkedUnitSet.contains(unitNumber);
+                              }).toList();
+
+                              final keyword = searchQuery.toLowerCase();
+
+                              final filteredNotChecked =
+                                  notChecked.where((unit) {
+                                if (keyword.isEmpty) return true;
+
+                                final unitNumber =
+                                    unit.unitNumber?.toLowerCase() ?? '';
+                                final model = unit.model?.toLowerCase() ?? '';
+
+                                return unitNumber.contains(keyword) ||
+                                    model.contains(keyword);
+                              }).toList();
+
+                              DateTime? lastUpdate;
+
+                              if (dailyData.isNotEmpty) {
+                                final sortedDocs = [...dailyData];
+
+                                sortedDocs.sort((a, b) {
+                                  final aData = a.data();
+                                  final bData = b.data();
+
+                                  final aTanggal =
+                                      aData['tanggal']?.toString() ?? '';
+                                  final bTanggal =
+                                      bData['tanggal']?.toString() ?? '';
+
+                                  return bTanggal.compareTo(aTanggal);
+                                });
+
+                                final latestData = sortedDocs.first.data();
+                                final tanggal =
+                                    latestData['tanggal']?.toString();
+
+                                if (tanggal != null && tanggal.isNotEmpty) {
+                                  lastUpdate = DateTime.tryParse(tanggal);
                                 }
-                                if (snapshot.connectionState ==
-                                    ConnectionState.active) {
-                                  final dailyData = snapshot.data?.docs ?? [];
+                              }
 
-                                  // Mendapatkan field 'unit' dari setiap dokumen
-                                  final unitList = dailyData
-                                      .map((doc) => doc['unit'])
-                                      .toList();
-
-                                  // Mengecek apakah 'unitList' kosong, jika tidak kosong lanjutkan removeWhere
-                                  unitList.isNotEmpty
-                                      ? notChecked.removeWhere((element) =>
-                                          unitList.contains(element.unitNumber))
-                                      : [];
-
-                                  log('not checked unit : ${notChecked}');
-
-                                  return Column(
-                                    children: [
-                                      Text(
-                                        'Total Unit : ${notChecked.length ?? 0}',
-                                        style: getBlackTextStyle(
-                                          fontSize: 20,
+                              return Column(
+                                children: [
+                                  Text(
+                                    'Total Unit : ${filteredNotChecked.length}',
+                                    style: getBlackTextStyle(
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 12,
+                                  ),
+                                  if (lastUpdate != null)
+                                    Column(
+                                      children: [
+                                        Text(
+                                          'Last Update : ${DateFormat('HH:mm:ss dd-MM-yyyy').format(lastUpdate)}',
+                                          textAlign: TextAlign.center,
+                                          style: getBlackTextStyle(
+                                            fontSize: 14,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
-                                      (snapshot.data?.size != 0)
-                                          ? Column(
-                                              children: [
-                                                Builder(builder: (context) {
-                                                  // Parsing string to DateTime object
-                                                  DateTime parsedDate =
-                                                      DateTime.parse(snapshot
-                                                          .data
-                                                          ?.docs[snapshot
-                                                                  .data!.size -
-                                                              1]
-                                                          .data()['tanggal']);
+                                        const SizedBox(
+                                          height: 12,
+                                        ),
+                                      ],
+                                    ),
+                                  filteredNotChecked.isEmpty
+                                      ? Text(
+                                          'Empty!',
+                                          textAlign: TextAlign.center,
+                                          style:
+                                              getBlackTextStyle(fontSize: 18),
+                                        )
+                                      : ListView.builder(
+                                          itemCount: filteredNotChecked.length,
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemBuilder: (context, index) {
+                                            final unit =
+                                                filteredNotChecked[index];
 
-                                                  // Formatting DateTime to the desired format
-                                                  String formattedDate = DateFormat(
-                                                          'HH:mm:ss dd-MM-yyyy')
-                                                      .format(parsedDate);
-                                                  return Text(
-                                                    'Last Update : ${formattedDate}',
-                                                    textAlign: TextAlign.center,
-                                                    style: getBlackTextStyle(
-                                                      fontSize: 14,
+                                            return InkWell(
+                                              onTap: (userAccessId != '1' ||
+                                                      homeState
+                                                              .userAccessCompanyId
+                                                              .value ==
+                                                          '1')
+                                                  ? () {
+                                                      Navigator.pushNamed(
+                                                        context,
+                                                        DailyCheckFormPage
+                                                            .routeName,
+                                                        arguments: {
+                                                          'unitNumber':
+                                                              unit.unitNumber,
+                                                          'reccPress':
+                                                              state.reccPress,
+                                                        },
+                                                      );
+                                                    }
+                                                  : null,
+                                              child: Container(
+                                                margin:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 8.0),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 6),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white,
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black
+                                                          .withOpacity(0.1),
+                                                      spreadRadius: 2,
+                                                      blurRadius: 5,
+                                                      offset:
+                                                          const Offset(0, 2),
                                                     ),
-                                                  );
-                                                }),
-                                                const SizedBox(
-                                                  height: 12,
+                                                  ],
                                                 ),
-                                              ],
-                                            )
-                                          : Container(),
-                                      (notChecked == null || notChecked.isEmpty)
-                                          ? Text(
-                                              'Empty!',
-                                              textAlign: TextAlign.center,
-                                              style: getBlackTextStyle(
-                                                  fontSize: 18),
-                                            )
-                                          : Column(
-                                              children:
-                                                  (notChecked).map((unit) {
-                                                if (searchQuery.isNotEmpty &&
-                                                    !unit.unitNumber!
-                                                        .toLowerCase()
-                                                        .contains(
-                                                            searchQuery) &&
-                                                    !unit.model!
-                                                        .toLowerCase()
-                                                        .contains(
-                                                            searchQuery)) {
-                                                  return Container();
-                                                }
-                                                return InkWell(
-                                                  // onTap: (userAccessId == '1' ||
-                                                  //         userAccessId == '2' ||
-                                                  //         userAccessId == '3')
-                                                  onTap: (userAccessId != '1' ||
-                                                          homeState
-                                                                  .userAccessCompanyId
-                                                                  .value ==
-                                                              '1')
-                                                      ? () {
-                                                          Navigator.pushNamed(
-                                                              context,
-                                                              DailyCheckFormPage
-                                                                  .routeName,
-                                                              arguments: {
-                                                                'unitNumber': unit
-                                                                    .unitNumber,
-                                                                'reccPress': state
-                                                                    .reccPress,
-                                                              });
-                                                        }
-                                                      : () {},
-                                                  child: Container(
-                                                    margin:
-                                                        EdgeInsets.symmetric(
-                                                            vertical: 8.0),
+                                                child: ListTile(
+                                                  leading: const Icon(
+                                                    Icons.front_loader,
+                                                    color: Colors.orange,
+                                                  ),
+                                                  title: Padding(
                                                     padding:
-                                                        EdgeInsets.symmetric(
-                                                            vertical: 6),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.white,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                      boxShadow: [
-                                                        BoxShadow(
-                                                          color: Colors.black
-                                                              .withOpacity(0.1),
-                                                          spreadRadius: 2,
-                                                          blurRadius: 5,
-                                                          offset: Offset(0, 2),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    child: ListTile(
-                                                      leading: Icon(
-                                                        Icons.front_loader,
-                                                        color: Colors.orange,
+                                                        const EdgeInsets.only(
+                                                            bottom: 4.0),
+                                                    child: Text(
+                                                      unit.unitNumber ?? '',
+                                                      style: getBlackTextStyle(
+                                                        fontWeight:
+                                                            FontWeight.w700,
                                                       ),
-                                                      title: Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .only(
-                                                                bottom: 4.0),
-                                                        child: Text(
-                                                          '${unit.unitNumber}',
-                                                          style:
-                                                              getBlackTextStyle(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .w700),
-                                                        ),
-                                                      ),
-                                                      subtitle: Text(
-                                                        '${unit.model}',
-                                                        style: getGreyTextStyle(
-                                                            grey6A707C),
-                                                      ),
-                                                      trailing: Icon(Icons
-                                                          .arrow_forward_ios),
                                                     ),
                                                   ),
-                                                );
-                                              }).toList(),
-                                            ),
-                                    ],
-                                  );
-                                }
+                                                  subtitle: Text(
+                                                    unit.model ?? '',
+                                                    style: getGreyTextStyle(
+                                                        grey6A707C),
+                                                  ),
+                                                  trailing: const Icon(
+                                                      Icons.arrow_forward_ios),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                ],
+                              );
+                            },
+                          ),
 
-                                return Container();
-                              }),
                           const SizedBox(
                             height: 12,
                           ),
                         ],
                       );
                   }
+                  //   case 3:
+                  //     final today = DateTime.now();
+                  //     final todayString =
+                  //         today.toIso8601String().substring(0, 10);
+
+                  //     return Column(
+                  //       children: [
+                  //         const SizedBox(
+                  //           height: 12,
+                  //         ),
+
+                  //         // Tombol Get SPM Unit Tire Pressure
+                  //         (userAccessId != '1' &&
+                  //                 homeState.userAccessCompanyId.value == '')
+                  //             ? SizedBox(
+                  //                 width: double.infinity,
+                  //                 child: ElevatedButton(
+                  //                   onPressed: () async {
+                  //                     showDialog<bool>(
+                  //                       context: context,
+                  //                       barrierDismissible: false,
+                  //                       builder: (context) {
+                  //                         return AlertDialog(
+                  //                           title: const Text("Konfirmasi"),
+                  //                           content: const Text(
+                  //                               "Apakah Anda yakin?"),
+                  //                           actions: [
+                  //                             TextButton(
+                  //                               onPressed: () =>
+                  //                                   Navigator.of(context)
+                  //                                       .pop(false),
+                  //                               child: const Text("No"),
+                  //                             ),
+                  //                             ElevatedButton(
+                  //                               onPressed: () async {
+                  //                                 showDialog(
+                  //                                   context: context,
+                  //                                   barrierDismissible: false,
+                  //                                   builder: (context) {
+                  //                                     return const AlertDialog(
+                  //                                       content: Row(
+                  //                                         children: [
+                  //                                           CircularProgressIndicator(),
+                  //                                           SizedBox(width: 20),
+                  //                                           Text(
+                  //                                               "Submitting data, please wait..."),
+                  //                                         ],
+                  //                                       ),
+                  //                                     );
+                  //                                   },
+                  //                                 );
+
+                  //                                 try {
+                  //                                   final dataSPMJam7 =
+                  //                                       await ApiService
+                  //                                           .getJam7SPM(
+                  //                                               currentIdSite);
+
+                  //                                   final List<UnitTire>
+                  //                                       dataTireCondition =
+                  //                                       await ApiService
+                  //                                           .getTireCondition(
+                  //                                     currentIdSite,
+                  //                                   );
+
+                  //                                   final ratingMap =
+                  //                                       <String, String>{};
+                  //                                   final tireSizeMap =
+                  //                                       <String, String>{};
+                  //                                   final hmMap =
+                  //                                       <String, String>{};
+                  //                                   final idInventoryMap =
+                  //                                       <String, String>{};
+                  //                                   final idUnitMap =
+                  //                                       <String, String>{};
+                  //                                   final idDailyMap =
+                  //                                       <String, String>{};
+
+                  //                                   final today =
+                  //                                       DateTime.now();
+
+                  //                                   final formattedToday =
+                  //                                       '${today.month.toString().padLeft(2, '0')}'
+                  //                                       '${today.day.toString().padLeft(2, '0')}'
+                  //                                       '${(today.year % 100).toString().padLeft(2, '0')}';
+
+                  //                                   for (final unit
+                  //                                       in dataTireCondition) {
+                  //                                     final unitNumber =
+                  //                                         unit.unitNumber ?? '';
+                  //                                     final posisi =
+                  //                                         unit.posisi ?? '';
+
+                  //                                     if (unitNumber
+                  //                                             .isNotEmpty &&
+                  //                                         posisi.isNotEmpty) {
+                  //                                       final key =
+                  //                                           '$unitNumber-$posisi';
+
+                  //                                       ratingMap[key] =
+                  //                                           unit.rating ?? '';
+                  //                                       tireSizeMap[key] =
+                  //                                           unit.size ?? '';
+                  //                                       hmMap[key] =
+                  //                                           unit.hm ?? '';
+                  //                                       idInventoryMap[key] =
+                  //                                           unit.idinventory ??
+                  //                                               '';
+                  //                                       idUnitMap[key] =
+                  //                                           unit.idUnit ?? '';
+                  //                                       idDailyMap[key] =
+                  //                                           '$unitNumber$posisi$formattedToday$currentIdSite';
+                  //                                     }
+                  //                                   }
+
+                  //                                   final batch =
+                  //                                       firestore.batch();
+                  //                                   final collection =
+                  //                                       firestore.collection(
+                  //                                           'daily_pressure');
+
+                  //                                   // Ambil semua data checked hari ini sekali saja,
+                  //                                   // supaya tidak query Firebase di dalam loop.
+                  //                                   final todaySnapshot =
+                  //                                       await collection
+                  //                                           .where('hari',
+                  //                                               isEqualTo:
+                  //                                                   todayString)
+                  //                                           .where('idSite',
+                  //                                               isEqualTo:
+                  //                                                   currentIdSite)
+                  //                                           .get();
+
+                  //                                   final existingDocMap =
+                  //                                       <String, String>{};
+
+                  //                                   for (final doc
+                  //                                       in todaySnapshot.docs) {
+                  //                                     final data = doc.data();
+                  //                                     final unit = data['unit']
+                  //                                             ?.toString() ??
+                  //                                         '';
+
+                  //                                     if (unit.isNotEmpty) {
+                  //                                       existingDocMap[unit] =
+                  //                                           doc.id;
+                  //                                     }
+                  //                                   }
+
+                  //                                   for (final dataUnit
+                  //                                       in dataSPMJam7) {
+                  //                                     final jsonData =
+                  //                                         dataUnit.toJson();
+                  //                                     final unitNumber =
+                  //                                         dataUnit.devicename ??
+                  //                                             '';
+
+                  //                                     if (unitNumber.isEmpty) {
+                  //                                       continue;
+                  //                                     }
+
+                  //                                     final tireCount = jsonData
+                  //                                         .keys
+                  //                                         .where((k) =>
+                  //                                             k.startsWith(
+                  //                                                 'max_p'))
+                  //                                         .length;
+
+                  //                                     bool hasZeroPressure =
+                  //                                         false;
+
+                  //                                     for (int pos = 1;
+                  //                                         pos <= tireCount;
+                  //                                         pos++) {
+                  //                                       final pressure =
+                  //                                           double.tryParse(
+                  //                                                 jsonData[
+                  //                                                         'avg_p$pos']
+                  //                                                     .toString(),
+                  //                                               ) ??
+                  //                                               0;
+
+                  //                                       if (pressure == 0) {
+                  //                                         hasZeroPressure =
+                  //                                             true;
+                  //                                         break;
+                  //                                       }
+                  //                                     }
+
+                  //                                     if (hasZeroPressure) {
+                  //                                       continue;
+                  //                                     }
+
+                  //                                     final existingDocId =
+                  //                                         existingDocMap[
+                  //                                             unitNumber];
+
+                  //                                     final docRef =
+                  //                                         existingDocId != null
+                  //                                             ? collection.doc(
+                  //                                                 existingDocId)
+                  //                                             : collection
+                  //                                                 .doc();
+
+                  //                                     batch.set(docRef, {
+                  //                                       'idSite': currentIdSite,
+                  //                                       'user':
+                  //                                           user['username'] ??
+                  //                                               'Username',
+                  //                                       'tanggal': DateTime
+                  //                                               .now()
+                  //                                           .toIso8601String(),
+                  //                                       'hari': todayString,
+                  //                                       'jam': DateTime.now()
+                  //                                           .toIso8601String()
+                  //                                           .substring(11, 19),
+                  //                                       'unit': unitNumber,
+                  //                                       'hm': hmMap[
+                  //                                               '$unitNumber-1'] ??
+                  //                                           '',
+                  //                                       'posisi': List.generate(
+                  //                                           tireCount,
+                  //                                           (pIndex) {
+                  //                                         final pos =
+                  //                                             pIndex + 1;
+                  //                                         final key =
+                  //                                             '$unitNumber-$pos';
+
+                  //                                         return {
+                  //                                           'pos': '$pos',
+                  //                                           'pressure': (double
+                  //                                                       .tryParse(
+                  //                                                     jsonData[
+                  //                                                             'avg_p$pos']
+                  //                                                         .toString(),
+                  //                                                   ) ??
+                  //                                                   0)
+                  //                                               .toStringAsFixed(
+                  //                                                   0),
+                  //                                           'rating': ratingMap[
+                  //                                                   key] ??
+                  //                                               '',
+                  //                                           'adjusmentPressure':
+                  //                                               '0',
+                  //                                           'luka': '',
+                  //                                           'image': '',
+                  //                                           'tireSize':
+                  //                                               tireSizeMap[
+                  //                                                       key] ??
+                  //                                                   '',
+                  //                                           'idInventory':
+                  //                                               idInventoryMap[
+                  //                                                       key] ??
+                  //                                                   '',
+                  //                                           'idUnit': idUnitMap[
+                  //                                                   key] ??
+                  //                                               '',
+                  //                                           'idDaily':
+                  //                                               idDailyMap[
+                  //                                                       key] ??
+                  //                                                   '',
+                  //                                           'kondisi': '',
+                  //                                           'min_press': (double
+                  //                                                       .tryParse(
+                  //                                                     jsonData[
+                  //                                                             'min_p$pos']
+                  //                                                         .toString(),
+                  //                                                   ) ??
+                  //                                                   0)
+                  //                                               .toStringAsFixed(
+                  //                                                   0),
+                  //                                           'max_press': (double
+                  //                                                       .tryParse(
+                  //                                                     jsonData[
+                  //                                                             'max_p$pos']
+                  //                                                         .toString(),
+                  //                                                   ) ??
+                  //                                                   0)
+                  //                                               .toStringAsFixed(
+                  //                                                   0),
+                  //                                           'avg_press': (double
+                  //                                                       .tryParse(
+                  //                                                     jsonData[
+                  //                                                             'avg_p$pos']
+                  //                                                         .toString(),
+                  //                                                   ) ??
+                  //                                                   0)
+                  //                                               .toStringAsFixed(
+                  //                                                   0),
+                  //                                           'temp':
+                  //                                               double.tryParse(
+                  //                                                     jsonData[
+                  //                                                             'avg_t$pos']
+                  //                                                         .toString(),
+                  //                                                   ) ??
+                  //                                                   0,
+                  //                                         };
+                  //                                       }),
+                  //                                       'pit': 'Default',
+                  //                                       'timeLowPressureSPM':
+                  //                                           '',
+                  //                                     });
+                  //                                   }
+
+                  //                                   await batch.commit();
+
+                  //                                   Navigator.pop(
+                  //                                       context); // close loading
+                  //                                   Navigator.pop(
+                  //                                       context); // close confirmation
+
+                  //                                   ScaffoldMessenger.of(
+                  //                                           context)
+                  //                                       .showSnackBar(
+                  //                                     const SnackBar(
+                  //                                       content: Text(
+                  //                                         "Success! Please open menu 'Checked'",
+                  //                                       ),
+                  //                                       backgroundColor:
+                  //                                           Colors.green,
+                  //                                     ),
+                  //                                   );
+                  //                                 } catch (e) {
+                  //                                   Navigator.pop(
+                  //                                       context); // close loading
+                  //                                   Navigator.pop(
+                  //                                       context); // close confirmation
+
+                  //                                   ScaffoldMessenger.of(
+                  //                                           context)
+                  //                                       .showSnackBar(
+                  //                                     SnackBar(
+                  //                                       content: Text(
+                  //                                         "Error (Data Null) : Please Try Again\n$e",
+                  //                                       ),
+                  //                                       backgroundColor:
+                  //                                           Colors.red,
+                  //                                     ),
+                  //                                   );
+                  //                                 }
+                  //                               },
+                  //                               child: const Text("Yes"),
+                  //                             ),
+                  //                           ],
+                  //                         );
+                  //                       },
+                  //                     );
+                  //                   },
+                  //                   style: ElevatedButton.styleFrom(
+                  //                     backgroundColor: Colors.red,
+                  //                   ),
+                  //                   child: Container(
+                  //                     padding: const EdgeInsets.symmetric(
+                  //                         vertical: 12),
+                  //                     child: Row(
+                  //                       mainAxisAlignment:
+                  //                           MainAxisAlignment.center,
+                  //                       children: [
+                  //                         const Icon(
+                  //                           Icons.send,
+                  //                           color: Colors.white,
+                  //                         ),
+                  //                         const SizedBox(
+                  //                           width: 12,
+                  //                         ),
+                  //                         Text(
+                  //                           'Get SPM Unit Tire Pressure',
+                  //                           style: getWhiteTextStyle(),
+                  //                         ),
+                  //                       ],
+                  //                     ),
+                  //                   ),
+                  //                 ),
+                  //               )
+                  //             : Container(),
+
+                  //         const SizedBox(
+                  //           height: 12,
+                  //         ),
+
+                  //         StreamBuilder<QuerySnapshot>(
+                  //           stream: firestore
+                  //               .collection('daily_pressure')
+                  //               .where('hari', isEqualTo: todayString)
+                  //               .where('idSite', isEqualTo: currentIdSite)
+                  //               .snapshots(),
+                  //           builder: (context, snapshot) {
+                  //             if (snapshot.connectionState ==
+                  //                 ConnectionState.waiting) {
+                  //               return const Center(
+                  //                 child: CircularProgressIndicator.adaptive(),
+                  //               );
+                  //             }
+
+                  //             if (snapshot.hasError) {
+                  //               return Text(
+                  //                 'Error load data: ${snapshot.error}',
+                  //                 style: getBlackTextStyle(fontSize: 14),
+                  //               );
+                  //             }
+
+                  //             final dailyData = snapshot.data?.docs ?? [];
+
+                  //             final checkedUnitSet = dailyData
+                  //                 .map((doc) {
+                  //                   final data =
+                  //                       doc.data() as Map<String, dynamic>;
+                  //                   return data['unit']?.toString() ?? '';
+                  //                 })
+                  //                 .where((unit) => unit.isNotEmpty)
+                  //                 .toSet();
+
+                  //             final notChecked = state.units.where((unit) {
+                  //               final unitNumber = unit.unitNumber ?? '';
+                  //               return !checkedUnitSet.contains(unitNumber);
+                  //             }).toList();
+
+                  //             final keyword = searchQuery.toLowerCase();
+
+                  //             final filteredNotChecked =
+                  //                 notChecked.where((unit) {
+                  //               if (keyword.isEmpty) return true;
+
+                  //               final unitNumber =
+                  //                   unit.unitNumber?.toLowerCase() ?? '';
+                  //               final model = unit.model?.toLowerCase() ?? '';
+
+                  //               return unitNumber.contains(keyword) ||
+                  //                   model.contains(keyword);
+                  //             }).toList();
+
+                  //             DateTime? lastUpdate;
+
+                  //             if (dailyData.isNotEmpty) {
+                  //               final sortedDocs = [...dailyData];
+
+                  //               sortedDocs.sort((a, b) {
+                  //                 final aData =
+                  //                     a.data() as Map<String, dynamic>;
+                  //                 final bData =
+                  //                     b.data() as Map<String, dynamic>;
+
+                  //                 final aTanggal =
+                  //                     aData['tanggal']?.toString() ?? '';
+                  //                 final bTanggal =
+                  //                     bData['tanggal']?.toString() ?? '';
+
+                  //                 return bTanggal.compareTo(aTanggal);
+                  //               });
+
+                  //               final latestData = sortedDocs.first.data()
+                  //                   as Map<String, dynamic>;
+
+                  //               final tanggal =
+                  //                   latestData['tanggal']?.toString();
+
+                  //               if (tanggal != null && tanggal.isNotEmpty) {
+                  //                 lastUpdate = DateTime.tryParse(tanggal);
+                  //               }
+                  //             }
+
+                  //             return Column(
+                  //               children: [
+                  //                 Text(
+                  //                   'Total Unit : ${filteredNotChecked.length}',
+                  //                   style: getBlackTextStyle(
+                  //                     fontSize: 20,
+                  //                   ),
+                  //                 ),
+                  //                 const SizedBox(
+                  //                   height: 12,
+                  //                 ),
+                  //                 if (lastUpdate != null)
+                  //                   Column(
+                  //                     children: [
+                  //                       Text(
+                  //                         'Last Update : ${DateFormat('HH:mm:ss dd-MM-yyyy').format(lastUpdate)}',
+                  //                         textAlign: TextAlign.center,
+                  //                         style: getBlackTextStyle(
+                  //                           fontSize: 14,
+                  //                         ),
+                  //                       ),
+                  //                       const SizedBox(
+                  //                         height: 12,
+                  //                       ),
+                  //                     ],
+                  //                   ),
+                  //                 filteredNotChecked.isEmpty
+                  //                     ? Text(
+                  //                         'Empty!',
+                  //                         textAlign: TextAlign.center,
+                  //                         style:
+                  //                             getBlackTextStyle(fontSize: 18),
+                  //                       )
+                  //                     : ListView.builder(
+                  //                         itemCount: filteredNotChecked.length,
+                  //                         shrinkWrap: true,
+                  //                         physics:
+                  //                             const NeverScrollableScrollPhysics(),
+                  //                         itemBuilder: (context, index) {
+                  //                           final unit =
+                  //                               filteredNotChecked[index];
+
+                  //                           return InkWell(
+                  //                             onTap: (userAccessId != '1' ||
+                  //                                     homeState
+                  //                                             .userAccessCompanyId
+                  //                                             .value ==
+                  //                                         '1')
+                  //                                 ? () {
+                  //                                     Navigator.pushNamed(
+                  //                                       context,
+                  //                                       DailyCheckFormPage
+                  //                                           .routeName,
+                  //                                       arguments: {
+                  //                                         'unitNumber':
+                  //                                             unit.unitNumber,
+                  //                                         'reccPress':
+                  //                                             state.reccPress,
+                  //                                       },
+                  //                                     );
+                  //                                   }
+                  //                                 : null,
+                  //                             child: Container(
+                  //                               margin:
+                  //                                   const EdgeInsets.symmetric(
+                  //                                       vertical: 8.0),
+                  //                               padding:
+                  //                                   const EdgeInsets.symmetric(
+                  //                                       vertical: 6),
+                  //                               decoration: BoxDecoration(
+                  //                                 color: Colors.white,
+                  //                                 borderRadius:
+                  //                                     BorderRadius.circular(12),
+                  //                                 boxShadow: [
+                  //                                   BoxShadow(
+                  //                                     color: Colors.black
+                  //                                         .withOpacity(0.1),
+                  //                                     spreadRadius: 2,
+                  //                                     blurRadius: 5,
+                  //                                     offset:
+                  //                                         const Offset(0, 2),
+                  //                                   ),
+                  //                                 ],
+                  //                               ),
+                  //                               child: ListTile(
+                  //                                 leading: const Icon(
+                  //                                   Icons.front_loader,
+                  //                                   color: Colors.orange,
+                  //                                 ),
+                  //                                 title: Padding(
+                  //                                   padding:
+                  //                                       const EdgeInsets.only(
+                  //                                           bottom: 4.0),
+                  //                                   child: Text(
+                  //                                     unit.unitNumber ?? '',
+                  //                                     style: getBlackTextStyle(
+                  //                                       fontWeight:
+                  //                                           FontWeight.w700,
+                  //                                     ),
+                  //                                   ),
+                  //                                 ),
+                  //                                 subtitle: Text(
+                  //                                   unit.model ?? '',
+                  //                                   style: getGreyTextStyle(
+                  //                                       grey6A707C),
+                  //                                 ),
+                  //                                 trailing: const Icon(
+                  //                                     Icons.arrow_forward_ios),
+                  //                               ),
+                  //                             ),
+                  //                           );
+                  //                         },
+                  //                       ),
+                  //               ],
+                  //             );
+                  //           },
+                  //         ),
+
+                  //         const SizedBox(
+                  //           height: 12,
+                  //         ),
+                  //       ],
+                  //     );
+                  // }
+
+                  // KODE LAMA YANG BIKIN LEMOT
+                  //   case 3:
+                  //     final notChecked = [];
+                  //     notChecked.clear();
+                  //     notChecked.addAll(state.units);
+                  //     return Column(
+                  //       children: [
+                  //         const SizedBox(
+                  //           height: 12,
+                  //         ),
+                  //         // (userAccessId == '1' || userAccessId == '2')
+                  //         (userAccessId != '1' &&
+                  //                 homeState.userAccessCompanyId.value == '')
+                  //             ? SizedBox(
+                  //                 width: double.infinity,
+                  //                 child: ElevatedButton(
+                  //                     onPressed: () async {
+                  //                       showDialog<bool>(
+                  //                           context: context,
+                  //                           barrierDismissible: false,
+                  //                           builder: (context) {
+                  //                             return AlertDialog(
+                  //                               title: const Text("Konfirmasi"),
+                  //                               content: const Text(
+                  //                                   "Apakah Anda yakin?"),
+                  //                               actions: [
+                  //                                 TextButton(
+                  //                                   onPressed: () => Navigator
+                  //                                           .of(context)
+                  //                                       .pop(false), // pilih No
+                  //                                   child: const Text("No"),
+                  //                                 ),
+                  //                                 ElevatedButton(
+                  //                                   onPressed: () async {
+                  //                                     showDialog(
+                  //                                       context: context,
+                  //                                       barrierDismissible:
+                  //                                           false,
+                  //                                       builder: (context) {
+                  //                                         return const AlertDialog(
+                  //                                           content: Row(
+                  //                                             children: [
+                  //                                               CircularProgressIndicator(),
+                  //                                               SizedBox(
+                  //                                                   width: 20),
+                  //                                               Text(
+                  //                                                   "Submitting data, please wait..."),
+                  //                                             ],
+                  //                                           ),
+                  //                                         );
+                  //                                       },
+                  //                                     );
+                  //                                     try {
+                  //                                       final dataSPMJam7 =
+                  //                                           await ApiService
+                  //                                               .getJam7SPM(
+                  //                                                   currentIdSite);
+
+                  //                                       final List<UnitTire>
+                  //                                           dataTireCondition =
+                  //                                           await ApiService
+                  //                                               .getTireCondition(
+                  //                                                   currentIdSite);
+
+                  //                                       final ratingMap =
+                  //                                           <String, String>{};
+                  //                                       final tireSizeMap =
+                  //                                           <String, String>{};
+                  //                                       final hmMap =
+                  //                                           <String, String>{};
+                  //                                       final idInventoryMap =
+                  //                                           <String, String>{};
+                  //                                       final idUnitMap =
+                  //                                           <String, String>{};
+                  //                                       final idDailyMap =
+                  //                                           <String, String>{};
+                  //                                       final today =
+                  //                                           DateTime.now();
+                  //                                       final startOfDay =
+                  //                                           DateTime(
+                  //                                               today.year,
+                  //                                               today.month,
+                  //                                               today.day);
+                  //                                       final endOfDay =
+                  //                                           DateTime(
+                  //                                               today.year,
+                  //                                               today.month,
+                  //                                               today.day,
+                  //                                               23,
+                  //                                               59,
+                  //                                               59);
+                  //                                       final formattedToday =
+                  //                                           '${today.month.toString().padLeft(2, '0')}' // MM
+                  //                                           '${today.day.toString().padLeft(2, '0')}' // DD
+                  //                                           '${(today.year % 100).toString().padLeft(2, '0')}'; // YY
+
+                  //                                       for (final unit
+                  //                                           in dataTireCondition) {
+                  //                                         if (unit.unitNumber!
+                  //                                                 .isNotEmpty &&
+                  //                                             unit.posisi!
+                  //                                                 .isNotEmpty) {
+                  //                                           final key =
+                  //                                               '${unit.unitNumber}-${unit.posisi}';
+                  //                                           ratingMap[key] =
+                  //                                               unit.rating ??
+                  //                                                   '';
+                  //                                           tireSizeMap[key] =
+                  //                                               unit.size ?? '';
+                  //                                           hmMap[key] =
+                  //                                               unit.hm ?? '';
+                  //                                           idInventoryMap[
+                  //                                                   key] =
+                  //                                               unit.idinventory ??
+                  //                                                   '';
+                  //                                           idUnitMap[key] =
+                  //                                               unit.idUnit ??
+                  //                                                   '';
+                  //                                           idDailyMap[key] =
+                  //                                               '${unit.unitNumber}${unit.posisi}$formattedToday$currentIdSite';
+                  //                                         }
+                  //                                       }
+
+                  //                                       final batch =
+                  //                                           firestore.batch();
+                  //                                       final collection =
+                  //                                           firestore.collection(
+                  //                                               'daily_pressure');
+
+                  //                                       for (int i = 0;
+                  //                                           i <
+                  //                                               dataSPMJam7
+                  //                                                   .length;
+                  //                                           i++) {
+                  //                                         final dataUnit =
+                  //                                             dataSPMJam7[i];
+
+                  //                                         // tire count
+                  //                                         final tireCount = dataUnit
+                  //                                             .toJson()
+                  //                                             .keys
+                  //                                             .where((k) =>
+                  //                                                 k.startsWith(
+                  //                                                     'max_p'))
+                  //                                             .length;
+
+                  //                                         bool hasZeroPressure =
+                  //                                             false;
+                  //                                         for (int pos = 1;
+                  //                                             pos <= tireCount;
+                  //                                             pos++) {
+                  //                                           final pressure =
+                  //                                               double.tryParse(
+                  //                                                     dataUnit
+                  //                                                         .toJson()[
+                  //                                                             'avg_p$pos']
+                  //                                                         .toString(),
+                  //                                                   ) ??
+                  //                                                   0;
+                  //                                           if (pressure == 0) {
+                  //                                             hasZeroPressure =
+                  //                                                 true;
+                  //                                             break; // stop pengecekan
+                  //                                           }
+                  //                                         }
+
+                  //                                         if (hasZeroPressure) {
+                  //                                           continue;
+                  //                                         }
+
+                  //                                         final snapshot = await collection
+                  //                                             .where('unit',
+                  //                                                 isEqualTo:
+                  //                                                     dataUnit
+                  //                                                         .devicename)
+                  //                                             .where('tanggal',
+                  //                                                 isGreaterThanOrEqualTo:
+                  //                                                     startOfDay
+                  //                                                         .toIso8601String())
+                  //                                             .where('tanggal',
+                  //                                                 isLessThanOrEqualTo:
+                  //                                                     endOfDay
+                  //                                                         .toIso8601String())
+                  //                                             .get();
+
+                  //                                         // Kalau ada snapshot → pakai doc lama, kalau tidak → bikin baru
+                  //                                         final docRef = snapshot
+                  //                                                 .docs
+                  //                                                 .isNotEmpty
+                  //                                             ? collection.doc(
+                  //                                                 snapshot
+                  //                                                     .docs
+                  //                                                     .first
+                  //                                                     .id) // overwrite dok lama
+                  //                                             : collection
+                  //                                                 .doc(); // bikin dok baru
+
+                  //                                         batch.set(docRef, {
+                  //                                           'idSite':
+                  //                                               currentIdSite ??
+                  //                                                   '',
+                  //                                           'user': user[
+                  //                                                   'username'] ??
+                  //                                               'Username',
+                  //                                           'tanggal': DateTime
+                  //                                                       .now()
+                  //                                                   .toIso8601String() ??
+                  //                                               '',
+                  //                                           'hari': DateTime
+                  //                                                       .now()
+                  //                                                   .toIso8601String()
+                  //                                                   .substring(
+                  //                                                       0,
+                  //                                                       10) ??
+                  //                                               '',
+                  //                                           'jam': DateTime
+                  //                                                       .now()
+                  //                                                   .toIso8601String()
+                  //                                                   .substring(
+                  //                                                       11,
+                  //                                                       19) ??
+                  //                                               '',
+                  //                                           'unit': dataUnit
+                  //                                                   .devicename ??
+                  //                                               '',
+                  //                                           'hm': hmMap[
+                  //                                                   '${dataUnit.devicename}-${i + 1}'] ??
+                  //                                               '',
+                  //                                           'posisi':
+                  //                                               List.generate(
+                  //                                                   tireCount,
+                  //                                                   (pIndex) {
+                  //                                             final pos =
+                  //                                                 pIndex + 1;
+                  //                                             return {
+                  //                                               'pos': '$pos',
+                  //                                               // 'pressure': dataUnit
+                  //                                               //         .toJson()['avg_p$pos'] ??
+                  //                                               //     '0',
+                  //                                               'pressure': (double.tryParse(dataUnit
+                  //                                                           .toJson()[
+                  //                                                               'avg_p$pos']
+                  //                                                           .toString()) ??
+                  //                                                       0)
+                  //                                                   .toStringAsFixed(
+                  //                                                       0),
+                  //                                               'rating': ratingMap[
+                  //                                                   '${dataUnit.devicename}-$pos'],
+                  //                                               'adjusmentPressure':
+                  //                                                   '0',
+                  //                                               'luka': '',
+                  //                                               'image': '',
+                  //                                               'tireSize':
+                  //                                                   tireSizeMap[
+                  //                                                       '${dataUnit.devicename}-$pos'],
+                  //                                               'idInventory':
+                  //                                                   idInventoryMap[
+                  //                                                       '${dataUnit.devicename}-$pos'],
+                  //                                               'idUnit': idUnitMap[
+                  //                                                   '${dataUnit.devicename}-$pos'],
+                  //                                               'idDaily':
+                  //                                                   idDailyMap[
+                  //                                                       '${dataUnit.devicename}-$pos'],
+                  //                                               'kondisi': '',
+                  //                                               'min_press': (double.tryParse(dataUnit
+                  //                                                           .toJson()[
+                  //                                                               'min_p$pos']
+                  //                                                           .toString()) ??
+                  //                                                       0)
+                  //                                                   .toStringAsFixed(
+                  //                                                       0),
+                  //                                               'max_press': (double.tryParse(dataUnit
+                  //                                                           .toJson()[
+                  //                                                               'max_p$pos']
+                  //                                                           .toString()) ??
+                  //                                                       0)
+                  //                                                   .toStringAsFixed(
+                  //                                                       0),
+                  //                                               'avg_press': (double.tryParse(dataUnit
+                  //                                                           .toJson()[
+                  //                                                               'avg_p$pos']
+                  //                                                           .toString()) ??
+                  //                                                       0)
+                  //                                                   .toStringAsFixed(
+                  //                                                       0),
+                  //                                               'temp': (double.tryParse(dataUnit
+                  //                                                       .toJson()[
+                  //                                                           'avg_t$pos']
+                  //                                                       .toString()) ??
+                  //                                                   0),
+                  //                                             };
+                  //                                           }),
+                  //                                           'pit': 'Default',
+                  //                                           'timeLowPressureSPM':
+                  //                                               '',
+                  //                                         });
+                  //                                       }
+
+                  //                                       await batch.commit();
+
+                  //                                       Navigator.pop(context);
+                  //                                       Navigator.pop(context);
+                  //                                       ScaffoldMessenger.of(
+                  //                                               context)
+                  //                                           .showSnackBar(
+                  //                                               const SnackBar(
+                  //                                         content: Text(
+                  //                                             "Success! Please open menu 'Checked'"),
+                  //                                         backgroundColor:
+                  //                                             Colors.green,
+                  //                                       ));
+                  //                                     } catch (e) {
+                  //                                       // Tutup semua dialog
+                  //                                       Navigator.pop(
+                  //                                           context); // close submitting
+                  //                                       Navigator.pop(
+                  //                                           context); // close konfirmasi
+
+                  //                                       ScaffoldMessenger.of(
+                  //                                               context)
+                  //                                           .showSnackBar(
+                  //                                         SnackBar(
+                  //                                           content: Text(
+                  //                                               "Error (Data Null) : Please Try Again"),
+                  //                                           backgroundColor:
+                  //                                               Colors.red,
+                  //                                         ),
+                  //                                       );
+                  //                                     }
+                  //                                   },
+                  //                                   child: const Text("Yes"),
+                  //                                 ),
+                  //                               ],
+                  //                             );
+                  //                           });
+                  //                     },
+                  //                     style: ElevatedButton.styleFrom(
+                  //                         backgroundColor: Colors.red),
+                  //                     child: Container(
+                  //                       padding:
+                  //                           EdgeInsets.symmetric(vertical: 12),
+                  //                       child: Row(
+                  //                         mainAxisAlignment:
+                  //                             MainAxisAlignment.center,
+                  //                         children: [
+                  //                           const Icon(
+                  //                             Icons.send,
+                  //                             color: Colors.white,
+                  //                           ),
+                  //                           const SizedBox(
+                  //                             width: 12,
+                  //                           ),
+                  //                           Text(
+                  //                             'Get SPM Unit Tire Pressure',
+                  //                             style: getWhiteTextStyle(),
+                  //                           ),
+                  //                         ],
+                  //                       ),
+                  //                     )))
+                  //             : Container(),
+
+                  //         const SizedBox(
+                  //           height: 12,
+                  //         ),
+                  //         StreamBuilder(
+                  //             stream: firestore
+                  //                 .collection('daily_pressure')
+                  //                 .where('tanggal',
+                  //                     isGreaterThanOrEqualTo:
+                  //                         DateTime(now.year, now.month, now.day)
+                  //                             .toIso8601String())
+                  //                 .where('tanggal',
+                  //                     isLessThanOrEqualTo: DateTime(now.year,
+                  //                             now.month, now.day, 23, 59, 59)
+                  //                         .toIso8601String())
+                  //                 .where('idSite', isEqualTo: currentIdSite)
+                  //                 .snapshots(),
+                  //             builder: (context, snapshot) {
+                  //               if (snapshot.connectionState ==
+                  //                   ConnectionState.waiting) {
+                  //                 return CircularProgressIndicator.adaptive();
+                  //               }
+                  //               if (snapshot.connectionState ==
+                  //                   ConnectionState.active) {
+                  //                 final dailyData = snapshot.data?.docs ?? [];
+
+                  //                 // Mendapatkan field 'unit' dari setiap dokumen
+                  //                 final unitList = dailyData
+                  //                     .map((doc) => doc['unit'])
+                  //                     .toList();
+
+                  //                 // Mengecek apakah 'unitList' kosong, jika tidak kosong lanjutkan removeWhere
+                  //                 unitList.isNotEmpty
+                  //                     ? notChecked.removeWhere((element) =>
+                  //                         unitList.contains(element.unitNumber))
+                  //                     : [];
+
+                  //                 log('not checked unit : ${notChecked}');
+
+                  //                 return Column(
+                  //                   children: [
+                  //                     Text(
+                  //                       'Total Unit : ${notChecked.length ?? 0}',
+                  //                       style: getBlackTextStyle(
+                  //                         fontSize: 20,
+                  //                       ),
+                  //                     ),
+                  //                     const SizedBox(
+                  //                       height: 12,
+                  //                     ),
+                  //                     (snapshot.data?.size != 0)
+                  //                         ? Column(
+                  //                             children: [
+                  //                               Builder(builder: (context) {
+                  //                                 // Parsing string to DateTime object
+                  //                                 DateTime parsedDate =
+                  //                                     DateTime.parse(snapshot
+                  //                                         .data
+                  //                                         ?.docs[snapshot
+                  //                                                 .data!.size -
+                  //                                             1]
+                  //                                         .data()['tanggal']);
+
+                  //                                 // Formatting DateTime to the desired format
+                  //                                 String formattedDate = DateFormat(
+                  //                                         'HH:mm:ss dd-MM-yyyy')
+                  //                                     .format(parsedDate);
+                  //                                 return Text(
+                  //                                   'Last Update : ${formattedDate}',
+                  //                                   textAlign: TextAlign.center,
+                  //                                   style: getBlackTextStyle(
+                  //                                     fontSize: 14,
+                  //                                   ),
+                  //                                 );
+                  //                               }),
+                  //                               const SizedBox(
+                  //                                 height: 12,
+                  //                               ),
+                  //                             ],
+                  //                           )
+                  //                         : Container(),
+                  //                     (notChecked == null || notChecked.isEmpty)
+                  //                         ? Text(
+                  //                             'Empty!',
+                  //                             textAlign: TextAlign.center,
+                  //                             style: getBlackTextStyle(
+                  //                                 fontSize: 18),
+                  //                           )
+                  //                         : Column(
+                  //                             children:
+                  //                                 (notChecked).map((unit) {
+                  //                               if (searchQuery.isNotEmpty &&
+                  //                                   !unit.unitNumber!
+                  //                                       .toLowerCase()
+                  //                                       .contains(
+                  //                                           searchQuery) &&
+                  //                                   !unit.model!
+                  //                                       .toLowerCase()
+                  //                                       .contains(
+                  //                                           searchQuery)) {
+                  //                                 return Container();
+                  //                               }
+                  //                               return InkWell(
+                  //                                 // onTap: (userAccessId == '1' ||
+                  //                                 //         userAccessId == '2' ||
+                  //                                 //         userAccessId == '3')
+                  //                                 onTap: (userAccessId != '1' ||
+                  //                                         homeState
+                  //                                                 .userAccessCompanyId
+                  //                                                 .value ==
+                  //                                             '1')
+                  //                                     ? () {
+                  //                                         Navigator.pushNamed(
+                  //                                             context,
+                  //                                             DailyCheckFormPage
+                  //                                                 .routeName,
+                  //                                             arguments: {
+                  //                                               'unitNumber': unit
+                  //                                                   .unitNumber,
+                  //                                               'reccPress': state
+                  //                                                   .reccPress,
+                  //                                             });
+                  //                                       }
+                  //                                     : () {},
+                  //                                 child: Container(
+                  //                                   margin:
+                  //                                       EdgeInsets.symmetric(
+                  //                                           vertical: 8.0),
+                  //                                   padding:
+                  //                                       EdgeInsets.symmetric(
+                  //                                           vertical: 6),
+                  //                                   decoration: BoxDecoration(
+                  //                                     color: Colors.white,
+                  //                                     borderRadius:
+                  //                                         BorderRadius.circular(
+                  //                                             12),
+                  //                                     boxShadow: [
+                  //                                       BoxShadow(
+                  //                                         color: Colors.black
+                  //                                             .withOpacity(0.1),
+                  //                                         spreadRadius: 2,
+                  //                                         blurRadius: 5,
+                  //                                         offset: Offset(0, 2),
+                  //                                       ),
+                  //                                     ],
+                  //                                   ),
+                  //                                   child: ListTile(
+                  //                                     leading: Icon(
+                  //                                       Icons.front_loader,
+                  //                                       color: Colors.orange,
+                  //                                     ),
+                  //                                     title: Padding(
+                  //                                       padding:
+                  //                                           const EdgeInsets
+                  //                                               .only(
+                  //                                               bottom: 4.0),
+                  //                                       child: Text(
+                  //                                         '${unit.unitNumber}',
+                  //                                         style:
+                  //                                             getBlackTextStyle(
+                  //                                                 fontWeight:
+                  //                                                     FontWeight
+                  //                                                         .w700),
+                  //                                       ),
+                  //                                     ),
+                  //                                     subtitle: Text(
+                  //                                       '${unit.model}',
+                  //                                       style: getGreyTextStyle(
+                  //                                           grey6A707C),
+                  //                                     ),
+                  //                                     trailing: Icon(Icons
+                  //                                         .arrow_forward_ios),
+                  //                                   ),
+                  //                                 ),
+                  //                               );
+                  //                             }).toList(),
+                  //                           ),
+                  //                   ],
+                  //                 );
+                  //               }
+
+                  //               return Container();
+                  //             }),
+                  //         const SizedBox(
+                  //           height: 12,
+                  //         ),
+                  //       ],
+                  //     );
+                  // }
                 }
                 return Container();
               }),
@@ -2338,9 +4701,18 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
               icon: Icon(Icons.close), label: 'Not Checked'),
         ],
         currentIndex: selectedMenu,
+        // onTap: (index) {
+        //   setState(() {
+        //     selectedMenu = index;
+        //   });
+        // },
         onTap: (index) {
           setState(() {
             selectedMenu = index;
+
+            if (index == 0 || index == 1 || index == 3) {
+              checkedFuture = getCheckedTodayFuture();
+            }
           });
         },
       ),
