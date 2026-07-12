@@ -148,13 +148,13 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
           'Room B1 Selatan',
           'TIA',
           'Serongga',
-          'CSA Bagaspati',
           'CSA Selatan',
           'WS',
         ]);
         break;
       case '166':
-        pit.addAll(['All', 'WS', 'Pondok Operator', 'Pit Stop Toll']);
+        pit.addAll(
+            ['All', 'WS', 'CSA Bagaspati', 'Pondok Operator', 'Pit Stop Toll']);
         break;
       default:
         pit.add('All');
@@ -568,26 +568,53 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
 
                               final docs = snapshot.data?.docs ?? [];
 
-                              final allData = docs.map((doc) {
+                              // Ambil semua data dari Firestore
+                              final rawData = docs.map((doc) {
                                 return doc.data();
                               }).toList();
 
-                              allData.sort((a, b) {
+// Sort dulu dari tanggal terbaru ke terlama
+                              rawData.sort((a, b) {
                                 final aTanggal = a['tanggal']?.toString() ?? '';
                                 final bTanggal = b['tanggal']?.toString() ?? '';
                                 return bTanggal.compareTo(aTanggal);
                               });
 
+// DISTINCT BY UNIT
+// Kalau ada unit duplikat, yang dipakai adalah data paling terbaru
+// karena rawData sudah di-sort descending berdasarkan tanggal.
+                              final distinctMap =
+                                  <String, Map<String, dynamic>>{};
+
+                              for (final item in rawData) {
+                                final unit = item['unit']?.toString() ?? '';
+
+                                if (unit.isEmpty) {
+                                  continue;
+                                }
+
+                                if (!distinctMap.containsKey(unit)) {
+                                  distinctMap[unit] =
+                                      Map<String, dynamic>.from(item);
+                                }
+                              }
+
+                              final distinctDaily = distinctMap.values.toList();
+
                               final keyword = searchQuery.toLowerCase();
 
-                              final filteredData = allData.where((data) {
+                              final filteredData = distinctDaily.where((data) {
                                 final unit =
                                     data['unit']?.toString().toLowerCase() ??
+                                        '';
+                                final model =
+                                    data['model']?.toString().toLowerCase() ??
                                         '';
 
                                 if (keyword.isEmpty) return true;
 
-                                return unit.contains(keyword);
+                                return unit.contains(keyword) ||
+                                    model.contains(keyword);
                               }).toList();
 
                               filteredItemTask.clear();
@@ -599,9 +626,9 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
 
                               DateTime? lastUpdate;
 
-                              if (allData.isNotEmpty) {
+                              if (distinctDaily.isNotEmpty) {
                                 final tanggal =
-                                    allData.first['tanggal']?.toString();
+                                    distinctDaily.first['tanggal']?.toString();
 
                                 if (tanggal != null && tanggal.isNotEmpty) {
                                   lastUpdate = DateTime.tryParse(tanggal);

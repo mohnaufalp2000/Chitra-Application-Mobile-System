@@ -1296,20 +1296,22 @@ Future<List<int>> createExcel(String type,
           // M = min_press
           sheet
               .getRangeByName('M${rowIndex}')
-              .setText(posisi[j]['min_press'] ?? '');
+              .setText(posisi[j]['min_press'].toString() ?? '');
 
           // N = max_press
           sheet
               .getRangeByName('N${rowIndex}')
-              .setText(posisi[j]['max_press'] ?? '');
+              .setText(posisi[j]['max_press'].toString() ?? '');
 
           // O = avg_press
           sheet
               .getRangeByName('O${rowIndex}')
-              .setText(posisi[j]['avg_press'] ?? '');
+              .setText(posisi[j]['avg_press'].toString() ?? '');
 
           // P = temp
-          sheet.getRangeByName('P${rowIndex}').setText(posisi[j]['temp'] ?? '');
+          sheet
+              .getRangeByName('P${rowIndex}')
+              .setText(posisi[j]['temp'].toString() ?? '');
 
           // Q = Tire Accessories (jika site 33)
           if (daily[i]['idSite'] == '33') {

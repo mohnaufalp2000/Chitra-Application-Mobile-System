@@ -54,6 +54,105 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
     'December'
   ];
 
+  Future<List<Map<String, dynamic>>> getMultipleDayExportData({
+    required DateTime firstPicked,
+    required DateTime lastPicked,
+  }) async {
+    if (widget.filteredItemTask.isEmpty) {
+      throw Exception(
+          'Data daily masih kosong. Buka data checked dulu sebelum export.');
+    }
+
+    final startDate = DateTime(
+      firstPicked.year,
+      firstPicked.month,
+      firstPicked.day,
+    );
+
+    final endDate = DateTime(
+      lastPicked.year,
+      lastPicked.month,
+      lastPicked.day,
+      23,
+      59,
+      59,
+    );
+
+    Query<Map<String, dynamic>> query = firestore
+        .collection('daily_pressure')
+        .where('idSite', isEqualTo: widget.filteredItemTask[0]['idSite'])
+        .where(
+          'tanggal',
+          isGreaterThanOrEqualTo: startDate.toIso8601String(),
+        )
+        .where(
+          'tanggal',
+          isLessThanOrEqualTo: endDate.toIso8601String(),
+        );
+
+    // Kalau user pilih pit tertentu, filter langsung di Firestore.
+    // Ini mengurangi jumlah dokumen yang dibaca dan mempercepat proses export.
+    if (widget.pit.isNotEmpty &&
+        widget.selectedPit != 0 &&
+        widget.selectedPit < widget.pit.length) {
+      query = query.where(
+        'pit',
+        isEqualTo: widget.pit[widget.selectedPit],
+      );
+    }
+
+    final snapshot = await query.get();
+
+    final rawData = snapshot.docs.map((doc) {
+      return doc.data();
+    }).toList();
+
+    log('jumlah daily sebelum distinct: ${rawData.length}');
+
+    // Sort terbaru dulu.
+    rawData.sort((a, b) {
+      final aTanggal = a['tanggal']?.toString() ?? '';
+      final bTanggal = b['tanggal']?.toString() ?? '';
+      return bTanggal.compareTo(aTanggal);
+    });
+
+    // DISTINCT BY UNIT + HARI
+    // Kalau export range 3 hari, unit yang sama tetap muncul 3x,
+    // tapi hanya 1 data terbaru per hari.
+    final latestMap = <String, Map<String, dynamic>>{};
+
+    for (final item in rawData) {
+      final unit = item['unit']?.toString() ?? '';
+      final tanggal = item['tanggal']?.toString() ?? '';
+
+      if (unit.isEmpty || tanggal.isEmpty) {
+        continue;
+      }
+
+      final hari = item['hari']?.toString().isNotEmpty == true
+          ? item['hari'].toString()
+          : tanggal.split('T').first;
+
+      final key = '$unit-$hari';
+
+      if (!latestMap.containsKey(key)) {
+        latestMap[key] = Map<String, dynamic>.from(item);
+      }
+    }
+
+    final distinctDaily = latestMap.values.toList();
+
+    distinctDaily.sort((a, b) {
+      final aTanggal = a['tanggal']?.toString() ?? '';
+      final bTanggal = b['tanggal']?.toString() ?? '';
+      return aTanggal.compareTo(bTanggal);
+    });
+
+    log('jumlah daily setelah distinct: ${distinctDaily.length}');
+
+    return distinctDaily;
+  }
+
   void _showDateRangePicker(
       BuildContext context, Function(List<DateTime>) onDatesSelected) async {
     DateTimeRange? pickedRange = await showDateRangePicker(
@@ -115,81 +214,166 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
               }
               break;
             case ExportType.multipleDay:
-              List<Map<String, dynamic>> excelItemTask = [];
-              _showDateRangePicker(context, (selectedMonths) async {
+              _showDateRangePicker(context, (selectedDates) async {
+                if (selectedDates.isEmpty) return;
+
                 setState(() {
-                  _isLoading = true; // Tampilkan loading
+                  _isLoading = true;
                 });
+
                 try {
-                  final firstPicked = selectedMonths[0];
-                  final lastPicked = selectedMonths[selectedMonths.length - 1];
-                  final snapshot = await firestore
-                      .collection('daily_pressure')
-                      .where('idSite',
-                          isEqualTo: widget.filteredItemTask[0]['idSite'])
-                      .where('tanggal',
-                          isGreaterThanOrEqualTo: DateTime(firstPicked.year,
-                                  firstPicked.month, firstPicked.day)
-                              .toIso8601String())
-                      .where('tanggal',
-                          isLessThanOrEqualTo: DateTime(lastPicked.year,
-                                  lastPicked.month, lastPicked.day, 23, 59, 59)
-                              .toIso8601String())
-                      .get();
+                  final firstPicked = selectedDates.first;
+                  final lastPicked = selectedDates.last;
 
-                  final allData = snapshot.docs
-                      .map((doc) => DailyPress.fromFirestore(
-                          doc.data() as Map<String, dynamic>))
-                      .toList();
+                  final excelItemTask = await getMultipleDayExportData(
+                    firstPicked: firstPicked,
+                    lastPicked: lastPicked,
+                  );
 
-                  log('jumlah daily double 1 : ${allData.length}');
-
-                  final distinctDaily =
-                      Set<DailyPress>.from(allData ?? []).toList();
-
-                  log('jumlah daily double 2 : ${distinctDaily.length}');
-
-                  distinctDaily.forEach((item) {
-                    Map<String, dynamic> cast = item.toFirestore();
-                    excelItemTask.add(cast);
-                  });
+                  if (excelItemTask.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.orange,
+                        content: Text(
+                            'Data export kosong untuk tanggal yang dipilih.'),
+                      ),
+                    );
+                    return;
+                  }
 
                   final id = Uuid();
+
                   final file = await createFolderPath(
                     id.v4(),
                     'daily-check',
                     email: widget.user['email'] ?? '',
                     site: widget.user['siteName'] ?? '',
-                    pit: (widget.pit.isNotEmpty)
+                    pit: (widget.pit.isNotEmpty &&
+                            widget.selectedPit < widget.pit.length)
                         ? widget.pit[widget.selectedPit]
                         : '',
                     date:
                         '${DateFormat('dd-MM-yyyy').format(DateTime(firstPicked.year, firstPicked.month, firstPicked.day))} - ${DateFormat('dd-MM-yyyy').format(DateTime(lastPicked.year, lastPicked.month, lastPicked.day))}',
                   );
 
-                  final bytes =
-                      await createExcel('daily-check', daily: excelItemTask);
+                  final bytes = await createExcel(
+                    'daily-check',
+                    daily: excelItemTask,
+                  );
+
                   await file.writeAsBytes(bytes, flush: true);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    backgroundColor: green00968A,
-                    content: Text(
-                      'Successful Save Data!',
-                      style: getWhiteTextStyle(),
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: green00968A,
+                      content: Text(
+                        'Successful Save Data!',
+                        style: getWhiteTextStyle(),
+                      ),
                     ),
-                  ));
-                  await OpenFile.open(file.path);
+                  );
+
+                  final result = await OpenFile.open(file.path);
+
+                  if (result.type != ResultType.done) {
+                    log('Open file error: ${result.message}');
+
+                    if (result.type == ResultType.noAppToOpen) {
+                      openPlayStore('attendance');
+                    }
+                  }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    backgroundColor: Colors.red,
-                    content: Text('Error: $e'),
-                  ));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.red,
+                      content: Text('Error: $e'),
+                    ),
+                  );
                 } finally {
-                  setState(() {
-                    _isLoading = false; // Sembunyikan loading
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  }
                 }
               });
               break;
+            // case ExportType.multipleDay:
+            //   List<Map<String, dynamic>> excelItemTask = [];
+            //   _showDateRangePicker(context, (selectedMonths) async {
+            //     setState(() {
+            //       _isLoading = true; // Tampilkan loading
+            //     });
+            //     try {
+            //       final firstPicked = selectedMonths[0];
+            //       final lastPicked = selectedMonths[selectedMonths.length - 1];
+            //       final snapshot = await firestore
+            //           .collection('daily_pressure')
+            //           .where('idSite',
+            //               isEqualTo: widget.filteredItemTask[0]['idSite'])
+            //           .where('tanggal',
+            //               isGreaterThanOrEqualTo: DateTime(firstPicked.year,
+            //                       firstPicked.month, firstPicked.day)
+            //                   .toIso8601String())
+            //           .where('tanggal',
+            //               isLessThanOrEqualTo: DateTime(lastPicked.year,
+            //                       lastPicked.month, lastPicked.day, 23, 59, 59)
+            //                   .toIso8601String())
+            //           .get();
+
+            //       final allData = snapshot.docs
+            //           .map((doc) => DailyPress.fromFirestore(
+            //               doc.data() as Map<String, dynamic>))
+            //           .toList();
+
+            //       log('jumlah daily double 1 : ${allData.length}');
+
+            //       final distinctDaily =
+            //           Set<DailyPress>.from(allData ?? []).toList();
+
+            //       log('jumlah daily double 2 : ${distinctDaily.length}');
+
+            //       distinctDaily.forEach((item) {
+            //         Map<String, dynamic> cast = item.toFirestore();
+            //         excelItemTask.add(cast);
+            //       });
+
+            //       final id = Uuid();
+            //       final file = await createFolderPath(
+            //         id.v4(),
+            //         'daily-check',
+            //         email: widget.user['email'] ?? '',
+            //         site: widget.user['siteName'] ?? '',
+            //         pit: (widget.pit.isNotEmpty)
+            //             ? widget.pit[widget.selectedPit]
+            //             : '',
+            //         date:
+            //             '${DateFormat('dd-MM-yyyy').format(DateTime(firstPicked.year, firstPicked.month, firstPicked.day))} - ${DateFormat('dd-MM-yyyy').format(DateTime(lastPicked.year, lastPicked.month, lastPicked.day))}',
+            //       );
+
+            //       final bytes =
+            //           await createExcel('daily-check', daily: excelItemTask);
+            //       await file.writeAsBytes(bytes, flush: true);
+            //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            //         backgroundColor: green00968A,
+            //         content: Text(
+            //           'Successful Save Data!',
+            //           style: getWhiteTextStyle(),
+            //         ),
+            //       ));
+            //       await OpenFile.open(file.path);
+            //     } catch (e) {
+            //       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            //         backgroundColor: Colors.red,
+            //         content: Text('Error: $e'),
+            //       ));
+            //     } finally {
+            //       setState(() {
+            //         _isLoading = false; // Sembunyikan loading
+            //       });
+            //     }
+            //   });
+            //   break;
           }
         },
         style: ElevatedButton.styleFrom(

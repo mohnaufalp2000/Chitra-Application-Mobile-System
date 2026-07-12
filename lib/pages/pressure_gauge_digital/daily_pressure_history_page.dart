@@ -51,6 +51,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
   bool isOnline = false;
   DateTime now = DateTime.now();
   bool _isLoadingSendData = false;
+  Future<QuerySnapshot<Map<String, dynamic>>>? historyCheckedFuture;
 
   @override
   void initState() {
@@ -62,6 +63,95 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
     log('tanggal kemarin : $formattedDate');
     getIdSite();
     getUser();
+    getUnits();
+
+    switch (idSite) {
+      case '52':
+        pit.add('All');
+        pit.add('Utara');
+        pit.add('Selatan');
+        pit.add('RML');
+        pit.add('WS');
+        break;
+      case '137':
+        pit.add('All');
+        pit.add('Japun');
+        pit.add('PCE');
+        break;
+      case '35':
+        pit.add('All');
+        pit.add('Tabuhan');
+        pit.add('EBL');
+        pit.add('Workshop');
+        break;
+      case '65':
+        pit.add('All');
+        pit.add('Room B1 Selatan');
+        pit.add('TIA');
+        pit.add('Serongga');
+        pit.add('CSA Selatan');
+        pit.add('WS');
+        break;
+      case '166':
+        pit.add('All');
+        pit.add('WS');
+        pit.add('CSA Bagaspati');
+        pit.add('Pondok Operator');
+        pit.add('Pit Stop Toll');
+        break;
+    }
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> getHistoryCheckedFuture() {
+    final startDate = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+    );
+
+    final endDate = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      23,
+      59,
+      59,
+    );
+
+    if (selectedPit == 0) {
+      return firestore
+          .collection('daily_pressure')
+          .where(
+            'tanggal',
+            isGreaterThanOrEqualTo: startDate.toIso8601String(),
+          )
+          .where(
+            'tanggal',
+            isLessThanOrEqualTo: endDate.toIso8601String(),
+          )
+          .where('idSite', isEqualTo: idSite)
+          .get();
+    }
+
+    return firestore
+        .collection('daily_pressure')
+        .where(
+          'tanggal',
+          isGreaterThanOrEqualTo: startDate.toIso8601String(),
+        )
+        .where(
+          'tanggal',
+          isLessThanOrEqualTo: endDate.toIso8601String(),
+        )
+        .where('idSite', isEqualTo: idSite)
+        .where('pit', isEqualTo: pit[selectedPit])
+        .get();
+  }
+
+  void refreshHistoryCheckedData() {
+    setState(() {
+      historyCheckedFuture = getHistoryCheckedFuture();
+    });
   }
 
   // Future<void> getUnits() async {
@@ -144,9 +234,9 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    getUnits();
-    log('count unit : ${units.length}');
-    pit.clear();
+    // getUnits();
+    // log('count unit : ${units.length}');
+    // pit.clear();
     // if (idSite == '52') {
     //   pit.add('All');
     //   pit.add('Utara');
@@ -154,41 +244,6 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
     //   pit.add('RML');
     //   pit.add('WS');
     // }
-    switch (idSite) {
-      case '52':
-        pit.add('All');
-        pit.add('Utara');
-        pit.add('Selatan');
-        pit.add('RML');
-        pit.add('WS');
-        break;
-      case '137':
-        pit.add('All');
-        pit.add('Japun');
-        pit.add('PCE');
-        break;
-      case '35':
-        pit.add('All');
-        pit.add('Tabuhan');
-        pit.add('EBL');
-        pit.add('Workshop');
-        break;
-      case '65':
-        pit.add('All');
-        pit.add('Room B1 Selatan');
-        pit.add('TIA');
-        pit.add('Serongga');
-        pit.add('CSA Bagaspati');
-        pit.add('CSA Selatan');
-        pit.add('WS');
-        break;
-      case '166':
-        pit.add('All');
-        pit.add('WS');
-        pit.add('Pondok Operator');
-        pit.add('Pit Stop Toll');
-        break;
-    }
 
     return Scaffold(
       appBar: appBarWidget('History', context),
@@ -210,10 +265,18 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                 initialSelectedDate: DateTime.now().subtract(Duration(days: 1)),
                 selectionColor: green00968A,
                 selectedTextColor: white,
+                // onDateChange: (date) {
+                //   log('tanggal terpilih : $date');
+                //   setState(() {
+                //     selectedDate = date;
+                //   });
+                // },
                 onDateChange: (date) {
                   log('tanggal terpilih : $date');
+
                   setState(() {
                     selectedDate = date;
+                    historyCheckedFuture = getHistoryCheckedFuture();
                   });
                 },
                 dateTextStyle: TextStyle(
@@ -586,6 +649,8 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                     switch (selectedMenu) {
                       // Checked Unit
                       case 0:
+                        historyCheckedFuture ??= getHistoryCheckedFuture();
+
                         return Column(
                           children: [
                             const SizedBox(
@@ -595,640 +660,1320 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12.0),
                               child: SelectPitButton(
-                                  pit: pit,
-                                  selectedPit: selectedPit,
-                                  onSelectedPitChanged: (index) {
-                                    setState(() {
-                                      selectedPit = index;
-                                    });
-                                  }),
+                                pit: pit,
+                                selectedPit: selectedPit,
+                                onSelectedPitChanged: (index) {
+                                  setState(() {
+                                    selectedPit = index;
+                                    historyCheckedFuture =
+                                        getHistoryCheckedFuture();
+                                  });
+                                },
+                              ),
                             ),
                             const SizedBox(
                               height: 12,
                             ),
-                            StreamBuilder(
-                                stream: firestore
-                                    .collection('daily_pressure')
-                                    .where('tanggal',
-                                        isGreaterThanOrEqualTo: DateTime(
-                                                selectedDate.year,
-                                                selectedDate.month,
-                                                selectedDate.day)
-                                            .toIso8601String())
-                                    .where('tanggal',
-                                        isLessThanOrEqualTo: DateTime(
-                                                selectedDate.year,
-                                                selectedDate.month,
-                                                selectedDate.day,
-                                                23,
-                                                59,
-                                                59)
-                                            .toIso8601String())
-                                    .where('idSite', isEqualTo: idSite)
-                                    .orderBy('tanggal', descending: true)
-                                    .snapshots(),
-                                builder: (context, snapshot) {
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.waiting) {
-                                    return CircularProgressIndicator.adaptive();
-                                  }
-                                  if (snapshot.connectionState ==
-                                      ConnectionState.active) {
-                                    // final allData = snapshot.data?.docs
-                                    //     .map((doc) => DailyPress.fromFirestore(
-                                    //         doc.data() as Map<String, dynamic>))
-                                    //     .toList();
-
-                                    // final distinctDaily =
-                                    //     Set<DailyPress>.from(allData ?? [])
-                                    //         .toList();
-
-                                    // ---------------------------------------- //
-                                    final allData = snapshot.data?.docs
-                                            .map((doc) =>
-                                                DailyPress.fromFirestore(doc
-                                                        .data()
-                                                    as Map<String, dynamic>))
-                                            .toList() ??
-                                        [];
-
-                                    // Buat map sementara untuk menyimpan data terbaru per unit
-                                    final Map<String, DailyPress>
-                                        latestDataByUnit = {};
-
-                                    for (var item in allData) {
-                                      final existing =
-                                          latestDataByUnit[item.unit];
-                                      if (existing == null ||
-                                          DateTime.parse(item.tanggal).isAfter(
-                                              DateTime.parse(
-                                                  existing.tanggal))) {
-                                        latestDataByUnit[item.unit] = item;
-                                      }
-                                    }
-
-                                    // Ambil hasil akhir (data unik dengan jam terbaru)
-                                    final distinctDaily =
-                                        latestDataByUnit.values.toList();
-
-                                    final tmpDailyData =
-                                        snapshot.data?.docs ?? [];
-
-                                    final dailyData =
-                                        distinctDaily.where((doc) {
-                                      // pilih all pit
-                                      if (pit.isNotEmpty) {
-                                        if (pit[selectedPit] == 'All') {
-                                          return doc.idSite == idSite;
-                                        }
-
-                                        // ada pit
-                                        if (doc.pit != 'Default') {
-                                          return doc.idSite == idSite &&
-                                              doc.pit == pit[selectedPit];
-                                        }
-                                      }
-
-                                      // tidak ada pit
-                                      return doc.idSite == idSite;
-                                    }).toList();
-
-                                    // untuk data export excel
-                                    filteredItemTask.clear();
-                                    filteredItemTask.clear();
-                                    dailyData.forEach((item) {
-                                      log('perulangan item: $item');
-                                      Map<String, dynamic> cast =
-                                          item.toFirestore();
-                                      if (cast['unit'] == 'CO2386') {
-                                        log('co2386: $cast');
-                                      }
-
-                                      filteredItemTask.add(cast);
-                                    });
-
-                                    log('list selected 1 = ${tmpDailyData.length}');
-                                    log('list selected 2 = ${filteredItemTask}');
-
-                                    return Column(
-                                      children: [
-                                        Text(
-                                          'Total Unit : ${dailyData.length ?? 0}',
-                                          style: getBlackTextStyle(
-                                            fontSize: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(
-                                          height: 12,
-                                        ),
-                                        (snapshot.data?.size != 0)
-                                            ? Column(
-                                                children: [
-                                                  Builder(builder: (context) {
-                                                    // Parsing string to DateTime object
-                                                    DateTime parsedDate =
-                                                        DateTime.parse(snapshot
-                                                            .data
-                                                            ?.docs[snapshot
-                                                                    .data!
-                                                                    .size -
-                                                                1]
-                                                            .data()['tanggal']);
-
-                                                    // Formatting DateTime to the desired format
-                                                    String formattedDate =
-                                                        DateFormat(
-                                                                'HH:mm:ss dd-MM-yyyy')
-                                                            .format(parsedDate);
-                                                    return Text(
-                                                      'Last Update : ${formattedDate}',
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: getBlackTextStyle(
-                                                        fontSize: 14,
-                                                      ),
-                                                    );
-                                                  }),
-                                                  const SizedBox(
-                                                    height: 12,
-                                                  ),
-                                                ],
-                                              )
-                                            : Container(),
-                                      ],
-                                    );
-                                  }
-
-                                  return Container();
-                                }),
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12.0),
-                              child: PaginateFirestore(
-                                query: selectedPit == 0
-                                    ? firestore
-                                        .collection('daily_pressure')
-                                        .where('tanggal',
-                                            isGreaterThanOrEqualTo:
-                                                DateTime(selectedDate.year, selectedDate.month, selectedDate.day)
-                                                    .toIso8601String())
-                                        .where('tanggal',
-                                            isLessThanOrEqualTo: DateTime(
-                                                    selectedDate.year,
-                                                    selectedDate.month,
-                                                    selectedDate.day,
-                                                    23,
-                                                    59,
-                                                    59)
-                                                .toIso8601String())
-                                        .where('idSite', isEqualTo: idSite)
-                                        .orderBy('tanggal', descending: true)
-                                    : firestore
-                                        .collection('daily_pressure')
-                                        .where('tanggal',
-                                            isGreaterThanOrEqualTo:
-                                                DateTime(selectedDate.year, selectedDate.month, selectedDate.day)
-                                                    .toIso8601String())
-                                        .where('tanggal',
-                                            isLessThanOrEqualTo:
-                                                DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59)
-                                                    .toIso8601String())
-                                        .where('idSite', isEqualTo: idSite)
-                                        .where('pit', isEqualTo: pit[selectedPit])
-                                        .orderBy('tanggal', descending: true),
-                                key: ValueKey(selectedDate),
-                                itemBuilderType: PaginateBuilderType.listView,
-                                shrinkWrap: true,
-                                physics: NeverScrollableScrollPhysics(),
-                                itemsPerPage: 10,
-                                isLive: true,
-                                initialLoader: const Center(
-                                    child:
-                                        CircularProgressIndicator.adaptive()),
-                                bottomLoader: const Center(
-                                    child:
-                                        CircularProgressIndicator.adaptive()),
-                                itemBuilder:
-                                    (context, snapshot, firebaseIndex) {
-                                  final Map<String, dynamic> dailyMap =
-                                      snapshot[firebaseIndex].data()
-                                          as Map<String, dynamic>;
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: refreshHistoryCheckedData,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.blueGrey,
+                                  ),
+                                  child: Text(
+                                    'Refresh History Data',
+                                    style: getWhiteTextStyle(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(
+                              height: 12,
+                            ),
+                            FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                              future: historyCheckedFuture,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                    child: CircularProgressIndicator.adaptive(),
+                                  );
+                                }
 
-                                  final String unit =
-                                      dailyMap['unit'] ?? 'No Unit';
-                                  final String pit =
-                                      dailyMap['pit'] ?? 'Default';
-                                  final String user =
-                                      dailyMap['user'] ?? 'No Name';
-                                  final String tanggal =
-                                      dailyMap['tanggal'] ?? '';
-                                  final String hm = dailyMap['hm'] ?? '0';
-                                  final positionList =
-                                      dailyMap['posisi'] as List<dynamic>? ??
-                                          [];
+                                if (snapshot.hasError) {
+                                  return Text(
+                                    'Error load history data: ${snapshot.error}',
+                                    style: getBlackTextStyle(fontSize: 14),
+                                  );
+                                }
 
-                                  if (selectedPit != 0) {
-                                    if (pit != this.pit[selectedPit]) {
-                                      return Container();
-                                    }
+                                final docs = snapshot.data?.docs ?? [];
+
+                                final rawData = docs.map((doc) {
+                                  return doc.data();
+                                }).toList();
+
+                                rawData.sort((a, b) {
+                                  final aTanggal =
+                                      a['tanggal']?.toString() ?? '';
+                                  final bTanggal =
+                                      b['tanggal']?.toString() ?? '';
+                                  return bTanggal.compareTo(aTanggal);
+                                });
+
+                                // DISTINCT BY UNIT
+                                // Jika ada unit duplikat dalam 1 hari,
+                                // yang dipakai adalah data terbaru berdasarkan tanggal.
+                                final distinctMap =
+                                    <String, Map<String, dynamic>>{};
+
+                                for (final item in rawData) {
+                                  final unit = item['unit']?.toString() ?? '';
+
+                                  if (unit.isEmpty) {
+                                    continue;
                                   }
 
-                                  if (searchQuery.isNotEmpty &&
-                                      !unit.toLowerCase().contains(
-                                          searchQuery.toLowerCase())) {
-                                    return Container();
+                                  if (!distinctMap.containsKey(unit)) {
+                                    distinctMap[unit] =
+                                        Map<String, dynamic>.from(item);
                                   }
+                                }
 
-                                  return Card(
-                                      elevation: 2,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
+                                final distinctDaily =
+                                    distinctMap.values.toList();
+
+                                final keyword = searchQuery.toLowerCase();
+
+                                final filteredData =
+                                    distinctDaily.where((data) {
+                                  final unit =
+                                      data['unit']?.toString().toLowerCase() ??
+                                          '';
+                                  final model =
+                                      data['model']?.toString().toLowerCase() ??
+                                          '';
+
+                                  if (keyword.isEmpty) return true;
+
+                                  return unit.contains(keyword) ||
+                                      model.contains(keyword);
+                                }).toList();
+
+                                filteredItemTask.clear();
+
+                                for (final item in filteredData) {
+                                  filteredItemTask
+                                      .add(Map<String, dynamic>.from(item));
+                                }
+
+                                DateTime? lastUpdate;
+
+                                if (distinctDaily.isNotEmpty) {
+                                  final tanggal = distinctDaily.first['tanggal']
+                                      ?.toString();
+
+                                  if (tanggal != null && tanggal.isNotEmpty) {
+                                    lastUpdate = DateTime.tryParse(tanggal);
+                                  }
+                                }
+
+                                return Column(
+                                  children: [
+                                    Text(
+                                      'Total Unit : ${filteredData.length}',
+                                      style: getBlackTextStyle(
+                                        fontSize: 20,
                                       ),
-                                      color: green00968A,
-                                      child: Container(
-                                        width: double.infinity,
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 24),
-                                        decoration: BoxDecoration(
-                                          color: green00968A,
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: ExpansionTile(
-                                          tilePadding: EdgeInsets.zero,
-                                          childrenPadding: EdgeInsets.all(0),
-                                          title: Row(
-                                            children: [
-                                              Icon(
-                                                Icons.task,
-                                                color: white,
-                                                size: 36,
-                                              ),
-                                              const SizedBox(
-                                                width: 12,
-                                              ),
-                                              Text(
-                                                unit +
-                                                    '${((pit != 'Default') ? '\n' + pit : '')}',
-                                                style: getWhiteTextStyle(
-                                                    fontWeight: w700,
-                                                    fontSize: 18),
-                                              )
-                                            ],
+                                    ),
+                                    const SizedBox(
+                                      height: 12,
+                                    ),
+                                    if (lastUpdate != null)
+                                      Column(
+                                        children: [
+                                          Text(
+                                            'Last Update : ${DateFormat('HH:mm:ss dd-MM-yyyy').format(lastUpdate)}',
+                                            textAlign: TextAlign.center,
+                                            style: getBlackTextStyle(
+                                              fontSize: 14,
+                                            ),
                                           ),
-                                          trailing: SizedBox(
-                                            width: 90,
-                                            child: Icon(Icons.arrow_drop_down),
+                                          const SizedBox(
+                                            height: 12,
                                           ),
-                                          children: [
-                                            const SizedBox(height: 12),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text('Name',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18)),
-                                                Container(
-                                                  width: 250,
-                                                  child: Text(user,
-                                                      textAlign: TextAlign.end,
-                                                      style: getWhiteTextStyle(
-                                                          fontWeight: w700,
-                                                          fontSize: 18)),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text('Tanggal',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18)),
-                                                Text(
-                                                    tanggal.isNotEmpty
-                                                        ? tanggal.split('T')[0]
-                                                        : 'No Date',
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18)),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text('Waktu',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18)),
-                                                Text(
-                                                    (tanggal.isNotEmpty &&
-                                                            tanggal
-                                                                .contains('T'))
-                                                        ? tanggal
-                                                            .split('T')[1]
-                                                            .substring(0, 5)
-                                                        : 'No Time',
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18)),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text(
-                                                  (idSite == bmbhauling.idSite)
-                                                      ? 'KM Unit'
-                                                      : 'HM Unit',
-                                                  style: getWhiteTextStyle(
-                                                      fontSize: 18),
-                                                ),
-                                                Text(hm,
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18)),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                Text('Pit',
-                                                    style: getWhiteTextStyle(
-                                                        fontSize: 18)),
-                                                Text(pit,
-                                                    style: getWhiteTextStyle(
-                                                        fontWeight: w700,
-                                                        fontSize: 18)),
-                                              ],
-                                            ),
-                                            const SizedBox(height: 12),
-                                            Column(
-                                              children: positionList.map((pl) {
-                                                final Map<String, dynamic>
-                                                    posData =
-                                                    pl as Map<String, dynamic>;
+                                        ],
+                                      ),
+                                    filteredData.isEmpty
+                                        ? Text(
+                                            'Empty!',
+                                            textAlign: TextAlign.center,
+                                            style:
+                                                getBlackTextStyle(fontSize: 18),
+                                          )
+                                        : Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12.0),
+                                            child: ListView.builder(
+                                              itemCount: filteredData.length,
+                                              shrinkWrap: true,
+                                              physics:
+                                                  const NeverScrollableScrollPhysics(),
+                                              itemBuilder: (context, index) {
+                                                final dailyMap =
+                                                    filteredData[index];
 
-                                                List<dynamic> luka = [];
-                                                final dynamic rawLuka =
-                                                    posData['luka'];
-
-                                                if (rawLuka is List) {
-                                                  luka = rawLuka;
-                                                } else if (rawLuka is String) {
-                                                  luka.add(rawLuka);
-                                                }
-
-                                                final String pos =
-                                                    posData['pos']
+                                                final String unit =
+                                                    dailyMap['unit']
                                                             ?.toString() ??
-                                                        '-';
-                                                final String pressure =
-                                                    posData['pressure']
+                                                        'No Unit';
+                                                final String pitText =
+                                                    dailyMap['pit']
                                                             ?.toString() ??
-                                                        '0';
-                                                final String adjPressure =
-                                                    posData['adjusmentPressure']
+                                                        'Default';
+                                                final String userText =
+                                                    dailyMap['user']
+                                                            ?.toString() ??
+                                                        'No Name';
+                                                final String tanggal =
+                                                    dailyMap['tanggal']
                                                             ?.toString() ??
                                                         '';
-                                                final String rating =
-                                                    posData['rating']
-                                                            ?.toString() ??
-                                                        '';
+                                                final String hm = dailyMap['hm']
+                                                        ?.toString() ??
+                                                    '0';
 
-                                                return Column(
-                                                  children: [
-                                                    Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Text(
-                                                          'Pos. $pos',
-                                                          style:
-                                                              getWhiteTextStyle(
-                                                                  fontSize: 18),
-                                                        ),
-                                                        Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .end,
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Text(
-                                                              '$pressure Psi',
+                                                final positionList =
+                                                    dailyMap['posisi']
+                                                            as List<dynamic>? ??
+                                                        [];
+
+                                                return Card(
+                                                  elevation: 2,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            12),
+                                                  ),
+                                                  color: green00968A,
+                                                  child: Container(
+                                                    width: double.infinity,
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 24,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: green00968A,
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    ),
+                                                    child: ExpansionTile(
+                                                      tilePadding:
+                                                          EdgeInsets.zero,
+                                                      childrenPadding:
+                                                          EdgeInsets.zero,
+                                                      title: Row(
+                                                        children: [
+                                                          Icon(
+                                                            Icons.task,
+                                                            color: white,
+                                                            size: 36,
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 12,
+                                                          ),
+                                                          Expanded(
+                                                            child: Text(
+                                                              unit +
+                                                                  '${((pitText != 'Default') ? '\n$pitText' : '')}',
                                                               style:
                                                                   getWhiteTextStyle(
-                                                                      fontWeight:
-                                                                          w700,
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      trailing: const SizedBox(
+                                                        width: 90,
+                                                        child: Icon(Icons
+                                                            .arrow_drop_down),
+                                                      ),
+                                                      children: [
+                                                        const SizedBox(
+                                                            height: 12),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Text(
+                                                              'Name',
+                                                              style:
+                                                                  getWhiteTextStyle(
                                                                       fontSize:
                                                                           18),
                                                             ),
-                                                            if (adjPressure
-                                                                    .isNotEmpty &&
-                                                                adjPressure !=
-                                                                    '0')
-                                                              Text(
-                                                                '$adjPressure Psi (Adj. Pressure)',
-                                                                style: getWhiteTextStyle(
-                                                                    fontWeight:
-                                                                        w700,
-                                                                    fontSize:
-                                                                        18),
-                                                              ),
-                                                            if (luka.isNotEmpty)
-                                                              Text(
-                                                                luka.join('\n'),
+                                                            SizedBox(
+                                                              width: 250,
+                                                              child: Text(
+                                                                userText,
                                                                 textAlign:
                                                                     TextAlign
                                                                         .end,
-                                                                style: getWhiteTextStyle(
-                                                                    fontWeight:
-                                                                        w700,
-                                                                    fontSize:
-                                                                        18),
+                                                                style:
+                                                                    getWhiteTextStyle(
+                                                                  fontWeight:
+                                                                      w700,
+                                                                  fontSize: 18,
+                                                                ),
                                                               ),
-                                                            if (rating
-                                                                .isNotEmpty)
-                                                              Text(
-                                                                  'Rating $rating',
-                                                                  style: getWhiteTextStyle(
-                                                                      fontWeight:
-                                                                          w700,
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 12),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Text(
+                                                              'Tanggal',
+                                                              style:
+                                                                  getWhiteTextStyle(
                                                                       fontSize:
-                                                                          18)),
-                                                            // Jangan lupa tambahkan IDSite 33
-                                                            if (idSite ==
-                                                                    '33' &&
-                                                                pl['tireAccessories'] !=
-                                                                    null)
-                                                              Column(
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .end,
-                                                                children: [
-                                                                  Text(
-                                                                      'Tire Accessories',
-                                                                      style: getWhiteTextStyle(
-                                                                          fontWeight:
-                                                                              w700,
-                                                                          fontSize:
-                                                                              14)),
-                                                                  const SizedBox(
-                                                                    height: 6,
-                                                                  ),
-                                                                  Column(
-                                                                    crossAxisAlignment:
-                                                                        CrossAxisAlignment
-                                                                            .end,
-                                                                    children: pl[
-                                                                            'tireAccessories']
-                                                                        .map<Widget>(
-                                                                            (acc) {
-                                                                      return Column(
-                                                                        crossAxisAlignment:
-                                                                            CrossAxisAlignment.end,
-                                                                        children: [
-                                                                          Row(
+                                                                          18),
+                                                            ),
+                                                            Text(
+                                                              tanggal.isNotEmpty
+                                                                  ? tanggal
+                                                                      .split(
+                                                                          'T')[0]
+                                                                  : 'No Date',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 12),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Text(
+                                                              'Waktu',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                      fontSize:
+                                                                          18),
+                                                            ),
+                                                            Text(
+                                                              (tanggal.isNotEmpty &&
+                                                                      tanggal.contains(
+                                                                          'T'))
+                                                                  ? tanggal
+                                                                      .split('T')[
+                                                                          1]
+                                                                      .substring(
+                                                                          0, 5)
+                                                                  : 'No Time',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 12),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Text(
+                                                              (idSite ==
+                                                                      bmbhauling
+                                                                          .idSite)
+                                                                  ? 'KM Unit'
+                                                                  : 'HM Unit',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                      fontSize:
+                                                                          18),
+                                                            ),
+                                                            Text(
+                                                              hm,
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 12),
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          children: [
+                                                            Text(
+                                                              'Pit',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                      fontSize:
+                                                                          18),
+                                                            ),
+                                                            Text(
+                                                              pitText,
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        const SizedBox(
+                                                            height: 12),
+                                                        Column(
+                                                          children: positionList
+                                                              .map((pl) {
+                                                            final Map<String,
+                                                                    dynamic>
+                                                                posData = Map<
+                                                                    String,
+                                                                    dynamic>.from(
+                                                              pl as Map,
+                                                            );
+
+                                                            List<dynamic> luka =
+                                                                [];
+                                                            final dynamic
+                                                                rawLuka =
+                                                                posData['luka'];
+
+                                                            if (rawLuka
+                                                                is List) {
+                                                              luka = rawLuka;
+                                                            } else if (rawLuka
+                                                                    is String &&
+                                                                rawLuka
+                                                                    .isNotEmpty) {
+                                                              luka.add(rawLuka);
+                                                            }
+
+                                                            final String pos =
+                                                                posData['pos']
+                                                                        ?.toString() ??
+                                                                    '-';
+
+                                                            final String
+                                                                pressure =
+                                                                posData['pressure']
+                                                                        ?.toString() ??
+                                                                    '0';
+
+                                                            final String
+                                                                adjPressure =
+                                                                posData['adjusmentPressure']
+                                                                        ?.toString() ??
+                                                                    '';
+
+                                                            final String
+                                                                rating =
+                                                                posData['rating']
+                                                                        ?.toString() ??
+                                                                    '';
+
+                                                            return Column(
+                                                              children: [
+                                                                Row(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .spaceBetween,
+                                                                  crossAxisAlignment:
+                                                                      CrossAxisAlignment
+                                                                          .center,
+                                                                  children: [
+                                                                    Text(
+                                                                      'Pos. $pos',
+                                                                      style:
+                                                                          getWhiteTextStyle(
+                                                                        fontSize:
+                                                                            18,
+                                                                      ),
+                                                                    ),
+                                                                    Column(
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .end,
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .center,
+                                                                      children: [
+                                                                        Text(
+                                                                          '$pressure Psi',
+                                                                          style:
+                                                                              getWhiteTextStyle(
+                                                                            fontWeight:
+                                                                                w700,
+                                                                            fontSize:
+                                                                                18,
+                                                                          ),
+                                                                        ),
+                                                                        if (adjPressure.isNotEmpty &&
+                                                                            adjPressure !=
+                                                                                '0')
+                                                                          Text(
+                                                                            '$adjPressure Psi (Adj. Pressure)',
+                                                                            style:
+                                                                                getWhiteTextStyle(
+                                                                              fontWeight: w700,
+                                                                              fontSize: 18,
+                                                                            ),
+                                                                          ),
+                                                                        if (luka
+                                                                            .isNotEmpty)
+                                                                          Text(
+                                                                            luka.join('\n'),
+                                                                            textAlign:
+                                                                                TextAlign.end,
+                                                                            style:
+                                                                                getWhiteTextStyle(
+                                                                              fontWeight: w700,
+                                                                              fontSize: 18,
+                                                                            ),
+                                                                          ),
+                                                                        if (rating
+                                                                            .isNotEmpty)
+                                                                          Text(
+                                                                            'Rating $rating',
+                                                                            style:
+                                                                                getWhiteTextStyle(
+                                                                              fontWeight: w700,
+                                                                              fontSize: 18,
+                                                                            ),
+                                                                          ),
+                                                                        if (idSite ==
+                                                                                '33' &&
+                                                                            posData['tireAccessories'] !=
+                                                                                null)
+                                                                          Column(
+                                                                            crossAxisAlignment:
+                                                                                CrossAxisAlignment.end,
                                                                             children: [
-                                                                              Text(acc['name'] + ' (' + acc['condition'] + '${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})', textAlign: TextAlign.right, style: getWhiteTextStyle(fontWeight: w500, fontSize: 14)),
-                                                                            ],
-                                                                          ),
-                                                                          const SizedBox(
-                                                                            height:
-                                                                                6,
-                                                                          ),
-                                                                          if (acc['image'].isNotEmpty &&
-                                                                              acc['image'] != 'image.png' &&
-                                                                              acc['image'] != '')
-                                                                            InkWell(
-                                                                              onTap: () async {
-                                                                                await showDialog(
-                                                                                  context: context,
-                                                                                  barrierDismissible: true,
-                                                                                  builder: (_) {
-                                                                                    return Dialog(
-                                                                                      backgroundColor: Colors.transparent,
-                                                                                      elevation: 0,
-                                                                                      child: Center(
-                                                                                        child: Column(
-                                                                                          mainAxisSize: MainAxisSize.min,
-                                                                                          children: [
-                                                                                            // === GAMBAR + TOMBOL CLOSE ===
-                                                                                            Stack(
-                                                                                              children: [
-                                                                                                Container(
-                                                                                                  width: MediaQuery.of(context).size.width * 0.6,
-                                                                                                  height: MediaQuery.of(context).size.height * 0.6,
-                                                                                                  decoration: BoxDecoration(
-                                                                                                    borderRadius: BorderRadius.circular(12),
-                                                                                                  ),
-                                                                                                  clipBehavior: Clip.antiAlias,
-                                                                                                  child: Image.network(
-                                                                                                    acc['image'],
-                                                                                                    fit: BoxFit.contain,
-                                                                                                  ),
-                                                                                                ),
-                                                                                                Positioned(
-                                                                                                  right: 8,
-                                                                                                  top: 8,
-                                                                                                  child: InkWell(
-                                                                                                    onTap: () => Navigator.of(context).pop(),
-                                                                                                    borderRadius: BorderRadius.circular(20),
-                                                                                                    child: Container(
-                                                                                                      padding: const EdgeInsets.all(6),
-                                                                                                      decoration: BoxDecoration(
-                                                                                                        color: Colors.black45,
-                                                                                                        shape: BoxShape.circle,
-                                                                                                      ),
-                                                                                                      child: const Icon(
-                                                                                                        LucideIcons.x,
-                                                                                                        color: Colors.white,
-                                                                                                        size: 20,
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ],
-                                                                                            ),
-
-                                                                                            const SizedBox(height: 12),
-
-                                                                                            // === TEKS KETERANGAN ===
-                                                                                            Container(
-                                                                                              padding: const EdgeInsets.all(8),
-                                                                                              decoration: BoxDecoration(
-                                                                                                color: Colors.white,
-                                                                                                borderRadius: BorderRadius.circular(16),
-                                                                                              ),
-                                                                                              child: Text(
-                                                                                                '#$unit Pos. $pos | ${acc['name']} ${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''}',
-                                                                                                style: getBlackTextStyle(
-                                                                                                  fontWeight: w700,
-                                                                                                ),
-                                                                                                textAlign: TextAlign.center,
-                                                                                              ),
-                                                                                            ),
-                                                                                          ],
-                                                                                        ),
-                                                                                      ),
-                                                                                    );
-                                                                                  },
-                                                                                );
-                                                                              },
-                                                                              child: SizedBox(
-                                                                                width: 150,
-                                                                                height: 100,
-                                                                                child: Image.network(
-                                                                                  acc['image'],
-                                                                                  fit: BoxFit.cover,
+                                                                              Text(
+                                                                                'Tire Accessories',
+                                                                                style: getWhiteTextStyle(
+                                                                                  fontWeight: w700,
+                                                                                  fontSize: 14,
                                                                                 ),
                                                                               ),
-                                                                            )
-                                                                        ],
-                                                                      );
-                                                                    }).toList(),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                          ],
+                                                                              const SizedBox(
+                                                                                height: 6,
+                                                                              ),
+                                                                              Column(
+                                                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                                                children: posData['tireAccessories'].map<Widget>((acc) {
+                                                                                  return Column(
+                                                                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                                                                    children: [
+                                                                                      Row(
+                                                                                        children: [
+                                                                                          Text(
+                                                                                            acc['name'] + ' (' + acc['condition'] + '${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})',
+                                                                                            textAlign: TextAlign.right,
+                                                                                            style: getWhiteTextStyle(
+                                                                                              fontWeight: w500,
+                                                                                              fontSize: 14,
+                                                                                            ),
+                                                                                          ),
+                                                                                        ],
+                                                                                      ),
+                                                                                      const SizedBox(
+                                                                                        height: 6,
+                                                                                      ),
+                                                                                      if (acc['image'].isNotEmpty && acc['image'] != 'image.png' && acc['image'] != '')
+                                                                                        InkWell(
+                                                                                          onTap: () async {
+                                                                                            await showDialog(
+                                                                                              context: context,
+                                                                                              barrierDismissible: true,
+                                                                                              builder: (_) {
+                                                                                                return Dialog(
+                                                                                                  backgroundColor: Colors.transparent,
+                                                                                                  elevation: 0,
+                                                                                                  child: Center(
+                                                                                                    child: Column(
+                                                                                                      mainAxisSize: MainAxisSize.min,
+                                                                                                      children: [
+                                                                                                        Stack(
+                                                                                                          children: [
+                                                                                                            Container(
+                                                                                                              width: MediaQuery.of(context).size.width * 0.6,
+                                                                                                              height: MediaQuery.of(context).size.height * 0.6,
+                                                                                                              decoration: BoxDecoration(
+                                                                                                                borderRadius: BorderRadius.circular(12),
+                                                                                                              ),
+                                                                                                              clipBehavior: Clip.antiAlias,
+                                                                                                              child: Image.network(
+                                                                                                                acc['image'],
+                                                                                                                fit: BoxFit.contain,
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                            Positioned(
+                                                                                                              right: 8,
+                                                                                                              top: 8,
+                                                                                                              child: InkWell(
+                                                                                                                onTap: () => Navigator.of(context).pop(),
+                                                                                                                borderRadius: BorderRadius.circular(20),
+                                                                                                                child: Container(
+                                                                                                                  padding: const EdgeInsets.all(6),
+                                                                                                                  decoration: const BoxDecoration(
+                                                                                                                    color: Colors.black45,
+                                                                                                                    shape: BoxShape.circle,
+                                                                                                                  ),
+                                                                                                                  child: const Icon(
+                                                                                                                    LucideIcons.x,
+                                                                                                                    color: Colors.white,
+                                                                                                                    size: 20,
+                                                                                                                  ),
+                                                                                                                ),
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                          ],
+                                                                                                        ),
+                                                                                                        const SizedBox(height: 12),
+                                                                                                        Container(
+                                                                                                          padding: const EdgeInsets.all(8),
+                                                                                                          decoration: BoxDecoration(
+                                                                                                            color: Colors.white,
+                                                                                                            borderRadius: BorderRadius.circular(16),
+                                                                                                          ),
+                                                                                                          child: Text(
+                                                                                                            '#$unit Pos. $pos | ${acc['name']} ${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''}',
+                                                                                                            style: getBlackTextStyle(
+                                                                                                              fontWeight: w700,
+                                                                                                            ),
+                                                                                                            textAlign: TextAlign.center,
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ],
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                );
+                                                                                              },
+                                                                                            );
+                                                                                          },
+                                                                                          child: SizedBox(
+                                                                                            width: 150,
+                                                                                            height: 100,
+                                                                                            child: Image.network(
+                                                                                              acc['image'],
+                                                                                              fit: BoxFit.cover,
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                    ],
+                                                                                  );
+                                                                                }).toList(),
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                      ],
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                                const SizedBox(
+                                                                    height: 12),
+                                                                Divider(
+                                                                  color: white,
+                                                                  thickness:
+                                                                      1.5,
+                                                                ),
+                                                              ],
+                                                            );
+                                                          }).toList(),
                                                         ),
                                                       ],
                                                     ),
-                                                    const SizedBox(height: 12),
-                                                    Divider(
-                                                      color: white,
-                                                      thickness: 1.5,
-                                                    ),
-                                                  ],
+                                                  ),
                                                 );
-                                              }).toList(),
+                                              },
                                             ),
-                                          ],
-                                        ),
-                                      ));
-                                },
-                              ),
+                                          ),
+                                  ],
+                                );
+                              },
                             ),
                           ],
                         );
+                      // case 0:
+                      //   return Column(
+                      //     children: [
+                      //       const SizedBox(
+                      //         height: 12,
+                      //       ),
+                      //       Padding(
+                      //         padding:
+                      //             const EdgeInsets.symmetric(horizontal: 12.0),
+                      //         child: SelectPitButton(
+                      //             pit: pit,
+                      //             selectedPit: selectedPit,
+                      //             onSelectedPitChanged: (index) {
+                      //               setState(() {
+                      //                 selectedPit = index;
+                      //               });
+                      //             }),
+                      //       ),
+                      //       const SizedBox(
+                      //         height: 12,
+                      //       ),
+                      //       StreamBuilder(
+                      //           stream: firestore
+                      //               .collection('daily_pressure')
+                      //               .where('tanggal',
+                      //                   isGreaterThanOrEqualTo: DateTime(
+                      //                           selectedDate.year,
+                      //                           selectedDate.month,
+                      //                           selectedDate.day)
+                      //                       .toIso8601String())
+                      //               .where('tanggal',
+                      //                   isLessThanOrEqualTo: DateTime(
+                      //                           selectedDate.year,
+                      //                           selectedDate.month,
+                      //                           selectedDate.day,
+                      //                           23,
+                      //                           59,
+                      //                           59)
+                      //                       .toIso8601String())
+                      //               .where('idSite', isEqualTo: idSite)
+                      //               .orderBy('tanggal', descending: true)
+                      //               .snapshots(),
+                      //           builder: (context, snapshot) {
+                      //             if (snapshot.connectionState ==
+                      //                 ConnectionState.waiting) {
+                      //               return CircularProgressIndicator.adaptive();
+                      //             }
+                      //             if (snapshot.connectionState ==
+                      //                 ConnectionState.active) {
+                      //               // final allData = snapshot.data?.docs
+                      //               //     .map((doc) => DailyPress.fromFirestore(
+                      //               //         doc.data() as Map<String, dynamic>))
+                      //               //     .toList();
+
+                      //               // final distinctDaily =
+                      //               //     Set<DailyPress>.from(allData ?? [])
+                      //               //         .toList();
+
+                      //               // ---------------------------------------- //
+                      //               final allData = snapshot.data?.docs
+                      //                       .map((doc) =>
+                      //                           DailyPress.fromFirestore(doc
+                      //                                   .data()
+                      //                               as Map<String, dynamic>))
+                      //                       .toList() ??
+                      //                   [];
+
+                      //               // Buat map sementara untuk menyimpan data terbaru per unit
+                      //               final Map<String, DailyPress>
+                      //                   latestDataByUnit = {};
+
+                      //               for (var item in allData) {
+                      //                 final existing =
+                      //                     latestDataByUnit[item.unit];
+                      //                 if (existing == null ||
+                      //                     DateTime.parse(item.tanggal).isAfter(
+                      //                         DateTime.parse(
+                      //                             existing.tanggal))) {
+                      //                   latestDataByUnit[item.unit] = item;
+                      //                 }
+                      //               }
+
+                      //               // Ambil hasil akhir (data unik dengan jam terbaru)
+                      //               final distinctDaily =
+                      //                   latestDataByUnit.values.toList();
+
+                      //               final tmpDailyData =
+                      //                   snapshot.data?.docs ?? [];
+
+                      //               final dailyData =
+                      //                   distinctDaily.where((doc) {
+                      //                 // pilih all pit
+                      //                 if (pit.isNotEmpty) {
+                      //                   if (pit[selectedPit] == 'All') {
+                      //                     return doc.idSite == idSite;
+                      //                   }
+
+                      //                   // ada pit
+                      //                   if (doc.pit != 'Default') {
+                      //                     return doc.idSite == idSite &&
+                      //                         doc.pit == pit[selectedPit];
+                      //                   }
+                      //                 }
+
+                      //                 // tidak ada pit
+                      //                 return doc.idSite == idSite;
+                      //               }).toList();
+
+                      //               // untuk data export excel
+                      //               filteredItemTask.clear();
+                      //               filteredItemTask.clear();
+                      //               dailyData.forEach((item) {
+                      //                 log('perulangan item: $item');
+                      //                 Map<String, dynamic> cast =
+                      //                     item.toFirestore();
+                      //                 if (cast['unit'] == 'CO2386') {
+                      //                   log('co2386: $cast');
+                      //                 }
+
+                      //                 filteredItemTask.add(cast);
+                      //               });
+
+                      //               log('list selected 1 = ${tmpDailyData.length}');
+                      //               log('list selected 2 = ${filteredItemTask}');
+
+                      //               return Column(
+                      //                 children: [
+                      //                   Text(
+                      //                     'Total Unit : ${dailyData.length ?? 0}',
+                      //                     style: getBlackTextStyle(
+                      //                       fontSize: 20,
+                      //                     ),
+                      //                   ),
+                      //                   const SizedBox(
+                      //                     height: 12,
+                      //                   ),
+                      //                   (snapshot.data?.size != 0)
+                      //                       ? Column(
+                      //                           children: [
+                      //                             Builder(builder: (context) {
+                      //                               // Parsing string to DateTime object
+                      //                               DateTime parsedDate =
+                      //                                   DateTime.parse(snapshot
+                      //                                       .data
+                      //                                       ?.docs[snapshot
+                      //                                               .data!
+                      //                                               .size -
+                      //                                           1]
+                      //                                       .data()['tanggal']);
+
+                      //                               // Formatting DateTime to the desired format
+                      //                               String formattedDate =
+                      //                                   DateFormat(
+                      //                                           'HH:mm:ss dd-MM-yyyy')
+                      //                                       .format(parsedDate);
+                      //                               return Text(
+                      //                                 'Last Update : ${formattedDate}',
+                      //                                 textAlign:
+                      //                                     TextAlign.center,
+                      //                                 style: getBlackTextStyle(
+                      //                                   fontSize: 14,
+                      //                                 ),
+                      //                               );
+                      //                             }),
+                      //                             const SizedBox(
+                      //                               height: 12,
+                      //                             ),
+                      //                           ],
+                      //                         )
+                      //                       : Container(),
+                      //                 ],
+                      //               );
+                      //             }
+
+                      //             return Container();
+                      //           }),
+                      //       Padding(
+                      //         padding:
+                      //             const EdgeInsets.symmetric(horizontal: 12.0),
+                      //         child: PaginateFirestore(
+                      //           query: selectedPit == 0
+                      //               ? firestore
+                      //                   .collection('daily_pressure')
+                      //                   .where('tanggal',
+                      //                       isGreaterThanOrEqualTo:
+                      //                           DateTime(selectedDate.year, selectedDate.month, selectedDate.day)
+                      //                               .toIso8601String())
+                      //                   .where('tanggal',
+                      //                       isLessThanOrEqualTo: DateTime(
+                      //                               selectedDate.year,
+                      //                               selectedDate.month,
+                      //                               selectedDate.day,
+                      //                               23,
+                      //                               59,
+                      //                               59)
+                      //                           .toIso8601String())
+                      //                   .where('idSite', isEqualTo: idSite)
+                      //                   .orderBy('tanggal', descending: true)
+                      //               : firestore
+                      //                   .collection('daily_pressure')
+                      //                   .where('tanggal',
+                      //                       isGreaterThanOrEqualTo:
+                      //                           DateTime(selectedDate.year, selectedDate.month, selectedDate.day)
+                      //                               .toIso8601String())
+                      //                   .where('tanggal',
+                      //                       isLessThanOrEqualTo:
+                      //                           DateTime(selectedDate.year, selectedDate.month, selectedDate.day, 23, 59, 59)
+                      //                               .toIso8601String())
+                      //                   .where('idSite', isEqualTo: idSite)
+                      //                   .where('pit', isEqualTo: pit[selectedPit])
+                      //                   .orderBy('tanggal', descending: true),
+                      //           key: ValueKey(selectedDate),
+                      //           itemBuilderType: PaginateBuilderType.listView,
+                      //           shrinkWrap: true,
+                      //           physics: NeverScrollableScrollPhysics(),
+                      //           itemsPerPage: 10,
+                      //           isLive: true,
+                      //           initialLoader: const Center(
+                      //               child:
+                      //                   CircularProgressIndicator.adaptive()),
+                      //           bottomLoader: const Center(
+                      //               child:
+                      //                   CircularProgressIndicator.adaptive()),
+                      //           itemBuilder:
+                      //               (context, snapshot, firebaseIndex) {
+                      //             final Map<String, dynamic> dailyMap =
+                      //                 snapshot[firebaseIndex].data()
+                      //                     as Map<String, dynamic>;
+
+                      //             final String unit =
+                      //                 dailyMap['unit'] ?? 'No Unit';
+                      //             final String pit =
+                      //                 dailyMap['pit'] ?? 'Default';
+                      //             final String user =
+                      //                 dailyMap['user'] ?? 'No Name';
+                      //             final String tanggal =
+                      //                 dailyMap['tanggal'] ?? '';
+                      //             final String hm = dailyMap['hm'] ?? '0';
+                      //             final positionList =
+                      //                 dailyMap['posisi'] as List<dynamic>? ??
+                      //                     [];
+
+                      //             if (selectedPit != 0) {
+                      //               if (pit != this.pit[selectedPit]) {
+                      //                 return Container();
+                      //               }
+                      //             }
+
+                      //             if (searchQuery.isNotEmpty &&
+                      //                 !unit.toLowerCase().contains(
+                      //                     searchQuery.toLowerCase())) {
+                      //               return Container();
+                      //             }
+
+                      //             return Card(
+                      //                 elevation: 2,
+                      //                 shape: RoundedRectangleBorder(
+                      //                   borderRadius: BorderRadius.circular(12),
+                      //                 ),
+                      //                 color: green00968A,
+                      //                 child: Container(
+                      //                   width: double.infinity,
+                      //                   padding: EdgeInsets.symmetric(
+                      //                       horizontal: 12, vertical: 24),
+                      //                   decoration: BoxDecoration(
+                      //                     color: green00968A,
+                      //                     borderRadius:
+                      //                         BorderRadius.circular(12),
+                      //                   ),
+                      //                   child: ExpansionTile(
+                      //                     tilePadding: EdgeInsets.zero,
+                      //                     childrenPadding: EdgeInsets.all(0),
+                      //                     title: Row(
+                      //                       children: [
+                      //                         Icon(
+                      //                           Icons.task,
+                      //                           color: white,
+                      //                           size: 36,
+                      //                         ),
+                      //                         const SizedBox(
+                      //                           width: 12,
+                      //                         ),
+                      //                         Text(
+                      //                           unit +
+                      //                               '${((pit != 'Default') ? '\n' + pit : '')}',
+                      //                           style: getWhiteTextStyle(
+                      //                               fontWeight: w700,
+                      //                               fontSize: 18),
+                      //                         )
+                      //                       ],
+                      //                     ),
+                      //                     trailing: SizedBox(
+                      //                       width: 90,
+                      //                       child: Icon(Icons.arrow_drop_down),
+                      //                     ),
+                      //                     children: [
+                      //                       const SizedBox(height: 12),
+                      //                       Row(
+                      //                         mainAxisAlignment:
+                      //                             MainAxisAlignment
+                      //                                 .spaceBetween,
+                      //                         children: [
+                      //                           Text('Name',
+                      //                               style: getWhiteTextStyle(
+                      //                                   fontSize: 18)),
+                      //                           Container(
+                      //                             width: 250,
+                      //                             child: Text(user,
+                      //                                 textAlign: TextAlign.end,
+                      //                                 style: getWhiteTextStyle(
+                      //                                     fontWeight: w700,
+                      //                                     fontSize: 18)),
+                      //                           ),
+                      //                         ],
+                      //                       ),
+                      //                       const SizedBox(height: 12),
+                      //                       Row(
+                      //                         mainAxisAlignment:
+                      //                             MainAxisAlignment
+                      //                                 .spaceBetween,
+                      //                         children: [
+                      //                           Text('Tanggal',
+                      //                               style: getWhiteTextStyle(
+                      //                                   fontSize: 18)),
+                      //                           Text(
+                      //                               tanggal.isNotEmpty
+                      //                                   ? tanggal.split('T')[0]
+                      //                                   : 'No Date',
+                      //                               style: getWhiteTextStyle(
+                      //                                   fontWeight: w700,
+                      //                                   fontSize: 18)),
+                      //                         ],
+                      //                       ),
+                      //                       const SizedBox(height: 12),
+                      //                       Row(
+                      //                         mainAxisAlignment:
+                      //                             MainAxisAlignment
+                      //                                 .spaceBetween,
+                      //                         children: [
+                      //                           Text('Waktu',
+                      //                               style: getWhiteTextStyle(
+                      //                                   fontSize: 18)),
+                      //                           Text(
+                      //                               (tanggal.isNotEmpty &&
+                      //                                       tanggal
+                      //                                           .contains('T'))
+                      //                                   ? tanggal
+                      //                                       .split('T')[1]
+                      //                                       .substring(0, 5)
+                      //                                   : 'No Time',
+                      //                               style: getWhiteTextStyle(
+                      //                                   fontWeight: w700,
+                      //                                   fontSize: 18)),
+                      //                         ],
+                      //                       ),
+                      //                       const SizedBox(height: 12),
+                      //                       Row(
+                      //                         mainAxisAlignment:
+                      //                             MainAxisAlignment
+                      //                                 .spaceBetween,
+                      //                         children: [
+                      //                           Text(
+                      //                             (idSite == bmbhauling.idSite)
+                      //                                 ? 'KM Unit'
+                      //                                 : 'HM Unit',
+                      //                             style: getWhiteTextStyle(
+                      //                                 fontSize: 18),
+                      //                           ),
+                      //                           Text(hm,
+                      //                               style: getWhiteTextStyle(
+                      //                                   fontWeight: w700,
+                      //                                   fontSize: 18)),
+                      //                         ],
+                      //                       ),
+                      //                       const SizedBox(height: 12),
+                      //                       Row(
+                      //                         mainAxisAlignment:
+                      //                             MainAxisAlignment
+                      //                                 .spaceBetween,
+                      //                         children: [
+                      //                           Text('Pit',
+                      //                               style: getWhiteTextStyle(
+                      //                                   fontSize: 18)),
+                      //                           Text(pit,
+                      //                               style: getWhiteTextStyle(
+                      //                                   fontWeight: w700,
+                      //                                   fontSize: 18)),
+                      //                         ],
+                      //                       ),
+                      //                       const SizedBox(height: 12),
+                      //                       Column(
+                      //                         children: positionList.map((pl) {
+                      //                           final Map<String, dynamic>
+                      //                               posData =
+                      //                               pl as Map<String, dynamic>;
+
+                      //                           List<dynamic> luka = [];
+                      //                           final dynamic rawLuka =
+                      //                               posData['luka'];
+
+                      //                           if (rawLuka is List) {
+                      //                             luka = rawLuka;
+                      //                           } else if (rawLuka is String) {
+                      //                             luka.add(rawLuka);
+                      //                           }
+
+                      //                           final String pos =
+                      //                               posData['pos']
+                      //                                       ?.toString() ??
+                      //                                   '-';
+                      //                           final String pressure =
+                      //                               posData['pressure']
+                      //                                       ?.toString() ??
+                      //                                   '0';
+                      //                           final String adjPressure =
+                      //                               posData['adjusmentPressure']
+                      //                                       ?.toString() ??
+                      //                                   '';
+                      //                           final String rating =
+                      //                               posData['rating']
+                      //                                       ?.toString() ??
+                      //                                   '';
+
+                      //                           return Column(
+                      //                             children: [
+                      //                               Row(
+                      //                                 mainAxisAlignment:
+                      //                                     MainAxisAlignment
+                      //                                         .spaceBetween,
+                      //                                 crossAxisAlignment:
+                      //                                     CrossAxisAlignment
+                      //                                         .center,
+                      //                                 children: [
+                      //                                   Text(
+                      //                                     'Pos. $pos',
+                      //                                     style:
+                      //                                         getWhiteTextStyle(
+                      //                                             fontSize: 18),
+                      //                                   ),
+                      //                                   Column(
+                      //                                     crossAxisAlignment:
+                      //                                         CrossAxisAlignment
+                      //                                             .end,
+                      //                                     mainAxisAlignment:
+                      //                                         MainAxisAlignment
+                      //                                             .center,
+                      //                                     children: [
+                      //                                       Text(
+                      //                                         '$pressure Psi',
+                      //                                         style:
+                      //                                             getWhiteTextStyle(
+                      //                                                 fontWeight:
+                      //                                                     w700,
+                      //                                                 fontSize:
+                      //                                                     18),
+                      //                                       ),
+                      //                                       if (adjPressure
+                      //                                               .isNotEmpty &&
+                      //                                           adjPressure !=
+                      //                                               '0')
+                      //                                         Text(
+                      //                                           '$adjPressure Psi (Adj. Pressure)',
+                      //                                           style: getWhiteTextStyle(
+                      //                                               fontWeight:
+                      //                                                   w700,
+                      //                                               fontSize:
+                      //                                                   18),
+                      //                                         ),
+                      //                                       if (luka.isNotEmpty)
+                      //                                         Text(
+                      //                                           luka.join('\n'),
+                      //                                           textAlign:
+                      //                                               TextAlign
+                      //                                                   .end,
+                      //                                           style: getWhiteTextStyle(
+                      //                                               fontWeight:
+                      //                                                   w700,
+                      //                                               fontSize:
+                      //                                                   18),
+                      //                                         ),
+                      //                                       if (rating
+                      //                                           .isNotEmpty)
+                      //                                         Text(
+                      //                                             'Rating $rating',
+                      //                                             style: getWhiteTextStyle(
+                      //                                                 fontWeight:
+                      //                                                     w700,
+                      //                                                 fontSize:
+                      //                                                     18)),
+                      //                                       // Jangan lupa tambahkan IDSite 33
+                      //                                       if (idSite ==
+                      //                                               '33' &&
+                      //                                           pl['tireAccessories'] !=
+                      //                                               null)
+                      //                                         Column(
+                      //                                           crossAxisAlignment:
+                      //                                               CrossAxisAlignment
+                      //                                                   .end,
+                      //                                           children: [
+                      //                                             Text(
+                      //                                                 'Tire Accessories',
+                      //                                                 style: getWhiteTextStyle(
+                      //                                                     fontWeight:
+                      //                                                         w700,
+                      //                                                     fontSize:
+                      //                                                         14)),
+                      //                                             const SizedBox(
+                      //                                               height: 6,
+                      //                                             ),
+                      //                                             Column(
+                      //                                               crossAxisAlignment:
+                      //                                                   CrossAxisAlignment
+                      //                                                       .end,
+                      //                                               children: pl[
+                      //                                                       'tireAccessories']
+                      //                                                   .map<Widget>(
+                      //                                                       (acc) {
+                      //                                                 return Column(
+                      //                                                   crossAxisAlignment:
+                      //                                                       CrossAxisAlignment.end,
+                      //                                                   children: [
+                      //                                                     Row(
+                      //                                                       children: [
+                      //                                                         Text(acc['name'] + ' (' + acc['condition'] + '${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})', textAlign: TextAlign.right, style: getWhiteTextStyle(fontWeight: w500, fontSize: 14)),
+                      //                                                       ],
+                      //                                                     ),
+                      //                                                     const SizedBox(
+                      //                                                       height:
+                      //                                                           6,
+                      //                                                     ),
+                      //                                                     if (acc['image'].isNotEmpty &&
+                      //                                                         acc['image'] != 'image.png' &&
+                      //                                                         acc['image'] != '')
+                      //                                                       InkWell(
+                      //                                                         onTap: () async {
+                      //                                                           await showDialog(
+                      //                                                             context: context,
+                      //                                                             barrierDismissible: true,
+                      //                                                             builder: (_) {
+                      //                                                               return Dialog(
+                      //                                                                 backgroundColor: Colors.transparent,
+                      //                                                                 elevation: 0,
+                      //                                                                 child: Center(
+                      //                                                                   child: Column(
+                      //                                                                     mainAxisSize: MainAxisSize.min,
+                      //                                                                     children: [
+                      //                                                                       // === GAMBAR + TOMBOL CLOSE ===
+                      //                                                                       Stack(
+                      //                                                                         children: [
+                      //                                                                           Container(
+                      //                                                                             width: MediaQuery.of(context).size.width * 0.6,
+                      //                                                                             height: MediaQuery.of(context).size.height * 0.6,
+                      //                                                                             decoration: BoxDecoration(
+                      //                                                                               borderRadius: BorderRadius.circular(12),
+                      //                                                                             ),
+                      //                                                                             clipBehavior: Clip.antiAlias,
+                      //                                                                             child: Image.network(
+                      //                                                                               acc['image'],
+                      //                                                                               fit: BoxFit.contain,
+                      //                                                                             ),
+                      //                                                                           ),
+                      //                                                                           Positioned(
+                      //                                                                             right: 8,
+                      //                                                                             top: 8,
+                      //                                                                             child: InkWell(
+                      //                                                                               onTap: () => Navigator.of(context).pop(),
+                      //                                                                               borderRadius: BorderRadius.circular(20),
+                      //                                                                               child: Container(
+                      //                                                                                 padding: const EdgeInsets.all(6),
+                      //                                                                                 decoration: BoxDecoration(
+                      //                                                                                   color: Colors.black45,
+                      //                                                                                   shape: BoxShape.circle,
+                      //                                                                                 ),
+                      //                                                                                 child: const Icon(
+                      //                                                                                   LucideIcons.x,
+                      //                                                                                   color: Colors.white,
+                      //                                                                                   size: 20,
+                      //                                                                                 ),
+                      //                                                                               ),
+                      //                                                                             ),
+                      //                                                                           ),
+                      //                                                                         ],
+                      //                                                                       ),
+
+                      //                                                                       const SizedBox(height: 12),
+
+                      //                                                                       // === TEKS KETERANGAN ===
+                      //                                                                       Container(
+                      //                                                                         padding: const EdgeInsets.all(8),
+                      //                                                                         decoration: BoxDecoration(
+                      //                                                                           color: Colors.white,
+                      //                                                                           borderRadius: BorderRadius.circular(16),
+                      //                                                                         ),
+                      //                                                                         child: Text(
+                      //                                                                           '#$unit Pos. $pos | ${acc['name']} ${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''}',
+                      //                                                                           style: getBlackTextStyle(
+                      //                                                                             fontWeight: w700,
+                      //                                                                           ),
+                      //                                                                           textAlign: TextAlign.center,
+                      //                                                                         ),
+                      //                                                                       ),
+                      //                                                                     ],
+                      //                                                                   ),
+                      //                                                                 ),
+                      //                                                               );
+                      //                                                             },
+                      //                                                           );
+                      //                                                         },
+                      //                                                         child: SizedBox(
+                      //                                                           width: 150,
+                      //                                                           height: 100,
+                      //                                                           child: Image.network(
+                      //                                                             acc['image'],
+                      //                                                             fit: BoxFit.cover,
+                      //                                                           ),
+                      //                                                         ),
+                      //                                                       )
+                      //                                                   ],
+                      //                                                 );
+                      //                                               }).toList(),
+                      //                                             ),
+                      //                                           ],
+                      //                                         ),
+                      //                                     ],
+                      //                                   ),
+                      //                                 ],
+                      //                               ),
+                      //                               const SizedBox(height: 12),
+                      //                               Divider(
+                      //                                 color: white,
+                      //                                 thickness: 1.5,
+                      //                               ),
+                      //                             ],
+                      //                           );
+                      //                         }).toList(),
+                      //                       ),
+                      //                     ],
+                      //                   ),
+                      //                 ));
+                      //           },
+                      //         ),
+                      //       ),
+                      //     ],
+                      //   );
                       // Not Checked Unit
                       case 1:
                         final notChecked = [];
@@ -1439,8 +2184,17 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
         onTap: (index) {
           setState(() {
             selectedMenu = index;
+
+            if (index == 0) {
+              historyCheckedFuture ??= getHistoryCheckedFuture();
+            }
           });
         },
+        // onTap: (index) {
+        //   setState(() {
+        //     selectedMenu = index;
+        //   });
+        // },
       ),
     );
   }

@@ -1931,13 +1931,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           pit.add('Room B1 Selatan');
                           pit.add('TIA');
                           pit.add('Serongga');
-                          pit.add('CSA Bagaspati');
                           pit.add('CSA Selatan');
                           pit.add('WS');
                           break;
                         case '166':
                           pit.add('WS');
                           pit.add('Pondok Operator');
+                          pit.add('CSA Bagaspati');
                           pit.add('Pit Stop Toll');
                           break;
                       }
