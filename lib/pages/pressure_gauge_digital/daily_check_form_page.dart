@@ -2880,29 +2880,91 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                               ElevatedButton.styleFrom(backgroundColor: Colors.green),
                                                                           onPressed:
                                                                               () {
-                                                                            // setState(
-                                                                            //     () {
-                                                                            //   position[posIndex]
-                                                                            //       [
-                                                                            //       'pressure'] = ps;
-                                                                            //   Navigator.of(context)
-                                                                            //       .pop();
-                                                                            // });
-                                                                            setState(() {
-                                                                              position[posIndex] = position[posIndex].copyWith(pressure: ps);
-                                                                              // input kondisi pressure
-                                                                              position[posIndex] = position[posIndex].copyWith(
-                                                                                kondisi: int.parse(((dataUnit['reccPress'] as List<Map<String, dynamic>>).firstWhere(
-                                                                                          (element) => element.containsKey(position[posIndex].size),
-                                                                                          orElse: () => <String, dynamic>{},
-                                                                                        )[position[posIndex].size])) <
-                                                                                        int.parse(ps)
-                                                                                    ? 'Normal'
-                                                                                    : 'Low Pressure',
+                                                                            final selectedPosition =
+                                                                                position[posIndex];
+                                                                            final tireSize =
+                                                                                selectedPosition.size;
+                                                                            final inputPressure =
+                                                                                int.tryParse(ps) ?? 0;
+
+                                                                            final dynamic
+                                                                                rawReccPress =
+                                                                                dataUnit['reccPress'];
+
+                                                                            int recommendedPressure =
+                                                                                0;
+                                                                            bool
+                                                                                isRecommendationFound =
+                                                                                false;
+
+                                                                            if (rawReccPress
+                                                                                is List) {
+                                                                              final matchedRecommendation = rawReccPress.cast<dynamic>().firstWhere(
+                                                                                (element) {
+                                                                                  return element is Map && element.containsKey(tireSize);
+                                                                                },
+                                                                                orElse: () => null,
                                                                               );
-                                                                              Navigator.of(context).pop();
+
+                                                                              if (matchedRecommendation is Map) {
+                                                                                final dynamic recommendationValue = matchedRecommendation[tireSize];
+
+                                                                                recommendedPressure = int.tryParse(recommendationValue?.toString() ?? '') ?? 0;
+
+                                                                                isRecommendationFound = recommendationValue != null;
+                                                                              }
+                                                                            }
+
+                                                                            log('Size tire: $tireSize');
+                                                                            log('Input pressure: $inputPressure');
+                                                                            log('Rekomendasi pressure: $recommendedPressure');
+                                                                            log('Rekomendasi ditemukan: $isRecommendationFound');
+
+                                                                            setState(() {
+                                                                              position[posIndex] = selectedPosition.copyWith(
+                                                                                pressure: ps,
+
+                                                                                // Apabila rekomendasi tidak ditemukan,
+                                                                                // gunakan kondisi default "Normal".
+                                                                                kondisi: !isRecommendationFound
+                                                                                    ? 'Normal'
+                                                                                    : inputPressure >= recommendedPressure
+                                                                                        ? 'Normal'
+                                                                                        : 'Low Pressure',
+                                                                              );
                                                                             });
+
+                                                                            Navigator.of(context).pop();
                                                                           },
+                                                                          // onPressed:
+                                                                          //     () {
+                                                                          //   // setState(
+                                                                          //   //     () {
+                                                                          //   //   position[posIndex]
+                                                                          //   //       [
+                                                                          //   //       'pressure'] = ps;
+                                                                          //   //   Navigator.of(context)
+                                                                          //   //       .pop();
+                                                                          //   // });
+                                                                          //   setState(() {
+                                                                          //     position[posIndex] = position[posIndex].copyWith(pressure: ps);
+                                                                          //     // input kondisi pressure
+                                                                          //     log('rekomendasi pressure : ${dataUnit['reccPress']}');
+                                                                          //     log('rekomendasi pressure dengan size : ${[
+                                                                          //       position[posIndex].size
+                                                                          //     ]}');
+                                                                          //     position[posIndex] = position[posIndex].copyWith(
+                                                                          //       kondisi: int.parse(((dataUnit['reccPress'] as List<Map<String, dynamic>>).firstWhere(
+                                                                          //                 (element) => element.containsKey(position[posIndex].size),
+                                                                          //                 orElse: () => <String, dynamic>{},
+                                                                          //               )[position[posIndex].size])) <
+                                                                          //               int.parse(ps)
+                                                                          //           ? 'Normal'
+                                                                          //           : 'Low Pressure',
+                                                                          //     );
+                                                                          //     Navigator.of(context).pop();
+                                                                          //   });
+                                                                          // },
                                                                           child:
                                                                               Text(
                                                                             ps,
