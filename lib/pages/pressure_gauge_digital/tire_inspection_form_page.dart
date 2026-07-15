@@ -82,6 +82,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   String idSite = '';
   bool isSaved = false;
   Map<String, dynamic> dataUnit = {};
+  String? _hmInitializedForUnit;
 
   TextEditingController idUnit = TextEditingController(text: '');
   TextEditingController hmUnit = TextEditingController(text: '');
@@ -668,6 +669,33 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+
+    idUnit.dispose();
+    hmUnit.dispose();
+    pressureCtrl.dispose();
+    remarksCtrl.dispose();
+    damageCtrl.dispose();
+    rtd1.dispose();
+    rtd2.dispose();
+
+    for (final controller in remarksControllers) {
+      controller.dispose();
+    }
+
+    for (final controller in snControllers) {
+      controller.dispose();
+    }
+
+    for (final controller in rtd1Controllers) {
+      controller.dispose();
+    }
+
+    for (final controller in rtd2Controllers) {
+      controller.dispose();
+    }
+
+    swiperController.dispose();
+
     super.dispose();
   }
 
@@ -858,6 +886,17 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           child: BlocConsumer<TireBloc, TireState>(
         listener: (context, state) {
           if (state is TiresLoadedState) {
+            final firstUnit = state.units.first;
+            final currentUnitNumber = firstUnit.unitNumber ?? '';
+
+            if (_hmInitializedForUnit != currentUnitNumber) {
+              hmUnit.text = idSite == bmbhauling.idSite
+                  ? ''
+                  : firstUnit.hm?.toString() ?? '';
+
+              _hmInitializedForUnit = currentUnitNumber;
+            }
+
             position.clear();
 
             for (int i = 0; i < state.units.length; i++) {
@@ -874,16 +913,21 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               }
               remarksControllers.add(TextEditingController(text: ''));
               snControllers.add(TextEditingController(text: ''));
-              rtd1Controllers.add(TextEditingController(text: ''));
-              rtd2Controllers.add(TextEditingController(text: ''));
+              rtd1Controllers.add(
+                TextEditingController(text: unit.rtd?.toString() ?? ''),
+              );
+
+              rtd2Controllers.add(
+                TextEditingController(text: unit.otd?.toString() ?? ''),
+              );
               position.add({
                 'position': i + 1,
                 'pressure': '',
                 'adjusmentPressure': '',
                 'hm': '',
                 'damageTire': [],
-                'rtd1': '',
-                'rtd2': '',
+                'rtd1': unit.rtd?.toString() ?? '',
+                'rtd2': unit.otd?.toString() ?? '',
                 'remarks': '',
                 'sn': unit.sn,
                 'rating': '',
@@ -1078,24 +1122,18 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                               const SizedBox(
                                 height: 12,
                               ),
-                              Builder(builder: (context) {
-                                print("id site hauling : $idSite");
-                                hmUnit.text = (idSite != bmbhauling.idSite)
-                                    ? (units[0].hm ?? '')
-                                    : '';
-
-                                return SizedBox(
-                                  width: double.infinity,
-                                  child: InputFormWidget(
-                                      // isReadOnly: true,
-                                      // controller: hmCtrl,
-                                      controller: hmUnit,
-                                      isDecimalOnly: true,
-                                      type: TextInputType.number,
-                                      hint:
-                                          'Fill ${idSite == bmbhauling.idSite ? 'KM' : 'HM'}'),
-                                );
-                              }),
+                              SizedBox(
+                                width: double.infinity,
+                                child: InputFormWidget(
+                                  controller: hmUnit,
+                                  isDecimalOnly: true,
+                                  type: const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  hint:
+                                      'Fill ${idSite == bmbhauling.idSite ? 'KM' : 'HM'}',
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -2837,24 +2875,36 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
-                                                Builder(builder: (context) {
-                                                  rtd1Controllers[index].text =
-                                                      unit.rtd ?? '';
-                                                  position[index]['rtd1'] =
-                                                      unit.rtd;
-                                                  return SizedBox(
-                                                    width: double.infinity,
-                                                    child: InputFormWidget(
-                                                        onChng: (value) {
-                                                          position[index]
-                                                              ['rtd1'] = value;
-                                                        },
-                                                        controller:
-                                                            rtd1Controllers[
-                                                                index],
-                                                        hint: ''),
-                                                  );
-                                                }),
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  child: InputFormWidget(
+                                                    onChng: (value) {
+                                                      position[index]['rtd1'] =
+                                                          value;
+                                                    },
+                                                    controller:
+                                                        rtd1Controllers[index],
+                                                    hint: '',
+                                                  ),
+                                                ),
+                                                // Builder(builder: (context) {
+                                                //   rtd1Controllers[index].text =
+                                                //       unit.rtd ?? '';
+                                                //   position[index]['rtd1'] =
+                                                //       unit.rtd;
+                                                //   return SizedBox(
+                                                //     width: double.infinity,
+                                                //     child: InputFormWidget(
+                                                //         onChng: (value) {
+                                                //           position[index]
+                                                //               ['rtd1'] = value;
+                                                //         },
+                                                //         controller:
+                                                //             rtd1Controllers[
+                                                //                 index],
+                                                //         hint: ''),
+                                                //   );
+                                                // }),
                                               ],
                                             ),
                                           ),
@@ -2874,24 +2924,36 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
-                                                Builder(builder: (context) {
-                                                  rtd2Controllers[index].text =
-                                                      unit.otd ?? '';
-                                                  position[index]['rtd2'] =
-                                                      unit.otd;
-                                                  return SizedBox(
-                                                    width: double.infinity,
-                                                    child: InputFormWidget(
-                                                        onChng: (value) {
-                                                          position[index]
-                                                              ['rtd2'] = value;
-                                                        },
-                                                        controller:
-                                                            rtd2Controllers[
-                                                                index],
-                                                        hint: ''),
-                                                  );
-                                                }),
+                                                SizedBox(
+                                                  width: double.infinity,
+                                                  child: InputFormWidget(
+                                                    onChng: (value) {
+                                                      position[index]['rtd2'] =
+                                                          value;
+                                                    },
+                                                    controller:
+                                                        rtd2Controllers[index],
+                                                    hint: '',
+                                                  ),
+                                                ),
+                                                // Builder(builder: (context) {
+                                                //   rtd2Controllers[index].text =
+                                                //       unit.otd ?? '';
+                                                //   position[index]['rtd2'] =
+                                                //       unit.otd;
+                                                //   return SizedBox(
+                                                //     width: double.infinity,
+                                                //     child: InputFormWidget(
+                                                //         onChng: (value) {
+                                                //           position[index]
+                                                //               ['rtd2'] = value;
+                                                //         },
+                                                //         controller:
+                                                //             rtd2Controllers[
+                                                //                 index],
+                                                //         hint: ''),
+                                                //   );
+                                                // }),
                                               ],
                                             ),
                                           ),
