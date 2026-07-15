@@ -822,14 +822,35 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
   @override
   void didChangeDependencies() {
-    if (_isInit) {
-      dataUnit =
-          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-      // Setelah dataUnit didapat, panggil fungsi yang membutuhkannya
+    super.didChangeDependencies();
+
+    if (!_isInit) {
+      return;
+    }
+
+    final arguments = ModalRoute.of(context)?.settings.arguments;
+
+    if (arguments is Map<String, dynamic>) {
+      dataUnit = arguments;
+
+      // Mengisi kembali KM/HM dari data yang dipilih
+      hmCtrl.text = (dataUnit['hm'] ?? '').toString();
+
+      log('Data unit edit: $dataUnit');
+      log('KM/HM edit: ${hmCtrl.text}');
+
       callTires();
     }
+
     _isInit = false;
-    super.didChangeDependencies();
+    // if (_isInit) {
+    //   dataUnit =
+    //       ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+    //   // Setelah dataUnit didapat, panggil fungsi yang membutuhkannya
+    //   callTires();
+    // }
+    // _isInit = false;
+    // super.didChangeDependencies();
   }
 
   @override

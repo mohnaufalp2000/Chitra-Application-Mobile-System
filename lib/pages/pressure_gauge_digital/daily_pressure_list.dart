@@ -815,8 +815,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                       children: [
                                                         Text(
                                                           (currentIdSite ==
-                                                                  bmbhauling
-                                                                      .idSite)
+                                                                      bmbhauling
+                                                                          .idSite ||
+                                                                  currentIdSite ==
+                                                                      '1')
                                                               ? 'KM Unit'
                                                               : 'HM Unit',
                                                           style:
