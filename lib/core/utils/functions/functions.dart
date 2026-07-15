@@ -1199,30 +1199,64 @@ Future<List<int>> createExcel(String type,
       final Workbook workbook = Workbook();
       final Worksheet sheet = workbook.worksheets[0];
 
+      // sheet.getRangeByName('A1').setText('Date');
+      // sheet.getRangeByName('B1').setText('Unit');
+      // sheet.getRangeByName('C1').setText('Pos');
+      // sheet.getRangeByName('D1').setText('Pressure');
+      // sheet.getRangeByName('E1').setText('Adj');
+      // sheet
+      //     .getRangeByName('F1')
+      //     .setText((daily?[0]['idSite'] == bmbhauling.idSite) ? 'KM' : 'HM');
+      // sheet.getRangeByName('G1').setText('Tire Damage');
+      // sheet.getRangeByName('G1').columnWidth = 25;
+      // sheet.getRangeByName('H1').setText('Location');
+      // sheet.getRangeByName('I1').setText('Rating');
+      // sheet.getRangeByName('J1').setText('Condition');
+      // sheet.getRangeByName('K1').setText('Size');
+      // sheet.getRangeByName('L1').setText('Tire Pressure Condition');
+      // sheet.getRangeByName('M1').setText('min_press');
+      // sheet.getRangeByName('N1').setText('max_press');
+      // sheet.getRangeByName('O1').setText('avg_press');
+      // sheet.getRangeByName('P1').setText('temp');
+      // if (daily?[0]['idSite'] == '33') {
+      //   sheet.getRangeByName('Q1').setText('Tire Accessories');
+      //   sheet.getRangeByName('R1').setText('temperature_status');
+      // } else {
+      //   sheet.getRangeByName('Q1').setText('temperature_status');
+      // }
+
       sheet.getRangeByName('A1').setText('Date');
       sheet.getRangeByName('B1').setText('Unit');
       sheet.getRangeByName('C1').setText('Pos');
       sheet.getRangeByName('D1').setText('Pressure');
       sheet.getRangeByName('E1').setText('Adj');
+
+// Kolom tambahan setelah Adj Pressure
+      sheet.getRangeByName('F1').setText('Day');
+      sheet.getRangeByName('G1').setText('Time');
+
       sheet
-          .getRangeByName('F1')
+          .getRangeByName('H1')
           .setText((daily?[0]['idSite'] == bmbhauling.idSite) ? 'KM' : 'HM');
-      sheet.getRangeByName('G1').setText('Tire Damage');
-      sheet.getRangeByName('G1').columnWidth = 25;
-      sheet.getRangeByName('H1').setText('Location');
-      sheet.getRangeByName('I1').setText('Rating');
-      sheet.getRangeByName('J1').setText('Condition');
-      sheet.getRangeByName('K1').setText('Size');
-      sheet.getRangeByName('L1').setText('Tire Pressure Condition');
-      sheet.getRangeByName('M1').setText('min_press');
-      sheet.getRangeByName('N1').setText('max_press');
-      sheet.getRangeByName('O1').setText('avg_press');
-      sheet.getRangeByName('P1').setText('temp');
+
+      sheet.getRangeByName('I1').setText('Tire Damage');
+      sheet.getRangeByName('I1').columnWidth = 25;
+
+      sheet.getRangeByName('J1').setText('Location');
+      sheet.getRangeByName('K1').setText('Rating');
+      sheet.getRangeByName('L1').setText('Condition');
+      sheet.getRangeByName('M1').setText('Size');
+      sheet.getRangeByName('N1').setText('Tire Pressure Condition');
+      sheet.getRangeByName('O1').setText('min_press');
+      sheet.getRangeByName('P1').setText('max_press');
+      sheet.getRangeByName('Q1').setText('avg_press');
+      sheet.getRangeByName('R1').setText('temp');
+
       if (daily?[0]['idSite'] == '33') {
-        sheet.getRangeByName('Q1').setText('Tire Accessories');
-        sheet.getRangeByName('R1').setText('temperature_status');
+        sheet.getRangeByName('S1').setText('Tire Accessories');
+        sheet.getRangeByName('T1').setText('temperature_status');
       } else {
-        sheet.getRangeByName('Q1').setText('temperature_status');
+        sheet.getRangeByName('S1').setText('temperature_status');
       }
 
       // log('daily excel daily excel : $daily');
@@ -1238,6 +1272,8 @@ Future<List<int>> createExcel(String type,
           DateTime parse = DateTime.parse(daily[i]['tanggal']);
           String formattedDate =
               DateFormat('MM/dd/yyyy HH:mm:ss').format(parse);
+          String formattedDay = DateFormat('MM/dd/yyyy').format(parse);
+          String formattedTime = DateFormat('HH:mm:ss').format(parse);
           print('tanggal daily terbaru : $formattedDate');
 
           sheet.getRangeByName('A${rowIndex}').setText(formattedDate); // Date
@@ -1251,10 +1287,11 @@ Future<List<int>> createExcel(String type,
               (posisi[j]['adjusmentPressure'] == '')
                   ? '0'
                   : posisi[j]['adjusmentPressure']); // Adj
-
+          sheet.getRangeByName('F${rowIndex}').setText(formattedDay); // Date
+          sheet.getRangeByName('G${rowIndex}').setText(formattedTime); // Date
           // F = HM
           sheet
-              .getRangeByName('F${rowIndex}')
+              .getRangeByName('H${rowIndex}')
               .setText(daily[i]['hm']?.toString() ?? '');
 
           // G = Tire Damage
@@ -1269,64 +1306,64 @@ Future<List<int>> createExcel(String type,
             textToSet = lukaData;
           }
           if (textToSet.isNotEmpty) {
-            sheet.getRangeByName('G${rowIndex}').setText(textToSet);
+            sheet.getRangeByName('I${rowIndex}').setText(textToSet);
           }
 
           // H = Location
-          sheet.getRangeByName('H${rowIndex}').setText(daily[i]['pit']);
+          sheet.getRangeByName('J${rowIndex}').setText(daily[i]['pit']);
 
           // I = Rating
-          sheet.getRangeByName('I${rowIndex}').setText(posisi[j]['rating']);
+          sheet.getRangeByName('K${rowIndex}').setText(posisi[j]['rating']);
 
           // J = Condition
           sheet
-              .getRangeByName('J${rowIndex}')
+              .getRangeByName('L${rowIndex}')
               .setText(daily[i]['unit_condition'] ?? '');
 
           // K = Size
           sheet
-              .getRangeByName('K${rowIndex}')
+              .getRangeByName('M${rowIndex}')
               .setText(posisi[j]['tireSize'] ?? '');
 
           // L = Tire Pressure Condition
           sheet
-              .getRangeByName('L${rowIndex}')
+              .getRangeByName('N${rowIndex}')
               .setText(posisi[j]['kondisi'] ?? '');
 
           // M = min_press
           sheet
-              .getRangeByName('M${rowIndex}')
+              .getRangeByName('O${rowIndex}')
               .setText(posisi[j]['min_press'].toString() ?? '');
 
           // N = max_press
           sheet
-              .getRangeByName('N${rowIndex}')
+              .getRangeByName('P${rowIndex}')
               .setText(posisi[j]['max_press'].toString() ?? '');
 
           // O = avg_press
           sheet
-              .getRangeByName('O${rowIndex}')
+              .getRangeByName('Q${rowIndex}')
               .setText(posisi[j]['avg_press'].toString() ?? '');
 
           // P = temp
           sheet
-              .getRangeByName('P${rowIndex}')
+              .getRangeByName('R${rowIndex}')
               .setText(posisi[j]['temp'].toString() ?? '');
 
           // Q = Tire Accessories (jika site 33)
           if (daily[i]['idSite'] == '33') {
-            sheet.getRangeByName('Q${rowIndex}').setText(
+            sheet.getRangeByName('S${rowIndex}').setText(
                   posisi[j]['tireAccessories']
                       .map((acc) =>
                           '${acc['name']} (${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})')
                       .join('\n'),
                 );
             sheet
-                .getRangeByName('R${rowIndex}')
+                .getRangeByName('T${rowIndex}')
                 .setText(posisi[j]['temperatureStatus'] ?? '');
           } else {
             sheet
-                .getRangeByName('Q${rowIndex}')
+                .getRangeByName('S${rowIndex}')
                 .setText(posisi[j]['temperatureStatus'] ?? '');
           }
 
