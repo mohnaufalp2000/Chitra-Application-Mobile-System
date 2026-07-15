@@ -1111,7 +1111,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                     width: 12,
                                   ),
                                   Text(
-                                    (idSite == bmbhauling.idSite)
+                                    (idSite == bmbhauling.idSite &&
+                                            idSite == '1')
                                         ? 'KM Unit'
                                         : 'HM Unit',
                                     style: getBlackTextStyle(

@@ -905,15 +905,24 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                 Row(
                                   children: [
                                     Icon(
-                                      Icons.watch,
-                                      color: Colors.red,
+                                      (idSite == bmbhauling.idSite &&
+                                              idSite == '1')
+                                          ? Icons.edit_road_sharp
+                                          : Icons.watch,
+                                      color: (idSite == bmbhauling.idSite &&
+                                              idSite == '1')
+                                          ? Colors.black
+                                          : Colors.red,
                                       size: 38,
                                     ),
                                     const SizedBox(
                                       width: 12,
                                     ),
                                     Text(
-                                      'HM UNIT',
+                                      (idSite == bmbhauling.idSite ||
+                                              idSite == '1')
+                                          ? 'KM UNIT'
+                                          : 'HM UNIT',
                                       style: getBlackTextStyle(
                                           fontWeight: w700, fontSize: 18),
                                     ),
@@ -929,11 +938,47 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                       controller: hmCtrl,
                                       isDecimalOnly: true,
                                       type: TextInputType.number,
-                                      hint: 'Fill HM'),
+                                      hint:
+                                          'Fill ${(idSite == bmbhauling.idSite || idSite == '1') ? 'KM' : 'HM'}'),
                                 ),
                               ],
                             ),
                           ),
+                          // Expanded(
+                          //   child: Column(
+                          //     children: [
+                          //       Row(
+                          //         children: [
+                          //           Icon(
+                          //             Icons.watch,
+                          //             color: Colors.red,
+                          //             size: 38,
+                          //           ),
+                          //           const SizedBox(
+                          //             width: 12,
+                          //           ),
+                          //           Text(
+                          //             'HM UNIT',
+                          //             style: getBlackTextStyle(
+                          //                 fontWeight: w700, fontSize: 18),
+                          //           ),
+                          //         ],
+                          //       ),
+                          //       const SizedBox(
+                          //         height: 12,
+                          //       ),
+                          //       SizedBox(
+                          //         width: double.infinity,
+                          //         child: InputFormWidget(
+                          //             // isReadOnly: true,
+                          //             controller: hmCtrl,
+                          //             isDecimalOnly: true,
+                          //             type: TextInputType.number,
+                          //             hint: 'Fill HM'),
+                          //       ),
+                          //     ],
+                          //   ),
+                          // ),
                         ],
                       ),
                       const SizedBox(
@@ -2134,10 +2179,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                     Row(
                                       children: [
                                         Icon(
-                                          (idSite == bmbhauling.idSite)
+                                          (idSite == bmbhauling.idSite ||
+                                                  idSite == '1')
                                               ? Icons.edit_road_sharp
                                               : Icons.watch,
-                                          color: (idSite == bmbhauling.idSite)
+                                          color: (idSite == bmbhauling.idSite ||
+                                                  idSite == '1')
                                               ? Colors.black
                                               : Colors.red,
                                           size: 38,
@@ -2146,7 +2193,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                           width: 12,
                                         ),
                                         Text(
-                                          (idSite == bmbhauling.idSite)
+                                          (idSite == bmbhauling.idSite ||
+                                                  idSite == '1')
                                               ? 'KM UNIT'
                                               : 'HM UNIT',
                                           style: getBlackTextStyle(
@@ -2165,7 +2213,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                           isDecimalOnly: true,
                                           type: TextInputType.number,
                                           hint:
-                                              'Fill ${(idSite == bmbhauling.idSite) ? 'KM' : 'HM'}'),
+                                              'Fill ${(idSite == bmbhauling.idSite || idSite == '1') ? 'KM' : 'HM'}'),
                                     ),
                                   ],
                                 ),
@@ -4035,7 +4083,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
               }
 
               // jika salah satu data pressure ada yang kosong
-              bool hasEmptyPressure = position.any((p) => p.pressure.isEmpty);
+              final isSisHauling =
+                  homeState.userAccessCompanyId.value == '1' && idSite == '1';
+              print('is sis hauling : ${isSisHauling}');
+              bool hasEmptyPressure = false;
+              if (!isSisHauling) {
+                hasEmptyPressure = position.any((p) => p.pressure.isEmpty);
+              }
 
               if (hasEmptyPressure) {
                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
