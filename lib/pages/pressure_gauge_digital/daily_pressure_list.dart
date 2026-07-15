@@ -815,8 +815,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                       children: [
                                                         Text(
                                                           (currentIdSite ==
-                                                                  bmbhauling
-                                                                      .idSite)
+                                                                      bmbhauling
+                                                                          .idSite ||
+                                                                  currentIdSite ==
+                                                                      '1')
                                                               ? 'KM Unit'
                                                               : 'HM Unit',
                                                           style:
@@ -1605,475 +1607,979 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                     case 1:
                       checkedFuture ??= getCheckedTodayFuture();
 
-                      final reccPressMap = <String, int>{};
+                      if (homeState.userAccessCompanyId.value == '1' &&
+                          homeState.userAccessId.value == '1') {
+                        // ============================================================
+                        // USER COMPANY 1 + ACCESS ID 1
+                        // MENAMPILKAN UNIT YANG MEMILIKI PRESSURE 0 PSI
+                        // ============================================================
 
-                      for (final item in state.reccPress) {
-                        item.forEach((key, value) {
-                          reccPressMap[key.toString()] =
-                              int.tryParse(value.toString()) ?? 0;
-                        });
-                      }
+                        bool isZeroPressure(dynamic pressureValue) {
+                          final rawValue = pressureValue
+                              ?.toString()
+                              .trim()
+                              .replaceAll(',', '.');
 
-                      return Column(
-                        children: [
-                          const SizedBox(height: 12),
-                          SelectPitButton(
-                            pit: pit,
-                            selectedPit: selectedPit,
-                            onSelectedPitChanged: (index) {
-                              setState(() {
-                                selectedPit = index;
-                                checkedFuture = getCheckedTodayFuture();
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          if (homeState.selectedSite?.idCompany == '2')
-                            Text(
-                              'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
-                              style: getBlackTextStyle(fontSize: 14),
-                            )
-                          else
-                            Container(),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: refreshCheckedData,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueGrey,
-                              ),
-                              child: Text(
-                                'Refresh Low Pressure Data',
-                                style: getWhiteTextStyle(),
+                          // Nilai null atau kosong pada tampilan lama juga ditulis 0 Psi,
+                          // sehingga pada filter dianggap sebagai pressure 0 Psi.
+                          if (rawValue == null || rawValue.isEmpty) {
+                            return true;
+                          }
+
+                          final pressure = double.tryParse(rawValue);
+
+                          return pressure != null && pressure == 0;
+                        }
+
+                        return Column(
+                          children: [
+                            const SizedBox(height: 12),
+                            SelectPitButton(
+                              pit: pit,
+                              selectedPit: selectedPit,
+                              onSelectedPitChanged: (index) {
+                                setState(() {
+                                  selectedPit = index;
+                                  checkedFuture = getCheckedTodayFuture();
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: refreshCheckedData,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey,
+                                ),
+                                child: Text(
+                                  'Refresh Data Incomplete Check',
+                                  style: getWhiteTextStyle(),
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                            future: checkedFuture,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                  child: CircularProgressIndicator.adaptive(),
-                                );
-                              }
-
-                              if (snapshot.hasError) {
-                                return Text(
-                                  'Error load low pressure data: ${snapshot.error}',
-                                  style: getBlackTextStyle(fontSize: 14),
-                                );
-                              }
-
-                              final docs = snapshot.data?.docs ?? [];
-
-                              final allData = docs.map((doc) {
-                                final data = doc.data();
-                                return DailyPress.fromFirestore(data);
-                              }).toList();
-
-                              allData.sort((a, b) {
-                                return b.tanggal.compareTo(a.tanggal);
-                              });
-
-                              final keyword = searchQuery.toLowerCase();
-
-                              final lowPressureData = allData.where((data) {
-                                if (keyword.isNotEmpty) {
-                                  final unit = data.unit.toLowerCase();
-
-                                  if (!unit.contains(keyword)) {
-                                    return false;
-                                  }
+                            const SizedBox(height: 12),
+                            FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                              future: checkedFuture,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                    child: CircularProgressIndicator.adaptive(),
+                                  );
                                 }
 
-                                return data.posisi.any((position) {
-                                  final tireSize = position.size;
+                                if (snapshot.hasError) {
+                                  return Text(
+                                    'Error load data pressure 0 Psi: ${snapshot.error}',
+                                    style: getBlackTextStyle(fontSize: 14),
+                                  );
+                                }
 
-                                  if (tireSize == null || tireSize.isEmpty) {
-                                    return false;
-                                  }
+                                final docs = snapshot.data?.docs ?? [];
 
-                                  final pressure =
-                                      int.tryParse(position.pressure ?? '0') ??
-                                          0;
+                                final allData = docs.map((doc) {
+                                  final data = doc.data();
 
-                                  if (pressure == 0) {
-                                    return false;
-                                  }
+                                  return DailyPress.fromFirestore(data);
+                                }).toList();
 
-                                  final adjustedPressure =
-                                      position.adjusmentPressure;
-
-                                  if (adjustedPressure.isNotEmpty &&
-                                      adjustedPressure != '0') {
-                                    return false;
-                                  }
-
-                                  final recommendedPressure =
-                                      reccPressMap[tireSize] ?? 0;
-
-                                  if (recommendedPressure == 0) {
-                                    return false;
-                                  }
-
-                                  return pressure < recommendedPressure;
+                                // Urutkan berdasarkan tanggal terbaru
+                                allData.sort((a, b) {
+                                  return b.tanggal.compareTo(a.tanggal);
                                 });
-                              }).toList();
 
-                              if (lowPressureData.isEmpty) {
-                                return Text(
-                                  'There is no low pressure data!',
-                                  style: getBlackTextStyle(),
-                                );
-                              }
+                                final keyword =
+                                    searchQuery.trim().toLowerCase();
 
-                              return ListView.builder(
-                                itemCount: lowPressureData.length,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemBuilder: (context, index) {
-                                  final data = lowPressureData[index];
+                                // Ambil unit yang memiliki minimal satu posisi 0 Psi
+                                final zeroPressureData = allData.where((data) {
+                                  if (keyword.isNotEmpty) {
+                                    final unit = data.unit.toLowerCase();
 
-                                  return Card(
-                                    elevation: 2,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                    if (!unit.contains(keyword)) {
+                                      return false;
+                                    }
+                                  }
+
+                                  return data.posisi.any((position) {
+                                    return isZeroPressure(position.pressure);
+                                  });
+                                }).toList();
+
+                                if (zeroPressureData.isEmpty) {
+                                  return Text(
+                                    'Tidak ada data pressure 0 Psi!',
+                                    style: getBlackTextStyle(),
+                                  );
+                                }
+
+                                return Column(
+                                  children: [
+                                    Text(
+                                      'Total Unit : ${zeroPressureData.length}',
+                                      textAlign: TextAlign.center,
+                                      style: getBlackTextStyle(
+                                        fontSize: 20,
+                                        fontWeight: w700,
+                                      ),
                                     ),
-                                    child: Container(
-                                      width: double.infinity,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 24,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: ExpansionTile(
-                                        tilePadding: EdgeInsets.zero,
-                                        childrenPadding: EdgeInsets.zero,
-                                        title: Row(
-                                          children: [
-                                            Icon(
-                                              Icons.task,
-                                              color: white,
-                                              size: 36,
+                                    const SizedBox(height: 16),
+                                    ListView.builder(
+                                      itemCount: zeroPressureData.length,
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      itemBuilder: (context, index) {
+                                        final data = zeroPressureData[index];
+
+                                        // Hanya mengambil posisi yang memiliki 0 Psi
+                                        final zeroPressurePositions =
+                                            data.posisi.where((position) {
+                                          return isZeroPressure(
+                                              position.pressure);
+                                        }).toList();
+
+                                        return Card(
+                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 24,
                                             ),
-                                            const SizedBox(width: 12),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
+                                            decoration: BoxDecoration(
+                                              color: Colors.red,
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: ExpansionTile(
+                                              tilePadding: EdgeInsets.zero,
+                                              childrenPadding: EdgeInsets.zero,
+                                              iconColor: white,
+                                              collapsedIconColor: white,
+                                              title: Row(
                                                 children: [
-                                                  Text(
-                                                    data.unit +
-                                                        '${((data.pit != 'Default') ? '\n${data.pit}' : '')}',
-                                                    style: getWhiteTextStyle(
-                                                      fontWeight: w700,
-                                                      fontSize: 18,
-                                                    ),
+                                                  Icon(
+                                                    Icons.warning_amber_rounded,
+                                                    color: white,
+                                                    size: 36,
                                                   ),
-                                                  Text(
-                                                    'LOW PRESSURE!',
-                                                    style: getWhiteTextStyle(
-                                                      fontWeight: w700,
-                                                      fontSize: 18,
+                                                  const SizedBox(width: 12),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(
+                                                          data.unit +
+                                                              '${data.pit != 'Default' ? '\n${data.pit}' : ''}',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontWeight: w700,
+                                                            fontSize: 18,
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          '${zeroPressurePositions.length} posisi terdeteksi',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontSize: 14,
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        trailing: const SizedBox(
-                                          width: 90,
-                                          child: Icon(Icons.arrow_drop_down),
-                                        ),
-                                        children: [
-                                          const SizedBox(height: 12),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Name',
-                                                style: getWhiteTextStyle(
-                                                    fontSize: 18),
+                                              trailing: const SizedBox(
+                                                width: 90,
+                                                child: Icon(
+                                                  Icons.arrow_drop_down,
+                                                ),
                                               ),
-                                              SizedBox(
-                                                width: 250,
-                                                child: Text(
-                                                  data.user == ''
-                                                      ? 'No Name'
-                                                      : data.user,
-                                                  textAlign: TextAlign.end,
+                                              children: [
+                                                const SizedBox(height: 12),
+
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      'Name',
+                                                      style: getWhiteTextStyle(
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 250,
+                                                      child: Text(
+                                                        data.user.isEmpty
+                                                            ? 'No Name'
+                                                            : data.user,
+                                                        textAlign:
+                                                            TextAlign.end,
+                                                        style:
+                                                            getWhiteTextStyle(
+                                                          fontWeight: w700,
+                                                          fontSize: 18,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                const SizedBox(height: 12),
+
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      'Tanggal',
+                                                      style: getWhiteTextStyle(
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      data.tanggal
+                                                          .split('T')[0],
+                                                      style: getWhiteTextStyle(
+                                                        fontWeight: w700,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                const SizedBox(height: 12),
+
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      'Waktu',
+                                                      style: getWhiteTextStyle(
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      data.tanggal
+                                                          .split('T')[1]
+                                                          .substring(0, 5),
+                                                      style: getWhiteTextStyle(
+                                                        fontWeight: w700,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                const SizedBox(height: 12),
+
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      'HM Unit',
+                                                      style: getWhiteTextStyle(
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      data.hm,
+                                                      style: getWhiteTextStyle(
+                                                        fontWeight: w700,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                const SizedBox(height: 12),
+
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      'Pit',
+                                                      style: getWhiteTextStyle(
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      data.pit,
+                                                      style: getWhiteTextStyle(
+                                                        fontWeight: w700,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                const SizedBox(height: 12),
+
+                                                // Hanya menampilkan posisi pressure 0 Psi
+                                                ListView.builder(
+                                                  itemCount:
+                                                      zeroPressurePositions
+                                                          .length,
+                                                  shrinkWrap: true,
+                                                  physics:
+                                                      const NeverScrollableScrollPhysics(),
+                                                  itemBuilder:
+                                                      (context, posIndex) {
+                                                    final pl =
+                                                        zeroPressurePositions[
+                                                            posIndex];
+
+                                                    List<dynamic> luka = [];
+
+                                                    if (pl.luka != null &&
+                                                        pl.luka is! String) {
+                                                      luka = pl.luka
+                                                          as List<dynamic>;
+                                                    }
+
+                                                    return Column(
+                                                      children: [
+                                                        Row(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Row(
+                                                              children: [
+                                                                Icon(
+                                                                  Icons
+                                                                      .error_outline,
+                                                                  color: white,
+                                                                  size: 24,
+                                                                ),
+                                                                const SizedBox(
+                                                                    width: 8),
+                                                                Text(
+                                                                  'Pos. ${pl.pos}',
+                                                                  style:
+                                                                      getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
+                                                                    fontSize:
+                                                                        18,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .end,
+                                                              children: [
+                                                                Text(
+                                                                  '0 Psi',
+                                                                  style:
+                                                                      getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
+                                                                    fontSize:
+                                                                        22,
+                                                                  ),
+                                                                ),
+                                                                Text(
+                                                                  'Pressure belum diinput',
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .end,
+                                                                  style:
+                                                                      getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
+                                                                    fontSize:
+                                                                        14,
+                                                                  ),
+                                                                ),
+                                                                if (pl.size !=
+                                                                        null &&
+                                                                    pl.size!
+                                                                        .isNotEmpty)
+                                                                  Text(
+                                                                    'Size: ${pl.size}',
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .end,
+                                                                    style:
+                                                                        getWhiteTextStyle(
+                                                                      fontSize:
+                                                                          14,
+                                                                    ),
+                                                                  ),
+                                                                if (pl.adjusmentPressure !=
+                                                                        null &&
+                                                                    pl.adjusmentPressure !=
+                                                                        '0' &&
+                                                                    pl.adjusmentPressure !=
+                                                                        '')
+                                                                  Text(
+                                                                    '${pl.adjusmentPressure} Psi '
+                                                                    '(Adj. Pressure)',
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .end,
+                                                                    style:
+                                                                        getWhiteTextStyle(
+                                                                      fontWeight:
+                                                                          w700,
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
+                                                                  ),
+                                                                if (luka
+                                                                    .isNotEmpty)
+                                                                  SizedBox(
+                                                                    width: 200,
+                                                                    child: Text(
+                                                                      luka.join(
+                                                                          '\n'),
+                                                                      textAlign:
+                                                                          TextAlign
+                                                                              .end,
+                                                                      style:
+                                                                          getWhiteTextStyle(
+                                                                        fontWeight:
+                                                                            w700,
+                                                                        fontSize:
+                                                                            16,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                if (pl.rating !=
+                                                                        null &&
+                                                                    pl.rating!
+                                                                        .isNotEmpty)
+                                                                  Text(
+                                                                    'Rating ${pl.rating}',
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .end,
+                                                                    style:
+                                                                        getWhiteTextStyle(
+                                                                      fontWeight:
+                                                                          w700,
+                                                                      fontSize:
+                                                                          16,
+                                                                    ),
+                                                                  ),
+                                                                Container(
+                                                                  width: 120,
+                                                                  height: 60,
+                                                                  margin:
+                                                                      const EdgeInsets
+                                                                          .only(
+                                                                    top: 12,
+                                                                    bottom: 12,
+                                                                  ),
+                                                                  child:
+                                                                      ButtonWidget(
+                                                                    name: Text(
+                                                                      'Edit',
+                                                                      textAlign:
+                                                                          TextAlign
+                                                                              .center,
+                                                                      style:
+                                                                          getWhiteTextStyle(),
+                                                                    ),
+                                                                    color:
+                                                                        green00968A,
+                                                                    function:
+                                                                        () {
+                                                                      final List<
+                                                                              Position>
+                                                                          position =
+                                                                          [];
+
+                                                                      for (int i =
+                                                                              0;
+                                                                          i < data.posisi.length;
+                                                                          i++) {
+                                                                        final p =
+                                                                            data.posisi[i];
+
+                                                                        position
+                                                                            .add(
+                                                                          Position(
+                                                                            pos:
+                                                                                p.pos,
+                                                                            pressure:
+                                                                                p.pressure,
+                                                                            temperatureStatus:
+                                                                                p.temperatureStatus,
+                                                                            rating:
+                                                                                p.rating,
+                                                                            adjusmentPressure:
+                                                                                p.adjusmentPressure,
+                                                                            adjustmentTemperatureStatus:
+                                                                                p.adjustmentTemperatureStatus,
+                                                                            luka:
+                                                                                p.luka,
+                                                                            image:
+                                                                                p.image,
+                                                                            size:
+                                                                                p.size,
+                                                                            idInventory:
+                                                                                p.idInventory,
+                                                                            idUnit:
+                                                                                p.idUnit,
+                                                                            idDaily:
+                                                                                p.idDaily,
+                                                                            kondisi:
+                                                                                p.kondisi,
+                                                                          ),
+                                                                        );
+                                                                      }
+
+                                                                      final dataUnit =
+                                                                          {
+                                                                        'unitNumber':
+                                                                            data.unit,
+                                                                        'hm': data
+                                                                            .hm,
+                                                                        'pit': data
+                                                                            .pit,
+                                                                        'position':
+                                                                            position,
+                                                                        'reccPress':
+                                                                            state.reccPress,
+                                                                      };
+
+                                                                      Navigator
+                                                                          .pushNamed(
+                                                                        context,
+                                                                        DailyCheckFormPage
+                                                                            .routeName,
+                                                                        arguments:
+                                                                            dataUnit,
+                                                                      );
+                                                                    },
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ],
+                                                        ),
+                                                        Divider(
+                                                          color: white,
+                                                          thickness: 1.5,
+                                                        ),
+                                                      ],
+                                                    );
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      } else {
+                        // ============================================================
+                        // USER LAIN
+                        // TETAP MENGGUNAKAN LOGIKA LOW PRESSURE LAMA
+                        // ============================================================
+
+                        final reccPressMap = <String, int>{};
+
+                        for (final item in state.reccPress) {
+                          item.forEach((key, value) {
+                            reccPressMap[key.toString()] =
+                                int.tryParse(value.toString()) ?? 0;
+                          });
+                        }
+
+                        return Column(
+                          children: [
+                            const SizedBox(height: 12),
+                            SelectPitButton(
+                              pit: pit,
+                              selectedPit: selectedPit,
+                              onSelectedPitChanged: (index) {
+                                setState(() {
+                                  selectedPit = index;
+                                  checkedFuture = getCheckedTodayFuture();
+                                });
+                              },
+                            ),
+                            const SizedBox(height: 12),
+                            if (homeState.selectedSite?.idCompany == '2')
+                              Text(
+                                'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
+                                style: getBlackTextStyle(fontSize: 14),
+                              )
+                            else
+                              Container(),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: refreshCheckedData,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey,
+                                ),
+                                child: Text(
+                                  'Refresh Low Pressure Data',
+                                  style: getWhiteTextStyle(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                              future: checkedFuture,
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const Center(
+                                    child: CircularProgressIndicator.adaptive(),
+                                  );
+                                }
+
+                                if (snapshot.hasError) {
+                                  return Text(
+                                    'Error load low pressure data: ${snapshot.error}',
+                                    style: getBlackTextStyle(fontSize: 14),
+                                  );
+                                }
+
+                                final docs = snapshot.data?.docs ?? [];
+
+                                final allData = docs.map((doc) {
+                                  final data = doc.data();
+
+                                  return DailyPress.fromFirestore(data);
+                                }).toList();
+
+                                allData.sort((a, b) {
+                                  return b.tanggal.compareTo(a.tanggal);
+                                });
+
+                                final keyword = searchQuery.toLowerCase();
+
+                                final lowPressureData = allData.where((data) {
+                                  if (keyword.isNotEmpty) {
+                                    final unit = data.unit.toLowerCase();
+
+                                    if (!unit.contains(keyword)) {
+                                      return false;
+                                    }
+                                  }
+
+                                  return data.posisi.any((position) {
+                                    final tireSize = position.size;
+
+                                    if (tireSize == null || tireSize.isEmpty) {
+                                      return false;
+                                    }
+
+                                    final pressure = int.tryParse(
+                                            position.pressure ?? '0') ??
+                                        0;
+
+                                    if (pressure == 0) {
+                                      return false;
+                                    }
+
+                                    final adjustedPressure =
+                                        position.adjusmentPressure;
+
+                                    if (adjustedPressure.isNotEmpty &&
+                                        adjustedPressure != '0') {
+                                      return false;
+                                    }
+
+                                    final recommendedPressure =
+                                        reccPressMap[tireSize] ?? 0;
+
+                                    if (recommendedPressure == 0) {
+                                      return false;
+                                    }
+
+                                    return pressure < recommendedPressure;
+                                  });
+                                }).toList();
+
+                                if (lowPressureData.isEmpty) {
+                                  return Text(
+                                    'There is no low pressure data!',
+                                    style: getBlackTextStyle(),
+                                  );
+                                }
+
+                                return ListView.builder(
+                                  itemCount: lowPressureData.length,
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemBuilder: (context, index) {
+                                    final data = lowPressureData[index];
+
+                                    return Card(
+                                      elevation: 2,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Container(
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 24,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: ExpansionTile(
+                                          tilePadding: EdgeInsets.zero,
+                                          childrenPadding: EdgeInsets.zero,
+                                          title: Row(
+                                            children: [
+                                              Icon(
+                                                Icons.task,
+                                                color: white,
+                                                size: 36,
+                                              ),
+                                              const SizedBox(width: 12),
+                                              Expanded(
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text(
+                                                      data.unit +
+                                                          '${data.pit != 'Default' ? '\n${data.pit}' : ''}',
+                                                      style: getWhiteTextStyle(
+                                                        fontWeight: w700,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      'LOW PRESSURE!',
+                                                      style: getWhiteTextStyle(
+                                                        fontWeight: w700,
+                                                        fontSize: 18,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          trailing: const SizedBox(
+                                            width: 90,
+                                            child: Icon(
+                                              Icons.arrow_drop_down,
+                                            ),
+                                          ),
+                                          children: [
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Name',
+                                                  style: getWhiteTextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                  width: 250,
+                                                  child: Text(
+                                                    data.user == ''
+                                                        ? 'No Name'
+                                                        : data.user,
+                                                    textAlign: TextAlign.end,
+                                                    style: getWhiteTextStyle(
+                                                      fontWeight: w700,
+                                                      fontSize: 18,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Tanggal',
+                                                  style: getWhiteTextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  data.tanggal.split('T')[0],
                                                   style: getWhiteTextStyle(
                                                     fontWeight: w700,
                                                     fontSize: 18,
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Tanggal',
-                                                style: getWhiteTextStyle(
-                                                    fontSize: 18),
-                                              ),
-                                              Text(
-                                                data.tanggal.split('T')[0],
-                                                style: getWhiteTextStyle(
-                                                  fontWeight: w700,
-                                                  fontSize: 18,
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Waktu',
+                                                  style: getWhiteTextStyle(
+                                                    fontSize: 18,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Waktu',
-                                                style: getWhiteTextStyle(
-                                                    fontSize: 18),
-                                              ),
-                                              Text(
-                                                data.tanggal
-                                                    .split('T')[1]
-                                                    .substring(0, 5),
-                                                style: getWhiteTextStyle(
-                                                  fontWeight: w700,
-                                                  fontSize: 18,
+                                                Text(
+                                                  data.tanggal
+                                                      .split('T')[1]
+                                                      .substring(0, 5),
+                                                  style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'HM Unit',
-                                                style: getWhiteTextStyle(
-                                                    fontSize: 18),
-                                              ),
-                                              Text(
-                                                data.hm,
-                                                style: getWhiteTextStyle(
-                                                  fontWeight: w700,
-                                                  fontSize: 18,
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'HM Unit',
+                                                  style: getWhiteTextStyle(
+                                                    fontSize: 18,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 12),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'Pit',
-                                                style: getWhiteTextStyle(
-                                                    fontSize: 18),
-                                              ),
-                                              Text(
-                                                data.pit,
-                                                style: getWhiteTextStyle(
-                                                  fontWeight: w700,
-                                                  fontSize: 18,
+                                                Text(
+                                                  data.hm,
+                                                  style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 12),
-                                          ListView.builder(
-                                            itemCount: data.posisi.length,
-                                            shrinkWrap: true,
-                                            physics:
-                                                const NeverScrollableScrollPhysics(),
-                                            itemBuilder: (context, posIndex) {
-                                              final pl = data.posisi[posIndex];
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'Pit',
+                                                  style: getWhiteTextStyle(
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  data.pit,
+                                                  style: getWhiteTextStyle(
+                                                    fontWeight: w700,
+                                                    fontSize: 18,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                            ListView.builder(
+                                              itemCount: data.posisi.length,
+                                              shrinkWrap: true,
+                                              physics:
+                                                  const NeverScrollableScrollPhysics(),
+                                              itemBuilder: (context, posIndex) {
+                                                final pl =
+                                                    data.posisi[posIndex];
 
-                                              List<dynamic> luka = [];
+                                                List<dynamic> luka = [];
 
-                                              if (pl.luka != null &&
-                                                  pl.luka is! String) {
-                                                luka = pl.luka as List<dynamic>;
-                                              }
+                                                if (pl.luka != null &&
+                                                    pl.luka is! String) {
+                                                  luka =
+                                                      pl.luka as List<dynamic>;
+                                                }
 
-                                              final tireSize = pl.size;
-                                              final pressure = int.tryParse(
-                                                      pl.pressure ?? '0') ??
-                                                  0;
-                                              final recommendedPressure =
-                                                  reccPressMap[tireSize] ?? 0;
+                                                final tireSize = pl.size;
 
-                                              final adjustedPressure =
-                                                  pl.adjusmentPressure;
+                                                final pressure = int.tryParse(
+                                                        pl.pressure ?? '0') ??
+                                                    0;
 
-                                              final isThisPositionLow =
-                                                  tireSize != null &&
-                                                      tireSize.isNotEmpty &&
-                                                      pressure > 0 &&
-                                                      recommendedPressure > 0 &&
-                                                      pressure <
-                                                          recommendedPressure &&
-                                                      (adjustedPressure
-                                                              .isEmpty ||
-                                                          adjustedPressure ==
-                                                              '0');
+                                                final recommendedPressure =
+                                                    reccPressMap[tireSize] ?? 0;
 
-                                              return Column(
-                                                children: [
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Text(
-                                                        'Pos. ${pl.pos}',
-                                                        style:
-                                                            getWhiteTextStyle(
-                                                                fontSize: 18),
-                                                      ),
-                                                      Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .end,
-                                                        children: [
-                                                          Text(
-                                                            '${(pl.pressure == '' || pl.pressure == null) ? 0 : pl.pressure} Psi',
-                                                            style:
-                                                                getWhiteTextStyle(
-                                                              fontWeight: w700,
-                                                              fontSize: 18,
-                                                            ),
+                                                final adjustedPressure =
+                                                    pl.adjusmentPressure;
+
+                                                final isThisPositionLow =
+                                                    tireSize != null &&
+                                                        tireSize.isNotEmpty &&
+                                                        pressure > 0 &&
+                                                        recommendedPressure >
+                                                            0 &&
+                                                        pressure <
+                                                            recommendedPressure &&
+                                                        (adjustedPressure
+                                                                .isEmpty ||
+                                                            adjustedPressure ==
+                                                                '0');
+
+                                                return Column(
+                                                  children: [
+                                                    Row(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .center,
+                                                      children: [
+                                                        Text(
+                                                          'Pos. ${pl.pos}',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontSize: 18,
                                                           ),
-                                                          if (isThisPositionLow)
+                                                        ),
+                                                        Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .end,
+                                                          children: [
                                                             Text(
-                                                              'Recc: $recommendedPressure Psi',
-                                                              style:
-                                                                  getWhiteTextStyle(
-                                                                fontWeight:
-                                                                    w700,
-                                                                fontSize: 14,
-                                                              ),
-                                                            ),
-                                                          if (isThisPositionLow)
-                                                            Container(
-                                                              width: 120,
-                                                              height: 60,
-                                                              margin:
-                                                                  const EdgeInsets
-                                                                      .only(
-                                                                top: 12,
-                                                                bottom: 12,
-                                                              ),
-                                                              child:
-                                                                  ButtonWidget(
-                                                                name: Text(
-                                                                  'Adjust',
-                                                                  style:
-                                                                      getWhiteTextStyle(),
-                                                                ),
-                                                                color:
-                                                                    green00968A,
-                                                                function: () {
-                                                                  List<Position>
-                                                                      position =
-                                                                      [];
-
-                                                                  for (int i =
-                                                                          0;
-                                                                      i <
-                                                                          data.posisi
-                                                                              .length;
-                                                                      i++) {
-                                                                    final p =
-                                                                        data.posisi[
-                                                                            i];
-
-                                                                    position
-                                                                        .add(
-                                                                      Position(
-                                                                        pos: p
-                                                                            .pos,
-                                                                        pressure:
-                                                                            p.pressure,
-                                                                        temperatureStatus:
-                                                                            p.temperatureStatus,
-                                                                        rating:
-                                                                            p.rating,
-                                                                        adjusmentPressure:
-                                                                            p.adjusmentPressure,
-                                                                        adjustmentTemperatureStatus:
-                                                                            p.adjustmentTemperatureStatus,
-                                                                        luka: p
-                                                                            .luka,
-                                                                        image: p
-                                                                            .image,
-                                                                        size: p
-                                                                            .size,
-                                                                        idInventory:
-                                                                            p.idInventory,
-                                                                        idUnit:
-                                                                            p.idUnit,
-                                                                        idDaily:
-                                                                            p.idDaily,
-                                                                        kondisi:
-                                                                            p.kondisi,
-                                                                      ),
-                                                                    );
-                                                                  }
-
-                                                                  final dataUnit =
-                                                                      {
-                                                                    'unitNumber':
-                                                                        data.unit,
-                                                                    'hm':
-                                                                        data.hm,
-                                                                    'pit': data
-                                                                        .pit,
-                                                                    'position':
-                                                                        position,
-                                                                    'reccPress':
-                                                                        state
-                                                                            .reccPress,
-                                                                  };
-
-                                                                  Navigator
-                                                                      .pushNamed(
-                                                                    context,
-                                                                    DailyCheckFormPage
-                                                                        .routeName,
-                                                                    arguments:
-                                                                        dataUnit,
-                                                                  );
-                                                                },
-                                                              ),
-                                                            ),
-                                                          if (pl.adjusmentPressure !=
-                                                                  null &&
-                                                              pl.adjusmentPressure !=
-                                                                  '0' &&
-                                                              pl.adjusmentPressure !=
-                                                                  '')
-                                                            Text(
-                                                              '${pl.adjusmentPressure} Psi (Adj. Pressure)',
+                                                              '${pl.pressure == '' || pl.pressure == null ? 0 : pl.pressure} Psi',
                                                               style:
                                                                   getWhiteTextStyle(
                                                                 fontWeight:
@@ -2081,14 +2587,116 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                 fontSize: 18,
                                                               ),
                                                             ),
-                                                          if (luka.isNotEmpty)
-                                                            SizedBox(
-                                                              width: 200,
-                                                              child: Text(
-                                                                luka.join('\n'),
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .end,
+                                                            if (isThisPositionLow)
+                                                              Text(
+                                                                'Recc: $recommendedPressure Psi',
+                                                                style:
+                                                                    getWhiteTextStyle(
+                                                                  fontWeight:
+                                                                      w700,
+                                                                  fontSize: 14,
+                                                                ),
+                                                              ),
+                                                            if (isThisPositionLow)
+                                                              Container(
+                                                                width: 120,
+                                                                height: 60,
+                                                                margin:
+                                                                    const EdgeInsets
+                                                                        .only(
+                                                                  top: 12,
+                                                                  bottom: 12,
+                                                                ),
+                                                                child:
+                                                                    ButtonWidget(
+                                                                  name: Text(
+                                                                    'Adjust',
+                                                                    style:
+                                                                        getWhiteTextStyle(),
+                                                                  ),
+                                                                  color:
+                                                                      green00968A,
+                                                                  function: () {
+                                                                    final List<
+                                                                            Position>
+                                                                        position =
+                                                                        [];
+
+                                                                    for (int i =
+                                                                            0;
+                                                                        i < data.posisi.length;
+                                                                        i++) {
+                                                                      final p =
+                                                                          data.posisi[
+                                                                              i];
+
+                                                                      position
+                                                                          .add(
+                                                                        Position(
+                                                                          pos: p
+                                                                              .pos,
+                                                                          pressure:
+                                                                              p.pressure,
+                                                                          temperatureStatus:
+                                                                              p.temperatureStatus,
+                                                                          rating:
+                                                                              p.rating,
+                                                                          adjusmentPressure:
+                                                                              p.adjusmentPressure,
+                                                                          adjustmentTemperatureStatus:
+                                                                              p.adjustmentTemperatureStatus,
+                                                                          luka:
+                                                                              p.luka,
+                                                                          image:
+                                                                              p.image,
+                                                                          size:
+                                                                              p.size,
+                                                                          idInventory:
+                                                                              p.idInventory,
+                                                                          idUnit:
+                                                                              p.idUnit,
+                                                                          idDaily:
+                                                                              p.idDaily,
+                                                                          kondisi:
+                                                                              p.kondisi,
+                                                                        ),
+                                                                      );
+                                                                    }
+
+                                                                    final dataUnit =
+                                                                        {
+                                                                      'unitNumber':
+                                                                          data.unit,
+                                                                      'hm': data
+                                                                          .hm,
+                                                                      'pit': data
+                                                                          .pit,
+                                                                      'position':
+                                                                          position,
+                                                                      'reccPress':
+                                                                          state
+                                                                              .reccPress,
+                                                                    };
+
+                                                                    Navigator
+                                                                        .pushNamed(
+                                                                      context,
+                                                                      DailyCheckFormPage
+                                                                          .routeName,
+                                                                      arguments:
+                                                                          dataUnit,
+                                                                    );
+                                                                  },
+                                                                ),
+                                                              ),
+                                                            if (pl.adjusmentPressure !=
+                                                                    null &&
+                                                                pl.adjusmentPressure !=
+                                                                    '0' &&
+                                                                pl.adjusmentPressure !=
+                                                                    '')
+                                                              Text(
+                                                                '${pl.adjusmentPressure} Psi (Adj. Pressure)',
                                                                 style:
                                                                     getWhiteTextStyle(
                                                                   fontWeight:
@@ -2096,39 +2704,586 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                   fontSize: 18,
                                                                 ),
                                                               ),
+                                                            if (luka.isNotEmpty)
+                                                              SizedBox(
+                                                                width: 200,
+                                                                child: Text(
+                                                                  luka.join(
+                                                                      '\n'),
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .end,
+                                                                  style:
+                                                                      getWhiteTextStyle(
+                                                                    fontWeight:
+                                                                        w700,
+                                                                    fontSize:
+                                                                        18,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            Text(
+                                                              '${pl.rating == '' || pl.rating == null ? '' : 'Rating ${pl.rating}'}',
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18,
+                                                              ),
                                                             ),
-                                                          Text(
-                                                            '${(pl.rating == '' || pl.rating == null) ? '' : 'Rating ${pl.rating}'}',
-                                                            style:
-                                                                getWhiteTextStyle(
-                                                              fontWeight: w700,
-                                                              fontSize: 18,
-                                                            ),
-                                                          ),
-                                                          const SizedBox(
-                                                              height: 12),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  Divider(
-                                                    color: white,
-                                                    thickness: 1.5,
-                                                  ),
-                                                ],
-                                              );
-                                            },
-                                          ),
-                                        ],
+                                                            const SizedBox(
+                                                                height: 12),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Divider(
+                                                      color: white,
+                                                      thickness: 1.5,
+                                                    ),
+                                                  ],
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                        ],
-                      );
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        );
+                      }
+                    // case 1:
+                    // checkedFuture ??= getCheckedTodayFuture();
+
+                    // final reccPressMap = <String, int>{};
+
+                    // for (final item in state.reccPress) {
+                    //   item.forEach((key, value) {
+                    //     reccPressMap[key.toString()] =
+                    //         int.tryParse(value.toString()) ?? 0;
+                    //   });
+                    // }
+
+                    // return Column(
+                    //   children: [
+                    //     const SizedBox(height: 12),
+                    //     SelectPitButton(
+                    //       pit: pit,
+                    //       selectedPit: selectedPit,
+                    //       onSelectedPitChanged: (index) {
+                    //         setState(() {
+                    //           selectedPit = index;
+                    //           checkedFuture = getCheckedTodayFuture();
+                    //         });
+                    //       },
+                    //     ),
+                    //     const SizedBox(height: 12),
+                    //     if (homeState.selectedSite?.idCompany == '2')
+                    //       Text(
+                    //         'Target Low Pressure : ${(state.countAllTire * 0.01).ceil()} Tire',
+                    //         style: getBlackTextStyle(fontSize: 14),
+                    //       )
+                    //     else
+                    //       Container(),
+                    //     const SizedBox(height: 12),
+                    //     SizedBox(
+                    //       width: double.infinity,
+                    //       child: ElevatedButton(
+                    //         onPressed: refreshCheckedData,
+                    //         style: ElevatedButton.styleFrom(
+                    //           backgroundColor: Colors.blueGrey,
+                    //         ),
+                    //         child: Text(
+                    //           'Refresh Low Pressure Data',
+                    //           style: getWhiteTextStyle(),
+                    //         ),
+                    //       ),
+                    //     ),
+                    //     const SizedBox(height: 12),
+                    //     FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    //       future: checkedFuture,
+                    //       builder: (context, snapshot) {
+                    //         if (snapshot.connectionState ==
+                    //             ConnectionState.waiting) {
+                    //           return const Center(
+                    //             child: CircularProgressIndicator.adaptive(),
+                    //           );
+                    //         }
+
+                    //         if (snapshot.hasError) {
+                    //           return Text(
+                    //             'Error load low pressure data: ${snapshot.error}',
+                    //             style: getBlackTextStyle(fontSize: 14),
+                    //           );
+                    //         }
+
+                    //         final docs = snapshot.data?.docs ?? [];
+
+                    //         final allData = docs.map((doc) {
+                    //           final data = doc.data();
+                    //           return DailyPress.fromFirestore(data);
+                    //         }).toList();
+
+                    //         allData.sort((a, b) {
+                    //           return b.tanggal.compareTo(a.tanggal);
+                    //         });
+
+                    //         final keyword = searchQuery.toLowerCase();
+
+                    //         final lowPressureData = allData.where((data) {
+                    //           if (keyword.isNotEmpty) {
+                    //             final unit = data.unit.toLowerCase();
+
+                    //             if (!unit.contains(keyword)) {
+                    //               return false;
+                    //             }
+                    //           }
+
+                    //           return data.posisi.any((position) {
+                    //             final tireSize = position.size;
+
+                    //             if (tireSize == null || tireSize.isEmpty) {
+                    //               return false;
+                    //             }
+
+                    //             final pressure =
+                    //                 int.tryParse(position.pressure ?? '0') ??
+                    //                     0;
+
+                    //             if (pressure == 0) {
+                    //               return false;
+                    //             }
+
+                    //             final adjustedPressure =
+                    //                 position.adjusmentPressure;
+
+                    //             if (adjustedPressure.isNotEmpty &&
+                    //                 adjustedPressure != '0') {
+                    //               return false;
+                    //             }
+
+                    //             final recommendedPressure =
+                    //                 reccPressMap[tireSize] ?? 0;
+
+                    //             if (recommendedPressure == 0) {
+                    //               return false;
+                    //             }
+
+                    //             return pressure < recommendedPressure;
+                    //           });
+                    //         }).toList();
+
+                    //         if (lowPressureData.isEmpty) {
+                    //           return Text(
+                    //             'There is no low pressure data!',
+                    //             style: getBlackTextStyle(),
+                    //           );
+                    //         }
+
+                    //         return ListView.builder(
+                    //           itemCount: lowPressureData.length,
+                    //           shrinkWrap: true,
+                    //           physics: const NeverScrollableScrollPhysics(),
+                    //           itemBuilder: (context, index) {
+                    //             final data = lowPressureData[index];
+
+                    //             return Card(
+                    //               elevation: 2,
+                    //               shape: RoundedRectangleBorder(
+                    //                 borderRadius: BorderRadius.circular(12),
+                    //               ),
+                    //               child: Container(
+                    //                 width: double.infinity,
+                    //                 padding: const EdgeInsets.symmetric(
+                    //                   horizontal: 12,
+                    //                   vertical: 24,
+                    //                 ),
+                    //                 decoration: BoxDecoration(
+                    //                   color: Colors.red,
+                    //                   borderRadius: BorderRadius.circular(12),
+                    //                 ),
+                    //                 child: ExpansionTile(
+                    //                   tilePadding: EdgeInsets.zero,
+                    //                   childrenPadding: EdgeInsets.zero,
+                    //                   title: Row(
+                    //                     children: [
+                    //                       Icon(
+                    //                         Icons.task,
+                    //                         color: white,
+                    //                         size: 36,
+                    //                       ),
+                    //                       const SizedBox(width: 12),
+                    //                       Expanded(
+                    //                         child: Column(
+                    //                           crossAxisAlignment:
+                    //                               CrossAxisAlignment.start,
+                    //                           children: [
+                    //                             Text(
+                    //                               data.unit +
+                    //                                   '${((data.pit != 'Default') ? '\n${data.pit}' : '')}',
+                    //                               style: getWhiteTextStyle(
+                    //                                 fontWeight: w700,
+                    //                                 fontSize: 18,
+                    //                               ),
+                    //                             ),
+                    //                             Text(
+                    //                               'LOW PRESSURE!',
+                    //                               style: getWhiteTextStyle(
+                    //                                 fontWeight: w700,
+                    //                                 fontSize: 18,
+                    //                               ),
+                    //                             ),
+                    //                           ],
+                    //                         ),
+                    //                       ),
+                    //                     ],
+                    //                   ),
+                    //                   trailing: const SizedBox(
+                    //                     width: 90,
+                    //                     child: Icon(Icons.arrow_drop_down),
+                    //                   ),
+                    //                   children: [
+                    //                     const SizedBox(height: 12),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'Name',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         SizedBox(
+                    //                           width: 250,
+                    //                           child: Text(
+                    //                             data.user == ''
+                    //                                 ? 'No Name'
+                    //                                 : data.user,
+                    //                             textAlign: TextAlign.end,
+                    //                             style: getWhiteTextStyle(
+                    //                               fontWeight: w700,
+                    //                               fontSize: 18,
+                    //                             ),
+                    //                           ),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(height: 12),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'Tanggal',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Text(
+                    //                           data.tanggal.split('T')[0],
+                    //                           style: getWhiteTextStyle(
+                    //                             fontWeight: w700,
+                    //                             fontSize: 18,
+                    //                           ),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(height: 12),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'Waktu',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Text(
+                    //                           data.tanggal
+                    //                               .split('T')[1]
+                    //                               .substring(0, 5),
+                    //                           style: getWhiteTextStyle(
+                    //                             fontWeight: w700,
+                    //                             fontSize: 18,
+                    //                           ),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(height: 12),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'HM Unit',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Text(
+                    //                           data.hm,
+                    //                           style: getWhiteTextStyle(
+                    //                             fontWeight: w700,
+                    //                             fontSize: 18,
+                    //                           ),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(height: 12),
+                    //                     Row(
+                    //                       mainAxisAlignment:
+                    //                           MainAxisAlignment.spaceBetween,
+                    //                       children: [
+                    //                         Text(
+                    //                           'Pit',
+                    //                           style: getWhiteTextStyle(
+                    //                               fontSize: 18),
+                    //                         ),
+                    //                         Text(
+                    //                           data.pit,
+                    //                           style: getWhiteTextStyle(
+                    //                             fontWeight: w700,
+                    //                             fontSize: 18,
+                    //                           ),
+                    //                         ),
+                    //                       ],
+                    //                     ),
+                    //                     const SizedBox(height: 12),
+                    //                     ListView.builder(
+                    //                       itemCount: data.posisi.length,
+                    //                       shrinkWrap: true,
+                    //                       physics:
+                    //                           const NeverScrollableScrollPhysics(),
+                    //                       itemBuilder: (context, posIndex) {
+                    //                         final pl = data.posisi[posIndex];
+
+                    //                         List<dynamic> luka = [];
+
+                    //                         if (pl.luka != null &&
+                    //                             pl.luka is! String) {
+                    //                           luka = pl.luka as List<dynamic>;
+                    //                         }
+
+                    //                         final tireSize = pl.size;
+                    //                         final pressure = int.tryParse(
+                    //                                 pl.pressure ?? '0') ??
+                    //                             0;
+                    //                         final recommendedPressure =
+                    //                             reccPressMap[tireSize] ?? 0;
+
+                    //                         final adjustedPressure =
+                    //                             pl.adjusmentPressure;
+
+                    //                         final isThisPositionLow =
+                    //                             tireSize != null &&
+                    //                                 tireSize.isNotEmpty &&
+                    //                                 pressure > 0 &&
+                    //                                 recommendedPressure > 0 &&
+                    //                                 pressure <
+                    //                                     recommendedPressure &&
+                    //                                 (adjustedPressure
+                    //                                         .isEmpty ||
+                    //                                     adjustedPressure ==
+                    //                                         '0');
+
+                    //                         return Column(
+                    //                           children: [
+                    //                             Row(
+                    //                               mainAxisAlignment:
+                    //                                   MainAxisAlignment
+                    //                                       .spaceBetween,
+                    //                               crossAxisAlignment:
+                    //                                   CrossAxisAlignment
+                    //                                       .center,
+                    //                               children: [
+                    //                                 Text(
+                    //                                   'Pos. ${pl.pos}',
+                    //                                   style:
+                    //                                       getWhiteTextStyle(
+                    //                                           fontSize: 18),
+                    //                                 ),
+                    //                                 Column(
+                    //                                   crossAxisAlignment:
+                    //                                       CrossAxisAlignment
+                    //                                           .end,
+                    //                                   children: [
+                    //                                     Text(
+                    //                                       '${(pl.pressure == '' || pl.pressure == null) ? 0 : pl.pressure} Psi',
+                    //                                       style:
+                    //                                           getWhiteTextStyle(
+                    //                                         fontWeight: w700,
+                    //                                         fontSize: 18,
+                    //                                       ),
+                    //                                     ),
+                    //                                     if (isThisPositionLow)
+                    //                                       Text(
+                    //                                         'Recc: $recommendedPressure Psi',
+                    //                                         style:
+                    //                                             getWhiteTextStyle(
+                    //                                           fontWeight:
+                    //                                               w700,
+                    //                                           fontSize: 14,
+                    //                                         ),
+                    //                                       ),
+                    //                                     if (isThisPositionLow)
+                    //                                       Container(
+                    //                                         width: 120,
+                    //                                         height: 60,
+                    //                                         margin:
+                    //                                             const EdgeInsets
+                    //                                                 .only(
+                    //                                           top: 12,
+                    //                                           bottom: 12,
+                    //                                         ),
+                    //                                         child:
+                    //                                             ButtonWidget(
+                    //                                           name: Text(
+                    //                                             'Adjust',
+                    //                                             style:
+                    //                                                 getWhiteTextStyle(),
+                    //                                           ),
+                    //                                           color:
+                    //                                               green00968A,
+                    //                                           function: () {
+                    //                                             List<Position>
+                    //                                                 position =
+                    //                                                 [];
+
+                    //                                             for (int i =
+                    //                                                     0;
+                    //                                                 i <
+                    //                                                     data.posisi
+                    //                                                         .length;
+                    //                                                 i++) {
+                    //                                               final p =
+                    //                                                   data.posisi[
+                    //                                                       i];
+
+                    //                                               position
+                    //                                                   .add(
+                    //                                                 Position(
+                    //                                                   pos: p
+                    //                                                       .pos,
+                    //                                                   pressure:
+                    //                                                       p.pressure,
+                    //                                                   temperatureStatus:
+                    //                                                       p.temperatureStatus,
+                    //                                                   rating:
+                    //                                                       p.rating,
+                    //                                                   adjusmentPressure:
+                    //                                                       p.adjusmentPressure,
+                    //                                                   adjustmentTemperatureStatus:
+                    //                                                       p.adjustmentTemperatureStatus,
+                    //                                                   luka: p
+                    //                                                       .luka,
+                    //                                                   image: p
+                    //                                                       .image,
+                    //                                                   size: p
+                    //                                                       .size,
+                    //                                                   idInventory:
+                    //                                                       p.idInventory,
+                    //                                                   idUnit:
+                    //                                                       p.idUnit,
+                    //                                                   idDaily:
+                    //                                                       p.idDaily,
+                    //                                                   kondisi:
+                    //                                                       p.kondisi,
+                    //                                                 ),
+                    //                                               );
+                    //                                             }
+
+                    //                                             final dataUnit =
+                    //                                                 {
+                    //                                               'unitNumber':
+                    //                                                   data.unit,
+                    //                                               'hm':
+                    //                                                   data.hm,
+                    //                                               'pit': data
+                    //                                                   .pit,
+                    //                                               'position':
+                    //                                                   position,
+                    //                                               'reccPress':
+                    //                                                   state
+                    //                                                       .reccPress,
+                    //                                             };
+
+                    //                                             Navigator
+                    //                                                 .pushNamed(
+                    //                                               context,
+                    //                                               DailyCheckFormPage
+                    //                                                   .routeName,
+                    //                                               arguments:
+                    //                                                   dataUnit,
+                    //                                             );
+                    //                                           },
+                    //                                         ),
+                    //                                       ),
+                    //                                     if (pl.adjusmentPressure !=
+                    //                                             null &&
+                    //                                         pl.adjusmentPressure !=
+                    //                                             '0' &&
+                    //                                         pl.adjusmentPressure !=
+                    //                                             '')
+                    //                                       Text(
+                    //                                         '${pl.adjusmentPressure} Psi (Adj. Pressure)',
+                    //                                         style:
+                    //                                             getWhiteTextStyle(
+                    //                                           fontWeight:
+                    //                                               w700,
+                    //                                           fontSize: 18,
+                    //                                         ),
+                    //                                       ),
+                    //                                     if (luka.isNotEmpty)
+                    //                                       SizedBox(
+                    //                                         width: 200,
+                    //                                         child: Text(
+                    //                                           luka.join('\n'),
+                    //                                           textAlign:
+                    //                                               TextAlign
+                    //                                                   .end,
+                    //                                           style:
+                    //                                               getWhiteTextStyle(
+                    //                                             fontWeight:
+                    //                                                 w700,
+                    //                                             fontSize: 18,
+                    //                                           ),
+                    //                                         ),
+                    //                                       ),
+                    //                                     Text(
+                    //                                       '${(pl.rating == '' || pl.rating == null) ? '' : 'Rating ${pl.rating}'}',
+                    //                                       style:
+                    //                                           getWhiteTextStyle(
+                    //                                         fontWeight: w700,
+                    //                                         fontSize: 18,
+                    //                                       ),
+                    //                                     ),
+                    //                                     const SizedBox(
+                    //                                         height: 12),
+                    //                                   ],
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                             Divider(
+                    //                               color: white,
+                    //                               thickness: 1.5,
+                    //                             ),
+                    //                           ],
+                    //                         );
+                    //                       },
+                    //                     ),
+                    //                   ],
+                    //                 ),
+                    //               ),
+                    //             );
+                    //           },
+                    //         );
+                    //       },
+                    //     ),
+                    //   ],
+                    // );
+                    // old code case 1
                     // case 1:
                     //   return Column(
                     //     children: [
@@ -4720,9 +5875,17 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
-              icon: Icon(Icons.done_outline_rounded), label: 'Checked (All)'),
+              icon: Icon(Icons.done_outline_rounded),
+              label: homeState.userAccessCompanyId.value == '1' &&
+                      homeState.userAccessId.value == '1'
+                  ? 'Complete'
+                  : 'Checked (All)'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.error), label: 'Checked (Low)'),
+              icon: Icon(Icons.error),
+              label: homeState.userAccessCompanyId.value == '1' &&
+                      homeState.userAccessId.value == '1'
+                  ? 'Incomplete Check'
+                  : 'Checked (Low)'),
           BottomNavigationBarItem(icon: Icon(Icons.list), label: 'All Unit'),
           BottomNavigationBarItem(
               icon: Icon(Icons.close), label: 'Not Checked'),
