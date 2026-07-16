@@ -133,6 +133,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   TextEditingController pressureDigitalCtrl = TextEditingController(text: '');
   TextEditingController damageCtrl = TextEditingController(text: '');
   TextEditingController hmCtrl = TextEditingController(text: '');
+  TextEditingController hmNoteCtrl = TextEditingController(text: '');
   int selectedPit = -1;
   int selectedPosIndex = -1;
   int selectedType = 1;
@@ -833,6 +834,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     pressureCtrl.dispose();
     damageCtrl.dispose();
     hmCtrl.dispose();
+    hmNoteCtrl.dispose();
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     super.dispose();
@@ -853,6 +855,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
       // Mengisi kembali KM/HM dari data yang dipilih
       hmCtrl.text = (dataUnit['hm'] ?? '').toString();
+      hmNoteCtrl.text = (dataUnit['hmNote'] ?? '').toString();
 
       log('Data unit edit: $dataUnit');
       log('KM/HM edit: ${hmCtrl.text}');
@@ -2257,6 +2260,47 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                   ],
                                 ),
                               ),
+                              const SizedBox(
+                                width: 12,
+                              ),
+                              if (idSite == '1')
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Icon(
+                                            Icons.note,
+                                            color:
+                                                (idSite == bmbhauling.idSite ||
+                                                        idSite == '1')
+                                                    ? Colors.black
+                                                    : Colors.red,
+                                            size: 38,
+                                          ),
+                                          const SizedBox(
+                                            width: 12,
+                                          ),
+                                          Text(
+                                            'Note',
+                                            style: getBlackTextStyle(
+                                                fontWeight: w700, fontSize: 18),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(
+                                        height: 12,
+                                      ),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: InputFormWidget(
+                                            // isReadOnly: true,
+                                            controller: hmNoteCtrl,
+                                            hint: 'Note'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                           const SizedBox(
@@ -4212,6 +4256,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       'jam': DateTime.now().toIso8601String().substring(11, 19),
                       'unit': dataUnit['unitNumber'],
                       'hm': hmCtrl.text,
+                      'hmNote': hmNoteCtrl.text,
                       'posisi': position.map((p) {
                         final pIndex = position.indexOf(p);
 
@@ -4291,6 +4336,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                               .substring(11, 19),
                           'unit': dataUnit['unitNumber'],
                           'hm': hmCtrl.text,
+                          'hmNote': hmNoteCtrl.text,
                           'posisi': position.map((p) {
                             final pIndex = position.indexOf(p);
                             return {
@@ -4348,6 +4394,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       'jam': DateTime.now().toIso8601String().substring(11, 19),
                       'unit': dataUnit['unitNumber'],
                       'hm': hmCtrl.text,
+                      'hmNote': hmNoteCtrl.text,
                       'posisi': position.map((p) {
                         final pIndex = position.indexOf(p);
 
