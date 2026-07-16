@@ -2257,6 +2257,48 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                   ],
                                 ),
                               ),
+                              if (idSite == '1')
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(
+                                        width: 12,
+                                      ),
+                                      Expanded(
+                                        child: Column(
+                                          children: [
+                                            Row(
+                                              children: [
+                                                const SizedBox(
+                                                  width: 12,
+                                                ),
+                                                Text(
+                                                  'Note',
+                                                  style: getBlackTextStyle(
+                                                      fontWeight: w700,
+                                                      fontSize: 18),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(
+                                              height: 12,
+                                            ),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: InputFormWidget(
+                                                  // isReadOnly: true,
+                                                  controller: hmCtrl,
+                                                  isDecimalOnly: true,
+                                                  type: TextInputType.number,
+                                                  hint:
+                                                      'Fill ${(idSite == bmbhauling.idSite || idSite == '1') ? 'KM' : 'HM'}'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                             ],
                           ),
                           const SizedBox(
