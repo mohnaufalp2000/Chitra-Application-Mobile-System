@@ -825,13 +825,44 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                               getWhiteTextStyle(
                                                                   fontSize: 18),
                                                         ),
-                                                        Text(
-                                                          dailyMap['hm'] ?? '',
-                                                          style:
-                                                              getWhiteTextStyle(
-                                                            fontWeight: w700,
-                                                            fontSize: 18,
-                                                          ),
+                                                        Column(
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .end,
+                                                          children: [
+                                                            Text(
+                                                              (dailyMap['hm'] ==
+                                                                      '')
+                                                                  ? '0'
+                                                                  : dailyMap[
+                                                                      'hm'],
+                                                              style:
+                                                                  getWhiteTextStyle(
+                                                                fontWeight:
+                                                                    w700,
+                                                                fontSize: 18,
+                                                              ),
+                                                            ),
+                                                            (dailyMap['hmNote'] !=
+                                                                    null)
+                                                                ? Column(
+                                                                    crossAxisAlignment:
+                                                                        CrossAxisAlignment
+                                                                            .end,
+                                                                    children: [
+                                                                      const SizedBox(
+                                                                        height:
+                                                                            6,
+                                                                      ),
+                                                                      Text(
+                                                                          'Note : ' + dailyMap['hmNote'] ??
+                                                                              '',
+                                                                          style:
+                                                                              getWhiteTextStyle(fontSize: 18)),
+                                                                    ],
+                                                                  )
+                                                                : Container()
+                                                          ],
                                                         ),
                                                       ],
                                                     ),
