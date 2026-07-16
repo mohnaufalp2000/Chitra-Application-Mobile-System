@@ -4174,216 +4174,227 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
               ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
               try {
-                final today = DateTime.now();
-                final startOfDay = DateTime(today.year, today.month, today.day);
-                final endOfDay =
-                    DateTime(today.year, today.month, today.day, 23, 59, 59);
+                await (() async {
+                  final today = DateTime.now();
+                  final startOfDay =
+                      DateTime(today.year, today.month, today.day);
+                  final endOfDay =
+                      DateTime(today.year, today.month, today.day, 23, 59, 59);
 
-                final listImage = await uploadImageFirebase(idSite);
-                await uploadAllTireAccessories();
+                  final listImage = await uploadImageFirebase(idSite);
+                  await uploadAllTireAccessories();
 
-                final querySnapshot = await FirebaseFirestore.instance
-                    .collection(dataUnit['type'] == 'spm'
-                        ? 'adjusment_spm'
-                        : 'daily_pressure')
-                    .where('unit', isEqualTo: dataUnit['unitNumber'])
-                    .where('tanggal',
-                        isGreaterThanOrEqualTo: startOfDay.toIso8601String())
-                    .where('tanggal',
-                        isLessThanOrEqualTo: endOfDay.toIso8601String())
-                    .get();
-
-                if (querySnapshot.docs.isNotEmpty) {
-                  final docId = querySnapshot.docs.first.id;
-
-                  // revisi data
-                  await firestore
+                  final querySnapshot = await FirebaseFirestore.instance
                       .collection(dataUnit['type'] == 'spm'
                           ? 'adjusment_spm'
                           : 'daily_pressure')
-                      .doc(docId)
-                      .update({
-                    'idSite': idSite,
-                    'user': user['username'] ?? auth.currentUser!.email,
-                    'tanggal': DateTime.now().toIso8601String(),
-                    'hari': DateTime.now().toIso8601String().substring(0, 10),
-                    'jam': DateTime.now().toIso8601String().substring(11, 19),
-                    'unit': dataUnit['unitNumber'],
-                    'hm': hmCtrl.text,
-                    'posisi': position.map((p) {
-                      final pIndex = position.indexOf(p);
+                      .where('unit', isEqualTo: dataUnit['unitNumber'])
+                      .where('tanggal',
+                          isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+                      .where('tanggal',
+                          isLessThanOrEqualTo: endOfDay.toIso8601String())
+                      .get();
 
-                      return {
-                        'pos': '${pIndex + 1}',
-                        'rating': (p.rating == '' || p.rating.isEmpty)
-                            ? 'A'
-                            : (p.rating),
-                        'pressure': (p.pressure) ?? '0',
-                        'temperatureStatus': (p.temperatureStatus),
-                        'adjusmentPressure': (p.adjusmentPressure) ?? '0',
-                        'adjusmentTemperatureStatus':
-                            (position[0].adjusmentPressure != '')
-                                ? (position[0].adjustmentTemperatureStatus)
-                                : '',
-                        'luka': (selectedType == 0)
-                            ? ''
-                            : (p.luka.isEmpty)
-                                ? ['Good Condition']
-                                : p.luka,
-                        'image':
-                            (listImage[pIndex] != '') ? listImage[pIndex] : '',
-                        'tireSize': (p.size ?? ''),
-                        'idInventory': (p.idInventory ?? ''),
-                        'idUnit': (p.idUnit ?? ''),
-                        'idDaily': '${p.idDaily}',
-                        'kondisi': '${p.kondisi}',
-                        'tireAccessories':
-                            p.tireAccessories.map((a) => a.toMap()).toList(),
-                      };
-                    }),
-                    'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
-                    'timeLowPressureSPM': (dataUnit['type'] == 'spm')
-                        ? selectedDateTimeSPM?.toIso8601String()
-                        : '',
-                  });
-                } else {
-                  // tambah data kemarin (khusus site CK-BIB)
-                  if (idSite == bibkgb.idSite || idSite == bibgh.idSite) {
-                    final queryYesterdaySnapshot = await FirebaseFirestore
-                        .instance
+                  if (querySnapshot.docs.isNotEmpty) {
+                    final docId = querySnapshot.docs.first.id;
+
+                    // revisi data
+                    await firestore
                         .collection(dataUnit['type'] == 'spm'
                             ? 'adjusment_spm'
                             : 'daily_pressure')
-                        .where('unit', isEqualTo: dataUnit['unitNumber'])
-                        .where('tanggal',
-                            isGreaterThanOrEqualTo: DateTime(
-                                    today.year,
-                                    today.month,
-                                    today.subtract(Duration(days: 1)).day)
-                                .toIso8601String())
-                        .where('tanggal',
-                            isLessThanOrEqualTo: endOfDay.toIso8601String())
-                        .get();
+                        .doc(docId)
+                        .update({
+                      'idSite': idSite,
+                      'user': user['username'] ?? auth.currentUser!.email,
+                      'tanggal': DateTime.now().toIso8601String(),
+                      'hari': DateTime.now().toIso8601String().substring(0, 10),
+                      'jam': DateTime.now().toIso8601String().substring(11, 19),
+                      'unit': dataUnit['unitNumber'],
+                      'hm': hmCtrl.text,
+                      'posisi': position.map((p) {
+                        final pIndex = position.indexOf(p);
 
-                    if (queryYesterdaySnapshot.docs.isEmpty) {
-                      // tambah data kemarin
-                      await firestore
+                        return {
+                          'pos': '${pIndex + 1}',
+                          'rating': (p.rating == '' || p.rating.isEmpty)
+                              ? 'A'
+                              : (p.rating),
+                          'pressure': (p.pressure) ?? '0',
+                          'temperatureStatus': (p.temperatureStatus),
+                          'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                          'adjusmentTemperatureStatus':
+                              (position[0].adjusmentPressure != '')
+                                  ? (position[0].adjustmentTemperatureStatus)
+                                  : '',
+                          'luka': (selectedType == 0)
+                              ? ''
+                              : (p.luka.isEmpty)
+                                  ? ['Good Condition']
+                                  : p.luka,
+                          'image': (listImage[pIndex] != '')
+                              ? listImage[pIndex]
+                              : '',
+                          'tireSize': (p.size ?? ''),
+                          'idInventory': (p.idInventory ?? ''),
+                          'idUnit': (p.idUnit ?? ''),
+                          'idDaily': '${p.idDaily}',
+                          'kondisi': '${p.kondisi}',
+                          'tireAccessories':
+                              p.tireAccessories.map((a) => a.toMap()).toList(),
+                        };
+                      }),
+                      'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
+                      'timeLowPressureSPM': (dataUnit['type'] == 'spm')
+                          ? selectedDateTimeSPM?.toIso8601String()
+                          : '',
+                    });
+                  } else {
+                    // tambah data kemarin (khusus site CK-BIB)
+                    if (idSite == bibkgb.idSite || idSite == bibgh.idSite) {
+                      final queryYesterdaySnapshot = await FirebaseFirestore
+                          .instance
                           .collection(dataUnit['type'] == 'spm'
                               ? 'adjusment_spm'
                               : 'daily_pressure')
-                          .add({
-                        // 'nama': (user),
-                        'idSite': idSite,
-                        'user': user['username'] ?? auth.currentUser!.email,
-                        'tanggal': DateTime.now()
-                            .subtract(Duration(days: 1))
-                            .toIso8601String(),
-                        'hari': DateTime.now()
-                            .subtract(Duration(days: 1))
-                            .toIso8601String()
-                            .substring(0, 10),
-                        'jam': DateTime.now()
-                            .subtract(Duration(days: 1))
-                            .toIso8601String()
-                            .substring(11, 19),
-                        'unit': dataUnit['unitNumber'],
-                        'hm': hmCtrl.text,
-                        'posisi': position.map((p) {
-                          final pIndex = position.indexOf(p);
-                          return {
-                            'pos': '${pIndex + 1}',
-                            'pressure': (p.pressure) ?? '0',
-                            'temperatureStatus': (p.temperatureStatus),
-                            'rating': (p.rating == '' || p.rating.isEmpty)
-                                ? 'A'
-                                : (p.rating),
-                            'adjusmentPressure': (p.adjusmentPressure) ?? '0',
-                            'adjusmentTemperatureStatus':
-                                (position[0].adjusmentPressure != '')
-                                    ? (position[0].adjustmentTemperatureStatus)
-                                    : '',
-                            'luka': (selectedType == 0)
-                                ? ''
-                                : (p.luka.isEmpty)
-                                    ? ['Good Condition']
-                                    : p.luka,
-                            'image': (listImage[pIndex] != '')
-                                ? listImage[pIndex]
-                                : '',
-                            'tireSize': (p.size ?? ''),
-                            'idInventory': (p.idInventory ?? ''),
-                            'idUnit': (p.idUnit ?? ''),
-                            'idDaily': '${p.idDaily}',
-                            'kondisi': '${p.kondisi}',
-                            'tireAccessories': p.tireAccessories
-                                .map((a) => a.toMap())
-                                .toList(),
-                          };
-                        }),
-                        'pit':
-                            (selectedPit == -1) ? 'Default' : pit[selectedPit],
-                        'timeLowPressureSPM': (dataUnit['type'] == 'spm')
-                            ? selectedDateTimeSPM?.toIso8601String()
-                            : '',
-                      });
+                          .where('unit', isEqualTo: dataUnit['unitNumber'])
+                          .where('tanggal',
+                              isGreaterThanOrEqualTo: DateTime(
+                                      today.year,
+                                      today.month,
+                                      today.subtract(Duration(days: 1)).day)
+                                  .toIso8601String())
+                          .where('tanggal',
+                              isLessThanOrEqualTo: endOfDay.toIso8601String())
+                          .get();
+
+                      if (queryYesterdaySnapshot.docs.isEmpty) {
+                        // tambah data kemarin
+                        await firestore
+                            .collection(dataUnit['type'] == 'spm'
+                                ? 'adjusment_spm'
+                                : 'daily_pressure')
+                            .add({
+                          // 'nama': (user),
+                          'idSite': idSite,
+                          'user': user['username'] ?? auth.currentUser!.email,
+                          'tanggal': DateTime.now()
+                              .subtract(Duration(days: 1))
+                              .toIso8601String(),
+                          'hari': DateTime.now()
+                              .subtract(Duration(days: 1))
+                              .toIso8601String()
+                              .substring(0, 10),
+                          'jam': DateTime.now()
+                              .subtract(Duration(days: 1))
+                              .toIso8601String()
+                              .substring(11, 19),
+                          'unit': dataUnit['unitNumber'],
+                          'hm': hmCtrl.text,
+                          'posisi': position.map((p) {
+                            final pIndex = position.indexOf(p);
+                            return {
+                              'pos': '${pIndex + 1}',
+                              'pressure': (p.pressure) ?? '0',
+                              'temperatureStatus': (p.temperatureStatus),
+                              'rating': (p.rating == '' || p.rating.isEmpty)
+                                  ? 'A'
+                                  : (p.rating),
+                              'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                              'adjusmentTemperatureStatus':
+                                  (position[0].adjusmentPressure != '')
+                                      ? (position[0]
+                                          .adjustmentTemperatureStatus)
+                                      : '',
+                              'luka': (selectedType == 0)
+                                  ? ''
+                                  : (p.luka.isEmpty)
+                                      ? ['Good Condition']
+                                      : p.luka,
+                              'image': (listImage[pIndex] != '')
+                                  ? listImage[pIndex]
+                                  : '',
+                              'tireSize': (p.size ?? ''),
+                              'idInventory': (p.idInventory ?? ''),
+                              'idUnit': (p.idUnit ?? ''),
+                              'idDaily': '${p.idDaily}',
+                              'kondisi': '${p.kondisi}',
+                              'tireAccessories': p.tireAccessories
+                                  .map((a) => a.toMap())
+                                  .toList(),
+                            };
+                          }),
+                          'pit': (selectedPit == -1)
+                              ? 'Default'
+                              : pit[selectedPit],
+                          'timeLowPressureSPM': (dataUnit['type'] == 'spm')
+                              ? selectedDateTimeSPM?.toIso8601String()
+                              : '',
+                        });
+                      }
                     }
+
+                    // tambah data
+                    await firestore
+                        .collection(dataUnit['type'] == 'spm'
+                            ? 'adjusment_spm'
+                            : 'daily_pressure')
+                        .add({
+                      // 'nama': (user),
+                      'idSite': idSite,
+                      'user': user['username'] ?? auth.currentUser!.email,
+                      'tanggal': DateTime.now().toIso8601String(),
+                      'hari': DateTime.now().toIso8601String().substring(0, 10),
+                      'jam': DateTime.now().toIso8601String().substring(11, 19),
+                      'unit': dataUnit['unitNumber'],
+                      'hm': hmCtrl.text,
+                      'posisi': position.map((p) {
+                        final pIndex = position.indexOf(p);
+
+                        return {
+                          'pos': '${pIndex + 1}',
+                          'pressure': (p.pressure) ?? '0',
+                          'temperatureStatus': (p.temperatureStatus),
+                          'rating': (p.rating == '' || p.rating.isEmpty)
+                              ? 'A'
+                              : (p.rating),
+                          'adjusmentPressure': (p.adjusmentPressure) ?? '0',
+                          'adjusmentTemperatureStatus':
+                              (position[0].adjusmentPressure != '')
+                                  ? (position[0].adjustmentTemperatureStatus)
+                                  : '',
+                          'luka': (selectedType == 0)
+                              ? ''
+                              : (p.luka.isEmpty)
+                                  ? ['Good Condition']
+                                  : p.luka,
+                          'image': (listImage[pIndex] != '')
+                              ? listImage[pIndex]
+                              : '',
+                          'tireSize': (p.size ?? ''),
+                          'idInventory': (p.idInventory ?? ''),
+                          'idUnit': (p.idUnit ?? ''),
+                          'idDaily': '${p.idDaily}',
+                          'kondisi': '${p.kondisi}',
+                          'tireAccessories':
+                              p.tireAccessories.map((a) => a.toMap()).toList(),
+                        };
+                      }),
+                      'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
+                      'timeLowPressureSPM': (dataUnit['type'] == 'spm')
+                          ? selectedDateTimeSPM?.toIso8601String()
+                          : '',
+                    });
+
+                    // tambah data ke daily check 3
+
+                    // updateDailyPressure3(dataUnit, idSite);
                   }
+                })()
+                    .timeout(
+                  const Duration(seconds: 15),
+                );
 
-                  // tambah data
-                  await firestore
-                      .collection(dataUnit['type'] == 'spm'
-                          ? 'adjusment_spm'
-                          : 'daily_pressure')
-                      .add({
-                    // 'nama': (user),
-                    'idSite': idSite,
-                    'user': user['username'] ?? auth.currentUser!.email,
-                    'tanggal': DateTime.now().toIso8601String(),
-                    'hari': DateTime.now().toIso8601String().substring(0, 10),
-                    'jam': DateTime.now().toIso8601String().substring(11, 19),
-                    'unit': dataUnit['unitNumber'],
-                    'hm': hmCtrl.text,
-                    'posisi': position.map((p) {
-                      final pIndex = position.indexOf(p);
-
-                      return {
-                        'pos': '${pIndex + 1}',
-                        'pressure': (p.pressure) ?? '0',
-                        'temperatureStatus': (p.temperatureStatus),
-                        'rating': (p.rating == '' || p.rating.isEmpty)
-                            ? 'A'
-                            : (p.rating),
-                        'adjusmentPressure': (p.adjusmentPressure) ?? '0',
-                        'adjusmentTemperatureStatus':
-                            (position[0].adjusmentPressure != '')
-                                ? (position[0].adjustmentTemperatureStatus)
-                                : '',
-                        'luka': (selectedType == 0)
-                            ? ''
-                            : (p.luka.isEmpty)
-                                ? ['Good Condition']
-                                : p.luka,
-                        'image':
-                            (listImage[pIndex] != '') ? listImage[pIndex] : '',
-                        'tireSize': (p.size ?? ''),
-                        'idInventory': (p.idInventory ?? ''),
-                        'idUnit': (p.idUnit ?? ''),
-                        'idDaily': '${p.idDaily}',
-                        'kondisi': '${p.kondisi}',
-                        'tireAccessories':
-                            p.tireAccessories.map((a) => a.toMap()).toList(),
-                      };
-                    }),
-                    'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
-                    'timeLowPressureSPM': (dataUnit['type'] == 'spm')
-                        ? selectedDateTimeSPM?.toIso8601String()
-                        : '',
-                  });
-
-                  // tambah data ke daily check 3
-
-                  // updateDailyPressure3(dataUnit, idSite);
-                }
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     backgroundColor: green00968A,
                     content: Text(
@@ -4391,9 +4402,34 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       style: getWhiteTextStyle(),
                     )));
                 Navigator.pop(context);
+                if (!mounted) return;
                 setState(() {
                   isLoadingSave = false;
                 });
+              } on TimeoutException {
+                debugPrint(
+                  'Save timeout: proses penyimpanan melebihi 15 detik',
+                );
+
+                if (!mounted) return;
+
+                setState(() {
+                  isLoadingSave = false;
+                });
+
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 5),
+                    content: Text(
+                      'Gagal menyimpan data karena proses melebihi '
+                      '15 detik. Coba kembali beberapa detik.',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                );
               } catch (e) {
                 print('error bmb : $e');
                 setState(() {
