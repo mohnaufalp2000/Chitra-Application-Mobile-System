@@ -995,6 +995,21 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                             18,
                                                                       ),
                                                                     ),
+                                                                    (userAccessId ==
+                                                                            '1')
+                                                                        ? Column(
+                                                                            children: [
+                                                                              SizedBox(height: 12),
+                                                                              Text(
+                                                                                'RTD ${pl['rtd1'] ?? '-'}/${pl['rtd2'] ?? '-'}',
+                                                                                style: getWhiteTextStyle(
+                                                                                  fontWeight: w700,
+                                                                                  fontSize: 18,
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          )
+                                                                        : Container(),
                                                                     const SizedBox(
                                                                         height:
                                                                             12),

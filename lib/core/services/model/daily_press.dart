@@ -94,6 +94,8 @@ class Position extends Equatable {
   final String avgPress;
   final String temp;
   final List<TireAccessory> tireAccessories;
+  final String rtd1;
+  final String rtd2;
 
   Position({
     required this.pos,
@@ -114,6 +116,8 @@ class Position extends Equatable {
     this.avgPress = '',
     this.temp = '',
     this.tireAccessories = const [],
+    this.rtd1 = '',
+    this.rtd2 = '',
   });
 
   @override
@@ -121,6 +125,7 @@ class Position extends Equatable {
     return 'Position(pos: $pos, pressure: $pressure, temperatureStatus: $temperatureStatus, rating: $rating, adjusmentPressure: $adjusmentPressure, adjustmentTemperatureStatus: $adjustmentTemperatureStatus, '
         'luka: ${luka.join(", ")}, image: $image, size: $size, idInventory: $idInventory, idUnit: $idUnit, '
         'idDaily: $idDaily, kondisi: $kondisi, minPress: $minPress, maxPress: $maxPress, avgPress: $avgPress, '
+        'rtd1: $rtd1, rtd2: $rtd2)'
         'temp: $temp, tireAccessories: ${tireAccessories.map((e) => e.toMap()).toList()})';
   }
 
@@ -161,6 +166,8 @@ class Position extends Equatable {
               ?.map((e) => TireAccessory.fromMap(e))
               .toList() ??
           [],
+      rtd1: map['rtd1']?.toString() ?? '',
+      rtd2: map['rtd2']?.toString() ?? '',
     );
   }
 
@@ -183,6 +190,8 @@ class Position extends Equatable {
     String? avgPress,
     String? temp,
     List<TireAccessory>? tireAccessories,
+    String? rtd1,
+    String? rtd2,
   }) {
     return Position(
       pos: pos ?? this.pos,
@@ -204,6 +213,8 @@ class Position extends Equatable {
       avgPress: avgPress ?? this.avgPress,
       temp: temp ?? this.temp,
       tireAccessories: tireAccessories ?? this.tireAccessories,
+      rtd1: rtd1 ?? this.rtd1,
+      rtd2: rtd2 ?? this.rtd2,
     );
   }
 
@@ -227,6 +238,8 @@ class Position extends Equatable {
       'avg_press': avgPress,
       'temp': temp,
       'tireAccessories': tireAccessories.map((e) => e.toMap()).toList(),
+      'rtd1': rtd1,
+      'rtd2': rtd2,
     };
   }
 
