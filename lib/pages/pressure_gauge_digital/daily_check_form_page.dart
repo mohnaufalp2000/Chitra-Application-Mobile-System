@@ -5067,6 +5067,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   TextEditingController damageCtrl = TextEditingController(text: '');
   TextEditingController hmCtrl = TextEditingController(text: '');
   TextEditingController hmNoteCtrl = TextEditingController(text: '');
+  TextEditingController rtd1Ctrl = TextEditingController(text: '');
+  TextEditingController rtd2Ctrl = TextEditingController(text: '');
   int selectedPit = -1;
   int selectedPosIndex = -1;
   int selectedType = 1;
@@ -5768,6 +5770,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     damageCtrl.dispose();
     hmCtrl.dispose();
     hmNoteCtrl.dispose();
+    rtd1Ctrl.dispose();
+    rtd2Ctrl.dispose();
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     super.dispose();
@@ -5866,6 +5870,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           ],
         ];
       case 10:
+        // Urutan visual 10 ban:
+        // Baris 1 : Pos. 1 / F1  |  Pos. 2 / F2
+        // Baris 2 : Pos. 3 / R1, Pos. 4 / R2  |  Pos. 5 / R3, Pos. 6 / R4
+        // Baris 3 : Pos. 7 / R5, Pos. 8 / R6  |  Pos. 9 / R7, Pos. 10 / R8
         return [
           [
             [0],
@@ -5873,10 +5881,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
           ],
           [
             [2, 3],
-            [6, 7],
+            [4, 5],
           ],
           [
-            [4, 5],
+            [6, 7],
             [8, 9],
           ],
         ];
@@ -6982,6 +6990,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                     const SizedBox(
                                       height: 12,
                                     ),
+                                    (idSite == '1')
+                                        ? Text('haha')
+                                        : Container(),
                                     // IMAGE DAILY CHECK
                                     (dataUnit['type'] != null)
                                         ? SizedBox(
@@ -7116,7 +7127,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                   idDaily:
                                       '${state.units[i].idUnit}${i + 1}${formattedToday}${idSite}',
                                   kondisi: '',
-                                  tireAccessories: []),
+                                  tireAccessories: [],
+                                  rtd1: '',
+                                  rtd2: ''),
                             );
                           }
                         }
@@ -8669,272 +8682,439 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                               ),
                                               // SELECT DAMAGE TIRE
                                               SizedBox(
-                                                  width: itemWidth,
-                                                  // height: 65,
-                                                  child: ElevatedButton(
-                                                    onPressed: () {
-                                                      FocusScope.of(context)
-                                                          .unfocus();
-                                                      List<bool>
-                                                          checkedDamageValues =
-                                                          List<bool>.filled(
-                                                              damageType.length,
-                                                              false);
+                                                width: itemWidth,
+                                                // height: 65,
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    FocusScope.of(context)
+                                                        .unfocus();
+                                                    List<bool>
+                                                        checkedDamageValues =
+                                                        List<bool>.filled(
+                                                            damageType.length,
+                                                            false);
 
-                                                      if (position[posIndex]
-                                                          .luka
-                                                          .isNotEmpty) {
-                                                        for (int i = 0;
-                                                            i <
-                                                                damageType
-                                                                    .length;
-                                                            i++) {
-                                                          if (position[posIndex]
-                                                              .luka
-                                                              .contains(damageType[
-                                                                      i]
-                                                                  ['remark'])) {
-                                                            checkedDamageValues[
-                                                                i] = true;
-                                                          }
+                                                    if (position[posIndex]
+                                                        .luka
+                                                        .isNotEmpty) {
+                                                      for (int i = 0;
+                                                          i < damageType.length;
+                                                          i++) {
+                                                        if (position[posIndex]
+                                                            .luka
+                                                            .contains(damageType[
+                                                                i]['remark'])) {
+                                                          checkedDamageValues[
+                                                              i] = true;
                                                         }
-
-                                                        damageCtrl
-                                                            .text = position[
-                                                                    posIndex]
-                                                                .luka
-                                                                .isNotEmpty
-                                                            ? position[posIndex]
-                                                                .luka[0]
-                                                            : '';
                                                       }
 
-                                                      showDialog(
-                                                        context: context,
-                                                        builder: (BuildContext
-                                                            context) {
-                                                          return Dialog(
-                                                            child: Container(
-                                                              padding:
-                                                                  EdgeInsets
-                                                                      .all(
-                                                                          20.0),
-                                                              child: Column(
-                                                                mainAxisSize:
-                                                                    MainAxisSize
-                                                                        .min,
-                                                                children: <Widget>[
-                                                                  Text(
-                                                                    'Choose Damage Tire',
-                                                                    style:
-                                                                        TextStyle(
-                                                                      fontSize:
-                                                                          24.0,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                    ),
+                                                      damageCtrl.text =
+                                                          position[posIndex]
+                                                                  .luka
+                                                                  .isNotEmpty
+                                                              ? position[
+                                                                      posIndex]
+                                                                  .luka[0]
+                                                              : '';
+                                                    }
+
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (BuildContext
+                                                          context) {
+                                                        return Dialog(
+                                                          child: Container(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                    20.0),
+                                                            child: Column(
+                                                              mainAxisSize:
+                                                                  MainAxisSize
+                                                                      .min,
+                                                              children: <Widget>[
+                                                                Text(
+                                                                  'Choose Damage Tire',
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontSize:
+                                                                        24.0,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
                                                                   ),
-                                                                  SizedBox(
-                                                                      height:
-                                                                          12.0),
-                                                                  Expanded(
+                                                                ),
+                                                                SizedBox(
+                                                                    height:
+                                                                        12.0),
+                                                                Expanded(
+                                                                  child:
+                                                                      SingleChildScrollView(
                                                                     child:
-                                                                        SingleChildScrollView(
-                                                                      child:
-                                                                          Column(
-                                                                        children:
-                                                                            damageType.map((damage) {
-                                                                          final dmgIndex =
-                                                                              damageType.indexOf(damage);
-                                                                          return StatefulBuilder(builder:
-                                                                              (context, setState) {
-                                                                            return CheckboxListTile(
-                                                                              title: Text(damage['remark']),
-                                                                              value: checkedDamageValues[dmgIndex],
-                                                                              onChanged: (bool? value) {
-                                                                                setState(() {
-                                                                                  checkedDamageValues[dmgIndex] = value ?? false;
-                                                                                });
-                                                                              },
-                                                                            );
-                                                                          });
-                                                                        }).toList(),
-                                                                      ),
+                                                                        Column(
+                                                                      children:
+                                                                          damageType
+                                                                              .map((damage) {
+                                                                        final dmgIndex =
+                                                                            damageType.indexOf(damage);
+                                                                        return StatefulBuilder(builder:
+                                                                            (context,
+                                                                                setState) {
+                                                                          return CheckboxListTile(
+                                                                            title:
+                                                                                Text(damage['remark']),
+                                                                            value:
+                                                                                checkedDamageValues[dmgIndex],
+                                                                            onChanged:
+                                                                                (bool? value) {
+                                                                              setState(() {
+                                                                                checkedDamageValues[dmgIndex] = value ?? false;
+                                                                              });
+                                                                            },
+                                                                          );
+                                                                        });
+                                                                      }).toList(),
                                                                     ),
                                                                   ),
-                                                                  SizedBox(
+                                                                ),
+                                                                SizedBox(
+                                                                    height:
+                                                                        12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
+                                                                Column(
+                                                                  children: [
+                                                                    SizedBox(
                                                                       height:
-                                                                          12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
-                                                                  Column(
-                                                                    children: [
-                                                                      SizedBox(
-                                                                        height:
-                                                                            42,
-                                                                        width: double
-                                                                            .infinity,
-                                                                        child: InputFormWidget(
-                                                                            controller:
-                                                                                damageCtrl,
-                                                                            hint:
-                                                                                'Input Manual Here....'),
+                                                                          42,
+                                                                      width: double
+                                                                          .infinity,
+                                                                      child: InputFormWidget(
+                                                                          controller:
+                                                                              damageCtrl,
+                                                                          hint:
+                                                                              'Input Manual Here....'),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height:
+                                                                          12,
+                                                                    ),
+                                                                    SizedBox(
+                                                                      width: double
+                                                                          .infinity,
+                                                                      child:
+                                                                          ElevatedButton(
+                                                                        onPressed:
+                                                                            () {
+                                                                          damageCtrl
+                                                                              .clear();
+                                                                          Navigator.pop(
+                                                                              context);
+                                                                        },
+                                                                        child: Text(
+                                                                            'Close'),
                                                                       ),
-                                                                      const SizedBox(
-                                                                        height:
-                                                                            12,
-                                                                      ),
-                                                                      SizedBox(
-                                                                        width: double
-                                                                            .infinity,
-                                                                        child:
-                                                                            ElevatedButton(
-                                                                          onPressed:
-                                                                              () {
-                                                                            damageCtrl.clear();
-                                                                            Navigator.pop(context);
-                                                                          },
-                                                                          child:
-                                                                              Text('Close'),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                      height:
+                                                                          12,
+                                                                    ),
+                                                                    SizedBox(
+                                                                      width: double
+                                                                          .infinity,
+                                                                      child:
+                                                                          ElevatedButton(
+                                                                        style: ElevatedButton
+                                                                            .styleFrom(
+                                                                          backgroundColor:
+                                                                              Colors.green,
                                                                         ),
-                                                                      ),
-                                                                      const SizedBox(
-                                                                        height:
-                                                                            12,
-                                                                      ),
-                                                                      SizedBox(
-                                                                        width: double
-                                                                            .infinity,
-                                                                        child:
-                                                                            ElevatedButton(
-                                                                          style:
-                                                                              ElevatedButton.styleFrom(
-                                                                            backgroundColor:
-                                                                                Colors.green,
-                                                                          ),
-                                                                          onPressed:
-                                                                              () {
-                                                                            setState(() {});
+                                                                        onPressed:
+                                                                            () {
+                                                                          setState(
+                                                                              () {});
 
-                                                                            Map<String, int>
-                                                                                ratingPriority =
-                                                                                {
-                                                                              '': 1,
-                                                                              'A': 1,
-                                                                              'B': 2,
-                                                                              'C': 3,
-                                                                              'X': 4,
-                                                                            };
+                                                                          Map<String, int>
+                                                                              ratingPriority =
+                                                                              {
+                                                                            '': 1,
+                                                                            'A':
+                                                                                1,
+                                                                            'B':
+                                                                                2,
+                                                                            'C':
+                                                                                3,
+                                                                            'X':
+                                                                                4,
+                                                                          };
 
-                                                                            final List<Map<String, dynamic>>
-                                                                                tmp =
-                                                                                [];
+                                                                          final List<Map<String, dynamic>>
+                                                                              tmp =
+                                                                              [];
 
-                                                                            // isi damage dengan ketikan
-                                                                            if (damageCtrl.text == '' ||
-                                                                                damageCtrl.text.isNotEmpty) {
-                                                                              tmp.add({
-                                                                                'remark': damageCtrl.text,
-                                                                                'rating': ''
-                                                                              });
+                                                                          // isi damage dengan ketikan
+                                                                          if (damageCtrl.text == '' ||
+                                                                              damageCtrl.text.isNotEmpty) {
+                                                                            tmp.add({
+                                                                              'remark': damageCtrl.text,
+                                                                              'rating': ''
+                                                                            });
+                                                                          }
+
+                                                                          for (int i = 0;
+                                                                              i < checkedDamageValues.length;
+                                                                              i++) {
+                                                                            if (checkedDamageValues[i]) {
+                                                                              tmp.add(damageType[i]);
+                                                                            } else {
+                                                                              tmp.removeWhere((element) => element == damageType[i]);
                                                                             }
+                                                                          }
+                                                                          log('idx luka ban : $posIndex');
 
-                                                                            for (int i = 0;
-                                                                                i < checkedDamageValues.length;
-                                                                                i++) {
-                                                                              if (checkedDamageValues[i]) {
-                                                                                tmp.add(damageType[i]);
-                                                                              } else {
-                                                                                tmp.removeWhere((element) => element == damageType[i]);
-                                                                              }
-                                                                            }
-                                                                            log('idx luka ban : $posIndex');
+                                                                          if (tmp
+                                                                              .isNotEmpty) {
+                                                                            position[posIndex] =
+                                                                                position[posIndex].copyWith(luka: []);
+
+                                                                            position[posIndex].luka.addAll(
+                                                                                  tmp.map((e) => e['remark'].toString()),
+                                                                                );
+
+                                                                            // PENETUAN RATING DARI LUKA BAN
+                                                                            String
+                                                                                worstRating =
+                                                                                '';
 
                                                                             if (tmp.isNotEmpty) {
-                                                                              position[posIndex] = position[posIndex].copyWith(luka: []);
+                                                                              worstRating = tmp.fold(
+                                                                                '',
+                                                                                (worst, item) {
+                                                                                  final current = item['rating'] ?? '';
 
-                                                                              position[posIndex].luka.addAll(
-                                                                                    tmp.map((e) => e['remark'].toString()),
-                                                                                  );
-
-                                                                              // PENETUAN RATING DARI LUKA BAN
-                                                                              String worstRating = '';
-
-                                                                              if (tmp.isNotEmpty) {
-                                                                                worstRating = tmp.fold(
-                                                                                  '',
-                                                                                  (worst, item) {
-                                                                                    final current = item['rating'] ?? '';
-
-                                                                                    return ratingPriority[current]! > ratingPriority[worst]! ? current : worst;
-                                                                                  },
-                                                                                );
-                                                                              }
-
-                                                                              position[posIndex] = position[posIndex].copyWith(
-                                                                                rating: worstRating,
+                                                                                  return ratingPriority[current]! > ratingPriority[worst]! ? current : worst;
+                                                                                },
                                                                               );
-
-                                                                              log('hasil luka ban : ${position}');
-                                                                              log('hasil rating dari luka ban : ${worstRating}');
                                                                             }
 
-                                                                            // jika hapus damage hari kemarin
-                                                                            if (position[posIndex].luka[0] == '' &&
-                                                                                position[posIndex].luka.length == 1) {
-                                                                              position[posIndex] = position[posIndex].copyWith(luka: []);
-                                                                            }
+                                                                            position[posIndex] =
+                                                                                position[posIndex].copyWith(
+                                                                              rating: worstRating,
+                                                                            );
 
-                                                                            damageCtrl.clear();
+                                                                            log('hasil luka ban : ${position}');
+                                                                            log('hasil rating dari luka ban : ${worstRating}');
+                                                                          }
 
-                                                                            Navigator.pop(context);
-                                                                          },
-                                                                          child:
-                                                                              Text(
-                                                                            'Submit',
-                                                                            style:
-                                                                                getWhiteTextStyle(
-                                                                              fontWeight: w700,
-                                                                            ),
+                                                                          // jika hapus damage hari kemarin
+                                                                          if (position[posIndex].luka[0] == '' &&
+                                                                              position[posIndex].luka.length == 1) {
+                                                                            position[posIndex] =
+                                                                                position[posIndex].copyWith(luka: []);
+                                                                          }
+
+                                                                          damageCtrl
+                                                                              .clear();
+
+                                                                          Navigator.pop(
+                                                                              context);
+                                                                        },
+                                                                        child:
+                                                                            Text(
+                                                                          'Submit',
+                                                                          style:
+                                                                              getWhiteTextStyle(
+                                                                            fontWeight:
+                                                                                w700,
                                                                           ),
                                                                         ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    );
+                                                  },
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              blue344BEF,
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                          )),
+                                                  child: Text(
+                                                    (position[posIndex].luka ==
+                                                                null ||
+                                                            position[posIndex]
+                                                                .luka
+                                                                .isEmpty)
+                                                        ? 'Damage Tire (None)'
+                                                        : position[posIndex]
+                                                            .luka
+                                                            .join('\n---\n'),
+                                                    textAlign: TextAlign.center,
+                                                    style: getWhiteTextStyle(
+                                                        fontSize: 14),
+                                                  ),
+                                                ),
+                                              ),
+                                              // ADMO HAULING, RTD DAILY CHECK
+                                              (idSite == '1')
+                                                  ? SizedBox(
+                                                      width: itemWidth,
+                                                      // height: 65,
+                                                      child: ElevatedButton(
+                                                        onPressed: () {
+                                                          FocusScope.of(context)
+                                                              .unfocus();
+
+                                                          rtd1Ctrl.text =
+                                                              position[posIndex]
+                                                                  .rtd1;
+                                                          rtd2Ctrl.text =
+                                                              position[posIndex]
+                                                                  .rtd2;
+
+                                                          showDialog(
+                                                            context: context,
+                                                            builder:
+                                                                (BuildContext
+                                                                    context) {
+                                                              return Dialog(
+                                                                child:
+                                                                    Container(
+                                                                  padding:
+                                                                      EdgeInsets
+                                                                          .all(
+                                                                              20.0),
+                                                                  child: Column(
+                                                                    mainAxisSize:
+                                                                        MainAxisSize
+                                                                            .min,
+                                                                    children: <Widget>[
+                                                                      Text(
+                                                                        'Input RTD',
+                                                                        style:
+                                                                            TextStyle(
+                                                                          fontSize:
+                                                                              24.0,
+                                                                          fontWeight:
+                                                                              FontWeight.bold,
+                                                                        ),
+                                                                      ),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              12.0),
+                                                                      SizedBox(
+                                                                          height:
+                                                                              12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
+                                                                      Column(
+                                                                        children: [
+                                                                          SizedBox(
+                                                                            height:
+                                                                                42,
+                                                                            width:
+                                                                                double.infinity,
+                                                                            child:
+                                                                                Row(
+                                                                              children: [
+                                                                                Expanded(child: InputFormWidget(controller: rtd1Ctrl, hint: '')),
+                                                                                const SizedBox(
+                                                                                  width: 6,
+                                                                                ),
+                                                                                Expanded(child: InputFormWidget(controller: rtd2Ctrl, hint: '')),
+                                                                              ],
+                                                                            ),
+                                                                          ),
+                                                                          const SizedBox(
+                                                                            height:
+                                                                                12,
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width:
+                                                                                double.infinity,
+                                                                            child:
+                                                                                ElevatedButton(
+                                                                              onPressed: () {
+                                                                                damageCtrl.clear();
+                                                                                Navigator.pop(context);
+                                                                              },
+                                                                              child: Text('Close'),
+                                                                            ),
+                                                                          ),
+                                                                          const SizedBox(
+                                                                            height:
+                                                                                12,
+                                                                          ),
+                                                                          SizedBox(
+                                                                            width:
+                                                                                double.infinity,
+                                                                            child:
+                                                                                ElevatedButton(
+                                                                              style: ElevatedButton.styleFrom(
+                                                                                backgroundColor: Colors.green,
+                                                                              ),
+                                                                              onPressed: () {
+                                                                                setState(() {
+                                                                                  position[posIndex] = position[posIndex].copyWith(rtd1: rtd1Ctrl.text);
+                                                                                  position[posIndex] = position[posIndex].copyWith(rtd2: rtd2Ctrl.text);
+                                                                                });
+                                                                                log('position after input rtd : ${position}');
+
+                                                                                Navigator.pop(context);
+                                                                              },
+                                                                              child: Text(
+                                                                                'Submit',
+                                                                                style: getWhiteTextStyle(
+                                                                                  fontWeight: w700,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ],
                                                                       ),
                                                                     ],
                                                                   ),
-                                                                ],
-                                                              ),
-                                                            ),
+                                                                ),
+                                                              );
+                                                            },
                                                           );
                                                         },
-                                                      );
-                                                    },
-                                                    style: ElevatedButton
-                                                        .styleFrom(
-                                                            backgroundColor:
-                                                                blue344BEF,
-                                                            shape:
-                                                                RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          12),
-                                                            )),
-                                                    child: Text(
-                                                      (position[posIndex]
-                                                                      .luka ==
-                                                                  null ||
-                                                              position[posIndex]
-                                                                  .luka
-                                                                  .isEmpty)
-                                                          ? 'Damage Tire (None)'
-                                                          : position[posIndex]
-                                                              .luka
-                                                              .join('\n---\n'),
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: getWhiteTextStyle(
-                                                          fontSize: 14),
-                                                    ),
-                                                  )),
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                                backgroundColor:
+                                                                    blue344BEF,
+                                                                shape:
+                                                                    RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              12),
+                                                                )),
+                                                        child: Text(
+                                                          (position[posIndex]
+                                                                          .rtd1 !=
+                                                                      '' &&
+                                                                  position[posIndex]
+                                                                          .rtd2 !=
+                                                                      '')
+                                                              ? 'RTD : ${position[posIndex].rtd1}/${position[posIndex].rtd2}'
+                                                              : 'RTD',
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                                  fontSize: 14),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : Container(),
 
                                               // Memilih Tire Accessories
                                               // ADDITIONAL TIRE ACCESSORIES EDIT #2
@@ -9455,6 +9635,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           'kondisi': '${p.kondisi}',
                           'tireAccessories':
                               p.tireAccessories.map((a) => a.toMap()).toList(),
+                          'rtd1': p.rtd1 ?? '',
+                          'rtd2': p.rtd2 ?? '',
                         };
                       }),
                       'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
@@ -9536,6 +9718,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                               'tireAccessories': p.tireAccessories
                                   .map((a) => a.toMap())
                                   .toList(),
+                              'rtd1': p.rtd1 ?? '',
+                              'rtd2': p.rtd2 ?? '',
                             };
                           }),
                           'pit': (selectedPit == -1)
@@ -9593,6 +9777,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           'kondisi': '${p.kondisi}',
                           'tireAccessories':
                               p.tireAccessories.map((a) => a.toMap()).toList(),
+                          'rtd1': p.rtd1 ?? '',
+                          'rtd2': p.rtd2 ?? '',
                         };
                       }),
                       'pit': (selectedPit == -1) ? 'Default' : pit[selectedPit],
