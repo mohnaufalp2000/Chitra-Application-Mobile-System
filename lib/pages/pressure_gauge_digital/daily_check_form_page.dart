@@ -5147,13 +5147,24 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
       final isSisIdSite = sisIdSite.any((site) => site.idSite == idSite);
 
       if (isSisIdSite) {
-        final doc = await firestore
-            .collection('list_tire_damage_inspection')
-            .doc('sis062026')
-            .get();
+        if (idSite == '1') {
+          final doc = await firestore
+              .collection('list_tire_damage_inspection')
+              .doc('admo-hauling')
+              .get();
 
-        if (doc.exists) {
-          data = doc.data();
+          if (doc.exists) {
+            data = doc.data();
+          }
+        } else {
+          final doc = await firestore
+              .collection('list_tire_damage_inspection')
+              .doc('sis062026')
+              .get();
+
+          if (doc.exists) {
+            data = doc.data();
+          }
         }
       } else {
         final query =
@@ -6738,26 +6749,84 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                 List<bool>.filled(
                                                     damageType.length, false);
 
+// hilangkan good condition jika user input luka
+                                            damageCtrl.clear();
+
                                             if (position[posIndex]
                                                 .luka
                                                 .isNotEmpty) {
                                               for (int i = 0;
                                                   i < damageType.length;
                                                   i++) {
-                                                if (position[posIndex]
-                                                    .luka
-                                                    .contains(damageType[i]
-                                                        ['remark'])) {
-                                                  checkedDamageValues[i] = true;
-                                                }
+                                                final String damageRemark =
+                                                    damageType[i]['remark']
+                                                            ?.toString()
+                                                            .trim() ??
+                                                        '';
+
+                                                checkedDamageValues[i] =
+                                                    position[posIndex].luka.any(
+                                                          (item) =>
+                                                              item
+                                                                  .trim()
+                                                                  .toLowerCase() ==
+                                                              damageRemark
+                                                                  .toLowerCase(),
+                                                        );
                                               }
-                                              damageCtrl
-                                                  .text = position[posIndex]
+
+                                              // Hanya masukkan data manual yang tidak tersedia
+                                              // pada daftar damageType dan bukan Good Condition.
+                                              final List<String> manualDamages =
+                                                  position[posIndex]
                                                       .luka
-                                                      .isNotEmpty
-                                                  ? position[posIndex].luka[0]
-                                                  : '';
+                                                      .where((item) {
+                                                final String normalized =
+                                                    item.trim().toLowerCase();
+
+                                                final bool isGoodCondition =
+                                                    normalized ==
+                                                            'good condition' ||
+                                                        normalized == 'good';
+
+                                                final bool existsInDamageType =
+                                                    damageType.any(
+                                                  (damage) =>
+                                                      (damage['remark'] ?? '')
+                                                          .toString()
+                                                          .trim()
+                                                          .toLowerCase() ==
+                                                      normalized,
+                                                );
+
+                                                return !isGoodCondition &&
+                                                    !existsInDamageType;
+                                              }).toList();
+
+                                              damageCtrl.text =
+                                                  manualDamages.join(', ');
                                             }
+
+                                            // if (position[posIndex]
+                                            //     .luka
+                                            //     .isNotEmpty) {
+                                            //   for (int i = 0;
+                                            //       i < damageType.length;
+                                            //       i++) {
+                                            //     if (position[posIndex]
+                                            //         .luka
+                                            //         .contains(damageType[i]
+                                            //             ['remark'])) {
+                                            //       checkedDamageValues[i] = true;
+                                            //     }
+                                            //   }
+                                            //   damageCtrl
+                                            //       .text = position[posIndex]
+                                            //           .luka
+                                            //           .isNotEmpty
+                                            //       ? position[posIndex].luka[0]
+                                            //       : '';
+                                            // }
 
                                             showDialog(
                                               context: context,
@@ -6865,25 +6934,37 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                           .green,
                                                                 ),
                                                                 onPressed: () {
-                                                                  setState(
-                                                                      () {});
-
                                                                   final List<
                                                                           String>
                                                                       tmp = [];
 
-                                                                  // isi damage dengan ketikan
-                                                                  if (damageCtrl
-                                                                              .text ==
-                                                                          '' ||
-                                                                      damageCtrl
-                                                                          .text
-                                                                          .isNotEmpty) {
-                                                                    tmp.add(
-                                                                        damageCtrl
-                                                                            .text);
+                                                                  bool isGoodCondition(
+                                                                      String
+                                                                          value) {
+                                                                    final normalizedValue = value
+                                                                        .trim()
+                                                                        .toLowerCase();
+
+                                                                    return normalizedValue ==
+                                                                            'good condition' ||
+                                                                        normalizedValue ==
+                                                                            'good';
                                                                   }
 
+                                                                  // Ambil input manual jika tidak kosong.
+                                                                  final String
+                                                                      manualDamage =
+                                                                      damageCtrl
+                                                                          .text
+                                                                          .trim();
+
+                                                                  if (manualDamage
+                                                                      .isNotEmpty) {
+                                                                    tmp.add(
+                                                                        manualDamage);
+                                                                  }
+
+                                                                  // Ambil damage yang dicentang.
                                                                   for (int i =
                                                                           0;
                                                                       i <
@@ -6892,61 +6973,150 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                       i++) {
                                                                     if (checkedDamageValues[
                                                                         i]) {
-                                                                      tmp.add(damageType[
-                                                                              i]
-                                                                          [
-                                                                          'remark']);
-                                                                    } else {
-                                                                      tmp.removeWhere((element) =>
-                                                                          element ==
-                                                                          damageType[i]
-                                                                              [
-                                                                              'remark']);
+                                                                      final String
+                                                                          selectedDamage =
+                                                                          damageType[i]['remark']?.toString().trim() ??
+                                                                              '';
+
+                                                                      if (selectedDamage
+                                                                          .isNotEmpty) {
+                                                                        tmp.add(
+                                                                            selectedDamage);
+                                                                      }
                                                                     }
                                                                   }
+
+                                                                  // Hilangkan data yang sama.
+                                                                  final List<
+                                                                          String>
+                                                                      uniqueDamage =
+                                                                      tmp
+                                                                          .toSet()
+                                                                          .toList();
+
+                                                                  // Cek apakah terdapat luka selain Good Condition / Good.
+                                                                  final bool
+                                                                      hasActualDamage =
+                                                                      uniqueDamage.any(
+                                                                          (damage) =>
+                                                                              !isGoodCondition(damage));
+
+                                                                  if (hasActualDamage) {
+                                                                    // Jika ada luka, hilangkan semua variasi Good Condition.
+                                                                    uniqueDamage
+                                                                        .removeWhere(
+                                                                            isGoodCondition);
+                                                                  } else {
+                                                                    // Jika tidak ada luka, gunakan default Good Condition.
+                                                                    uniqueDamage
+                                                                      ..clear()
+                                                                      ..add(
+                                                                          'Good Condition');
+                                                                  }
+
+                                                                  position[
+                                                                      posIndex] = position[
+                                                                          posIndex]
+                                                                      .copyWith(
+                                                                    luka:
+                                                                        uniqueDamage,
+                                                                  );
+
                                                                   log('idx luka ban : $posIndex');
-
-                                                                  if (tmp
-                                                                      .isNotEmpty) {
-                                                                    // position[posIndex]
-                                                                    //     [
-                                                                    //     'damage'] = [];
-                                                                    position[
-                                                                        posIndex] = position[
-                                                                            posIndex]
-                                                                        .copyWith(
-                                                                            luka: []);
-
-                                                                    position[
-                                                                            posIndex]
-                                                                        .luka
-                                                                        .addAll(
-                                                                            tmp);
-
-                                                                    log('hasil luka ban : ${position}');
-                                                                  }
-
-                                                                  // jika hapus damage hari kemarin
-                                                                  if (position[posIndex].luka[
-                                                                              0] ==
-                                                                          '' &&
-                                                                      position[posIndex]
-                                                                              .luka
-                                                                              .length ==
-                                                                          1) {
-                                                                    position[
-                                                                        posIndex] = position[
-                                                                            posIndex]
-                                                                        .copyWith(
-                                                                            luka: []);
-                                                                  }
+                                                                  log('hasil luka ban : ${position[posIndex].luka}');
 
                                                                   damageCtrl
                                                                       .clear();
 
+                                                                  setState(
+                                                                      () {});
+
                                                                   Navigator.pop(
                                                                       context);
                                                                 },
+                                                                // onPressed: () {
+                                                                //   setState(
+                                                                //       () {});
+
+                                                                //   final List<
+                                                                //           String>
+                                                                //       tmp = [];
+
+                                                                //   // isi damage dengan ketikan
+                                                                //   if (damageCtrl
+                                                                //               .text ==
+                                                                //           '' ||
+                                                                //       damageCtrl
+                                                                //           .text
+                                                                //           .isNotEmpty) {
+                                                                //     tmp.add(
+                                                                //         damageCtrl
+                                                                //             .text);
+                                                                //   }
+
+                                                                //   for (int i =
+                                                                //           0;
+                                                                //       i <
+                                                                //           checkedDamageValues
+                                                                //               .length;
+                                                                //       i++) {
+                                                                //     if (checkedDamageValues[
+                                                                //         i]) {
+                                                                //       tmp.add(damageType[
+                                                                //               i]
+                                                                //           [
+                                                                //           'remark']);
+                                                                //     } else {
+                                                                //       tmp.removeWhere((element) =>
+                                                                //           element ==
+                                                                //           damageType[i]
+                                                                //               [
+                                                                //               'remark']);
+                                                                //     }
+                                                                //   }
+                                                                //   log('idx luka ban : $posIndex');
+
+                                                                //   if (tmp
+                                                                //       .isNotEmpty) {
+                                                                //     // position[posIndex]
+                                                                //     //     [
+                                                                //     //     'damage'] = [];
+                                                                //     position[
+                                                                //         posIndex] = position[
+                                                                //             posIndex]
+                                                                //         .copyWith(
+                                                                //             luka: []);
+
+                                                                //     position[
+                                                                //             posIndex]
+                                                                //         .luka
+                                                                //         .addAll(
+                                                                //             tmp);
+
+                                                                //     log('hasil luka ban : ${position}');
+                                                                //   }
+
+                                                                //   // jika hapus damage hari kemarin
+                                                                //   if (position[posIndex].luka[
+                                                                //               0] ==
+                                                                //           '' &&
+                                                                //       position[posIndex]
+                                                                //               .luka
+                                                                //               .length ==
+                                                                //           1) {
+                                                                //     position[
+                                                                //         posIndex] = position[
+                                                                //             posIndex]
+                                                                //         .copyWith(
+                                                                //             luka: []);
+                                                                //   }
+
+                                                                //   damageCtrl
+                                                                //       .clear();
+
+                                                                //   Navigator.pop(
+                                                                //       context);
+                                                                // },
                                                                 child: Text(
                                                                   'Submit',
                                                                   style:
@@ -8720,84 +8890,133 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                               : '';
                                                     }
 
+                                                    bool isGoodCondition(
+                                                        dynamic value) {
+                                                      final normalized = value
+                                                              ?.toString()
+                                                              .trim()
+                                                              .toLowerCase() ??
+                                                          '';
+
+                                                      return normalized ==
+                                                              'good condition' ||
+                                                          normalized == 'good';
+                                                    }
+
                                                     showDialog(
                                                       context: context,
                                                       builder: (BuildContext
                                                           context) {
-                                                        return Dialog(
-                                                          child: Container(
-                                                            padding:
-                                                                EdgeInsets.all(
-                                                                    20.0),
-                                                            child: Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: <Widget>[
-                                                                Text(
-                                                                  'Choose Damage Tire',
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontSize:
-                                                                        24.0,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                                SizedBox(
-                                                                    height:
-                                                                        12.0),
-                                                                Expanded(
-                                                                  child:
-                                                                      SingleChildScrollView(
-                                                                    child:
-                                                                        Column(
-                                                                      children:
-                                                                          damageType
-                                                                              .map((damage) {
-                                                                        final dmgIndex =
-                                                                            damageType.indexOf(damage);
-                                                                        return StatefulBuilder(builder:
-                                                                            (context,
-                                                                                setState) {
-                                                                          return CheckboxListTile(
-                                                                            title:
-                                                                                Text(damage['remark']),
-                                                                            value:
-                                                                                checkedDamageValues[dmgIndex],
-                                                                            onChanged:
-                                                                                (bool? value) {
-                                                                              setState(() {
-                                                                                checkedDamageValues[dmgIndex] = value ?? false;
-                                                                              });
-                                                                            },
-                                                                          );
-                                                                        });
-                                                                      }).toList(),
-                                                                    ),
-                                                                  ),
-                                                                ),
-                                                                SizedBox(
-                                                                    height:
-                                                                        12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
-                                                                Column(
+                                                        return StatefulBuilder(
+                                                          builder: (context,
+                                                              setDialogState) {
+                                                            return Dialog(
+                                                              child: Container(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                        .all(
+                                                                        20),
+                                                                child: Column(
+                                                                  mainAxisSize:
+                                                                      MainAxisSize
+                                                                          .min,
                                                                   children: [
+                                                                    const Text(
+                                                                      'Choose Damage Tire',
+                                                                      style:
+                                                                          TextStyle(
+                                                                        fontSize:
+                                                                            24,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                        height:
+                                                                            12),
+                                                                    Expanded(
+                                                                      child:
+                                                                          SingleChildScrollView(
+                                                                        child:
+                                                                            Column(
+                                                                          children: damageType
+                                                                              .asMap()
+                                                                              .entries
+                                                                              .map((entry) {
+                                                                            final int
+                                                                                dmgIndex =
+                                                                                entry.key;
+                                                                            final Map<String, dynamic>
+                                                                                damage =
+                                                                                entry.value;
+
+                                                                            final String
+                                                                                remark =
+                                                                                damage['remark']?.toString().trim() ?? '';
+
+                                                                            final bool
+                                                                                selectedIsGood =
+                                                                                isGoodCondition(remark);
+
+                                                                            return CheckboxListTile(
+                                                                              title: Text(remark),
+                                                                              value: checkedDamageValues[dmgIndex],
+                                                                              onChanged: (bool? value) {
+                                                                                setDialogState(() {
+                                                                                  final bool isChecked = value ?? false;
+
+                                                                                  if (isChecked && selectedIsGood) {
+                                                                                    // Good Condition dipilih:
+                                                                                    // hapus semua pilihan luka.
+                                                                                    for (int i = 0; i < checkedDamageValues.length; i++) {
+                                                                                      checkedDamageValues[i] = false;
+                                                                                    }
+
+                                                                                    checkedDamageValues[dmgIndex] = true;
+
+                                                                                    // Hapus input luka manual.
+                                                                                    damageCtrl.clear();
+                                                                                  } else {
+                                                                                    checkedDamageValues[dmgIndex] = isChecked;
+
+                                                                                    if (isChecked) {
+                                                                                      // Luka dipilih:
+                                                                                      // hilangkan Good Condition.
+                                                                                      for (int i = 0; i < damageType.length; i++) {
+                                                                                        final String itemRemark = damageType[i]['remark']?.toString().trim() ?? '';
+
+                                                                                        if (isGoodCondition(itemRemark)) {
+                                                                                          checkedDamageValues[i] = false;
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                });
+                                                                              },
+                                                                            );
+                                                                          }).toList(),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                    const SizedBox(
+                                                                        height:
+                                                                            12),
                                                                     SizedBox(
                                                                       height:
                                                                           42,
                                                                       width: double
                                                                           .infinity,
-                                                                      child: InputFormWidget(
-                                                                          controller:
-                                                                              damageCtrl,
-                                                                          hint:
-                                                                              'Input Manual Here....'),
+                                                                      child:
+                                                                          InputFormWidget(
+                                                                        controller:
+                                                                            damageCtrl,
+                                                                        hint:
+                                                                            'Input Manual Here....',
+                                                                      ),
                                                                     ),
                                                                     const SizedBox(
-                                                                      height:
-                                                                          12,
-                                                                    ),
+                                                                        height:
+                                                                            12),
                                                                     SizedBox(
                                                                       width: double
                                                                           .infinity,
@@ -8810,14 +9029,13 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                           Navigator.pop(
                                                                               context);
                                                                         },
-                                                                        child: Text(
+                                                                        child: const Text(
                                                                             'Close'),
                                                                       ),
                                                                     ),
                                                                     const SizedBox(
-                                                                      height:
-                                                                          12,
-                                                                    ),
+                                                                        height:
+                                                                            12),
                                                                     SizedBox(
                                                                       width: double
                                                                           .infinity,
@@ -8830,10 +9048,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                         ),
                                                                         onPressed:
                                                                             () {
-                                                                          setState(
-                                                                              () {});
-
-                                                                          Map<String, int>
+                                                                          final Map<String, int>
                                                                               ratingPriority =
                                                                               {
                                                                             '': 1,
@@ -8847,74 +9062,134 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                                 4,
                                                                           };
 
-                                                                          final List<Map<String, dynamic>>
-                                                                              tmp =
-                                                                              [];
+                                                                          final bool goodConditionSelected = damageType
+                                                                              .asMap()
+                                                                              .entries
+                                                                              .any((entry) {
+                                                                            final String
+                                                                                remark =
+                                                                                entry.value['remark']?.toString().trim() ?? '';
 
-                                                                          // isi damage dengan ketikan
-                                                                          if (damageCtrl.text == '' ||
-                                                                              damageCtrl.text.isNotEmpty) {
-                                                                            tmp.add({
-                                                                              'remark': damageCtrl.text,
-                                                                              'rating': ''
+                                                                            return checkedDamageValues[entry.key] &&
+                                                                                isGoodCondition(remark);
+                                                                          });
+
+                                                                          // Jika Good Condition dipilih,
+                                                                          // semua luka lama langsung dihapus.
+                                                                          if (goodConditionSelected) {
+                                                                            setState(() {
+                                                                              position[posIndex] = position[posIndex].copyWith(
+                                                                                luka: [
+                                                                                  'Good Condition'
+                                                                                ],
+                                                                                rating: 'A',
+                                                                              );
                                                                             });
+
+                                                                            damageCtrl.clear();
+                                                                            Navigator.pop(context);
+                                                                            return;
                                                                           }
 
+                                                                          final List<Map<String, dynamic>>
+                                                                              selectedDamages =
+                                                                              [];
+
+                                                                          // Ambil semua luka yang dicentang.
                                                                           for (int i = 0;
                                                                               i < checkedDamageValues.length;
                                                                               i++) {
-                                                                            if (checkedDamageValues[i]) {
-                                                                              tmp.add(damageType[i]);
-                                                                            } else {
-                                                                              tmp.removeWhere((element) => element == damageType[i]);
-                                                                            }
-                                                                          }
-                                                                          log('idx luka ban : $posIndex');
+                                                                            if (!checkedDamageValues[i])
+                                                                              continue;
 
-                                                                          if (tmp
-                                                                              .isNotEmpty) {
-                                                                            position[posIndex] =
-                                                                                position[posIndex].copyWith(luka: []);
-
-                                                                            position[posIndex].luka.addAll(
-                                                                                  tmp.map((e) => e['remark'].toString()),
-                                                                                );
-
-                                                                            // PENETUAN RATING DARI LUKA BAN
-                                                                            String
-                                                                                worstRating =
-                                                                                '';
-
-                                                                            if (tmp.isNotEmpty) {
-                                                                              worstRating = tmp.fold(
-                                                                                '',
-                                                                                (worst, item) {
-                                                                                  final current = item['rating'] ?? '';
-
-                                                                                  return ratingPriority[current]! > ratingPriority[worst]! ? current : worst;
-                                                                                },
-                                                                              );
-                                                                            }
-
-                                                                            position[posIndex] =
-                                                                                position[posIndex].copyWith(
-                                                                              rating: worstRating,
+                                                                            final damage =
+                                                                                Map<String, dynamic>.from(
+                                                                              damageType[i],
                                                                             );
 
-                                                                            log('hasil luka ban : ${position}');
-                                                                            log('hasil rating dari luka ban : ${worstRating}');
+                                                                            final String
+                                                                                remark =
+                                                                                damage['remark']?.toString().trim() ?? '';
+
+                                                                            if (remark.isNotEmpty &&
+                                                                                !isGoodCondition(remark)) {
+                                                                              selectedDamages.add(damage);
+                                                                            }
                                                                           }
 
-                                                                          // jika hapus damage hari kemarin
-                                                                          if (position[posIndex].luka[0] == '' &&
-                                                                              position[posIndex].luka.length == 1) {
-                                                                            position[posIndex] =
-                                                                                position[posIndex].copyWith(luka: []);
+                                                                          // Tambahkan input manual.
+                                                                          final String
+                                                                              manualDamage =
+                                                                              damageCtrl.text.trim();
+
+                                                                          if (manualDamage.isNotEmpty &&
+                                                                              !isGoodCondition(manualDamage)) {
+                                                                            selectedDamages.add({
+                                                                              'remark': manualDamage,
+                                                                              'rating': '',
+                                                                            });
                                                                           }
+
+                                                                          // Jika semuanya kosong, kembali ke default.
+                                                                          if (selectedDamages
+                                                                              .isEmpty) {
+                                                                            selectedDamages.add({
+                                                                              'remark': 'Good Condition',
+                                                                              'rating': 'A',
+                                                                            });
+                                                                          }
+
+                                                                          // Hilangkan data duplikat.
+                                                                          final Map<String, Map<String, dynamic>>
+                                                                              uniqueDamages =
+                                                                              {};
+
+                                                                          for (final damage
+                                                                              in selectedDamages) {
+                                                                            final String
+                                                                                remark =
+                                                                                damage['remark']?.toString().trim() ?? '';
+
+                                                                            if (remark.isNotEmpty) {
+                                                                              uniqueDamages[remark.toLowerCase()] = damage;
+                                                                            }
+                                                                          }
+
+                                                                          final finalDamages = uniqueDamages
+                                                                              .values
+                                                                              .toList();
+
+                                                                          String
+                                                                              worstRating =
+                                                                              '';
+
+                                                                          for (final damage
+                                                                              in finalDamages) {
+                                                                            final String
+                                                                                currentRating =
+                                                                                damage['rating']?.toString().trim() ?? '';
+
+                                                                            if ((ratingPriority[currentRating] ?? 1) >
+                                                                                (ratingPriority[worstRating] ?? 1)) {
+                                                                              worstRating = currentRating;
+                                                                            }
+                                                                          }
+
+                                                                          setState(
+                                                                              () {
+                                                                            position[posIndex] =
+                                                                                position[posIndex].copyWith(
+                                                                              luka: finalDamages
+                                                                                  .map(
+                                                                                    (damage) => damage['remark'].toString().trim(),
+                                                                                  )
+                                                                                  .toList(),
+                                                                              rating: worstRating,
+                                                                            );
+                                                                          });
 
                                                                           damageCtrl
                                                                               .clear();
-
                                                                           Navigator.pop(
                                                                               context);
                                                                         },
@@ -8931,12 +9206,377 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                     ),
                                                                   ],
                                                                 ),
-                                                              ],
-                                                            ),
-                                                          ),
+                                                              ),
+                                                            );
+                                                          },
                                                         );
                                                       },
                                                     );
+
+                                                    // showDialog(
+                                                    //   context: context,
+                                                    //   builder: (BuildContext
+                                                    //       context) {
+                                                    //     return Dialog(
+                                                    //       child: Container(
+                                                    //         padding:
+                                                    //             EdgeInsets.all(
+                                                    //                 20.0),
+                                                    //         child: Column(
+                                                    //           mainAxisSize:
+                                                    //               MainAxisSize
+                                                    //                   .min,
+                                                    //           children: <Widget>[
+                                                    //             Text(
+                                                    //               'Choose Damage Tire',
+                                                    //               style:
+                                                    //                   TextStyle(
+                                                    //                 fontSize:
+                                                    //                     24.0,
+                                                    //                 fontWeight:
+                                                    //                     FontWeight
+                                                    //                         .bold,
+                                                    //               ),
+                                                    //             ),
+                                                    //             SizedBox(
+                                                    //                 height:
+                                                    //                     12.0),
+                                                    //             Expanded(
+                                                    //               child:
+                                                    //                   SingleChildScrollView(
+                                                    //                 child:
+                                                    //                     Column(
+                                                    //                   children:
+                                                    //                       damageType
+                                                    //                           .map((damage) {
+                                                    //                     final dmgIndex =
+                                                    //                         damageType.indexOf(damage);
+                                                    //                     return StatefulBuilder(builder:
+                                                    //                         (context,
+                                                    //                             setState) {
+                                                    //                       return CheckboxListTile(
+                                                    //                         title:
+                                                    //                             Text(damage['remark']),
+                                                    //                         value:
+                                                    //                             checkedDamageValues[dmgIndex],
+                                                    //                         onChanged:
+                                                    //                             (bool? value) {
+                                                    //                           setState(() {
+                                                    //                             checkedDamageValues[dmgIndex] = value ?? false;
+                                                    //                           });
+                                                    //                         },
+                                                    //                       );
+                                                    //                     });
+                                                    //                   }).toList(),
+                                                    //                 ),
+                                                    //               ),
+                                                    //             ),
+                                                    //             SizedBox(
+                                                    //                 height:
+                                                    //                     12.0), // Tambahkan sedikit jarak antara daftar checkbox dan tombol "Close"
+                                                    //             Column(
+                                                    //               children: [
+                                                    //                 SizedBox(
+                                                    //                   height:
+                                                    //                       42,
+                                                    //                   width: double
+                                                    //                       .infinity,
+                                                    //                   child: InputFormWidget(
+                                                    //                       controller:
+                                                    //                           damageCtrl,
+                                                    //                       hint:
+                                                    //                           'Input Manual Here....'),
+                                                    //                 ),
+                                                    //                 const SizedBox(
+                                                    //                   height:
+                                                    //                       12,
+                                                    //                 ),
+                                                    //                 SizedBox(
+                                                    //                   width: double
+                                                    //                       .infinity,
+                                                    //                   child:
+                                                    //                       ElevatedButton(
+                                                    //                     onPressed:
+                                                    //                         () {
+                                                    //                       damageCtrl
+                                                    //                           .clear();
+                                                    //                       Navigator.pop(
+                                                    //                           context);
+                                                    //                     },
+                                                    //                     child: Text(
+                                                    //                         'Close'),
+                                                    //                   ),
+                                                    //                 ),
+                                                    //                 const SizedBox(
+                                                    //                   height:
+                                                    //                       12,
+                                                    //                 ),
+                                                    //                 SizedBox(
+                                                    //                   width: double
+                                                    //                       .infinity,
+                                                    //                   child:
+                                                    //                       ElevatedButton(
+                                                    //                     style: ElevatedButton
+                                                    //                         .styleFrom(
+                                                    //                       backgroundColor:
+                                                    //                           Colors.green,
+                                                    //                     ),
+                                                    //                     onPressed:
+                                                    //                         () {
+                                                    //                       final Map<String, int>
+                                                    //                           ratingPriority =
+                                                    //                           {
+                                                    //                         '': 1,
+                                                    //                         'A':
+                                                    //                             1,
+                                                    //                         'B':
+                                                    //                             2,
+                                                    //                         'C':
+                                                    //                             3,
+                                                    //                         'X':
+                                                    //                             4,
+                                                    //                       };
+
+                                                    //                       bool isGoodCondition(
+                                                    //                           dynamic value) {
+                                                    //                         final String
+                                                    //                             normalized =
+                                                    //                             value?.toString().trim().toLowerCase() ?? '';
+
+                                                    //                         return normalized == 'good condition' ||
+                                                    //                             normalized == 'good';
+                                                    //                       }
+
+                                                    //                       final List<Map<String, dynamic>>
+                                                    //                           selectedDamages =
+                                                    //                           [];
+
+                                                    //                       // Ambil damage yang dicentang.
+                                                    //                       for (int i = 0;
+                                                    //                           i < checkedDamageValues.length;
+                                                    //                           i++) {
+                                                    //                         if (checkedDamageValues[i]) {
+                                                    //                           final Map<String, dynamic> damage = Map<String, dynamic>.from(damageType[i]);
+
+                                                    //                           final String remark = damage['remark']?.toString().trim() ?? '';
+
+                                                    //                           if (remark.isNotEmpty) {
+                                                    //                             selectedDamages.add(damage);
+                                                    //                           }
+                                                    //                         }
+                                                    //                       }
+
+                                                    //                       // Ambil input manual.
+                                                    //                       final String
+                                                    //                           manualDamage =
+                                                    //                           damageCtrl.text.trim();
+
+                                                    //                       if (manualDamage.isNotEmpty &&
+                                                    //                           !isGoodCondition(manualDamage)) {
+                                                    //                         selectedDamages.add({
+                                                    //                           'remark': manualDamage,
+                                                    //                           'rating': '',
+                                                    //                         });
+                                                    //                       }
+
+                                                    //                       // Apakah ada luka selain Good Condition?
+                                                    //                       final bool
+                                                    //                           hasActualDamage =
+                                                    //                           selectedDamages.any(
+                                                    //                         (damage) =>
+                                                    //                             !isGoodCondition(damage['remark']),
+                                                    //                       );
+
+                                                    //                       if (hasActualDamage) {
+                                                    //                         // Jika ada luka, hapus seluruh variasi Good Condition.
+                                                    //                         selectedDamages.removeWhere(
+                                                    //                           (damage) => isGoodCondition(damage['remark']),
+                                                    //                         );
+                                                    //                       } else {
+                                                    //                         // Jika tidak memilih luka apa pun, gunakan Good Condition.
+                                                    //                         selectedDamages
+                                                    //                           ..clear()
+                                                    //                           ..add({
+                                                    //                             'remark': 'Good Condition',
+                                                    //                             'rating': 'A',
+                                                    //                           });
+                                                    //                       }
+
+                                                    //                       // Hilangkan damage yang duplikat.
+                                                    //                       final Map<String, Map<String, dynamic>>
+                                                    //                           uniqueDamageMap =
+                                                    //                           {};
+
+                                                    //                       for (final damage
+                                                    //                           in selectedDamages) {
+                                                    //                         final String
+                                                    //                             remark =
+                                                    //                             damage['remark']?.toString().trim() ?? '';
+
+                                                    //                         if (remark.isNotEmpty) {
+                                                    //                           uniqueDamageMap[remark.toLowerCase()] = damage;
+                                                    //                         }
+                                                    //                       }
+
+                                                    //                       final List<Map<String, dynamic>>
+                                                    //                           finalDamages =
+                                                    //                           uniqueDamageMap.values.toList();
+
+                                                    //                       // Cari rating terburuk dari damage yang dipilih.
+                                                    //                       String
+                                                    //                           worstRating =
+                                                    //                           '';
+
+                                                    //                       for (final damage
+                                                    //                           in finalDamages) {
+                                                    //                         final String
+                                                    //                             currentRating =
+                                                    //                             damage['rating']?.toString().trim() ?? '';
+
+                                                    //                         final int
+                                                    //                             currentPriority =
+                                                    //                             ratingPriority[currentRating] ?? 1;
+
+                                                    //                         final int
+                                                    //                             worstPriority =
+                                                    //                             ratingPriority[worstRating] ?? 1;
+
+                                                    //                         if (currentPriority >
+                                                    //                             worstPriority) {
+                                                    //                           worstRating = currentRating;
+                                                    //                         }
+                                                    //                       }
+
+                                                    //                       setState(
+                                                    //                           () {
+                                                    //                         position[posIndex] =
+                                                    //                             position[posIndex].copyWith(
+                                                    //                           luka: finalDamages
+                                                    //                               .map(
+                                                    //                                 (damage) => damage['remark'].toString().trim(),
+                                                    //                               )
+                                                    //                               .toList(),
+                                                    //                           rating: worstRating,
+                                                    //                         );
+                                                    //                       });
+
+                                                    //                       log('hasil luka ban: ${position[posIndex].luka}');
+                                                    //                       log('hasil rating: $worstRating');
+
+                                                    //                       damageCtrl
+                                                    //                           .clear();
+                                                    //                       Navigator.pop(
+                                                    //                           context);
+                                                    //                     },
+                                                    //                     // onPressed:
+                                                    //                     //     () {
+                                                    //                     //   setState(
+                                                    //                     //       () {});
+
+                                                    //                     //   Map<String, int>
+                                                    //                     //       ratingPriority =
+                                                    //                     //       {
+                                                    //                     //     '': 1,
+                                                    //                     //     'A':
+                                                    //                     //         1,
+                                                    //                     //     'B':
+                                                    //                     //         2,
+                                                    //                     //     'C':
+                                                    //                     //         3,
+                                                    //                     //     'X':
+                                                    //                     //         4,
+                                                    //                     //   };
+
+                                                    //                     //   final List<Map<String, dynamic>>
+                                                    //                     //       tmp =
+                                                    //                     //       [];
+
+                                                    //                     //   // isi damage dengan ketikan
+                                                    //                     //   if (damageCtrl.text == '' ||
+                                                    //                     //       damageCtrl.text.isNotEmpty) {
+                                                    //                     //     tmp.add({
+                                                    //                     //       'remark': damageCtrl.text,
+                                                    //                     //       'rating': ''
+                                                    //                     //     });
+                                                    //                     //   }
+
+                                                    //                     //   for (int i = 0;
+                                                    //                     //       i < checkedDamageValues.length;
+                                                    //                     //       i++) {
+                                                    //                     //     if (checkedDamageValues[i]) {
+                                                    //                     //       tmp.add(damageType[i]);
+                                                    //                     //     } else {
+                                                    //                     //       tmp.removeWhere((element) => element == damageType[i]);
+                                                    //                     //     }
+                                                    //                     //   }
+                                                    //                     //   log('idx luka ban : $posIndex');
+
+                                                    //                     //   if (tmp
+                                                    //                     //       .isNotEmpty) {
+                                                    //                     //     position[posIndex] =
+                                                    //                     //         position[posIndex].copyWith(luka: []);
+
+                                                    //                     //     position[posIndex].luka.addAll(
+                                                    //                     //           tmp.map((e) => e['remark'].toString()),
+                                                    //                     //         );
+
+                                                    //                     //     // PENETUAN RATING DARI LUKA BAN
+                                                    //                     //     String
+                                                    //                     //         worstRating =
+                                                    //                     //         '';
+
+                                                    //                     //     if (tmp.isNotEmpty) {
+                                                    //                     //       worstRating = tmp.fold(
+                                                    //                     //         '',
+                                                    //                     //         (worst, item) {
+                                                    //                     //           final current = item['rating'] ?? '';
+
+                                                    //                     //           return ratingPriority[current]! > ratingPriority[worst]! ? current : worst;
+                                                    //                     //         },
+                                                    //                     //       );
+                                                    //                     //     }
+
+                                                    //                     //     position[posIndex] =
+                                                    //                     //         position[posIndex].copyWith(
+                                                    //                     //       rating: worstRating,
+                                                    //                     //     );
+
+                                                    //                     //     log('hasil luka ban : ${position}');
+                                                    //                     //     log('hasil rating dari luka ban : ${worstRating}');
+                                                    //                     //   }
+
+                                                    //                     //   // jika hapus damage hari kemarin
+                                                    //                     //   if (position[posIndex].luka[0] == '' &&
+                                                    //                     //       position[posIndex].luka.length == 1) {
+                                                    //                     //     position[posIndex] =
+                                                    //                     //         position[posIndex].copyWith(luka: []);
+                                                    //                     //   }
+
+                                                    //                     //   damageCtrl
+                                                    //                     //       .clear();
+
+                                                    //                     //   Navigator.pop(
+                                                    //                     //       context);
+                                                    //                     // },
+                                                    //                     child:
+                                                    //                         Text(
+                                                    //                       'Submit',
+                                                    //                       style:
+                                                    //                           getWhiteTextStyle(
+                                                    //                         fontWeight:
+                                                    //                             w700,
+                                                    //                       ),
+                                                    //                     ),
+                                                    //                   ),
+                                                    //                 ),
+                                                    //               ],
+                                                    //             ),
+                                                    //           ],
+                                                    //         ),
+                                                    //       ),
+                                                    //     );
+                                                    //   },
+                                                    // );
                                                   },
                                                   style:
                                                       ElevatedButton.styleFrom(
