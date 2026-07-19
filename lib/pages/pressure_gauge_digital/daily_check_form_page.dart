@@ -7952,7 +7952,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                       builder: (context, constraints) {
                                         const pairSpacing = 12.0;
                                         const axleSpacing = 56.0;
-                                        const defaultWrapSpacing = 34.0;
+                                        // const defaultWrapSpacing = 34.0;
+                                        const defaultWrapSpacing = 12.0;
 
                                         // Total posisi 1-6 tetap memakai layout lama:
                                         // dua kolom Wrap tanpa layout bentuk axle.
@@ -9279,14 +9280,54 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                                         // Untuk 1-6 posisi, biarkan layout seperti sebelumnya.
                                         if (useDefaultLayout) {
-                                          return Wrap(
-                                            spacing: defaultWrapSpacing,
-                                            runSpacing: 24,
-                                            alignment: WrapAlignment.center,
-                                            children: tireWidgets,
+                                          final rowCount =
+                                              (tireWidgets.length / 2).ceil();
+
+                                          return Column(
+                                            children: List.generate(
+                                              rowCount,
+                                              (rowIndex) {
+                                                final leftIndex = rowIndex * 2;
+                                                final rightIndex =
+                                                    leftIndex + 1;
+
+                                                return Padding(
+                                                  padding: EdgeInsets.only(
+                                                    bottom:
+                                                        rowIndex == rowCount - 1
+                                                            ? 0
+                                                            : 24,
+                                                  ),
+                                                  child: Row(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      SizedBox(
+                                                        width: itemWidth,
+                                                        child: tireWidgets[
+                                                            leftIndex],
+                                                      ),
+                                                      const SizedBox(
+                                                          width:
+                                                              defaultWrapSpacing),
+                                                      if (rightIndex <
+                                                          tireWidgets.length)
+                                                        SizedBox(
+                                                          width: itemWidth,
+                                                          child: tireWidgets[
+                                                              rightIndex],
+                                                        )
+                                                      else
+                                                        SizedBox(
+                                                            width: itemWidth),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
                                           );
                                         }
-
                                         final axleRows =
                                             _getTireAxleRows(position.length);
 

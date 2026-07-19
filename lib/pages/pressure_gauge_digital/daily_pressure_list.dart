@@ -105,23 +105,74 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   }
 
   Future<QuerySnapshot<Map<String, dynamic>>> getCheckedTodayFuture() {
-    final todayString = DateTime.now().toIso8601String().substring(0, 10);
+    final now = DateTime.now();
 
-    if (selectedPit == 0) {
-      return firestore
-          .collection('daily_pressure')
-          .where('hari', isEqualTo: todayString)
-          .where('idSite', isEqualTo: currentIdSite)
-          .get();
+    final startOfDay = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    );
+
+    final startOfNextDay = startOfDay.add(
+      const Duration(days: 1),
+    );
+
+    final startDate = startOfDay.toIso8601String();
+    final endDate = startOfNextDay.toIso8601String();
+
+    log('====================================');
+    log('LOAD CHECKED UNIT');
+    log('Site          : $currentIdSite');
+    log('Selected Pit  : $selectedPit');
+    log('Start Date    : $startDate');
+    log('End Date      : $endDate');
+    log('====================================');
+
+    Query<Map<String, dynamic>> query = firestore
+        .collection('daily_pressure')
+        .where(
+          'tanggal',
+          isGreaterThanOrEqualTo: startDate,
+        )
+        .where(
+          'tanggal',
+          isLessThan: endDate,
+        )
+        .where(
+          'idSite',
+          isEqualTo: currentIdSite,
+        );
+
+    if (selectedPit != 0 && pit.isNotEmpty && selectedPit < pit.length) {
+      query = query.where(
+        'pit',
+        isEqualTo: pit[selectedPit],
+      );
     }
 
-    return firestore
-        .collection('daily_pressure')
-        .where('hari', isEqualTo: todayString)
-        .where('idSite', isEqualTo: currentIdSite)
-        .where('pit', isEqualTo: pit[selectedPit])
-        .get();
+    return query.get();
   }
+
+  // Future<QuerySnapshot<Map<String, dynamic>>> getCheckedTodayFuture() {
+  //   final todayString = DateTime.now().toIso8601String().substring(0, 10);
+  //   print('hari ini : $todayString');
+  //   print('id site hari ini : $currentIdSite');
+
+  //   if (selectedPit == 0) {
+  //     return firestore
+  //         .collection('daily_pressure')
+  //         .where('hari', isEqualTo: todayString)
+  //         .where('idSite', isEqualTo: currentIdSite)
+  //         .get();
+  //   }
+
+  //   return firestore
+  //       .collection('daily_pressure')
+  //       .where('hari', isEqualTo: todayString)
+  //       .where('idSite', isEqualTo: currentIdSite)
+  //       .where('pit', isEqualTo: pit[selectedPit])
+  //       .get();
+  // }
 
   void refreshCheckedData() {
     setState(() {
@@ -568,6 +619,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
 
                               final docs = snapshot.data?.docs ?? [];
 
+                              log('docs list daily : $docs');
+
                               // Ambil semua data dari Firestore
                               final rawData = docs.map((doc) {
                                 return doc.data();
@@ -600,6 +653,8 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                               }
 
                               final distinctDaily = distinctMap.values.toList();
+
+                              log('distinct list daily : $distinctDaily');
 
                               final keyword = searchQuery.toLowerCase();
 

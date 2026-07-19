@@ -573,11 +573,31 @@ Future<List<int>> createExcel(String type,
               HAlignType.center;
           sheet.getRangeByName('G$rowIndex').cellStyle.vAlign =
               VAlignType.center;
-          sheet.getRangeByName('G$rowIndex').setText((posisi['remarks'] == '' ||
-                  posisi['remarks'] == ' ' ||
-                  posisi['remarks'] == null)
-              ? 'Good Condition'
-              : posisi['remarks']);
+
+          final dynamic remarksData = posisi['remarks'];
+
+          String remarks = '';
+
+          if (remarksData is Map) {
+            // Jika remarks berupa Map, ambil nilai dari key "remark"
+            remarks = remarksData['remark']?.toString().trim() ?? '';
+          } else if (remarksData is String) {
+            // Jika remarks berupa String, langsung gunakan nilainya
+            remarks = remarksData.trim();
+          }
+
+          sheet.getRangeByName('G$rowIndex').setText(
+                remarks.isEmpty ? 'Good Condition' : remarks,
+              );
+          // sheet.getRangeByName('G$rowIndex').cellStyle.hAlign =
+          //     HAlignType.center;
+          // sheet.getRangeByName('G$rowIndex').cellStyle.vAlign =
+          //     VAlignType.center;
+          // sheet.getRangeByName('G$rowIndex').setText((posisi['remarks'] == '' ||
+          //         posisi['remarks'] == ' ' ||
+          //         posisi['remarks'] == null)
+          //     ? 'Good Condition'
+          //     : posisi['remarks']);
 
           // H = Pics (image dari Firebase Storage)
           try {
