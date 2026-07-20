@@ -1,10 +1,14 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/not_update_warning_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_badge_widget.dart';
 import 'package:get/get.dart';
+import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../core/blocs/daily_check_post/daily_check_post_bloc.dart';
 import '../../core/services/api_service.dart';
@@ -4632,7 +4636,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                           const SizedBox(
                             height: 12,
                           ),
-
                           FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
                             future: checkedFuture,
                             builder: (context, snapshot) {
@@ -4711,6 +4714,149 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                     'Total Unit : ${filteredNotChecked.length}',
                                     style: getBlackTextStyle(
                                       fontSize: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 12,
+                                  ),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton.icon(
+                                      onPressed: filteredNotChecked.isEmpty
+                                          ? null
+                                          : () async {
+                                              try {
+                                                final StringBuffer txt =
+                                                    StringBuffer();
+
+                                                final String tanggal = DateFormat(
+                                                        'dd-MM-yyyy HH:mm:ss')
+                                                    .format(DateTime.now());
+
+                                                txt.writeln(
+                                                    'LIST UNIT NOT CHECKED');
+                                                txt.writeln(
+                                                    '==============================');
+                                                txt.writeln(
+                                                    'Site       : $currentIdSite');
+                                                txt.writeln(
+                                                    'Tanggal    : $tanggal');
+                                                txt.writeln(
+                                                  'Total Unit : ${filteredNotChecked.length}',
+                                                );
+                                                txt.writeln(
+                                                    '==============================');
+                                                txt.writeln();
+
+                                                for (int index = 0;
+                                                    index <
+                                                        filteredNotChecked
+                                                            .length;
+                                                    index++) {
+                                                  final unit =
+                                                      filteredNotChecked[index];
+
+                                                  final String unitNumber =
+                                                      unit.unitNumber?.trim() ??
+                                                          '';
+
+                                                  final String model =
+                                                      unit.model?.trim() ?? '';
+
+                                                  txt.writeln(
+                                                    '${index + 1}. ${unitNumber.isEmpty ? '-' : unitNumber}',
+                                                  );
+
+                                                  txt.writeln(
+                                                    '   Model : ${model.isEmpty ? '-' : model}',
+                                                  );
+
+                                                  txt.writeln(
+                                                    '------------------------------',
+                                                  );
+                                                }
+
+                                                final Directory?
+                                                    downloadDirectory =
+                                                    await DownloadsPath
+                                                        .downloadsDirectory();
+
+                                                if (downloadDirectory == null) {
+                                                  throw Exception(
+                                                    'Folder Download tidak ditemukan',
+                                                  );
+                                                }
+
+                                                final String fileDate =
+                                                    DateFormat(
+                                                            'yyyyMMdd_HHmmss')
+                                                        .format(DateTime.now());
+
+                                                final String fileName =
+                                                    'not_checked_unit_${currentIdSite}_$fileDate.txt';
+
+                                                final File file = File(
+                                                  '${downloadDirectory.path}/$fileName',
+                                                );
+
+                                                await file.writeAsString(
+                                                  txt.toString(),
+                                                  flush: true,
+                                                );
+
+                                                debugPrint(
+                                                  'File berhasil disimpan: ${file.path}',
+                                                );
+
+                                                if (!context.mounted) return;
+
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    backgroundColor:
+                                                        Colors.green,
+                                                    duration: const Duration(
+                                                        seconds: 5),
+                                                    content: Text(
+                                                      'Berhasil export '
+                                                      '${filteredNotChecked.length} unit\n'
+                                                      'Download/$fileName',
+                                                    ),
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                debugPrint(
+                                                  'Gagal export Not Checked: $e',
+                                                );
+
+                                                if (!context.mounted) return;
+
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    backgroundColor: Colors.red,
+                                                    content: Text(
+                                                      'Gagal export data: $e',
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        disabledBackgroundColor: Colors.grey,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                      icon: const Icon(
+                                        Icons.file_download_outlined,
+                                        color: Colors.white,
+                                      ),
+                                      label: Text(
+                                        'Export Not Checked (${filteredNotChecked.length})',
+                                        style: getWhiteTextStyle(),
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(

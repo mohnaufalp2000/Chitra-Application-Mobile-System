@@ -1,8 +1,10 @@
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:get/get.dart';
+import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 import '../../core/blocs/daily_check_post/daily_check_post_bloc.dart';
@@ -1975,196 +1977,647 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                       //     ],
                       //   );
                       // Not Checked Unit
+                      // Not Checked Unit
                       case 1:
-                        final notChecked = [];
-                        notChecked.clear();
-                        notChecked.addAll(state.units);
                         return Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12.0),
                           child: Column(
                             children: [
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              StreamBuilder(
-                                  stream: firestore
-                                      .collection('daily_pressure')
-                                      .where('tanggal',
-                                          isGreaterThanOrEqualTo: DateTime(
-                                                  selectedDate.year,
-                                                  selectedDate.month,
-                                                  selectedDate.day)
-                                              .toIso8601String())
-                                      .where('tanggal',
-                                          isLessThanOrEqualTo: DateTime(
-                                                  selectedDate.year,
-                                                  selectedDate.month,
-                                                  selectedDate.day,
-                                                  23,
-                                                  59,
-                                                  59)
-                                              .toIso8601String())
-                                      .where('idSite', isEqualTo: idSite)
-                                      .snapshots(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return CircularProgressIndicator
-                                          .adaptive();
+                              const SizedBox(height: 12),
+                              StreamBuilder<
+                                  QuerySnapshot<Map<String, dynamic>>>(
+                                stream: firestore
+                                    .collection('daily_pressure')
+                                    .where(
+                                      'tanggal',
+                                      isGreaterThanOrEqualTo: DateTime(
+                                        selectedDate.year,
+                                        selectedDate.month,
+                                        selectedDate.day,
+                                      ).toIso8601String(),
+                                    )
+                                    .where(
+                                      'tanggal',
+                                      isLessThanOrEqualTo: DateTime(
+                                        selectedDate.year,
+                                        selectedDate.month,
+                                        selectedDate.day,
+                                        23,
+                                        59,
+                                        59,
+                                      ).toIso8601String(),
+                                    )
+                                    .where(
+                                      'idSite',
+                                      isEqualTo: idSite,
+                                    )
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                      child:
+                                          CircularProgressIndicator.adaptive(),
+                                    );
+                                  }
+
+                                  if (snapshot.hasError) {
+                                    return Text(
+                                      'Error load Not Checked data: ${snapshot.error}',
+                                      style: getBlackTextStyle(fontSize: 14),
+                                    );
+                                  }
+
+                                  final dailyData = snapshot.data?.docs ?? [];
+
+                                  // Daftar unit yang sudah diperiksa pada tanggal terpilih.
+                                  final Set<String> checkedUnitSet = dailyData
+                                      .map((doc) {
+                                        final data = doc.data();
+
+                                        return data['unit']
+                                                ?.toString()
+                                                .trim()
+                                                .toLowerCase() ??
+                                            '';
+                                      })
+                                      .where((unit) => unit.isNotEmpty)
+                                      .toSet();
+
+                                  // Ambil unit yang belum diperiksa.
+                                  final List<UnitTire> notChecked =
+                                      state.units.where((unit) {
+                                    final unitNumber =
+                                        unit.unitNumber?.trim().toLowerCase() ??
+                                            '';
+
+                                    if (unitNumber.isEmpty) {
+                                      return false;
                                     }
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.active) {
-                                      final dailyData =
-                                          snapshot.data?.docs ?? [];
 
-                                      // Mendapatkan field 'unit' dari setiap dokumen
-                                      final unitList = dailyData
-                                          .map((doc) => doc['unit'])
-                                          .toList();
+                                    return !checkedUnitSet.contains(unitNumber);
+                                  }).toList();
 
-                                      // Mengecek apakah 'unitList' kosong, jika tidak kosong lanjutkan removeWhere
-                                      unitList.isNotEmpty
-                                          ? notChecked.removeWhere((element) =>
-                                              unitList
-                                                  .contains(element.unitNumber))
-                                          : [];
+                                  // Filter berdasarkan search.
+                                  final String keyword =
+                                      searchQuery.trim().toLowerCase();
 
-                                      return Column(
-                                        children: [
-                                          Text(
-                                            'Total Unit : ${notChecked.length ?? 0}',
-                                            style: getBlackTextStyle(
-                                              fontSize: 20,
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          (snapshot.data?.size != 0)
-                                              ? Column(
-                                                  children: [
-                                                    Builder(builder: (context) {
-                                                      // Parsing string to DateTime object
-                                                      DateTime parsedDate =
-                                                          DateTime.parse(snapshot
-                                                              .data
-                                                              ?.docs[snapshot
-                                                                      .data!
-                                                                      .size -
-                                                                  1]
-                                                              .data()['tanggal']);
+                                  final List<UnitTire> filteredNotChecked =
+                                      notChecked.where((unit) {
+                                    if (keyword.isEmpty) {
+                                      return true;
+                                    }
 
-                                                      // Formatting DateTime to the desired format
-                                                      String formattedDate =
-                                                          DateFormat(
-                                                                  'HH:mm:ss dd-MM-yyyy')
-                                                              .format(
-                                                                  parsedDate);
-                                                      return Text(
-                                                        'Last Update : ${formattedDate}',
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style:
-                                                            getBlackTextStyle(
-                                                          fontSize: 14,
-                                                        ),
+                                    final unitNumber =
+                                        unit.unitNumber?.toLowerCase() ?? '';
+
+                                    final model =
+                                        unit.model?.toLowerCase() ?? '';
+
+                                    return unitNumber.contains(keyword) ||
+                                        model.contains(keyword);
+                                  }).toList();
+
+                                  // Urutkan berdasarkan nomor unit.
+                                  filteredNotChecked.sort((a, b) {
+                                    final unitA = a.unitNumber ?? '';
+                                    final unitB = b.unitNumber ?? '';
+
+                                    return unitA.compareTo(unitB);
+                                  });
+
+                                  DateTime? lastUpdate;
+
+                                  if (dailyData.isNotEmpty) {
+                                    final sortedDocs = [...dailyData];
+
+                                    sortedDocs.sort((a, b) {
+                                      final aTanggal =
+                                          a.data()['tanggal']?.toString() ?? '';
+
+                                      final bTanggal =
+                                          b.data()['tanggal']?.toString() ?? '';
+
+                                      return bTanggal.compareTo(aTanggal);
+                                    });
+
+                                    final tanggal = sortedDocs.first
+                                        .data()['tanggal']
+                                        ?.toString();
+
+                                    if (tanggal != null && tanggal.isNotEmpty) {
+                                      lastUpdate = DateTime.tryParse(tanggal);
+                                    }
+                                  }
+
+                                  return Column(
+                                    children: [
+                                      Text(
+                                        'Total Unit : ${filteredNotChecked.length}',
+                                        style: getBlackTextStyle(
+                                          fontSize: 20,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      // ==========================================
+                                      // TOMBOL EXPORT TXT
+                                      // ==========================================
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton.icon(
+                                          onPressed: filteredNotChecked.isEmpty
+                                              ? null
+                                              : () async {
+                                                  try {
+                                                    final StringBuffer txt =
+                                                        StringBuffer();
+
+                                                    final String
+                                                        selectedDateText =
+                                                        DateFormat('dd-MM-yyyy')
+                                                            .format(
+                                                                selectedDate);
+
+                                                    final String exportTime =
+                                                        DateFormat(
+                                                      'dd-MM-yyyy HH:mm:ss',
+                                                    ).format(DateTime.now());
+
+                                                    txt.writeln(
+                                                      'LIST UNIT NOT CHECKED',
+                                                    );
+
+                                                    txt.writeln(
+                                                      '================================',
+                                                    );
+
+                                                    txt.writeln(
+                                                      'Site          : $idSite',
+                                                    );
+
+                                                    txt.writeln(
+                                                      'Tanggal Data  : $selectedDateText',
+                                                    );
+
+                                                    txt.writeln(
+                                                      'Waktu Export  : $exportTime',
+                                                    );
+
+                                                    txt.writeln(
+                                                      'Total Unit    : '
+                                                      '${filteredNotChecked.length}',
+                                                    );
+
+                                                    if (keyword.isNotEmpty) {
+                                                      txt.writeln(
+                                                        'Pencarian     : $searchQuery',
                                                       );
-                                                    }),
-                                                    const SizedBox(
-                                                      height: 12,
-                                                    ),
-                                                  ],
-                                                )
-                                              : Container(),
-                                          (notChecked == null ||
-                                                  notChecked.isEmpty)
-                                              ? Text(
-                                                  'Empty!',
-                                                  textAlign: TextAlign.center,
-                                                  style: getBlackTextStyle(
-                                                      fontSize: 18),
-                                                )
-                                              : Column(
-                                                  children:
-                                                      (notChecked).map((unit) {
-                                                    if (searchQuery
-                                                            .isNotEmpty &&
-                                                        !unit.unitNumber!
-                                                            .toLowerCase()
-                                                            .contains(
-                                                                searchQuery) &&
-                                                        !unit.model!
-                                                            .toLowerCase()
-                                                            .contains(
-                                                                searchQuery)) {
-                                                      return Container();
                                                     }
-                                                    return Container(
-                                                      margin:
-                                                          EdgeInsets.symmetric(
-                                                              vertical: 8.0),
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              vertical: 6),
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white,
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    0.1),
-                                                            spreadRadius: 2,
-                                                            blurRadius: 5,
-                                                            offset:
-                                                                Offset(0, 2),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      child: ListTile(
-                                                        leading: Icon(
-                                                          Icons.front_loader,
-                                                          color: Colors.orange,
+
+                                                    txt.writeln(
+                                                      '================================',
+                                                    );
+
+                                                    txt.writeln();
+
+                                                    for (int index = 0;
+                                                        index <
+                                                            filteredNotChecked
+                                                                .length;
+                                                        index++) {
+                                                      final unit =
+                                                          filteredNotChecked[
+                                                              index];
+
+                                                      final String unitNumber =
+                                                          unit.unitNumber
+                                                                  ?.toString()
+                                                                  .trim() ??
+                                                              '';
+
+                                                      final String model = unit
+                                                              .model
+                                                              ?.toString()
+                                                              .trim() ??
+                                                          '';
+
+                                                      txt.writeln(
+                                                        '${index + 1}. '
+                                                        '${unitNumber.isEmpty ? '-' : unitNumber}',
+                                                      );
+
+                                                      txt.writeln(
+                                                        '   Model : '
+                                                        '${model.isEmpty ? '-' : model}',
+                                                      );
+
+                                                      txt.writeln(
+                                                        '--------------------------------',
+                                                      );
+                                                    }
+
+                                                    final Directory?
+                                                        downloadDirectory =
+                                                        await DownloadsPath
+                                                            .downloadsDirectory();
+
+                                                    if (downloadDirectory ==
+                                                        null) {
+                                                      throw Exception(
+                                                        'Folder Download tidak ditemukan',
+                                                      );
+                                                    }
+
+                                                    final String fileDate =
+                                                        DateFormat('yyyyMMdd')
+                                                            .format(
+                                                                selectedDate);
+
+                                                    final String fileTime =
+                                                        DateFormat('HHmmss')
+                                                            .format(
+                                                                DateTime.now());
+
+                                                    final String fileName =
+                                                        'not_checked_'
+                                                        '${idSite}_'
+                                                        '${fileDate}_'
+                                                        '$fileTime.txt';
+
+                                                    final File file = File(
+                                                      '${downloadDirectory.path}/'
+                                                      '$fileName',
+                                                    );
+
+                                                    await file.writeAsString(
+                                                      txt.toString(),
+                                                      flush: true,
+                                                    );
+
+                                                    debugPrint(
+                                                      'File TXT tersimpan: '
+                                                      '${file.path}',
+                                                    );
+
+                                                    if (!mounted) return;
+
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .hideCurrentSnackBar();
+
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                        duration:
+                                                            const Duration(
+                                                          seconds: 5,
                                                         ),
-                                                        title: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .only(
-                                                                  bottom: 4.0),
-                                                          child: Text(
-                                                            '${unit.unitNumber}',
-                                                            style: getBlackTextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w700),
-                                                          ),
+                                                        content: Text(
+                                                          'Berhasil export '
+                                                          '${filteredNotChecked.length} '
+                                                          'unit Not Checked\n'
+                                                          'Download/$fileName',
                                                         ),
-                                                        subtitle: Text(
-                                                          '${unit.model}',
-                                                          style:
-                                                              getGreyTextStyle(
-                                                                  grey6A707C),
-                                                        ),
-                                                        trailing: Icon(Icons
-                                                            .arrow_forward_ios),
                                                       ),
                                                     );
-                                                  }).toList(),
-                                                ),
-                                        ],
-                                      );
-                                    }
+                                                  } catch (e) {
+                                                    debugPrint(
+                                                      'Gagal export TXT: $e',
+                                                    );
 
-                                    return Container();
-                                  }),
-                              const SizedBox(
-                                height: 12,
+                                                    if (!mounted) return;
+
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .hideCurrentSnackBar();
+
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                        content: Text(
+                                                          'Gagal export TXT: $e',
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blue,
+                                            disabledBackgroundColor:
+                                                Colors.grey,
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                            ),
+                                          ),
+                                          icon: const Icon(
+                                            Icons.file_download_outlined,
+                                            color: Colors.white,
+                                          ),
+                                          label: Text(
+                                            'Export Not Checked '
+                                            '(${filteredNotChecked.length})',
+                                            style: getWhiteTextStyle(),
+                                          ),
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 12),
+
+                                      if (lastUpdate != null)
+                                        Column(
+                                          children: [
+                                            Text(
+                                              'Last Update : '
+                                              '${DateFormat('HH:mm:ss dd-MM-yyyy').format(lastUpdate)}',
+                                              textAlign: TextAlign.center,
+                                              style: getBlackTextStyle(
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                          ],
+                                        ),
+
+                                      if (filteredNotChecked.isEmpty)
+                                        Text(
+                                          keyword.isEmpty
+                                              ? 'Empty!'
+                                              : 'Unit tidak ditemukan!',
+                                          textAlign: TextAlign.center,
+                                          style: getBlackTextStyle(
+                                            fontSize: 18,
+                                          ),
+                                        )
+                                      else
+                                        ListView.builder(
+                                          itemCount: filteredNotChecked.length,
+                                          shrinkWrap: true,
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          itemBuilder: (context, index) {
+                                            final UnitTire unit =
+                                                filteredNotChecked[index];
+
+                                            return Container(
+                                              margin:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 8.0,
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 6,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: Colors.black
+                                                        .withOpacity(0.1),
+                                                    spreadRadius: 2,
+                                                    blurRadius: 5,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: ListTile(
+                                                leading: const Icon(
+                                                  Icons.front_loader,
+                                                  color: Colors.orange,
+                                                ),
+                                                title: Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    bottom: 4.0,
+                                                  ),
+                                                  child: Text(
+                                                    unit.unitNumber ?? '-',
+                                                    style: getBlackTextStyle(
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ),
+                                                subtitle: Text(
+                                                  unit.model ?? '-',
+                                                  style: getGreyTextStyle(
+                                                    grey6A707C,
+                                                  ),
+                                                ),
+                                                trailing: const Icon(
+                                                  Icons.arrow_forward_ios,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                    ],
+                                  );
+                                },
                               ),
+                              const SizedBox(height: 12),
                             ],
                           ),
                         );
+                      // case 1:
+                      // final notChecked = [];
+                      // notChecked.clear();
+                      // notChecked.addAll(state.units);
+                      // return Padding(
+                      //   padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      //   child: Column(
+                      //     children: [
+                      //       const SizedBox(
+                      //         height: 12,
+                      //       ),
+                      //       StreamBuilder(
+                      //           stream: firestore
+                      //               .collection('daily_pressure')
+                      //               .where('tanggal',
+                      //                   isGreaterThanOrEqualTo: DateTime(
+                      //                           selectedDate.year,
+                      //                           selectedDate.month,
+                      //                           selectedDate.day)
+                      //                       .toIso8601String())
+                      //               .where('tanggal',
+                      //                   isLessThanOrEqualTo: DateTime(
+                      //                           selectedDate.year,
+                      //                           selectedDate.month,
+                      //                           selectedDate.day,
+                      //                           23,
+                      //                           59,
+                      //                           59)
+                      //                       .toIso8601String())
+                      //               .where('idSite', isEqualTo: idSite)
+                      //               .snapshots(),
+                      //           builder: (context, snapshot) {
+                      //             if (snapshot.connectionState ==
+                      //                 ConnectionState.waiting) {
+                      //               return CircularProgressIndicator
+                      //                   .adaptive();
+                      //             }
+                      //             if (snapshot.connectionState ==
+                      //                 ConnectionState.active) {
+                      //               final dailyData =
+                      //                   snapshot.data?.docs ?? [];
+
+                      //               // Mendapatkan field 'unit' dari setiap dokumen
+                      //               final unitList = dailyData
+                      //                   .map((doc) => doc['unit'])
+                      //                   .toList();
+
+                      //               // Mengecek apakah 'unitList' kosong, jika tidak kosong lanjutkan removeWhere
+                      //               unitList.isNotEmpty
+                      //                   ? notChecked.removeWhere((element) =>
+                      //                       unitList
+                      //                           .contains(element.unitNumber))
+                      //                   : [];
+
+                      //               return Column(
+                      //                 children: [
+                      //                   Text(
+                      //                     'Total Unit : ${notChecked.length ?? 0}',
+                      //                     style: getBlackTextStyle(
+                      //                       fontSize: 20,
+                      //                     ),
+                      //                   ),
+                      //                   const SizedBox(
+                      //                     height: 12,
+                      //                   ),
+                      //                   (snapshot.data?.size != 0)
+                      //                       ? Column(
+                      //                           children: [
+                      //                             Builder(builder: (context) {
+                      //                               // Parsing string to DateTime object
+                      //                               DateTime parsedDate =
+                      //                                   DateTime.parse(snapshot
+                      //                                       .data
+                      //                                       ?.docs[snapshot
+                      //                                               .data!
+                      //                                               .size -
+                      //                                           1]
+                      //                                       .data()['tanggal']);
+
+                      //                               // Formatting DateTime to the desired format
+                      //                               String formattedDate =
+                      //                                   DateFormat(
+                      //                                           'HH:mm:ss dd-MM-yyyy')
+                      //                                       .format(
+                      //                                           parsedDate);
+                      //                               return Text(
+                      //                                 'Last Update : ${formattedDate}',
+                      //                                 textAlign:
+                      //                                     TextAlign.center,
+                      //                                 style:
+                      //                                     getBlackTextStyle(
+                      //                                   fontSize: 14,
+                      //                                 ),
+                      //                               );
+                      //                             }),
+                      //                             const SizedBox(
+                      //                               height: 12,
+                      //                             ),
+                      //                           ],
+                      //                         )
+                      //                       : Container(),
+                      //                   (notChecked == null ||
+                      //                           notChecked.isEmpty)
+                      //                       ? Text(
+                      //                           'Empty!',
+                      //                           textAlign: TextAlign.center,
+                      //                           style: getBlackTextStyle(
+                      //                               fontSize: 18),
+                      //                         )
+                      //                       : Column(
+                      //                           children:
+                      //                               (notChecked).map((unit) {
+                      //                             if (searchQuery
+                      //                                     .isNotEmpty &&
+                      //                                 !unit.unitNumber!
+                      //                                     .toLowerCase()
+                      //                                     .contains(
+                      //                                         searchQuery) &&
+                      //                                 !unit.model!
+                      //                                     .toLowerCase()
+                      //                                     .contains(
+                      //                                         searchQuery)) {
+                      //                               return Container();
+                      //                             }
+                      //                             return Container(
+                      //                               margin:
+                      //                                   EdgeInsets.symmetric(
+                      //                                       vertical: 8.0),
+                      //                               padding:
+                      //                                   EdgeInsets.symmetric(
+                      //                                       vertical: 6),
+                      //                               decoration: BoxDecoration(
+                      //                                 color: Colors.white,
+                      //                                 borderRadius:
+                      //                                     BorderRadius
+                      //                                         .circular(12),
+                      //                                 boxShadow: [
+                      //                                   BoxShadow(
+                      //                                     color: Colors.black
+                      //                                         .withOpacity(
+                      //                                             0.1),
+                      //                                     spreadRadius: 2,
+                      //                                     blurRadius: 5,
+                      //                                     offset:
+                      //                                         Offset(0, 2),
+                      //                                   ),
+                      //                                 ],
+                      //                               ),
+                      //                               child: ListTile(
+                      //                                 leading: Icon(
+                      //                                   Icons.front_loader,
+                      //                                   color: Colors.orange,
+                      //                                 ),
+                      //                                 title: Padding(
+                      //                                   padding:
+                      //                                       const EdgeInsets
+                      //                                           .only(
+                      //                                           bottom: 4.0),
+                      //                                   child: Text(
+                      //                                     '${unit.unitNumber}',
+                      //                                     style: getBlackTextStyle(
+                      //                                         fontWeight:
+                      //                                             FontWeight
+                      //                                                 .w700),
+                      //                                   ),
+                      //                                 ),
+                      //                                 subtitle: Text(
+                      //                                   '${unit.model}',
+                      //                                   style:
+                      //                                       getGreyTextStyle(
+                      //                                           grey6A707C),
+                      //                                 ),
+                      //                                 trailing: Icon(Icons
+                      //                                     .arrow_forward_ios),
+                      //                               ),
+                      //                             );
+                      //                           }).toList(),
+                      //                         ),
+                      //                 ],
+                      //               );
+                      //             }
+
+                      //             return Container();
+                      //           }),
+                      //       const SizedBox(
+                      //         height: 12,
+                      //       ),
+                      //     ],
+                      //   ),
+                      // );
                     }
                   }
                   return Container();
