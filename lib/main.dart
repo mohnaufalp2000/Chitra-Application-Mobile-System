@@ -63,8 +63,9 @@ void main() async {
     // );
     await Firebase.initializeApp();
 
-    FirebaseFirestore.instance.settings = Settings(
+    FirebaseFirestore.instance.settings = const Settings(
       persistenceEnabled: true, // Aktifkan disk persistence
+      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
     );
   } else {
     await Firebase.initializeApp();
