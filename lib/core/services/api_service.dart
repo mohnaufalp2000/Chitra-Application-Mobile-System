@@ -25,6 +25,55 @@ class ApiService {
   static const String postUrl =
       'https://cts-chitraparatama.co.id/ChitraTireMngr/product/getdatacamos.php?function=';
 
+  static Future<String?> _getFieldFromFirestore(
+    String collection,
+    String docId,
+    String fieldName,
+  ) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection(collection)
+          .doc(docId)
+          .get();
+
+      if (!doc.exists) {
+        log('❌ Dokumen $docId tidak ditemukan di Firestore.');
+        return null;
+      }
+
+      final value = doc.data()?[fieldName];
+
+      if (value == null || value.toString().isEmpty) {
+        log('⚠️ Field $fieldName kosong di dokumen $docId.');
+        return null;
+      }
+
+      return value.toString();
+    } catch (e) {
+      log('🔥 Error mengambil $fieldName Firestore ($docId): $e');
+      return null;
+    }
+  }
+
+  static Future<String> selectedParam1(String api) async {
+    final user = await getUserPreferences();
+
+    if (api != 'get_tire_running') {
+      return '';
+    }
+
+    if (user['id_company'] == '1') {
+      return await _getFieldFromFirestore(
+            'url_sis',
+            'get_tire_running',
+            'param1',
+          ) ??
+          '&date=';
+    }
+
+    return '&date=';
+  }
+
   static Future<String?> selectedUrl(String api) async {
     final user = await getUserPreferences();
 
@@ -449,76 +498,479 @@ class ApiService {
     }
   }
 
-  // mendapatkan daftar unit di salah satu site
+  // Mendapatkan daftar unit di salah satu site.
   static Future<List<UnitTire>> getUnits(String site) async {
-    final urll = await selectedUrl('get_tire_running');
-    log('url get tire running : $urll$site');
-    final response = await http.get(Uri.parse('$urll$site'));
+    try {
+      // final String baseUrl = await selectedUrl('get_tire_running') ?? '';
+      final baseUrl = await selectedUrl('get_tire_running');
+      final param1 = await selectedParam1('get_tire_running');
 
-    // try {
-    final body = response.body;
-    final result = jsonDecode(body);
-
-    List<Map<String, dynamic>> recommendPressure =
-        List<Map<String, dynamic>>.from(result['recc_press']);
-
-    List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
-      (unit) => UnitTire.fromJson(unit),
-    ));
-    final totalRow = result['total row'];
-
-    int countAllTire = 0;
-
-    if (totalRow is List && totalRow.isNotEmpty) {
-      countAllTire = int.tryParse(totalRow[0].toString()) ?? 0;
-    } else {
-      countAllTire = int.tryParse(totalRow.toString()) ?? 0;
-    }
-    // int countAllTire = result['total row'][0];
-    // log('ban all : ${result['total row']}');
-
-    List<UnitTire> fixData = [];
-
-    Set<String> seenUnitNumbers = {}; // Untuk menyimpan unitNumber unik
-    Map<String, int> sizeCount = {};
-    Set<String> sizes = {};
-
-    for (var unit in listUnitTire) {
-      // Gunakan Set untuk pengecekan unitNumber agar lebih cepat
-      if (seenUnitNumbers.add(unit.unitNumber ?? '')) {
-        fixData.add(unit); // Tambahkan hanya jika unitNumber belum ada
+      if (baseUrl == null || baseUrl.isEmpty) {
+        log('URL get_tire_running kosong');
+        return [];
       }
 
-      String size = unit.size ?? '';
-      if (size.isNotEmpty) {
-        sizes.add(size); // Simpan ukuran unik
+      final now = DateTime.now();
 
-        // Hitung sizeCount untuk SEMUA data, tanpa tergantung fixData
-        sizeCount[size] = (sizeCount[size] ?? 0) + 1;
+      final String date = '${now.year}-'
+          '${now.month.toString().padLeft(2, '0')}-'
+          '${now.day.toString().padLeft(2, '0')}';
+
+      final finalUrl = '$baseUrl$site$param1$date';
+
+      if (baseUrl.trim().isEmpty) {
+        throw Exception('URL get_tire_running kosong');
       }
+
+      // final Uri requestUrl = Uri.parse('$baseUrl$site');
+      final Uri requestUrl = Uri.parse('$finalUrl');
+
+      log('URL get tire running: $requestUrl');
+
+      final response =
+          await http.get(requestUrl).timeout(const Duration(seconds: 30));
+
+      log('Status get tire running: ${response.statusCode}');
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Get tire running gagal. '
+          'Status: ${response.statusCode}, '
+          'Body: ${response.body}',
+        );
+      }
+
+      final dynamic decodedResult = jsonDecode(response.body);
+
+      if (decodedResult is! Map) {
+        throw Exception(
+          'Format response get_tire_running tidak valid',
+        );
+      }
+
+      final Map<String, dynamic> result =
+          Map<String, dynamic>.from(decodedResult);
+
+      log('Result new get tire running diterima');
+
+      /*
+     * ==========================================================
+     * PARSE DATA TIRE
+     * ==========================================================
+     */
+
+      final List<dynamic> rawData = result['data'] is List
+          ? List<dynamic>.from(result['data'])
+          : <dynamic>[];
+
+      final List<UnitTire> listUnitTire = rawData
+          .whereType<Map>()
+          .map(
+            (dynamic unit) => UnitTire.fromJson(
+              Map<String, dynamic>.from(unit as Map),
+            ),
+          )
+          .toList();
+
+      /*
+     * ==========================================================
+     * PARSE RECOMMENDED PRESSURE
+     * ==========================================================
+     */
+
+      final List<Map<String, dynamic>> recommendedPressure =
+          _parseListOfMaps(result['recc_press']);
+
+      /*
+     * ==========================================================
+     * PARSE TARGET AREA
+     *
+     * Format API:
+     * [
+     *   {"Central": "6"},
+     *   {"North West": "6"}
+     * ]
+     *
+     * Hasil:
+     * {
+     *   "Central": 6,
+     *   "North West": 6
+     * }
+     * ==========================================================
+     */
+
+      final Map<String, int> targetArea =
+          _parseTargetArea(result['target_area']);
+
+      /*
+     * ==========================================================
+     * PARSE TOTAL ROW
+     *
+     * Mendukung:
+     * "total row": 72
+     * "total row": "72"
+     * "total row": [72]
+     * "total row": ["72"]
+     * ==========================================================
+     */
+
+      final int countAllTire = _parseTotalRow(result['total row']);
+
+      /*
+     * ==========================================================
+     * MEMBUAT LIST UNIT UNIK
+     * ==========================================================
+     */
+
+      final List<UnitTire> uniqueUnits = <UnitTire>[];
+      final Set<String> seenUnitNumbers = <String>{};
+
+      /*
+     * ==========================================================
+     * HITUNG UKURAN BAN
+     * ==========================================================
+     */
+
+      final Map<String, int> sizeCount = <String, int>{};
+      final Set<String> sizes = <String>{};
+
+      for (final UnitTire unit in listUnitTire) {
+        final String unitNumber = (unit.unitNumber ?? '').trim();
+
+        if (unitNumber.isNotEmpty && seenUnitNumbers.add(unitNumber)) {
+          uniqueUnits.add(unit);
+        }
+
+        final String tireSize = (unit.size ?? '').trim();
+
+        if (tireSize.isNotEmpty) {
+          sizes.add(tireSize);
+
+          sizeCount[tireSize] = (sizeCount[tireSize] ?? 0) + 1;
+        }
+      }
+
+      log('Total tire data: ${listUnitTire.length}');
+      log('Total unique units: ${uniqueUnits.length}');
+      log('Total row API: $countAllTire');
+      log('Target area: $targetArea');
+      log('Tire sizes: $sizeCount');
+
+      /*
+     * ==========================================================
+     * SIMPAN CACHE
+     * ==========================================================
+     */
+
+      /// Seluruh data ban.
+      /// Field area, schedule_type, dan schedule_date ikut tersimpan.
+      await cacheUnits(listUnitTire, site);
+
+      /// Total seluruh ban.
+      await cacheCountAllTire(
+        countAllTire,
+        site,
+      );
+
+      /// Recommended pressure.
+      await cacheReccPress(
+        recommendedPressure,
+      );
+
+      /// Ukuran ban dan jumlah per ukuran.
+      await cacheTireSize(
+        sizeCount,
+        sizes.toList(),
+        site,
+      );
+
+      /// Target dan daftar area berdasarkan site.
+      await cacheTargetArea(
+        targetArea,
+        site,
+      );
+
+      /// Penanda cache bulan dan tahun.
+      await saveMonthYear(DateTime.now());
+
+      return uniqueUnits;
+    } catch (e, st) {
+      log('Error getUnits: $e');
+      log('$st');
+
+      rethrow;
     }
-// Buat struktur data baru
-    Map<String, dynamic> sizeResult = {
-      "sizes": sizes.toList(), // Konversi Set ke List
-      "sizeCount": sizeCount
-    };
-
-    // save unit
-    await cacheUnits(listUnitTire, site);
-    // save all tire count
-    await cacheCountAllTire(countAllTire, site);
-    // save recommendation pressure
-    await cacheReccPress(recommendPressure);
-    // save size tire with quantity
-    await cacheTireSize(sizeCount, sizes.toList(), site);
-
-    // for check data unit monthly
-    await saveMonthYear(DateTime.now());
-    return fixData;
-    // } catch (e) {
-    //   throw Exception(e.toString());
-    // }
   }
+
+  static List<Map<String, dynamic>> _parseListOfMaps(
+    dynamic rawValue,
+  ) {
+    if (rawValue is! List) {
+      return <Map<String, dynamic>>[];
+    }
+
+    return rawValue
+        .whereType<Map>()
+        .map(
+          (dynamic item) => Map<String, dynamic>.from(
+            item as Map,
+          ),
+        )
+        .toList();
+  }
+
+  static int _parseTotalRow(dynamic rawValue) {
+    if (rawValue == null) {
+      return 0;
+    }
+
+    if (rawValue is int) {
+      return rawValue;
+    }
+
+    if (rawValue is num) {
+      return rawValue.toInt();
+    }
+
+    if (rawValue is List) {
+      if (rawValue.isEmpty) {
+        return 0;
+      }
+
+      return int.tryParse(
+            rawValue.first.toString(),
+          ) ??
+          0;
+    }
+
+    return int.tryParse(
+          rawValue.toString(),
+        ) ??
+        0;
+  }
+
+  static Map<String, int> _parseTargetArea(
+    dynamic rawTargetArea,
+  ) {
+    final Map<String, int> result = <String, int>{};
+
+    if (rawTargetArea is Map) {
+      rawTargetArea.forEach((dynamic key, dynamic value) {
+        final String areaName = key.toString().trim();
+
+        if (areaName.isEmpty) {
+          return;
+        }
+
+        result[areaName] = int.tryParse(value.toString()) ?? 0;
+      });
+
+      return result;
+    }
+
+    if (rawTargetArea is! List) {
+      return result;
+    }
+
+    for (final dynamic item in rawTargetArea) {
+      if (item is! Map) {
+        continue;
+      }
+
+      item.forEach((dynamic key, dynamic value) {
+        final String areaName = key.toString().trim();
+
+        if (areaName.isEmpty) {
+          return;
+        }
+
+        result[areaName] = int.tryParse(value.toString()) ?? 0;
+      });
+    }
+
+    return result;
+  }
+
+  static Future<void> cacheTargetArea(
+    Map<String, int> targetArea,
+    String idSite,
+  ) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      final String cacheKey = 'cached_target_area_$idSite';
+
+      final String updatedAtKey = 'cached_target_area_updated_at_$idSite';
+
+      await prefs.setString(
+        cacheKey,
+        jsonEncode(targetArea),
+      );
+
+      await prefs.setString(
+        updatedAtKey,
+        DateTime.now().toIso8601String(),
+      );
+
+      log(
+        'Cache target area berhasil '
+        '| site: $idSite '
+        '| data: $targetArea',
+      );
+    } catch (e) {
+      throw Exception(
+        'Gagal menyimpan cache target area: $e',
+      );
+    }
+  }
+
+  static Future<Map<String, int>> getCachedTargetArea({
+    String idSite = '',
+  }) async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+      final String cacheKey = 'cached_target_area_$idSite';
+
+      final String? cachedData = prefs.getString(cacheKey);
+
+      if (cachedData == null || cachedData.trim().isEmpty) {
+        return <String, int>{};
+      }
+
+      final dynamic decodedData = jsonDecode(cachedData);
+
+      if (decodedData is! Map) {
+        return <String, int>{};
+      }
+
+      final Map<String, int> result = <String, int>{};
+
+      decodedData.forEach(
+        (dynamic key, dynamic value) {
+          result[key.toString()] = int.tryParse(value.toString()) ?? 0;
+        },
+      );
+
+      log(
+        'Cache target area '
+        '| site: $idSite '
+        '| data: $result',
+      );
+
+      return result;
+    } catch (e) {
+      log('Error mengambil cache target area: $e');
+      return <String, int>{};
+    }
+  }
+
+  static Future<List<String>> getCachedAreaNames({
+    String idSite = '',
+  }) async {
+    final Map<String, int> targetArea = await getCachedTargetArea(
+      idSite: idSite,
+    );
+
+    final List<String> areas = targetArea.keys.toList();
+
+    areas.sort(
+      (String a, String b) => a.toLowerCase().compareTo(
+            b.toLowerCase(),
+          ),
+    );
+
+    return areas;
+  }
+
+  static Future<DateTime?> getCachedTargetAreaUpdatedAt({
+    String idSite = '',
+  }) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    final String updatedAtKey = 'cached_target_area_updated_at_$idSite';
+
+    final String? value = prefs.getString(updatedAtKey);
+
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    return DateTime.tryParse(value);
+  }
+
+  // mendapatkan daftar unit di salah satu site
+//   static Future<List<UnitTire>> getUnits(String site) async {
+//     final urll = await selectedUrl('get_tire_running');
+//     log('url get tire running : $urll$site');
+//     final response = await http.get(Uri.parse('$urll$site'));
+
+//     // try {
+//     final body = response.body;
+//     final result = jsonDecode(body);
+
+//     log('result new get tire running : $result');
+
+//     List<Map<String, dynamic>> recommendPressure =
+//         List<Map<String, dynamic>>.from(result['recc_press']);
+
+//     List<UnitTire> listUnitTire = List<UnitTire>.from(result['data'].map(
+//       (unit) => UnitTire.fromJson(unit),
+//     ));
+//     final totalRow = result['total row'];
+
+//     int countAllTire = 0;
+
+//     if (totalRow is List && totalRow.isNotEmpty) {
+//       countAllTire = int.tryParse(totalRow[0].toString()) ?? 0;
+//     } else {
+//       countAllTire = int.tryParse(totalRow.toString()) ?? 0;
+//     }
+//     // int countAllTire = result['total row'][0];
+//     // log('ban all : ${result['total row']}');
+
+//     List<UnitTire> fixData = [];
+
+//     Set<String> seenUnitNumbers = {}; // Untuk menyimpan unitNumber unik
+//     Map<String, int> sizeCount = {};
+//     Set<String> sizes = {};
+
+//     for (var unit in listUnitTire) {
+//       // Gunakan Set untuk pengecekan unitNumber agar lebih cepat
+//       if (seenUnitNumbers.add(unit.unitNumber ?? '')) {
+//         fixData.add(unit); // Tambahkan hanya jika unitNumber belum ada
+//       }
+
+//       String size = unit.size ?? '';
+//       if (size.isNotEmpty) {
+//         sizes.add(size); // Simpan ukuran unik
+
+//         // Hitung sizeCount untuk SEMUA data, tanpa tergantung fixData
+//         sizeCount[size] = (sizeCount[size] ?? 0) + 1;
+//       }
+//     }
+// // Buat struktur data baru
+//     Map<String, dynamic> sizeResult = {
+//       "sizes": sizes.toList(), // Konversi Set ke List
+//       "sizeCount": sizeCount
+//     };
+
+//     // save unit
+//     await cacheUnits(listUnitTire, site);
+//     // save all tire count
+//     await cacheCountAllTire(countAllTire, site);
+//     // save recommendation pressure
+//     await cacheReccPress(recommendPressure);
+//     // save size tire with quantity
+//     await cacheTireSize(sizeCount, sizes.toList(), site);
+
+//     // for check data unit monthly
+//     await saveMonthYear(DateTime.now());
+//     return fixData;
+//     // } catch (e) {
+//     //   throw Exception(e.toString());
+//     // }
+//   }
 
   static Future<void> cacheTireSize(
       Map<String, int> sizeCount, List<String> sizes, String idSite) async {
