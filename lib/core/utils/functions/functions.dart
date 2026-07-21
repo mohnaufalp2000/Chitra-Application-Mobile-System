@@ -1373,10 +1373,12 @@ Future<List<int>> createExcel(String type,
           // Q = Tire Accessories (jika site 33)
           if (daily[i]['idSite'] == '33') {
             sheet.getRangeByName('S${rowIndex}').setText(
-                  posisi[j]['tireAccessories']
-                      .map((acc) =>
-                          '${acc['name']} (${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})')
-                      .join('\n'),
+                  (posisi[j]['tireAccessories'] == null)
+                      ? ''
+                      : posisi[j]['tireAccessories']
+                          .map((acc) =>
+                              '${acc['name']} (${acc['condition']} ${(acc['remark'] != '') ? ': ${acc['remark']}' : ''})')
+                          .join('\n'),
                 );
             sheet
                 .getRangeByName('T${rowIndex}')
