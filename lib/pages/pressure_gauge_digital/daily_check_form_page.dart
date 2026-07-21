@@ -13384,6 +13384,17 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       //   pit.add('WS');
                       // }
                       switch (idSite) {
+                        case '5':
+                          pit.add('PITSTOP AMBON');
+                          pit.add('PITSTOP BANGKA');
+                          pit.add('PITSTOP BUTON');
+                          pit.add('PITSTOP IPD');
+                          pit.add('PITSTOP MEDAN');
+                          pit.add('PITSTOP OB2');
+                          pit.add('PITSTOP SABANG');
+                          pit.add('WSP');
+                          pit.add('Other');
+                          break;
                         case '52':
                           pit.add('Utara');
                           pit.add('Selatan');
