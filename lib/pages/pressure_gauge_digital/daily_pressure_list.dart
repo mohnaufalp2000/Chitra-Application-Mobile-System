@@ -5097,9 +5097,12 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                   subtitle: Text(
                                                     [
                                                       unit.model ?? '',
-                                                      if ((unit.area ?? '')
-                                                          .trim()
-                                                          .isNotEmpty)
+                                                      if (homeState
+                                                                  .currentSiteId ==
+                                                              '5' &&
+                                                          (unit.area ?? '')
+                                                              .trim()
+                                                              .isNotEmpty)
                                                         'Area: ${unit.area}',
                                                     ].where((value) {
                                                       return value
@@ -5109,6 +5112,21 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                     style: getGreyTextStyle(
                                                         grey6A707C),
                                                   ),
+                                                  // subtitle: Text(
+                                                  //   [
+                                                  //     unit.model ?? '',
+                                                  //     if ((unit.area ?? '')
+                                                  //         .trim()
+                                                  //         .isNotEmpty)
+                                                  //       'Area: ${unit.area}',
+                                                  //   ].where((value) {
+                                                  //     return value
+                                                  //         .trim()
+                                                  //         .isNotEmpty;
+                                                  //   }).join('\n'),
+                                                  //   style: getGreyTextStyle(
+                                                  //       grey6A707C),
+                                                  // ),
                                                   trailing: const Icon(
                                                       Icons.arrow_forward_ios),
                                                 ),
