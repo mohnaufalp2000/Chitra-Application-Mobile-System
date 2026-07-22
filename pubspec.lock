@@ -1480,10 +1480,9 @@ packages:
   share_plus:
     dependency: "direct main"
     description:
-      name: share_plus
-      sha256: "3ef39599b00059db0990ca2e30fca0a29d8b37aae924d60063f8e0184cf20900"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/share_plus"
+      relative: true
+    source: path
     version: "7.2.2"
   share_plus_platform_interface:
     dependency: transitive
