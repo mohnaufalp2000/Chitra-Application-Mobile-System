@@ -1281,7 +1281,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       return '0%';
     }
 
-    final double percentage = (current / target) * 100);
+    final double percentage = (current / target) * 100;
 
     if (percentage == percentage.roundToDouble()) {
       return '${percentage.toStringAsFixed(0)}%';
