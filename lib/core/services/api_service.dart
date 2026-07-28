@@ -195,28 +195,52 @@ class ApiService {
 
   /// 🔹 POST: Send Data Tire Inspection
   static Future<void> sendTireInspection(
-    List<SendTireInspection> inspections,
+    SendTireInspectionRequest request,
   ) async {
     try {
-      // Filter URL Customer
       final url = await selectedUrl('post_tire_inspection') ?? '';
+
+      if (url.isEmpty) {
+        throw Exception('URL post_tire_inspection tidak ditemukan');
+      }
+
+      final body = request.toJson();
+
+      log('=== SEND TIRE INSPECTION ===');
+      log('URL : $url');
+      log('Payload : ${jsonEncode(body)}');
 
       final response = await http.post(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: jsonEncode({
-          'inspects': inspections.map((e) => e.toJson()).toList(),
-        }),
+        body: jsonEncode(body),
       );
-      log('Successful send tire inspection : $response');
+
+      log('=== RESPONSE TIRE INSPECTION ===');
       log('URL : ${response.request?.url}');
       log('Status Code : ${response.statusCode}');
       log('Headers : ${response.headers}');
       log('Body : ${response.body}');
-    } catch (e) {
-      log('Error send tire inspection : $e');
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(
+          'Gagal send tire inspection. '
+          'Status: ${response.statusCode}, '
+          'Body: ${response.body}',
+        );
+      }
+
+      log('Successful send tire inspection');
+    } catch (e, stackTrace) {
+      log(
+        'Error send tire inspection : $e',
+        stackTrace: stackTrace,
+      );
+
+      rethrow;
     }
   }
 

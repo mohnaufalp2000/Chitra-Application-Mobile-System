@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:open_file/open_file.dart';
 import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 class NewTireInspectionState extends GetxController {
   final FirebaseAuth auth = FirebaseAuth.instance;
@@ -131,80 +132,446 @@ class NewTireInspectionState extends GetxController {
     fetchTasks();
   }
 
+  /// Convert URL gambar menjadi Base64 Data URI.
+  ///
+  /// Contoh hasil:
+  /// data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...
+  ///
+  /// Jika URL kosong, "0", atau download gagal,
+  /// akan mengembalikan "0".
+  String getFirstImageUrl(dynamic images) {
+    if (images == null) {
+      return '';
+    }
+
+    // Firestore menyimpan images sebagai List
+    if (images is List) {
+      if (images.isEmpty) {
+        return '';
+      }
+
+      final firstImage = images.first;
+
+      if (firstImage == null) {
+        return '';
+      }
+
+      return firstImage.toString().trim();
+    }
+
+    // Kalau ternyata memang String
+    String value = images.toString().trim();
+
+    // Safety untuk data yang sudah telanjur berbentuk:
+    // [https://....jpg]
+    if (value.startsWith('[') && value.endsWith(']')) {
+      value = value.substring(1, value.length - 1).trim();
+    }
+
+    return value;
+  }
+
+  Future<String> imageUrlToBase64(dynamic imageData) async {
+    try {
+      /// 1. Ambil URL asli dari List/String
+      final String imageUrl = getFirstImageUrl(imageData);
+
+      log('=== CONVERT IMAGE ===');
+      log('Raw image data : $imageData');
+      log('Image URL      : $imageUrl');
+
+      if (imageUrl.isEmpty || imageUrl == '0') {
+        log('Tidak ada gambar');
+        return '0';
+      }
+
+      /// 2. Kalau sudah Base64, langsung return
+      if (imageUrl.startsWith('data:image/')) {
+        log('Image sudah dalam format Base64');
+        return imageUrl;
+      }
+
+      /// 3. Parse URL
+      final Uri? uri = Uri.tryParse(imageUrl);
+
+      if (uri == null) {
+        log('Uri.tryParse gagal: $imageUrl');
+        return '0';
+      }
+
+      log('URI Scheme : ${uri.scheme}');
+      log('URI Host   : ${uri.host}');
+
+      if (uri.scheme != 'http' && uri.scheme != 'https') {
+        log('Invalid scheme: ${uri.scheme}');
+        return '0';
+      }
+
+      if (uri.host.isEmpty) {
+        log('Invalid host: ${uri.host}');
+        return '0';
+      }
+
+      /// 4. DOWNLOAD GAMBAR
+      log('Downloading image...');
+
+      final http.Response response = await http.get(uri);
+
+      log('Download status : ${response.statusCode}');
+      log('Image bytes     : ${response.bodyBytes.length}');
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        log(
+          'Gagal download image. '
+          'Status: ${response.statusCode}',
+        );
+
+        return '0';
+      }
+
+      if (response.bodyBytes.isEmpty) {
+        log('Gambar berhasil didownload tetapi bytes kosong');
+        return '0';
+      }
+
+      /// 5. Tentukan MIME TYPE
+      final String? contentType =
+          response.headers['content-type']?.split(';').first.trim();
+
+      final String mimeType;
+
+      if (contentType != null && contentType.startsWith('image/')) {
+        mimeType = contentType;
+      } else {
+        mimeType = _getImageMimeType(imageUrl);
+      }
+
+      log('Mime Type : $mimeType');
+
+      /// =================================================
+      /// 6. INI BAGIAN YANG MENGUBAH GAMBAR MENJADI BASE64
+      /// =================================================
+
+      final String base64Image = base64Encode(response.bodyBytes);
+
+      /// API kamu minta format:
+      ///
+      /// data:image/jpeg;base64,/9j/4AAQSk...
+      ///
+      final String base64DataUri = 'data:$mimeType;base64,$base64Image';
+
+      log('Base64 berhasil dibuat');
+      log('Base64 length : ${base64DataUri.length}');
+
+      // Jangan log seluruh Base64 karena sangat panjang
+      log(
+        'Base64 preview : '
+        '${base64DataUri.substring(
+          0,
+          base64DataUri.length > 100 ? 100 : base64DataUri.length,
+        )}...',
+      );
+
+      return base64DataUri;
+    } catch (e, stackTrace) {
+      log(
+        'Error converting image to Base64: $e',
+        stackTrace: stackTrace,
+      );
+
+      return '0';
+    }
+  }
+
+  String _getImageMimeType(String url) {
+    final String lowerUrl = url.toLowerCase();
+
+    if (lowerUrl.contains('.png')) {
+      return 'image/png';
+    }
+
+    if (lowerUrl.contains('.webp')) {
+      return 'image/webp';
+    }
+
+    if (lowerUrl.contains('.gif')) {
+      return 'image/gif';
+    }
+
+    if (lowerUrl.contains('.heic')) {
+      return 'image/heic';
+    }
+
+    if (lowerUrl.contains('.jpeg')) {
+      return 'image/jpeg';
+    }
+
+    if (lowerUrl.contains('.jpg')) {
+      return 'image/jpeg';
+    }
+
+    return 'image/jpeg';
+  }
+
+  String _getRimValue(
+    List<dynamic> rimCondition,
+    int index,
+    String key,
+  ) {
+    if (index >= rimCondition.length) {
+      return '';
+    }
+
+    final item = rimCondition[index];
+
+    if (item is! Map) {
+      return '';
+    }
+
+    return item[key]?.toString() ?? '';
+  }
+
   Future<void> sendTireInspection(BuildContext context) async {
     try {
       isSending.value = true;
-      sendTireInspectionProgress.value = 0.1;
-
-      await Future.delayed(const Duration(milliseconds: 300));
-      sendTireInspectionProgress.value = 0.3;
+      sendTireInspectionProgress.value = 0.0;
 
       final List<SendTireInspection> sendTireInspectionData = [];
 
-      for (final task in filteredTasks.value) {
-        final positions = task['posisi'] as List<dynamic>;
+      // Hitung total ban yang akan dikirim
+      int totalTires = 0;
+
+      for (final task in filteredTasks) {
+        final positions = task['posisi'] as List<dynamic>? ?? [];
+        log('posisi ban : ${positions}');
+        totalTires += positions.length;
+      }
+
+      if (totalTires == 0) {
+        throw Exception('Tidak ada data tire inspection yang akan dikirim.');
+      }
+
+      int processedTires = 0;
+
+      for (final task in filteredTasks) {
+        final positions = task['posisi'] as List<dynamic>? ?? [];
 
         for (final tire in positions) {
+          final rimCondition = tire['rimCondition'] as List<dynamic>? ?? [];
+
+          /// ==========================
+          /// CONVERT IMAGE TO BASE64
+          /// ==========================
+
+          String imageBase64 = '0';
+
+          final dynamic images = tire['images'];
+
+          log('Raw tire images : $images');
+          log('Raw tire images type : ${images.runtimeType}');
+
+          if (images != null) {
+            imageBase64 = await imageUrlToBase64(images);
+          }
+
+          log(
+            'Image converted. Base64 length: '
+            '${imageBase64.length}',
+          );
+
+          /// ==========================
+          /// CREATE INSPECTION
+          /// ==========================
+
           sendTireInspectionData.add(
             SendTireInspection(
-              date: task['hari'].toString(),
-              unitNumber: task['unit'].toString(),
-              tirePosition: tire['position'].toString(),
-              pressure: tire['pressure'].toString(),
-              rtd1: tire['rtd1'].toString(),
-              hmOnInspect: tire['hm'].toString(),
-              remark: tire['remarks'].toString(),
-              pics: '',
-              adjPress: tire['adjusmentPressure'].toString(),
-              inspectorLocation: task['pit'].toString(),
-              tireDamage: tire['damageTire'].toString(),
-              brokenComponent: '0',
-              snTire: tire['sn'].toString(),
-              rimBaseCondition: tire['rimCondition'][0]['condition'].toString(),
-              rimBaseRemark: tire['rimCondition'][0]['remark'].toString(),
-              flangeCondition: tire['rimCondition'][1]['condition'].toString(),
-              flangeRemark: tire['rimCondition'][1]['remark'].toString(),
-              lockRingCondition:
-                  tire['rimCondition'][2]['condition'].toString(),
-              lockRingRemark: tire['rimCondition'][2]['remark'].toString(),
-              valveCondition: tire['rimCondition'][3]['condition'].toString(),
-              valveRemark: tire['rimCondition'][3]['remark'].toString(),
-              coreValveCondition:
-                  tire['rimCondition'][4]['condition'].toString(),
-              coreValveRemark: tire['rimCondition'][4]['remark'].toString(),
-              nutStudCondition: tire['rimCondition'][5]['condition'].toString(),
-              nutStudRemark: tire['rimCondition'][5]['remark'].toString(),
-              temperatureStatus: tire['temperatureStatus']?.toString() ?? 'Hot',
-              site: task['id_site'].toString(),
+              date: task['hari']?.toString() ?? '',
+
+              unitNumber: task['unit']?.toString() ?? '',
+
+              tirePosition: tire['position']?.toString() ?? '',
+
+              pressure: tire['pressure']?.toString() ?? '',
+
+              rtd1: tire['rtd1']?.toString() ?? '',
+
+              hmOnInspect: tire['hm']?.toString() ?? '',
+
+              kmOnInspect: tire['km']?.toString() ?? '0',
+
+              remark: tire['remarks']?.toString() ?? '',
+
+              /// Sudah dalam bentuk:
+              /// data:image/jpeg;base64,...
+              pics: imageBase64,
+
+              adjPress: tire['adjusmentPressure']?.toString() ?? '0',
+
+              inspectorLocation: task['pit']?.toString() ?? '',
+
+              area: task['pit']?.toString() ?? '',
+
+              tireDamage: tire['damageTire']?.toString() ?? '',
+
+              brokenComponent: tire['brokenComponent']?.toString() ?? '0',
+
+              snTire: tire['sn']?.toString() ?? '',
+
+              rimBaseCondition: _getRimValue(
+                rimCondition,
+                0,
+                'condition',
+              ),
+
+              rimBaseRemark: _getRimValue(
+                rimCondition,
+                0,
+                'remark',
+              ),
+
+              flangeCondition: _getRimValue(
+                rimCondition,
+                1,
+                'condition',
+              ),
+
+              flangeRemark: _getRimValue(
+                rimCondition,
+                1,
+                'remark',
+              ),
+
+              lockRingCondition: _getRimValue(
+                rimCondition,
+                2,
+                'condition',
+              ),
+
+              lockRingRemark: _getRimValue(
+                rimCondition,
+                2,
+                'remark',
+              ),
+
+              valveCondition: _getRimValue(
+                rimCondition,
+                3,
+                'condition',
+              ),
+
+              valveRemark: _getRimValue(
+                rimCondition,
+                3,
+                'remark',
+              ),
+
+              coreValveCondition: _getRimValue(
+                rimCondition,
+                4,
+                'condition',
+              ),
+
+              coreValveRemark: _getRimValue(
+                rimCondition,
+                4,
+                'remark',
+              ),
+
+              nutStudCondition: _getRimValue(
+                rimCondition,
+                5,
+                'condition',
+              ),
+
+              nutStudRemark: _getRimValue(
+                rimCondition,
+                5,
+                'remark',
+              ),
+
+              temperatureStatus:
+                  tire['temperatureStatus']?.toString().toUpperCase() ?? 'HOT',
+
+              site: task['id_site']?.toString() ?? '',
             ),
           );
+
+          processedTires++;
+
+          /// Progress 0 - 80% untuk proses gambar
+          sendTireInspectionProgress.value =
+              (processedTires / totalTires) * 0.8;
         }
       }
 
-      log(
-        'Payload Tire Inspection : ${jsonEncode({
-              'inspects':
-                  sendTireInspectionData.map((e) => e.toJson()).toList(),
-            })}',
+      /// ==========================
+      /// CREATE REQUEST
+      /// ==========================
+
+      final request = SendTireInspectionRequest(
+        moNumber: filteredTasks.isNotEmpty
+            ? filteredTasks.first['mo_number']?.toString() ?? ''
+            : '',
+        inspects: sendTireInspectionData,
       );
 
-      await ApiService.sendTireInspection(sendTireInspectionData);
+      sendTireInspectionProgress.value = 0.85;
+
+      /// Jangan log seluruh Base64 karena bisa sangat besar.
+      log('=== TIRE INSPECTION REQUEST ===');
+      log('MO Number: ${request.moNumber}');
+      log(
+        'Total inspections: '
+        '${request.inspects.length}',
+      );
+
+      /// ==========================
+      /// SEND API
+      /// ==========================
+
+      sendTireInspectionProgress.value = 0.9;
+
+      await ApiService.sendTireInspection(request);
 
       sendTireInspectionProgress.value = 1.0;
+
+      if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           backgroundColor: Color(0xFF009688),
           content: Text(
             'Send data berhasil!',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Colors.white,
+            ),
           ),
         ),
       );
-    } catch (e) {
-      log('Error send tire inspection : $e');
+    } catch (e, stackTrace) {
+      log(
+        'Error send tire inspection: $e',
+        stackTrace: stackTrace,
+      );
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Send data gagal: $e',
+            style: const TextStyle(
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
     } finally {
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(
+        const Duration(milliseconds: 500),
+      );
+
       isSending.value = false;
       sendTireInspectionProgress.value = 0.0;
     }
