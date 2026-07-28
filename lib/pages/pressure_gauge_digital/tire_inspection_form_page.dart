@@ -1053,9 +1053,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   }
 
   String _selectedPitValue() {
-    if (!_isPitRequired()) {
-      return 'Default';
-    }
+    // if (!_isPitRequired()) {
+    //   return 'Default';
+    // }
 
     if (selectedPit < 0 || selectedPit >= pit.length) {
       return 'Default';
