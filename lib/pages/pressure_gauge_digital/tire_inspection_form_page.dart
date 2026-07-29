@@ -77,6 +77,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
   final HomeState homeState = Get.find<HomeState>();
+  bool get _usesAutomaticDamageRating =>
+      homeState.userAccessCompanyId.value == '1';
 
   bool _isInit = true;
   int selectedMenu = 1;
@@ -2970,14 +2972,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               )),
                                           child: (position[index]['rating'] ==
                                                   '')
-                                              ? Builder(builder: (context) {
-                                                  position[index]['rating'] =
-                                                      'A';
-                                                  return Text(
-                                                    'Rating A',
-                                                    style: getWhiteTextStyle(),
-                                                  );
-                                                })
+                                              ? Text(
+                                                  'Rating',
+                                                  style: getWhiteTextStyle(),
+                                                )
                                               : Text(
                                                   'Rating ${position[index]['rating']}',
                                                   style: getWhiteTextStyle(
@@ -3279,10 +3277,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                       },
                                                                     );
 
-                                                                    position[index]
-                                                                            [
-                                                                            'rating'] =
-                                                                        worstRating;
+                                                                    if (_usesAutomaticDamageRating) {
+                                                                      position[index]
+                                                                              [
+                                                                              'rating'] =
+                                                                          worstRating;
+                                                                    }
 
                                                                     selectedDamage
                                                                         .addAll(

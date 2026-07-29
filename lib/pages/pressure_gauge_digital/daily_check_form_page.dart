@@ -28201,6 +28201,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
   final HomeState homeState = Get.find<HomeState>();
+  bool get _usesAutomaticDamageRating =>
+      homeState.userAccessCompanyId.value == '1';
   bool _isInit = true;
   bool _listenerAdded = false;
 
@@ -30334,12 +30336,68 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                           'Good Condition');
                                                                   }
 
+                                                                  String
+                                                                      automaticRating =
+                                                                      '';
+
+                                                                  if (_usesAutomaticDamageRating) {
+                                                                    const ratingPriority =
+                                                                        <String,
+                                                                            int>{
+                                                                      '': 1,
+                                                                      'A': 1,
+                                                                      'B': 2,
+                                                                      'C': 3,
+                                                                      'X': 4,
+                                                                    };
+
+                                                                    for (final damageRemark
+                                                                        in uniqueDamage) {
+                                                                      final normalizedRemark =
+                                                                          damageRemark
+                                                                              .trim()
+                                                                              .toLowerCase();
+
+                                                                      final matchingDamage =
+                                                                          damageType
+                                                                              .where(
+                                                                        (damage) =>
+                                                                            (damage['remark'] ?? '')
+                                                                                .toString()
+                                                                                .trim()
+                                                                                .toLowerCase() ==
+                                                                            normalizedRemark,
+                                                                      );
+
+                                                                      final currentRating = matchingDamage
+                                                                              .isNotEmpty
+                                                                          ? (matchingDamage.first['rating'] ?? '')
+                                                                              .toString()
+                                                                              .trim()
+                                                                          : (isGoodCondition(damageRemark)
+                                                                              ? 'A'
+                                                                              : '');
+
+                                                                      if ((ratingPriority[currentRating] ??
+                                                                              1) >
+                                                                          (ratingPriority[automaticRating] ??
+                                                                              1)) {
+                                                                        automaticRating =
+                                                                            currentRating;
+                                                                      }
+                                                                    }
+                                                                  }
+
                                                                   position[
                                                                       posIndex] = position[
                                                                           posIndex]
                                                                       .copyWith(
                                                                     luka:
                                                                         uniqueDamage,
+                                                                    rating: _usesAutomaticDamageRating
+                                                                        ? automaticRating
+                                                                        : position[posIndex]
+                                                                            .rating,
                                                                   );
 
                                                                   log('idx luka ban : $posIndex');
@@ -30650,8 +30708,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       //     await receiveRatingTire(dataUnit['unitNumber']);
                       log('list rating : $ratings');
                       setState(() {
-                        for (int i = 0; i < ratings.length; i++) {
-                          // position[i]['rating'] = ratings[i];
+                        for (int i = 0;
+                            i < ratings.length && i < position.length;
+                            i++) {
                           position[i] =
                               position[i].copyWith(rating: ratings[i]);
                         }
@@ -32413,7 +32472,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                                 luka: [
                                                                                   'Good Condition'
                                                                                 ],
-                                                                                rating: 'A',
+                                                                                rating: _usesAutomaticDamageRating ? 'A' : position[posIndex].rating,
                                                                               );
                                                                             });
 
@@ -32515,7 +32574,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                                                     (damage) => damage['remark'].toString().trim(),
                                                                                   )
                                                                                   .toList(),
-                                                                              rating: worstRating,
+                                                                              rating: _usesAutomaticDamageRating ? worstRating : position[posIndex].rating,
                                                                             );
                                                                           });
 
