@@ -16,8 +16,7 @@ class DashboardPage extends StatelessWidget {
     return Scaffold(
       extendBody: true, // 🔹 biar FAB overlap dengan nav bar transparan
       body: Obx(() {
-        final pages = controller.pages;
-        return pages[controller.currentIndex.value];
+        return controller.currentPage;
       }),
 
       // 🔹 Tombol tengah (AI Analyzer)
