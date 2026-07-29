@@ -385,6 +385,8 @@ class NewTireInspectionState extends GetxController {
 
           sendTireInspectionData.add(
             SendTireInspection(
+              idUnitSite: tire['idUnit']?.toString() ?? '',
+
               date: task['hari']?.toString() ?? '',
 
               unitNumber: task['unit']?.toString() ?? '',
@@ -401,8 +403,6 @@ class NewTireInspectionState extends GetxController {
 
               remark: tire['remarks']?.toString() ?? '',
 
-              /// Sudah dalam bentuk:
-              /// data:image/jpeg;base64,...
               pics: imageBase64,
 
               adjPress: tire['adjusmentPressure']?.toString() ?? '0',
@@ -410,6 +410,9 @@ class NewTireInspectionState extends GetxController {
               inspectorLocation: task['pit']?.toString() ?? '',
 
               area: task['pit']?.toString() ?? '',
+
+              /// BARU
+              inspectionPeriod: task['periodTypeLabel']?.toString() ?? '',
 
               tireDamage: tire['damageTire']?.toString() ?? '',
 
@@ -453,39 +456,54 @@ class NewTireInspectionState extends GetxController {
                 'remark',
               ),
 
-              valveCondition: _getRimValue(
+              /// BARU
+              /// index 3 = O-RING
+              oRingCondition: _getRimValue(
                 rimCondition,
                 3,
+                'condition',
+              ),
+
+              oRingRemark: _getRimValue(
+                rimCondition,
+                3,
+                'remark',
+              ),
+
+              /// Index bergeser karena O-RING
+              valveCondition: _getRimValue(
+                rimCondition,
+                4,
                 'condition',
               ),
 
               valveRemark: _getRimValue(
                 rimCondition,
-                3,
+                4,
                 'remark',
               ),
 
               coreValveCondition: _getRimValue(
                 rimCondition,
-                4,
+                5,
                 'condition',
               ),
 
               coreValveRemark: _getRimValue(
                 rimCondition,
-                4,
+                5,
                 'remark',
               ),
 
               nutStudCondition: _getRimValue(
                 rimCondition,
-                5,
+                6,
                 'condition',
               ),
 
               nutStudRemark: _getRimValue(
                 rimCondition,
-                5,
+                6,
                 'remark',
               ),
 

@@ -920,7 +920,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
       return Expanded(
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           onTap: () {
             setState(() {
               selectedPeriodType = code;
@@ -929,53 +929,57 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 14,
+              horizontal: 8,
+              vertical: 12,
             ),
             decoration: BoxDecoration(
               color: isSelected ? Colors.orange : greyF7F8F9,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isSelected ? Colors.orange : Colors.grey.shade300,
-                width: isSelected ? 2 : 1,
+                width: isSelected ? 1.5 : 1,
               ),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: Colors.orange.withOpacity(0.20),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
+                        color: Colors.orange.withOpacity(0.15),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
                       ),
                     ]
                   : null,
             ),
-            child: Column(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
                   icon,
                   color: isSelected ? Colors.white : Colors.black87,
-                  size: 28,
+                  size: 20,
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: isSelected
-                      ? getWhiteTextStyle(
-                          fontSize: 14,
-                          fontWeight: w700,
-                        )
-                      : getBlackTextStyle(
-                          fontSize: 14,
-                          fontWeight: w700,
-                        ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: isSelected
+                        ? getWhiteTextStyle(
+                            fontSize: 12,
+                            fontWeight: w700,
+                          )
+                        : getBlackTextStyle(
+                            fontSize: 12,
+                            fontWeight: w700,
+                          ),
+                  ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(width: 4),
                 Text(
-                  code,
+                  '($code)',
                   style: TextStyle(
                     color: isSelected ? Colors.white70 : Colors.grey.shade600,
-                    fontSize: 12,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -994,19 +998,19 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             const Icon(
               Icons.fact_check_outlined,
               color: Colors.orange,
-              size: 30,
+              size: 22,
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 6),
             Text(
               'Inspection Period',
               style: getBlackTextStyle(
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: w700,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           children: [
             buildOption(
@@ -1014,7 +1018,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               label: 'Period Inspection',
               icon: Icons.manage_search_outlined,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             buildOption(
               code: 'PE',
               label: 'Period End',
@@ -1925,6 +1929,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                     'remark': ''
                   },
                   {
+                    'title': 'O-RING',
+                    'jobDescription': '',
+                    'condition': 'Good',
+                    'remark': ''
+                  },
+                  {
                     'title': 'VALVE (TERPASANG/TIDAK TERPASANG)',
                     'jobDescription': '',
                     'condition': 'Good',
@@ -2102,7 +2112,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                     const SizedBox(
                       height: 12,
                     ),
-                    if (homeState.userAccessId.value == '5')
+                    if (homeState.userAccessCompanyId.value == '1')
                       _buildPeriodTypeSelector(),
                     const SizedBox(
                       height: 16,
