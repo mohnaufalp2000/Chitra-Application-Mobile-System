@@ -63,6 +63,15 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
       selectedImages.removeAt(index);
       selectedImageTypes.removeAt(index);
     } else {
+      if (selectedImages.length >= 4) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Maksimal 4 gambar dapat dipilih.'),
+          ),
+        );
+        return;
+      }
+
       selectedImages.add(url);
       selectedImageTypes.add(type);
     }
@@ -104,6 +113,8 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
     required String imagePath,
     required Function(double) onProgress,
   }) async {
+    final bool isRejected =
+        data['status']?.toString().trim().toUpperCase() == 'REJECT';
     final totalStep = selectedImages.length + 2;
     int currentStep = 0;
 
@@ -144,33 +155,83 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
         .take(1)
         .toList();
 
-    final injuryImages = selectedWithType
-        .where((img) => img['type'] != 'Serial Number')
-        .take(3)
-        .toList();
+    final injuryImages =
+        selectedWithType.where((img) => img['type'] != 'Serial Number');
 
-    final selectedForPdf = [...snImages, ...injuryImages];
+    final selectedForPdf = [
+      ...snImages,
+      ...injuryImages,
+    ].take(4).toList();
     print('selected for pdf : ${selectedForPdf}');
 
-    // Image 1
-    final Uint8List imageData1 =
-        await getImageFromUrl(selectedForPdf[0]['image'] ?? '');
-    final image1 = p.MemoryImage(imageData1);
+    final pdfImages = await Future.wait(
+      selectedForPdf.map(
+        (item) async => p.MemoryImage(
+          await getImageFromUrl(item['image']?.toString() ?? ''),
+        ),
+      ),
+    );
 
-    // Image 2
-    final Uint8List imageData2 =
-        await getImageFromUrl(selectedForPdf[1]['image'] ?? '');
-    final image2 = p.MemoryImage(imageData2);
+    p.Widget buildImageItem(int index) {
+      final item = selectedForPdf[index];
 
-    // Image 3
-    final Uint8List imageData3 =
-        await getImageFromUrl(selectedForPdf[2]['image'] ?? '');
-    final image3 = p.MemoryImage(imageData3);
+      return p.Column(
+        children: [
+          p.Container(
+            decoration: p.BoxDecoration(
+              border: p.Border.all(color: PdfColors.black, width: 1),
+            ),
+            child: p.ClipRRect(
+              child: p.SizedBox(
+                width: 200,
+                height: 160,
+                child: p.Transform.rotate(
+                  angle: -(item['rotation'] as double? ?? 0.0),
+                  child: p.Image(pdfImages[index], fit: p.BoxFit.cover),
+                ),
+              ),
+            ),
+          ),
+          p.Container(
+            width: 200,
+            decoration: p.BoxDecoration(
+              border: p.Border.all(color: PdfColors.black, width: 1),
+            ),
+            child: p.Padding(
+              padding: const p.EdgeInsets.all(4),
+              child: p.Center(
+                child: p.Text(
+                  item['type']?.toString() ?? '',
+                  textAlign: p.TextAlign.center,
+                  style: const p.TextStyle(fontSize: 20),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
-    // Image 4
-    final Uint8List imageData4 =
-        await getImageFromUrl(selectedForPdf[3]['image'] ?? '');
-    final image4 = p.MemoryImage(imageData4);
+    final imageRows = <p.Widget>[];
+    for (int index = 0; index < selectedForPdf.length; index += 2) {
+      final rowItems = <p.Widget>[buildImageItem(index)];
+
+      if (index + 1 < selectedForPdf.length) {
+        rowItems.add(p.SizedBox(width: 12));
+        rowItems.add(buildImageItem(index + 1));
+      }
+
+      imageRows.add(
+        p.Row(
+          mainAxisAlignment: p.MainAxisAlignment.center,
+          children: rowItems,
+        ),
+      );
+
+      if (index + 2 < selectedForPdf.length) {
+        imageRows.add(p.SizedBox(height: 24));
+      }
+    }
 
     final pdf = p.Document();
 
@@ -543,171 +604,7 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
                                       width: 1), // Border sekeliling row
                                 ),
                                 child: p.Column(
-                                  children: [
-                                    p.Row(children: [
-                                      p.Column(children: [
-                                        p.Container(
-                                          decoration: p.BoxDecoration(
-                                            border: p.Border.all(
-                                                color: PdfColors.black,
-                                                width:
-                                                    1), // Border untuk gambar
-                                          ),
-                                          child: p.ClipRRect(
-                                            child: p.SizedBox(
-                                              width: 200,
-                                              height: 160,
-                                              child: p.Transform.rotate(
-                                                angle: -(selectedForPdf[0]
-                                                    ['rotation']),
-                                                child: p.Image(image1,
-                                                    fit: p.BoxFit.cover),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        p.Container(
-                                          width: 200,
-                                          decoration: p.BoxDecoration(
-                                            border: p.Border.all(
-                                                color: PdfColors.black,
-                                                width: 1), // Border untuk text
-                                          ),
-                                          child: p.Padding(
-                                            padding: p.EdgeInsets.all(4),
-                                            child: p.Center(
-                                                child: p.Text('Serial Number',
-                                                    textAlign:
-                                                        p.TextAlign.center,
-                                                    style: const p.TextStyle(
-                                                        fontSize: 20))),
-                                          ),
-                                        )
-                                      ]),
-                                      p.SizedBox(width: 12),
-                                      p.Column(children: [
-                                        p.Container(
-                                          decoration: p.BoxDecoration(
-                                            border: p.Border.all(
-                                                color: PdfColors.black,
-                                                width: 1),
-                                          ),
-                                          child: p.ClipRRect(
-                                            child: p.SizedBox(
-                                              width: 200,
-                                              height: 160,
-                                              child: p.Transform.rotate(
-                                                angle: -(selectedForPdf[1]
-                                                    ['rotation']),
-                                                child: p.Image(image2,
-                                                    fit: p.BoxFit.cover),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        p.Container(
-                                          width: 200,
-                                          decoration: p.BoxDecoration(
-                                            border: p.Border.all(
-                                                color: PdfColors.black,
-                                                width: 1),
-                                          ),
-                                          child: p.Padding(
-                                            padding: p.EdgeInsets.all(4),
-                                            child: p.Center(
-                                                child: p.Text(
-                                                    '${selectedForPdf[1]['type'] ?? ''}',
-                                                    textAlign:
-                                                        p.TextAlign.center,
-                                                    style: p.TextStyle(
-                                                        fontSize: 20))),
-                                          ),
-                                        )
-                                      ])
-                                    ]),
-                                    p.SizedBox(height: 24),
-                                    p.Row(children: [
-                                      p.Column(children: [
-                                        p.Container(
-                                          decoration: p.BoxDecoration(
-                                            border: p.Border.all(
-                                                color: PdfColors.black,
-                                                width: 1),
-                                          ),
-                                          child: p.ClipRRect(
-                                            child: p.SizedBox(
-                                              width: 200,
-                                              height: 160,
-                                              child: p.Transform.rotate(
-                                                angle: -(selectedForPdf[2]
-                                                    ['rotation']),
-                                                child: p.Image(image3,
-                                                    fit: p.BoxFit.cover),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        p.Container(
-                                          width: 200,
-                                          decoration: p.BoxDecoration(
-                                            border: p.Border.all(
-                                                color: PdfColors.black,
-                                                width: 1),
-                                          ),
-                                          child: p.Padding(
-                                            padding: p.EdgeInsets.all(4),
-                                            child: p.Center(
-                                                child: p.Text(
-                                                    '${selectedForPdf[2]['type'] ?? ''}',
-                                                    textAlign:
-                                                        p.TextAlign.center,
-                                                    style: p.TextStyle(
-                                                        fontSize: 20))),
-                                          ),
-                                        )
-                                      ]),
-                                      p.SizedBox(width: 12),
-                                      p.Column(children: [
-                                        p.Container(
-                                          decoration: p.BoxDecoration(
-                                            border: p.Border.all(
-                                                color: PdfColors.black,
-                                                width: 1),
-                                          ),
-                                          child: p.ClipRRect(
-                                            child: p.SizedBox(
-                                              width: 200,
-                                              height: 160,
-                                              child: p.Transform.rotate(
-                                                angle: -(selectedForPdf[3]
-                                                    ['rotation']),
-                                                child: p.Image(image4,
-                                                    fit: p.BoxFit.cover),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        p.Container(
-                                          width: 200,
-                                          decoration: p.BoxDecoration(
-                                            border: p.Border.all(
-                                                color: PdfColors.black,
-                                                width: 1),
-                                          ),
-                                          child: p.Padding(
-                                            padding: p.EdgeInsets.all(4),
-                                            child: p.Center(
-                                                child: p.Text(
-                                                    '${selectedForPdf[3]['type'] ?? ''}',
-                                                    textAlign:
-                                                        p.TextAlign.center,
-                                                    style: p.TextStyle(
-                                                        fontSize: 20))),
-                                          ),
-                                        )
-                                      ])
-                                    ]),
-                                  ],
+                                  children: imageRows,
                                 ),
                               )
                             ],
@@ -811,33 +708,67 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
                                 style: const p.TextStyle(
                                   fontSize: 10,
                                 ),
-                                children: [
-                                  const p.TextSpan(
-                                    text:
-                                        'Berdasarkan spesifikasi dan hasil inspeksi kondisi luka pada tire tersebut, maka kami menyatakan ',
-                                  ),
-                                  p.TextSpan(
-                                    text: 'layak dan aman',
-                                    style: p.TextStyle(
-                                      fontWeight: p.FontWeight.bold,
-                                      decoration: p.TextDecoration.underline,
-                                    ),
-                                  ),
-                                  const p.TextSpan(
-                                    text: ' untuk di lanjutkan proses ',
-                                  ),
-                                  p.TextSpan(
-                                    text: 'repair',
-                                    style: p.TextStyle(
-                                      fontWeight: p.FontWeight.bold,
-                                      decoration: p.TextDecoration.underline,
-                                    ),
-                                  ),
-                                  const p.TextSpan(
-                                    text:
-                                        '. Kami mohon approval untuk kelengkapan berkas sebagai proses repair selanjutnya.',
-                                  ),
-                                ],
+                                children: isRejected
+                                    ? [
+                                        const p.TextSpan(
+                                          text:
+                                              'Berdasarkan spesifikasi dan hasil inspeksi kondisi luka pada tire tersebut, maka kami menyatakan tire tersebut ',
+                                        ),
+                                        p.TextSpan(
+                                          text: 'tidak layak dan tidak aman',
+                                          style: p.TextStyle(
+                                              fontWeight: p.FontWeight.bold,
+                                              decoration:
+                                                  p.TextDecoration.underline,
+                                              color: PdfColors.red),
+                                        ),
+                                        const p.TextSpan(
+                                          text:
+                                              ' untuk dilanjutkan ke proses repair. Tire berstatus ',
+                                        ),
+                                        p.TextSpan(
+                                          text: 'REJECT',
+                                          style: p.TextStyle(
+                                            fontWeight: p.FontWeight.bold,
+                                            decoration:
+                                                p.TextDecoration.underline,
+                                            color: PdfColors.red,
+                                          ),
+                                        ),
+                                        const p.TextSpan(
+                                          text:
+                                              ' dan tidak diperbolehkan menjalani proses repair.',
+                                        ),
+                                      ]
+                                    : [
+                                        const p.TextSpan(
+                                          text:
+                                              'Berdasarkan spesifikasi dan hasil inspeksi kondisi luka pada tire tersebut, maka kami menyatakan ',
+                                        ),
+                                        p.TextSpan(
+                                          text: 'layak dan aman',
+                                          style: p.TextStyle(
+                                            fontWeight: p.FontWeight.bold,
+                                            decoration:
+                                                p.TextDecoration.underline,
+                                          ),
+                                        ),
+                                        const p.TextSpan(
+                                          text: ' untuk di lanjutkan proses ',
+                                        ),
+                                        p.TextSpan(
+                                          text: 'repair',
+                                          style: p.TextStyle(
+                                            fontWeight: p.FontWeight.bold,
+                                            decoration:
+                                                p.TextDecoration.underline,
+                                          ),
+                                        ),
+                                        const p.TextSpan(
+                                          text:
+                                              '. Kami mohon approval untuk kelengkapan berkas sebagai proses repair selanjutnya.',
+                                        ),
+                                      ],
                               ),
                             ),
                           ),
@@ -1148,6 +1079,16 @@ class _TireRepairPDFPageState extends State<TireRepairPDFPage> {
                 onPressed: _isGeneratingPdf
                     ? null
                     : () async {
+                        if (selectedImages.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                  'Pilih minimal 1 gambar untuk export PDF.'),
+                            ),
+                          );
+                          return;
+                        }
+
                         setState(() {
                           _isGeneratingPdf = true;
                           _pdfProgress = 0;

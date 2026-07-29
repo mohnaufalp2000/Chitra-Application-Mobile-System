@@ -4,7 +4,6 @@ import 'package:appcheck/appcheck.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/home/new_tire_inspection_page.dart';
-import 'package:camos/pages/home/tire_inspection_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -15,12 +14,17 @@ class DashboardState extends GetxController {
   final HomeState homeController = Get.put(HomeState());
 
   var currentIndex = 0.obs;
+  Widget? _homePage;
+  Widget? _inspectionPage;
 
-  final pages = <Widget>[
-    const Center(child: HomePage()),
-    // Center(child: TireInspectionPage()),
-    Center(child: NewTireInspectionPage()),
-  ];
+  Widget get currentPage {
+    switch (currentIndex.value) {
+      case 1:
+        return _inspectionPage ??= Center(child: NewTireInspectionPage());
+      default:
+        return _homePage ??= const Center(child: HomePage());
+    }
+  }
 
   void changePage(int index) {
     currentIndex.value = index;

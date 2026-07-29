@@ -551,8 +551,7 @@ class ApiService {
 
       log('URL get tire running: $requestUrl');
 
-      final response =
-          await http.get(requestUrl).timeout(const Duration(seconds: 30));
+      final response = await http.get(requestUrl);
 
       log('Status get tire running: ${response.statusCode}');
 

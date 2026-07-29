@@ -54,15 +54,8 @@ class NewTireInspectionState extends GetxController {
       log('=== FETCH tire_inspection ===');
       log('currentIdSite: $currentIdSite');
 
-      // Coba fetch semua dulu tanpa filter untuk debug
-      final allSnapshot = await firestore.collection('tire_inspection').get();
-
-      log('Total semua dokumen tire_inspection: ${allSnapshot.docs.length}');
-      for (final doc in allSnapshot.docs) {
-        log('doc id: ${doc.id} | id_site: ${doc.data()['id_site']} | unit: ${doc.data()['unit']}');
-      }
-
-      // Fetch dengan filter id_site
+      // Ambil hanya data site aktif. Mengambil seluruh koleksi di sini dapat
+      // menghabiskan heap Android sebelum hasil query sampai ke Dart.
       final querySnapshot = await firestore
           .collection('tire_inspection')
           .where('id_site', isEqualTo: currentIdSite)
