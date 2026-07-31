@@ -1,12 +1,11 @@
 import 'dart:developer';
 
-import 'package:bloc/bloc.dart';
 import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/site.dart';
 import 'package:camos/core/services/model/unit_tire.dart';
 import 'package:camos/core/utils/data/spm.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 part 'spm_event.dart';
 part 'spm_state.dart';
@@ -26,14 +25,15 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
 
         log('all sites spm : $allSites');
 
-        final idCompany = allSites
-            .firstWhere((site) => site.idSite == event.idSite,
-                orElse: () => Site(idSite: '', idCompany: ''))
-            .idCompany;
+        final selectedSite = allSites.firstWhere(
+          (site) => site.idSite == event.idSite,
+          orElse: () => Site(idSite: '', idCompany: ''),
+        );
+        final idCompany = selectedSite.idCompany?.trim() ?? '';
 
-        print('id company : $idCompany');
+        log('id company : $idCompany');
 
-        if (idCompany!.isEmpty) {
+        if (idCompany.isEmpty) {
           emit(SpmLoadedState(listSpm: [], isShowMore: []));
           return;
         }
@@ -45,10 +45,7 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
 
         // final isCts = '1';
 
-        final isCts = allSites
-            .firstWhere((site) => site.idSite == event.idSite,
-                orElse: () => Site(idSite: '', idCompany: ''))
-            .cts;
+        final isCts = selectedSite.cts;
 
         // final responseQuery = await firestore
         //     .collection('url_spm')
@@ -64,7 +61,12 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
           return;
         }
 
-        final urlSpm = responseQuery.docs.first.data()['url'];
+        final urlSpm =
+            responseQuery.docs.first.data()['url']?.toString().trim() ?? '';
+        if (urlSpm.isEmpty) {
+          emit(SpmLoadedState(listSpm: [], isShowMore: []));
+          return;
+        }
 
         // --- LOGIKA UTAMA DENGAN PERCABANGAN ---
 
@@ -93,10 +95,16 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
           // Buat "kamus" rating dengan kunci komposit
           final ratingMap = <String, String>{};
           for (final unit in dataUnits) {
-            if (unit.unitNumber!.isNotEmpty && unit.posisi!.isNotEmpty) {
-              final key = '${unit.unitNumber}-${unit.posisi}';
-              ratingMap[key] = unit.rating ?? '';
+            final unitNumber = unit.unitNumber?.trim() ?? '';
+            final posisi = unit.posisi?.trim() ?? '';
+
+            if (unitNumber.isEmpty || posisi.isEmpty) {
+              log('Data rating SPM dilewati karena unit/posisi kosong: $unit');
+              continue;
             }
+
+            final key = '$unitNumber-$posisi';
+            ratingMap[key] = unit.rating?.trim() ?? '';
           }
 
           log('unit spm rating bloc 2 : $ratingMap'); // aman
@@ -136,6 +144,7 @@ class SpmBloc extends Bloc<SpmEvent, SpmState> {
       } catch (e, stackTrace) {
         // Tambahkan stackTrace untuk debugging lebih detail
         log('Error in SpmBloc: $e', stackTrace: stackTrace);
+        emit(SpmLoadedState(listSpm: [], isShowMore: []));
       }
     });
   }
