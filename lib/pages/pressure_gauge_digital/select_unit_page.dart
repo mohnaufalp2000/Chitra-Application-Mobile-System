@@ -771,6 +771,9 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   /// Loading khusus pengambilan status Checked.
   bool isLoadingCheckedUnits = false;
 
+  /// Menjaga agar hasil request site lama tidak menimpa site yang baru.
+  int checkedUnitsRequestId = 0;
+
   /// Listener perubahan site.
   Worker? siteWorker;
 
@@ -873,6 +876,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   /// 1. id_site sama dengan site aktif.
   /// 2. Tanggal inspeksi sama dengan hari ini.
   Future<void> fetchCheckedUnits() async {
+    final int requestId = ++checkedUnitsRequestId;
     final String currentSiteId = homeState.currentSiteId.trim();
 
     if (currentSiteId.isEmpty) {
@@ -897,63 +901,86 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       log('FETCH CHECKED TIRE INSPECTION');
       log('Current site ID: $currentSiteId');
 
-      final querySnapshot = await firestore
-          .collection('tire_inspection')
-          .where(
-            'id_site',
-            isEqualTo: currentSiteId,
-          )
-          .get();
-
       final DateTime now = DateTime.now();
-
       final Map<String, DateTime> result = <String, DateTime>{};
+      DocumentSnapshot<Map<String, dynamic>>? lastDocument;
+      const int pageSize = 10;
 
-      for (final document in querySnapshot.docs) {
-        final Map<String, dynamic> data = document.data();
+      while (true) {
+        var query = firestore
+            .collection('tire_inspection')
+            .where(
+              'id_site',
+              isEqualTo: currentSiteId,
+            )
+            .limit(pageSize);
 
-        final String unitNumber = normalizeUnitNumber(
-          data['unit']?.toString(),
-        );
-
-        if (unitNumber.isEmpty) {
-          continue;
+        if (lastDocument != null) {
+          query = query.startAfterDocument(lastDocument);
         }
 
-        /// Prioritas field "hari".
-        /// Jika tidak tersedia, gunakan field "tanggal".
-        final dynamic dateValue = data['hari'] ?? data['tanggal'];
+        final querySnapshot = await query.get();
 
-        final DateTime? inspectionDate = parseInspectionDate(dateValue);
+        if (requestId != checkedUnitsRequestId ||
+            currentSiteId != homeState.currentSiteId.trim()) {
+          return;
+        }
 
-        if (inspectionDate == null) {
-          log(
-            'Tanggal tidak valid '
-            '| unit: $unitNumber '
-            '| value: $dateValue',
+        if (querySnapshot.docs.isEmpty) {
+          break;
+        }
+
+        for (final document in querySnapshot.docs) {
+          final Map<String, dynamic> data = document.data();
+
+          final String unitNumber = normalizeUnitNumber(
+            data['unit']?.toString(),
           );
 
-          continue;
+          if (unitNumber.isEmpty) {
+            continue;
+          }
+
+          /// Prioritas field "hari".
+          /// Jika tidak tersedia, gunakan field "tanggal".
+          final dynamic dateValue = data['hari'] ?? data['tanggal'];
+
+          final DateTime? inspectionDate = parseInspectionDate(dateValue);
+
+          if (inspectionDate == null) {
+            log(
+              'Tanggal tidak valid '
+              '| unit: $unitNumber '
+              '| value: $dateValue',
+            );
+
+            continue;
+          }
+
+          /// Hanya inspeksi hari ini yang dianggap Checked.
+          if (!isSameDate(inspectionDate, now)) {
+            continue;
+          }
+
+          final DateTime? previousDate = result[unitNumber];
+
+          /// Jika terdapat lebih dari satu dokumen pada unit
+          /// yang sama, gunakan tanggal/waktu terbaru.
+          if (previousDate == null || inspectionDate.isAfter(previousDate)) {
+            result[unitNumber] = inspectionDate;
+          }
+
+          log(
+            'CHECKED '
+            '| unit: $unitNumber '
+            '| date: $inspectionDate',
+          );
         }
 
-        /// Hanya inspeksi hari ini yang dianggap Checked.
-        if (!isSameDate(inspectionDate, now)) {
-          continue;
+        lastDocument = querySnapshot.docs.last;
+        if (querySnapshot.docs.length < pageSize) {
+          break;
         }
-
-        final DateTime? previousDate = result[unitNumber];
-
-        /// Jika terdapat lebih dari satu dokumen pada unit
-        /// yang sama, gunakan tanggal/waktu terbaru.
-        if (previousDate == null || inspectionDate.isAfter(previousDate)) {
-          result[unitNumber] = inspectionDate;
-        }
-
-        log(
-          'CHECKED '
-          '| unit: $unitNumber '
-          '| date: $inspectionDate',
-        );
       }
 
       log('Total checked today: ${result.length}');
@@ -968,7 +995,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       log('Error fetching checked units: $e');
       log('$st');
     } finally {
-      if (mounted) {
+      if (mounted && requestId == checkedUnitsRequestId) {
         setState(() {
           isLoadingCheckedUnits = false;
         });
