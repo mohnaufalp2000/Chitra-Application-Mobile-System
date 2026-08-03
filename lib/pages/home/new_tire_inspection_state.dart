@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:camos/core/services/api_service.dart';
@@ -19,6 +20,19 @@ class NewTireInspectionState extends GetxController {
 
   var tasks = <Map<String, dynamic>>[].obs;
   var filteredTasks = <Map<String, dynamic>>[].obs;
+
+  static const int _pageSize = 50;
+  static const int _sendBatchSize = 50;
+
+  final totalTasks = 0.obs;
+  final totalFilteredTasks = 0.obs;
+  final isLoadingMore = false.obs;
+  final hasMoreTasks = true.obs;
+
+  DocumentSnapshot<Map<String, dynamic>>? _lastTaskDocument;
+  Timer? _searchDebounce;
+  int _loadRequestId = 0;
+  bool _isTotalCountKnown = false;
 
   var isLoading = false.obs;
   var isExporting = false.obs;
@@ -47,6 +61,7 @@ class NewTireInspectionState extends GetxController {
   }
 
   Future<void> fetchTasks() async {
+    final requestId = ++_loadRequestId;
     try {
       isLoading.value = true;
       final currentIdSite = homeState.currentSiteId;
@@ -54,14 +69,39 @@ class NewTireInspectionState extends GetxController {
       log('=== FETCH tire_inspection ===');
       log('currentIdSite: $currentIdSite');
 
-      // Ambil hanya data site aktif. Mengambil seluruh koleksi di sini dapat
-      // menghabiskan heap Android sebelum hasil query sampai ke Dart.
-      final querySnapshot = await firestore
-          .collection('tire_inspection')
-          .where('id_site', isEqualTo: currentIdSite)
-          .get();
+      tasks.clear();
+      filteredTasks.clear();
+      totalTasks.value = 0;
+      totalFilteredTasks.value = 0;
+      _lastTaskDocument = null;
+      hasMoreTasks.value = true;
 
-      log('Filtered by id_site=$currentIdSite: ${querySnapshot.docs.length} docs');
+      final siteQuery = _siteQuery(currentIdSite);
+
+      // Count aggregation hanya mengembalikan angka total. Isi seluruh
+      // dokumen tidak ikut dimuat ke heap Android.
+      int? serverTotal;
+      try {
+        final countSnapshot = await siteQuery.count().get();
+        serverTotal = countSnapshot.count;
+      } catch (e) {
+        // List masih dapat memakai cache Firestore ketika aggregation count
+        // tidak tersedia, misalnya saat perangkat sedang offline.
+        log('Error counting tire_inspection: $e');
+      }
+      if (requestId != _loadRequestId) return;
+
+      final querySnapshot = await siteQuery.limit(_pageSize).get();
+      if (requestId != _loadRequestId) return;
+
+      totalTasks.value = serverTotal ?? querySnapshot.docs.length;
+      totalFilteredTasks.value = totalTasks.value;
+      _isTotalCountKnown = serverTotal != null;
+
+      log(
+        'Filtered by id_site=$currentIdSite: '
+        '${querySnapshot.docs.length}/$totalTasks docs',
+      );
 
       final result = querySnapshot.docs.map((doc) {
         final data = doc.data();
@@ -70,59 +110,206 @@ class NewTireInspectionState extends GetxController {
       }).toList();
 
       result.sort((a, b) {
-        final dateA = DateTime.tryParse(a['tanggal'] ?? '') ?? DateTime(2000);
-        final dateB = DateTime.tryParse(b['tanggal'] ?? '') ?? DateTime(2000);
+        final dateA =
+            DateTime.tryParse(a['hari']?.toString() ?? '') ?? DateTime(2000);
+        final dateB =
+            DateTime.tryParse(b['hari']?.toString() ?? '') ?? DateTime(2000);
         return dateB.compareTo(dateA);
       });
 
       tasks.assignAll(result);
+      if (querySnapshot.docs.isNotEmpty) {
+        _lastTaskDocument = querySnapshot.docs.last;
+      }
+      hasMoreTasks.value = querySnapshot.docs.length == _pageSize &&
+          (!_isTotalCountKnown || tasks.length < totalTasks.value);
       applyFilters();
     } catch (e) {
       log('Error fetching tire_inspection: $e');
     } finally {
-      isLoading.value = false;
+      if (requestId == _loadRequestId) {
+        isLoading.value = false;
+      }
+    }
+  }
+
+  void onSearchChanged(String value) {
+    searchQuery.value = value;
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 400),
+      reloadForActiveFilters,
+    );
+  }
+
+  Future<void> reloadForActiveFilters() async {
+    if (searchQuery.value.trim().isEmpty && selectedDateRange.value == null) {
+      await fetchTasks();
+      return;
+    }
+
+    final requestId = ++_loadRequestId;
+    try {
+      isLoading.value = true;
+      tasks.clear();
+      filteredTasks.clear();
+      hasMoreTasks.value = false;
+      _lastTaskDocument = null;
+
+      final matches = <Map<String, dynamic>>[];
+      DocumentSnapshot<Map<String, dynamic>>? cursor;
+
+      while (requestId == _loadRequestId) {
+        Query<Map<String, dynamic>> query =
+            _siteQuery(homeState.currentSiteId).limit(_pageSize);
+        if (cursor != null) {
+          query = query.startAfterDocument(cursor);
+        }
+
+        final snapshot = await query.get();
+        if (requestId != _loadRequestId || snapshot.docs.isEmpty) break;
+
+        for (final doc in snapshot.docs) {
+          final data = doc.data();
+          if (_taskMatchesActiveFilters(data)) {
+            data['doc_id'] = doc.id;
+            matches.add(data);
+          }
+        }
+
+        cursor = snapshot.docs.last;
+        if (snapshot.docs.length < _pageSize) break;
+      }
+
+      if (requestId != _loadRequestId) return;
+
+      matches.sort((a, b) {
+        final dateA =
+            DateTime.tryParse(a['hari']?.toString() ?? '') ?? DateTime(2000);
+        final dateB =
+            DateTime.tryParse(b['hari']?.toString() ?? '') ?? DateTime(2000);
+        return dateB.compareTo(dateA);
+      });
+
+      tasks.assignAll(matches);
+      filteredTasks.assignAll(matches);
+      totalFilteredTasks.value = matches.length;
+    } catch (e, stackTrace) {
+      log('Error filtering tire_inspection: $e', stackTrace: stackTrace);
+    } finally {
+      if (requestId == _loadRequestId) {
+        isLoading.value = false;
+      }
+    }
+  }
+
+  Query<Map<String, dynamic>> _siteQuery(String siteId) {
+    return firestore
+        .collection('tire_inspection')
+        .where('id_site', isEqualTo: siteId);
+  }
+
+  Future<void> loadMoreTasks() async {
+    if (isLoading.value ||
+        isLoadingMore.value ||
+        !hasMoreTasks.value ||
+        _lastTaskDocument == null) {
+      return;
+    }
+
+    try {
+      isLoadingMore.value = true;
+
+      final snapshot = await _siteQuery(homeState.currentSiteId)
+          .startAfterDocument(_lastTaskDocument!)
+          .limit(_pageSize)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        hasMoreTasks.value = false;
+        return;
+      }
+
+      final nextTasks = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['doc_id'] = doc.id;
+        return data;
+      });
+
+      tasks.addAll(nextTasks);
+      if (totalTasks.value < tasks.length) {
+        totalTasks.value = tasks.length;
+        totalFilteredTasks.value = totalTasks.value;
+      }
+      _lastTaskDocument = snapshot.docs.last;
+      hasMoreTasks.value = snapshot.docs.length == _pageSize &&
+          (!_isTotalCountKnown || tasks.length < totalTasks.value);
+      applyFilters();
+    } catch (e, stackTrace) {
+      log('Error loading more tire_inspection: $e', stackTrace: stackTrace);
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 
   void applyFilters() {
     var list = List<Map<String, dynamic>>.from(tasks);
-
-    if (selectedDateRange.value != null) {
-      final start = selectedDateRange.value!.start;
-      final end = DateTime(
-        selectedDateRange.value!.end.year,
-        selectedDateRange.value!.end.month,
-        selectedDateRange.value!.end.day,
-        23,
-        59,
-        59,
-      );
-
-      list = list.where((task) {
-        final dateStr =
-            task['hari']?.toString(); // ← pakai 'hari' bukan 'tanggal'
-        if (dateStr == null || dateStr.isEmpty) return false;
-        final date = DateTime.tryParse(dateStr);
-        if (date == null) return false;
-        return !date.isBefore(start) && !date.isAfter(end);
-      }).toList();
-    }
-
-    if (searchQuery.value.isNotEmpty) {
-      final query = searchQuery.value.toLowerCase();
-      list = list.where((task) {
-        return (task['unit'] ?? '').toString().toLowerCase().contains(query);
-      }).toList();
-    }
+    list = list.where(_taskMatchesActiveFilters).toList();
+    list.sort((a, b) {
+      final dateA =
+          DateTime.tryParse(a['hari']?.toString() ?? '') ?? DateTime(2000);
+      final dateB =
+          DateTime.tryParse(b['hari']?.toString() ?? '') ?? DateTime(2000);
+      return dateB.compareTo(dateA);
+    });
 
     filteredTasks.assignAll(list);
     log('filtered task : $filteredTasks');
   }
 
+  bool _taskMatchesActiveFilters(Map<String, dynamic> task) {
+    final range = selectedDateRange.value;
+    if (range != null) {
+      final dateStr = task['hari']?.toString();
+      if (dateStr == null || dateStr.isEmpty) return false;
+
+      final date = DateTime.tryParse(dateStr);
+      if (date == null) return false;
+
+      final start =
+          DateTime(range.start.year, range.start.month, range.start.day);
+      final end = DateTime(
+        range.end.year,
+        range.end.month,
+        range.end.day,
+        23,
+        59,
+        59,
+      );
+
+      if (date.isBefore(start) || date.isAfter(end)) return false;
+    }
+
+    final query = searchQuery.value.trim().toLowerCase();
+    if (query.isNotEmpty &&
+        !(task['unit'] ?? '').toString().toLowerCase().contains(query)) {
+      return false;
+    }
+
+    return true;
+  }
+
   void resetFilters() {
+    _searchDebounce?.cancel();
     selectedDateRange.value = null;
     searchQuery.value = '';
     fetchTasks();
+  }
+
+  @override
+  void onClose() {
+    _searchDebounce?.cancel();
+    super.onClose();
   }
 
   /// Convert URL gambar menjadi Base64 Data URI.
@@ -328,231 +515,89 @@ class NewTireInspectionState extends GetxController {
     try {
       isSending.value = true;
       sendTireInspectionProgress.value = 0.0;
+      final batch = <SendTireInspection>[];
+      DocumentSnapshot<Map<String, dynamic>>? cursor;
+      var scannedTasks = 0;
+      var sentInspections = 0;
+      var batchNumber = 0;
+      var batchMoNumber = '';
 
-      final List<SendTireInspection> sendTireInspectionData = [];
+      Future<void> sendCurrentBatch() async {
+        if (batch.isEmpty) return;
 
-      // Hitung total ban yang akan dikirim
-      int totalTires = 0;
+        batchNumber++;
+        final request = SendTireInspectionRequest(
+          moNumber: batchMoNumber,
+          inspects: List<SendTireInspection>.from(batch),
+        );
 
-      for (final task in filteredTasks) {
-        final positions = task['posisi'] as List<dynamic>? ?? [];
-        log('posisi ban : ${positions}');
-        totalTires += positions.length;
+        log('=== TIRE INSPECTION BATCH $batchNumber ===');
+        log('MO Number: ${request.moNumber}');
+        log('Total inspections: ${request.inspects.length}');
+
+        await ApiService.sendTireInspection(request);
+        sentInspections += batch.length;
+        batch.clear();
+        batchMoNumber = '';
       }
 
-      if (totalTires == 0) {
-        throw Exception('Tidak ada data tire inspection yang akan dikirim.');
-      }
+      while (true) {
+        Query<Map<String, dynamic>> query =
+            _siteQuery(homeState.currentSiteId).limit(_pageSize);
+        if (cursor != null) {
+          query = query.startAfterDocument(cursor);
+        }
 
-      int processedTires = 0;
+        final snapshot = await query.get();
+        if (snapshot.docs.isEmpty) break;
 
-      for (final task in filteredTasks) {
-        final positions = task['posisi'] as List<dynamic>? ?? [];
+        for (final doc in snapshot.docs) {
+          scannedTasks++;
+          final task = doc.data();
 
-        for (final tire in positions) {
-          final rimCondition = tire['rimCondition'] as List<dynamic>? ?? [];
+          if (!_taskMatchesActiveFilters(task)) continue;
 
-          /// ==========================
-          /// CONVERT IMAGE TO BASE64
-          /// ==========================
+          final positions = task['posisi'] as List<dynamic>? ?? [];
+          for (final rawTire in positions) {
+            if (rawTire is! Map) continue;
 
-          String imageBase64 = '0';
+            if (batch.isEmpty) {
+              batchMoNumber = task['mo_number']?.toString() ?? '';
+            }
 
-          final dynamic images = tire['images'];
+            final tire = Map<String, dynamic>.from(rawTire);
+            batch.add(await _createSendInspection(task, tire));
 
-          log('Raw tire images : $images');
-          log('Raw tire images type : ${images.runtimeType}');
-
-          if (images != null) {
-            imageBase64 = await imageUrlToBase64(images);
+            if (batch.length >= _sendBatchSize) {
+              await sendCurrentBatch();
+            }
           }
 
-          log(
-            'Image converted. Base64 length: '
-            '${imageBase64.length}',
-          );
-
-          /// ==========================
-          /// CREATE INSPECTION
-          /// ==========================
-
-          sendTireInspectionData.add(
-            SendTireInspection(
-              idUnitSite: tire['idUnit']?.toString() ?? '',
-
-              date: task['hari']?.toString() ?? '',
-
-              unitNumber: task['unit']?.toString() ?? '',
-
-              tirePosition: tire['position']?.toString() ?? '',
-
-              pressure: tire['pressure']?.toString() ?? '',
-
-              rtd1: tire['rtd1']?.toString() ?? '',
-
-              hmOnInspect: tire['hm']?.toString() ?? '',
-
-              kmOnInspect: tire['km']?.toString() ?? '0',
-
-              remark: tire['remarks']?.toString() ?? '',
-
-              pics: imageBase64,
-
-              adjPress: tire['adjusmentPressure']?.toString() ?? '0',
-
-              inspectorLocation: task['pit']?.toString() ?? '',
-
-              area: task['pit']?.toString() ?? '',
-
-              /// BARU
-              inspectionPeriod: task['periodTypeLabel']?.toString() ?? '',
-
-              tireDamage: tire['damageTire']?.toString() ?? '',
-
-              brokenComponent: tire['brokenComponent']?.toString() ?? '0',
-
-              snTire: tire['sn']?.toString() ?? '',
-
-              rimBaseCondition: _getRimValue(
-                rimCondition,
-                0,
-                'condition',
-              ),
-
-              rimBaseRemark: _getRimValue(
-                rimCondition,
-                0,
-                'remark',
-              ),
-
-              flangeCondition: _getRimValue(
-                rimCondition,
-                1,
-                'condition',
-              ),
-
-              flangeRemark: _getRimValue(
-                rimCondition,
-                1,
-                'remark',
-              ),
-
-              lockRingCondition: _getRimValue(
-                rimCondition,
-                2,
-                'condition',
-              ),
-
-              lockRingRemark: _getRimValue(
-                rimCondition,
-                2,
-                'remark',
-              ),
-
-              /// BARU
-              /// index 3 = O-RING
-              oRingCondition: _getRimValue(
-                rimCondition,
-                3,
-                'condition',
-              ),
-
-              oRingRemark: _getRimValue(
-                rimCondition,
-                3,
-                'remark',
-              ),
-
-              /// Index bergeser karena O-RING
-              valveCondition: _getRimValue(
-                rimCondition,
-                4,
-                'condition',
-              ),
-
-              valveRemark: _getRimValue(
-                rimCondition,
-                4,
-                'remark',
-              ),
-
-              coreValveCondition: _getRimValue(
-                rimCondition,
-                5,
-                'condition',
-              ),
-
-              coreValveRemark: _getRimValue(
-                rimCondition,
-                5,
-                'remark',
-              ),
-
-              nutStudCondition: _getRimValue(
-                rimCondition,
-                6,
-                'condition',
-              ),
-
-              nutStudRemark: _getRimValue(
-                rimCondition,
-                6,
-                'remark',
-              ),
-
-              temperatureStatus:
-                  tire['temperatureStatus']?.toString().toUpperCase() ?? 'HOT',
-
-              site: task['id_site']?.toString() ?? '',
-            ),
-          );
-
-          processedTires++;
-
-          /// Progress 0 - 80% untuk proses gambar
-          sendTireInspectionProgress.value =
-              (processedTires / totalTires) * 0.8;
+          if (totalTasks.value > 0) {
+            sendTireInspectionProgress.value =
+                ((scannedTasks / totalTasks.value) * 0.9).clamp(0.0, 0.9);
+          }
         }
+
+        cursor = snapshot.docs.last;
+        if (snapshot.docs.length < _pageSize) break;
       }
 
-      /// ==========================
-      /// CREATE REQUEST
-      /// ==========================
+      await sendCurrentBatch();
 
-      final request = SendTireInspectionRequest(
-        moNumber: filteredTasks.isNotEmpty
-            ? filteredTasks.first['mo_number']?.toString() ?? ''
-            : '',
-        inspects: sendTireInspectionData,
-      );
-
-      sendTireInspectionProgress.value = 0.85;
-
-      /// Jangan log seluruh Base64 karena bisa sangat besar.
-      log('=== TIRE INSPECTION REQUEST ===');
-      log('MO Number: ${request.moNumber}');
-      log(
-        'Total inspections: '
-        '${request.inspects.length}',
-      );
-
-      /// ==========================
-      /// SEND API
-      /// ==========================
-
-      sendTireInspectionProgress.value = 0.9;
-
-      await ApiService.sendTireInspection(request);
+      if (sentInspections == 0) {
+        throw Exception('Tidak ada data tire inspection yang akan dikirim.');
+      }
 
       sendTireInspectionProgress.value = 1.0;
 
       if (!context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           backgroundColor: Color(0xFF009688),
           content: Text(
-            'Send data berhasil!',
+            'Send data berhasil! $sentInspections inspeksi terkirim.',
             style: TextStyle(
               color: Colors.white,
             ),
@@ -588,6 +633,84 @@ class NewTireInspectionState extends GetxController {
     }
   }
 
+  Future<SendTireInspection> _createSendInspection(
+    Map<String, dynamic> task,
+    Map<String, dynamic> tire,
+  ) async {
+    final rimCondition = tire['rimCondition'] as List<dynamic>? ?? [];
+    var imageBase64 = '0';
+
+    if (tire['images'] != null) {
+      imageBase64 = await imageUrlToBase64(tire['images']);
+    }
+
+    return SendTireInspection(
+      idUnitSite: tire['idUnit']?.toString() ?? '',
+      date: task['hari']?.toString() ?? '',
+      unitNumber: task['unit']?.toString() ?? '',
+      tirePosition: tire['position']?.toString() ?? '',
+      pressure: tire['pressure']?.toString() ?? '',
+      rtd1: tire['rtd1']?.toString() ?? '',
+      hmOnInspect: tire['hm']?.toString() ?? '',
+      kmOnInspect: tire['km']?.toString() ?? '0',
+      remark: tire['remarks']?.toString() ?? '',
+      pics: imageBase64,
+      adjPress: tire['adjusmentPressure']?.toString() ?? '0',
+      inspectorLocation: task['pit']?.toString() ?? '',
+      area: task['pit']?.toString() ?? '',
+      inspectionPeriod: task['periodTypeLabel']?.toString() ?? '',
+      tireDamage: tire['damageTire']?.toString() ?? '',
+      brokenComponent: tire['brokenComponent']?.toString() ?? '0',
+      snTire: tire['sn']?.toString() ?? '',
+      rimBaseCondition: _getRimValue(rimCondition, 0, 'condition'),
+      rimBaseRemark: _getRimValue(rimCondition, 0, 'remark'),
+      flangeCondition: _getRimValue(rimCondition, 1, 'condition'),
+      flangeRemark: _getRimValue(rimCondition, 1, 'remark'),
+      lockRingCondition: _getRimValue(rimCondition, 2, 'condition'),
+      lockRingRemark: _getRimValue(rimCondition, 2, 'remark'),
+      oRingCondition: _getRimValue(rimCondition, 3, 'condition'),
+      oRingRemark: _getRimValue(rimCondition, 3, 'remark'),
+      valveCondition: _getRimValue(rimCondition, 4, 'condition'),
+      valveRemark: _getRimValue(rimCondition, 4, 'remark'),
+      coreValveCondition: _getRimValue(rimCondition, 5, 'condition'),
+      coreValveRemark: _getRimValue(rimCondition, 5, 'remark'),
+      nutStudCondition: _getRimValue(rimCondition, 6, 'condition'),
+      nutStudRemark: _getRimValue(rimCondition, 6, 'remark'),
+      temperatureStatus:
+          tire['temperatureStatus']?.toString().toUpperCase() ?? 'HOT',
+      site: task['id_site']?.toString() ?? '',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchAllMatchingTasks() async {
+    final result = <Map<String, dynamic>>[];
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+
+    while (true) {
+      Query<Map<String, dynamic>> query =
+          _siteQuery(homeState.currentSiteId).limit(_pageSize);
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
+      }
+
+      final snapshot = await query.get();
+      if (snapshot.docs.isEmpty) break;
+
+      for (final doc in snapshot.docs) {
+        final task = doc.data();
+        if (_taskMatchesActiveFilters(task)) {
+          task['doc_id'] = doc.id;
+          result.add(task);
+        }
+      }
+
+      cursor = snapshot.docs.last;
+      if (snapshot.docs.length < _pageSize) break;
+    }
+
+    return result;
+  }
+
   Future<void> exportToExcel(BuildContext context) async {
     try {
       isExporting.value = true;
@@ -611,15 +734,17 @@ class NewTireInspectionState extends GetxController {
 
       exportProgress.value = 0.65;
 
-      // Langsung pass filteredTasks — tidak perlu flatten
-      // createTireInspectionExcel sudah handle loop posisi di dalamnya
-      exportProgress.value = 0.85;
-      // yang bikin error !!
-      final cleanedData = takeOutRimCondition(filteredTasks);
-      log('filtered data : ${cleanedData.toList()}');
+      // Ambil seluruh hasil filter per halaman. Dengan begitu export tidak
+      // terbatas pada 50 item yang sedang tampil di layar.
+      final exportTasks = await _fetchAllMatchingTasks();
+      if (exportTasks.isEmpty) {
+        throw Exception('Tidak ada data tire inspection yang akan diexport.');
+      }
 
-      final bytes =
-          await createExcel('tire_inspection', task: cleanedData.toList());
+      exportProgress.value = 0.85;
+      final cleanedData = takeOutRimCondition(exportTasks);
+
+      final bytes = await createExcel('tire_inspection', task: cleanedData);
       await file.writeAsBytes(bytes, flush: true);
 
       exportProgress.value = 1.0;

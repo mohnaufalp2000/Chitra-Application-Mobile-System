@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:io';
 import 'package:camos/core/styles/color.dart';
 import 'package:camos/core/styles/text_manager.dart';
@@ -7,7 +6,6 @@ import 'package:camos/pages/home/new_tire_inspection_state.dart';
 import 'package:camos/pages/home/tire_inspection_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_badge_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
-import 'package:camos/pages/tire_repair_form/tire_repair_inspection/tire_repair_inspection_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -160,8 +158,7 @@ class NewTireInspectionPage extends StatelessWidget {
                   child: TextField(
                     controller: searchController,
                     onChanged: (value) {
-                      ntController.searchQuery.value = value;
-                      ntController.applyFilters();
+                      ntController.onSearchChanged(value);
                     },
                     decoration: InputDecoration(
                       hintText: 'Search... (Unit Number)',
@@ -184,7 +181,7 @@ class NewTireInspectionPage extends StatelessWidget {
                         );
                         if (picked != null) {
                           ntController.selectedDateRange.value = picked;
-                          ntController.applyFilters();
+                          await ntController.reloadForActiveFilters();
                         }
                       },
                       child: Container(
@@ -231,6 +228,15 @@ class NewTireInspectionPage extends StatelessWidget {
 
             const SizedBox(height: 12),
 
+            Obx(
+              () => Text(
+                'Total Unit: ${ntController.totalFilteredTasks.value}',
+                style: getBlackTextStyle(fontSize: 13),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+
             // List
             Expanded(
               child: Obx(() {
@@ -242,18 +248,39 @@ class NewTireInspectionPage extends StatelessWidget {
                   return const Center(child: Text('No data found.'));
                 }
 
-                return RefreshIndicator(
-                  onRefresh: ntController.fetchTasks,
-                  child: ListView.builder(
-                    itemCount: ntController.filteredTasks.length,
-                    itemBuilder: (context, index) {
-                      final doc = ntController.filteredTasks[index];
-                      final posisiList =
-                          (doc['posisi'] as List<dynamic>? ?? []);
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification.metrics.pixels >=
+                        notification.metrics.maxScrollExtent - 200) {
+                      ntController.loadMoreTasks();
+                    }
+                    return false;
+                  },
+                  child: RefreshIndicator(
+                    onRefresh: ntController.fetchTasks,
+                    child: ListView.builder(
+                      itemCount: ntController.filteredTasks.length +
+                          (ntController.hasMoreTasks.value ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index >= ntController.filteredTasks.length) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: ntController.isLoadingMore.value
+                                  ? const CircularProgressIndicator()
+                                  : const SizedBox.shrink(),
+                            ),
+                          );
+                        }
 
-                      return _TireInspectionCard(
-                          doc: doc, posisiList: posisiList);
-                    },
+                        final doc = ntController.filteredTasks[index];
+                        final posisiList =
+                            (doc['posisi'] as List<dynamic>? ?? []);
+
+                        return _TireInspectionCard(
+                            doc: doc, posisiList: posisiList);
+                      },
+                    ),
                   ),
                 );
               }),
