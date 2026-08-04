@@ -902,84 +902,52 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       log('Current site ID: $currentSiteId');
 
       final DateTime now = DateTime.now();
+      final String today = DateFormat('yyyy-MM-dd').format(now);
       final Map<String, DateTime> result = <String, DateTime>{};
-      DocumentSnapshot<Map<String, dynamic>>? lastDocument;
-      const int pageSize = 10;
 
-      while (true) {
-        var query = firestore
-            .collection('tire_inspection')
-            .where(
-              'id_site',
-              isEqualTo: currentSiteId,
-            )
-            .limit(pageSize);
+      // Status Checked hanya membutuhkan data hari ini. Memindai seluruh
+      // riwayat per halaman tetap membuat CPU dan GC bekerja terus-menerus.
+      final querySnapshot = await firestore
+          .collection('tire_inspection')
+          .where(
+            'id_site',
+            isEqualTo: currentSiteId,
+          )
+          .where(
+            'hari',
+            isEqualTo: today,
+          )
+          .get();
 
-        if (lastDocument != null) {
-          query = query.startAfterDocument(lastDocument);
+      if (requestId != checkedUnitsRequestId ||
+          currentSiteId != homeState.currentSiteId.trim()) {
+        return;
+      }
+
+      for (final document in querySnapshot.docs) {
+        final Map<String, dynamic> data = document.data();
+
+        final String unitNumber = normalizeUnitNumber(
+          data['unit']?.toString(),
+        );
+
+        if (unitNumber.isEmpty) {
+          continue;
         }
 
-        final querySnapshot = await query.get();
+        final dynamic dateValue = data['hari'] ?? data['tanggal'];
+        final DateTime? inspectionDate = parseInspectionDate(dateValue);
 
-        if (requestId != checkedUnitsRequestId ||
-            currentSiteId != homeState.currentSiteId.trim()) {
-          return;
+        if (inspectionDate == null || !isSameDate(inspectionDate, now)) {
+          continue;
         }
 
-        if (querySnapshot.docs.isEmpty) {
-          break;
-        }
+        final DateTime? previousDate = result[unitNumber];
 
-        for (final document in querySnapshot.docs) {
-          final Map<String, dynamic> data = document.data();
-
-          final String unitNumber = normalizeUnitNumber(
-            data['unit']?.toString(),
-          );
-
-          if (unitNumber.isEmpty) {
-            continue;
-          }
-
-          /// Prioritas field "hari".
-          /// Jika tidak tersedia, gunakan field "tanggal".
-          final dynamic dateValue = data['hari'] ?? data['tanggal'];
-
-          final DateTime? inspectionDate = parseInspectionDate(dateValue);
-
-          if (inspectionDate == null) {
-            log(
-              'Tanggal tidak valid '
-              '| unit: $unitNumber '
-              '| value: $dateValue',
-            );
-
-            continue;
-          }
-
-          /// Hanya inspeksi hari ini yang dianggap Checked.
-          if (!isSameDate(inspectionDate, now)) {
-            continue;
-          }
-
-          final DateTime? previousDate = result[unitNumber];
-
-          /// Jika terdapat lebih dari satu dokumen pada unit
-          /// yang sama, gunakan tanggal/waktu terbaru.
-          if (previousDate == null || inspectionDate.isAfter(previousDate)) {
-            result[unitNumber] = inspectionDate;
-          }
-
-          log(
-            'CHECKED '
-            '| unit: $unitNumber '
-            '| date: $inspectionDate',
-          );
-        }
-
-        lastDocument = querySnapshot.docs.last;
-        if (querySnapshot.docs.length < pageSize) {
-          break;
+        /// Jika terdapat lebih dari satu dokumen pada unit
+        /// yang sama, gunakan tanggal/waktu terbaru.
+        if (previousDate == null || inspectionDate.isAfter(previousDate)) {
+          result[unitNumber] = inspectionDate;
         }
       }
 
