@@ -771,6 +771,9 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   /// Loading khusus pengambilan status Checked.
   bool isLoadingCheckedUnits = false;
 
+  /// Menjaga agar hasil request site lama tidak menimpa site yang baru.
+  int checkedUnitsRequestId = 0;
+
   /// Listener perubahan site.
   Worker? siteWorker;
 
@@ -873,6 +876,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   /// 1. id_site sama dengan site aktif.
   /// 2. Tanggal inspeksi sama dengan hari ini.
   Future<void> fetchCheckedUnits() async {
+    final int requestId = ++checkedUnitsRequestId;
     final String currentSiteId = homeState.currentSiteId.trim();
 
     if (currentSiteId.isEmpty) {
@@ -897,17 +901,28 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       log('FETCH CHECKED TIRE INSPECTION');
       log('Current site ID: $currentSiteId');
 
+      final DateTime now = DateTime.now();
+      final String today = DateFormat('yyyy-MM-dd').format(now);
+      final Map<String, DateTime> result = <String, DateTime>{};
+
+      // Status Checked hanya membutuhkan data hari ini. Memindai seluruh
+      // riwayat per halaman tetap membuat CPU dan GC bekerja terus-menerus.
       final querySnapshot = await firestore
           .collection('tire_inspection')
           .where(
             'id_site',
             isEqualTo: currentSiteId,
           )
+          .where(
+            'hari',
+            isEqualTo: today,
+          )
           .get();
 
-      final DateTime now = DateTime.now();
-
-      final Map<String, DateTime> result = <String, DateTime>{};
+      if (requestId != checkedUnitsRequestId ||
+          currentSiteId != homeState.currentSiteId.trim()) {
+        return;
+      }
 
       for (final document in querySnapshot.docs) {
         final Map<String, dynamic> data = document.data();
@@ -920,24 +935,10 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           continue;
         }
 
-        /// Prioritas field "hari".
-        /// Jika tidak tersedia, gunakan field "tanggal".
         final dynamic dateValue = data['hari'] ?? data['tanggal'];
-
         final DateTime? inspectionDate = parseInspectionDate(dateValue);
 
-        if (inspectionDate == null) {
-          log(
-            'Tanggal tidak valid '
-            '| unit: $unitNumber '
-            '| value: $dateValue',
-          );
-
-          continue;
-        }
-
-        /// Hanya inspeksi hari ini yang dianggap Checked.
-        if (!isSameDate(inspectionDate, now)) {
+        if (inspectionDate == null || !isSameDate(inspectionDate, now)) {
           continue;
         }
 
@@ -948,12 +949,6 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
         if (previousDate == null || inspectionDate.isAfter(previousDate)) {
           result[unitNumber] = inspectionDate;
         }
-
-        log(
-          'CHECKED '
-          '| unit: $unitNumber '
-          '| date: $inspectionDate',
-        );
       }
 
       log('Total checked today: ${result.length}');
@@ -968,7 +963,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       log('Error fetching checked units: $e');
       log('$st');
     } finally {
-      if (mounted) {
+      if (mounted && requestId == checkedUnitsRequestId) {
         setState(() {
           isLoadingCheckedUnits = false;
         });
