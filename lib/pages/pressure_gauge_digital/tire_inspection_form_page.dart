@@ -22,6 +22,7 @@ import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/bounding_box_painter.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_selector_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
@@ -86,6 +87,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   // Jenis periode Tire Inspection.
   // Default menggunakan Period Inspection (PI).
   String selectedPeriodType = 'PI';
+  bool _isLoadingPreviousPressure = false;
+  int _previousPressureRequestId = 0;
+  bool _isLoadingHiddenFieldFallbacks = false;
+  int _hiddenFieldRequestId = 0;
+  String _apiHmForHiddenFields = '';
 
   var map = {};
   String idSite = '';
@@ -904,11 +910,291 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
   String get selectedPeriodTypeLabel {
     switch (selectedPeriodType) {
+      case 'PI/PE':
+        return 'Period Inspection / Period End';
       case 'PE':
         return 'Period End';
       case 'PI':
       default:
         return 'Period Inspection';
+    }
+  }
+
+  bool get _usesCompanyOnePeriodRules =>
+      homeState.userAccessCompanyId.value == '1';
+
+  bool get _hideHmForPeriod =>
+      _usesCompanyOnePeriodRules && selectedPeriodType == 'PI';
+
+  bool get _hideRtdForPeriod =>
+      _usesCompanyOnePeriodRules && selectedPeriodType == 'PI';
+
+  bool get _hideSnForPeriod =>
+      _usesCompanyOnePeriodRules &&
+      (selectedPeriodType == 'PI' || selectedPeriodType == 'PE');
+
+  bool get _hideTireComponentForPeriod =>
+      _usesCompanyOnePeriodRules && selectedPeriodType == 'PE';
+
+  bool get _hidePressureForPeriod =>
+      _usesCompanyOnePeriodRules && selectedPeriodType == 'PE';
+
+  String _validPressureValue(dynamic value) {
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty || text.toLowerCase() == 'null') return '';
+
+    final number = double.tryParse(text);
+    if (number != null && number <= 0) return '';
+
+    return text;
+  }
+
+  String _nonEmptySourceValue(dynamic value) {
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty || text.toLowerCase() == 'null') return '';
+    return text;
+  }
+
+  Map<dynamic, dynamic>? _historyPositionAt(
+    List<dynamic> positions,
+    int index,
+  ) {
+    final positionNumber =
+        position[index]['position']?.toString() ?? '${index + 1}';
+
+    for (final item in positions) {
+      if (item is Map &&
+          (item['position'] ?? item['pos'])?.toString() == positionNumber) {
+        return item;
+      }
+    }
+
+    if (index < positions.length && positions[index] is Map) {
+      return positions[index] as Map<dynamic, dynamic>;
+    }
+
+    return null;
+  }
+
+  Future<void> _loadHiddenFieldFallbacks() async {
+    if (!_usesCompanyOnePeriodRules ||
+        selectedPeriodType == 'PI/PE' ||
+        position.isEmpty) {
+      return;
+    }
+
+    final unitNumber = dataUnit['unitNumber']?.toString().trim() ?? '';
+    if (unitNumber.isEmpty) return;
+
+    final requestId = ++_hiddenFieldRequestId;
+    setState(() {
+      _isLoadingHiddenFieldFallbacks = true;
+
+      // Tire Component tidak tersedia pada response UnitTire. Kosongkan nilai
+      // default agar PE hanya memakai riwayat inspeksi Firebase yang nyata.
+      if (_hideTireComponentForPeriod) {
+        for (final item in position) {
+          item['rimCondition'] = <Map<String, dynamic>>[];
+        }
+      }
+    });
+
+    try {
+      final snapshot = await firestore
+          .collection('tire_inspection')
+          .where('unit', isEqualTo: unitNumber)
+          .orderBy('tanggal', descending: true)
+          .limit(10)
+          .get();
+
+      if (!mounted || requestId != _hiddenFieldRequestId) return;
+
+      final historyData = <Map<String, dynamic>>[];
+      for (final document in snapshot.docs) {
+        final data = document.data();
+        final documentSite = data['id_site']?.toString().trim() ?? '';
+        if (documentSite.isEmpty || documentSite == idSite) {
+          historyData.add(data);
+        }
+      }
+
+      String latestDocumentValue(String key) {
+        for (final data in historyData) {
+          final value = _nonEmptySourceValue(data[key]);
+          if (value.isNotEmpty) return value;
+        }
+        return '';
+      }
+
+      String latestPositionValue(int index, String key) {
+        for (final data in historyData) {
+          final positions = data['posisi'];
+          if (positions is! List) continue;
+
+          final previousPosition = _historyPositionAt(positions, index);
+          final value = _nonEmptySourceValue(previousPosition?[key]);
+          if (value.isNotEmpty) return value;
+        }
+        return '';
+      }
+
+      List<Map<String, dynamic>> latestRimCondition(int index) {
+        for (final data in historyData) {
+          final positions = data['posisi'];
+          if (positions is! List) continue;
+
+          final previousPosition = _historyPositionAt(positions, index);
+          final rimCondition = previousPosition?['rimCondition'];
+          if (rimCondition is List && rimCondition.isNotEmpty) {
+            return rimCondition
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList();
+          }
+        }
+        return <Map<String, dynamic>>[];
+      }
+
+      setState(() {
+        if (_hideHmForPeriod) {
+          final firebaseHm = latestDocumentValue('hm');
+          hmUnit.text = _apiHmForHiddenFields.isNotEmpty
+              ? _apiHmForHiddenFields
+              : firebaseHm;
+        }
+
+        for (int index = 0; index < position.length; index++) {
+          if (_hideRtdForPeriod) {
+            final apiRtd = _nonEmptySourceValue(position[index]['_apiRtd']);
+            final apiOtd = _nonEmptySourceValue(position[index]['_apiOtd']);
+            final firebaseRtd = latestPositionValue(index, 'rtd1');
+            final firebaseOtd = latestPositionValue(index, 'rtd2');
+
+            position[index]['rtd1'] = apiRtd.isNotEmpty ? apiRtd : firebaseRtd;
+            position[index]['rtd2'] = apiOtd.isNotEmpty ? apiOtd : firebaseOtd;
+
+            if (index < rtd1Controllers.length) {
+              rtd1Controllers[index].text = position[index]['rtd1'].toString();
+            }
+            if (index < rtd2Controllers.length) {
+              rtd2Controllers[index].text = position[index]['rtd2'].toString();
+            }
+          }
+
+          if (_hideSnForPeriod) {
+            final apiSn = _nonEmptySourceValue(position[index]['_apiSn']);
+            final firebaseSn = latestPositionValue(index, 'sn');
+            position[index]['sn'] = apiSn.isNotEmpty ? apiSn : firebaseSn;
+
+            if (index < snControllers.length) {
+              snControllers[index].text = position[index]['sn'].toString();
+            }
+          }
+
+          if (_hideTireComponentForPeriod) {
+            position[index]['rimCondition'] = latestRimCondition(index);
+          }
+        }
+      });
+    } catch (e, stackTrace) {
+      log(
+        'Error loading hidden field fallbacks: $e',
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (mounted && requestId == _hiddenFieldRequestId) {
+        setState(() {
+          _isLoadingHiddenFieldFallbacks = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadPreviousPressure() async {
+    if (!_hidePressureForPeriod || position.isEmpty) return;
+
+    final unitNumber = dataUnit['unitNumber']?.toString().trim() ?? '';
+    if (unitNumber.isEmpty) return;
+
+    final requestId = ++_previousPressureRequestId;
+    setState(() {
+      _isLoadingPreviousPressure = true;
+      for (final item in position) {
+        item['pressure'] = '';
+        item['adjusmentPressure'] = '';
+      }
+    });
+
+    try {
+      final snapshot = await firestore
+          .collection('daily_pressure')
+          .where('unit', isEqualTo: unitNumber)
+          .orderBy('tanggal', descending: true)
+          .limit(10)
+          .get();
+
+      if (!mounted || requestId != _previousPressureRequestId) return;
+
+      Map<String, dynamic>? latestData;
+      for (final document in snapshot.docs) {
+        final data = document.data();
+        final documentSite = data['idSite']?.toString().trim() ?? '';
+        if (documentSite.isEmpty || documentSite == idSite) {
+          latestData = data;
+          break;
+        }
+      }
+
+      final latestPositions = latestData?['posisi'];
+      if (latestPositions is! List) return;
+
+      setState(() {
+        for (int index = 0; index < position.length; index++) {
+          final positionNumber =
+              position[index]['position']?.toString() ?? '${index + 1}';
+
+          Map<dynamic, dynamic>? previousPosition;
+          for (final item in latestPositions) {
+            if (item is Map &&
+                (item['pos'] ?? item['position'])?.toString() ==
+                    positionNumber) {
+              previousPosition = item;
+              break;
+            }
+          }
+
+          if (previousPosition == null && index < latestPositions.length) {
+            final fallback = latestPositions[index];
+            if (fallback is Map) previousPosition = fallback;
+          }
+
+          if (previousPosition == null) continue;
+
+          final previousPressure =
+              _validPressureValue(previousPosition['pressure']);
+          final previousAdjustment =
+              _validPressureValue(previousPosition['adjusmentPressure']);
+
+          // Adjustment pressure adalah kondisi tekanan paling akhir. Jika
+          // tidak tersedia, gunakan hasil pressure inspeksi terakhir.
+          final effectivePreviousPressure = previousAdjustment.isNotEmpty
+              ? previousAdjustment
+              : previousPressure;
+          position[index]['pressure'] = effectivePreviousPressure;
+          position[index]['adjusmentPressure'] = effectivePreviousPressure;
+        }
+      });
+    } catch (e, stackTrace) {
+      log(
+        'Error loading previous pressure: $e',
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (mounted && requestId == _previousPressureRequestId) {
+        setState(() {
+          _isLoadingPreviousPressure = false;
+        });
+      }
     }
   }
 
@@ -923,10 +1209,29 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return Expanded(
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: () {
+          onTap: () async {
             setState(() {
               selectedPeriodType = code;
+
+              if (code != 'PE') {
+                _previousPressureRequestId++;
+                _isLoadingPreviousPressure = false;
+              }
+
+              if (code == 'PI/PE') {
+                _hiddenFieldRequestId++;
+                _isLoadingHiddenFieldFallbacks = false;
+              }
             });
+
+            if (code == 'PE') {
+              await Future.wait([
+                _loadPreviousPressure(),
+                _loadHiddenFieldFallbacks(),
+              ]);
+            } else if (code == 'PI') {
+              await _loadHiddenFieldFallbacks();
+            }
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
@@ -1025,6 +1330,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               code: 'PE',
               label: 'Period End',
               icon: Icons.event_available_outlined,
+            ),
+            const SizedBox(width: 8),
+            buildOption(
+              code: 'PI/PE',
+              label: 'Period Inspection / End',
+              icon: Icons.compare_arrows_outlined,
             ),
           ],
         ),
@@ -1204,6 +1515,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         'position': item['position'] ?? index + 1,
         'pressure': item['pressure']?.toString() ?? '',
         'adjusmentPressure': item['adjusmentPressure']?.toString() ?? '',
+        'temperatureStatus': item['temperatureStatus']?.toString() ?? 'HOT',
+        'adjusmentTemperatureStatus':
+            item['adjusmentTemperatureStatus']?.toString() ?? 'HOT',
         'rating': item['rating']?.toString().trim().isNotEmpty == true
             ? item['rating'].toString().trim()
             : 'A',
@@ -1269,6 +1583,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             item['adjusmentPressure']?.toString().trim().isNotEmpty == true
                 ? item['adjusmentPressure'].toString().trim()
                 : '0',
+        'temperatureStatus': item['temperatureStatus']?.toString() ?? 'HOT',
+        'adjusmentTemperatureStatus':
+            item['adjusmentTemperatureStatus']?.toString() ?? 'HOT',
         'luka': damages.isEmpty ? [_defaultDamageRemark()] : damages,
         'idUnit': item['idUnit'],
         'idInventory': item['idInventory'],
@@ -1497,11 +1814,110 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return;
     }
 
+    if (_usesCompanyOnePeriodRules &&
+        selectedPeriodType != 'PI/PE' &&
+        _isLoadingHiddenFieldFallbacks) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(
+            'Sedang melengkapi data dari API/Firebase. Silakan tunggu.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_usesCompanyOnePeriodRules && selectedPeriodType != 'PI/PE') {
+      final missingFields = <String>[];
+
+      if (_hideHmForPeriod && _nonEmptySourceValue(hmUnit.text).isEmpty) {
+        missingFields.add('HM');
+      }
+
+      for (int index = 0; index < position.length; index++) {
+        if (_hideRtdForPeriod &&
+            (_nonEmptySourceValue(position[index]['rtd1']).isEmpty ||
+                _nonEmptySourceValue(position[index]['rtd2']).isEmpty)) {
+          missingFields.add('RTD posisi ${index + 1}');
+        }
+
+        if (_hideSnForPeriod &&
+            _nonEmptySourceValue(position[index]['sn']).isEmpty) {
+          missingFields.add('SN posisi ${index + 1}');
+        }
+
+        if (_hideTireComponentForPeriod) {
+          final rimCondition = position[index]['rimCondition'];
+          if (rimCondition is! List || rimCondition.isEmpty) {
+            missingFields.add('Tire Component posisi ${index + 1}');
+          }
+        }
+      }
+
+      if (missingFields.isNotEmpty) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Data API/Firebase belum tersedia: ${missingFields.join(', ')}.',
+              style: getWhiteTextStyle(),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    if (_hidePressureForPeriod && _isLoadingPreviousPressure) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(
+            'Sedang mengambil data pressure terakhir. Silakan tunggu.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_hidePressureForPeriod) {
+      final missingPressurePositions = <String>[];
+      for (int index = 0; index < position.length; index++) {
+        if (_validPressureValue(position[index]['pressure']).isEmpty ||
+            _validPressureValue(
+              position[index]['adjusmentPressure'],
+            ).isEmpty) {
+          missingPressurePositions.add('${index + 1}');
+        }
+      }
+
+      if (missingPressurePositions.isNotEmpty) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Data pressure terakhir tidak ditemukan untuk posisi: '
+              '${missingPressurePositions.join(', ')}.',
+              style: getWhiteTextStyle(),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
     final currentHm =
         double.tryParse(state.units.first.hm?.toString() ?? '0') ?? 0;
     final newHm = double.tryParse(hmUnit.text.trim()) ?? 0;
 
-    if (currentHm > newHm) {
+    if (!_hideHmForPeriod && currentHm > newHm) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1515,7 +1931,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return;
     }
 
-    if ((newHm - currentHm) > 1000) {
+    if (!_hideHmForPeriod && (newHm - currentHm) > 1000) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1570,13 +1986,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           ? double.tryParse(rtd2Controllers[i].text) ?? 0
           : double.tryParse(position[i]['rtd2']?.toString() ?? '0') ?? 0;
 
-      if (inputRtd > actualRtd) {
+      if (!_hideRtdForPeriod && inputRtd > actualRtd) {
         errorsRtd.add(
           'Posisi ${unit.posisi}: RTD input ($inputRtd) melebihi RTD aktual ($actualRtd).',
         );
       }
 
-      if (inputOtd > actualOtd) {
+      if (!_hideRtdForPeriod && inputOtd > actualOtd) {
         errorsRtd.add(
           'Posisi ${unit.posisi}: OTD input ($inputOtd) melebihi OTD aktual ($actualOtd).',
         );
@@ -1853,6 +2269,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           if (state is TiresLoadedState) {
             final firstUnit = state.units.first;
             final currentUnitNumber = firstUnit.unitNumber ?? '';
+            _apiHmForHiddenFields = _nonEmptySourceValue(firstUnit.hm);
 
             if (_hmInitializedForUnit != currentUnitNumber) {
               hmUnit.text = idSite == bmbhauling.idSite
@@ -1889,10 +2306,15 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                 'position': i + 1,
                 'pressure': '',
                 'adjusmentPressure': '',
+                'temperatureStatus': 'HOT',
+                'adjusmentTemperatureStatus': 'HOT',
                 'hm': '',
                 'damageTire': [],
                 'rtd1': unit.rtd?.toString() ?? '',
                 'rtd2': unit.otd?.toString() ?? '',
+                '_apiRtd': unit.rtd?.toString() ?? '',
+                '_apiOtd': unit.otd?.toString() ?? '',
+                '_apiSn': unit.sn?.toString() ?? '',
                 'remarks': '',
                 'sn': unit.sn,
                 'rating': '',
@@ -1959,6 +2381,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               });
             }
             log('message position tire inspect : ${position}');
+
+            if (_usesCompanyOnePeriodRules && selectedPeriodType != 'PI/PE') {
+              unawaited(_loadHiddenFieldFallbacks());
+            }
+
+            if (_hidePressureForPeriod) {
+              unawaited(_loadPreviousPressure());
+            }
           }
         },
         builder: (context, state) {
@@ -2065,50 +2495,48 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                             ],
                           ),
                         ),
-                        const SizedBox(
-                          width: 12,
-                        ),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.watch,
-                                    color: Colors.red,
-                                    size: 38,
-                                  ),
-                                  const SizedBox(
-                                    width: 12,
-                                  ),
-                                  Text(
-                                    (idSite == bmbhauling.idSite &&
-                                            idSite == '1')
-                                        ? 'KM Unit'
-                                        : 'HM Unit',
-                                    style: getBlackTextStyle(
-                                        fontWeight: w700, fontSize: 18),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              SizedBox(
-                                width: double.infinity,
-                                child: InputFormWidget(
-                                  controller: hmUnit,
-                                  isDecimalOnly: true,
-                                  type: const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                                  hint:
-                                      'Fill ${idSite == bmbhauling.idSite ? 'KM' : 'HM'}',
+                        if (!_hideHmForPeriod) ...[
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.watch,
+                                      color: Colors.red,
+                                      size: 38,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      (idSite == bmbhauling.idSite &&
+                                              idSite == '1')
+                                          ? 'KM Unit'
+                                          : 'HM Unit',
+                                      style: getBlackTextStyle(
+                                        fontWeight: w700,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: InputFormWidget(
+                                    controller: hmUnit,
+                                    isDecimalOnly: true,
+                                    type: const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                    hint:
+                                        'Fill ${idSite == bmbhauling.idSite ? 'KM' : 'HM'}',
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
+                        ],
                       ],
                     ),
                     const SizedBox(
@@ -2275,6 +2703,39 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                     const SizedBox(
                       height: 12,
                     ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.device_thermostat,
+                          size: 38,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Unit/Tire Temperature',
+                          style: getBlackTextStyle(
+                            fontSize: 18,
+                            fontWeight: w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    TemperatureStatusSelectorWidget(
+                      selectedStatus: position.isNotEmpty
+                          ? position.first['temperatureStatus']?.toString() ??
+                              'HOT'
+                          : 'HOT',
+                      onChanged: (value) {
+                        setState(() {
+                          for (final tirePosition in position) {
+                            tirePosition['temperatureStatus'] = value;
+                            tirePosition['adjusmentTemperatureStatus'] = value;
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
                     ListView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
@@ -2370,24 +2831,26 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           const SizedBox(
                                             height: 12,
                                           ),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'SN',
-                                                style: getBlackTextStyle(
-                                                    fontWeight: w700),
-                                              ),
-                                              Text(
-                                                unit.sn ?? '',
-                                                style: getBlackTextStyle(),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
+                                          if (!_hideSnForPeriod) ...[
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'SN',
+                                                  style: getBlackTextStyle(
+                                                    fontWeight: w700,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  unit.sn ?? '',
+                                                  style: getBlackTextStyle(),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 12),
+                                          ],
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
@@ -2442,22 +2905,24 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           const SizedBox(
                                             height: 12,
                                           ),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            children: [
-                                              Text(
-                                                'RTD',
-                                                style: getBlackTextStyle(
-                                                    fontWeight: w700),
-                                              ),
-                                              Text(
-                                                '${unit.rtd} / ${unit.otd}' ??
-                                                    '',
-                                                style: getBlackTextStyle(),
-                                              ),
-                                            ],
-                                          ),
+                                          if (!_hideRtdForPeriod)
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  'RTD',
+                                                  style: getBlackTextStyle(
+                                                    fontWeight: w700,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '${unit.rtd} / ${unit.otd}',
+                                                  style: getBlackTextStyle(),
+                                                ),
+                                              ],
+                                            ),
                                         ],
                                       ),
                                       Padding(
@@ -2467,394 +2932,380 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                           thickness: 1.5,
                                         ),
                                       ),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          Expanded(
-                                            child: SizedBox(
-                                              width: MediaQuery.of(context)
-                                                  .size
-                                                  .width,
-                                              height: 45,
-                                              child: ElevatedButton(
-                                                onPressed: () async {
-                                                  FocusScope.of(context)
-                                                      .unfocus();
-                                                  setState(() {
-                                                    // selectedPosIndex = posIndex;
-                                                  });
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (BuildContext context) {
-                                                      return Dialog(
-                                                        child: Container(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                  20.0),
-                                                          child:
-                                                              SingleChildScrollView(
-                                                            child: Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: <Widget>[
-                                                                Text(
-                                                                  'Choose Pressure',
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontSize:
-                                                                        24.0,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
+                                      if (!_hidePressureForPeriod)
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: SizedBox(
+                                                width: MediaQuery.of(context)
+                                                    .size
+                                                    .width,
+                                                height: 45,
+                                                child: ElevatedButton(
+                                                  onPressed: () async {
+                                                    FocusScope.of(context)
+                                                        .unfocus();
+                                                    setState(() {
+                                                      // selectedPosIndex = posIndex;
+                                                    });
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (BuildContext
+                                                          context) {
+                                                        return Dialog(
+                                                          child: Container(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                    20.0),
+                                                            child:
+                                                                SingleChildScrollView(
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: <Widget>[
+                                                                  Text(
+                                                                    'Choose Pressure',
+                                                                    style:
+                                                                        TextStyle(
+                                                                      fontSize:
+                                                                          24.0,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
                                                                   ),
-                                                                ),
-                                                                SizedBox(
-                                                                    height:
-                                                                        16.0),
-                                                                Column(),
-                                                                Wrap(
-                                                                  children:
-                                                                      pressure.map(
-                                                                          (ps) {
-                                                                    final psIndex =
+                                                                  SizedBox(
+                                                                      height:
+                                                                          16.0),
+                                                                  Column(),
+                                                                  Wrap(
+                                                                    children:
                                                                         pressure
-                                                                            .indexOf(ps);
-                                                                    return Padding(
-                                                                      padding: const EdgeInsets
-                                                                          .only(
-                                                                          right:
-                                                                              16,
-                                                                          bottom:
-                                                                              18),
-                                                                      child:
-                                                                          ElevatedButton(
-                                                                        style: ElevatedButton.styleFrom(
-                                                                            backgroundColor:
-                                                                                Colors.green),
-                                                                        onPressed:
-                                                                            () {
-                                                                          final id =
-                                                                              Uuid();
-                                                                          setState(
-                                                                              () {
-                                                                            position[index]['pressure'] =
-                                                                                ps;
-                                                                            Navigator.of(context).pop();
-                                                                          });
-                                                                        },
+                                                                            .map((ps) {
+                                                                      final psIndex =
+                                                                          pressure
+                                                                              .indexOf(ps);
+                                                                      return Padding(
+                                                                        padding: const EdgeInsets
+                                                                            .only(
+                                                                            right:
+                                                                                16,
+                                                                            bottom:
+                                                                                18),
                                                                         child:
-                                                                            Text(
-                                                                          ps,
+                                                                            ElevatedButton(
                                                                           style:
-                                                                              getWhiteTextStyle(
-                                                                            fontWeight:
-                                                                                w700,
+                                                                              ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                                                                          onPressed:
+                                                                              () {
+                                                                            final id =
+                                                                                Uuid();
+                                                                            setState(() {
+                                                                              position[index]['pressure'] = ps;
+                                                                              Navigator.of(context).pop();
+                                                                            });
+                                                                          },
+                                                                          child:
+                                                                              Text(
+                                                                            ps,
+                                                                            style:
+                                                                                getWhiteTextStyle(
+                                                                              fontWeight: w700,
+                                                                            ),
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                    );
-                                                                  }).toList(),
-                                                                ),
-                                                                Row(
-                                                                  children: [
-                                                                    Expanded(
-                                                                      child:
-                                                                          SizedBox(
-                                                                        width: double
-                                                                            .infinity,
-                                                                        child: InputFormWidget(
-                                                                            controller:
-                                                                                pressureCtrl,
-                                                                            isDigitOnly:
-                                                                                true,
-                                                                            type:
-                                                                                TextInputType.number,
-                                                                            hint: 'Input Manual'),
-                                                                      ),
-                                                                    ),
-                                                                    const SizedBox(
-                                                                      width: 6,
-                                                                    ),
-                                                                    ElevatedButton(
-                                                                        onPressed:
-                                                                            () {
-                                                                          setState(
-                                                                              () {
-                                                                            if (pressureCtrl.text !=
-                                                                                '') {
-                                                                              position[index]['pressure'] = pressureCtrl.text;
-                                                                            }
-                                                                            pressureCtrl.clear();
-                                                                            Navigator.of(context).pop();
-                                                                          });
-                                                                        },
-                                                                        child: Text(
-                                                                            'Submit'))
-                                                                  ],
-                                                                ),
-                                                                SizedBox(
-                                                                    height:
-                                                                        12.0),
-                                                                SizedBox(
-                                                                  width: double
-                                                                      .infinity,
-                                                                  child:
-                                                                      ElevatedButton(
-                                                                    onPressed:
-                                                                        () {
-                                                                      pressureCtrl
-                                                                          .clear();
-                                                                      Navigator.of(
-                                                                              context)
-                                                                          .pop();
-                                                                    },
-                                                                    child: Text(
-                                                                        'Close'),
+                                                                      );
+                                                                    }).toList(),
                                                                   ),
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        Colors.blue,
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                    )),
-                                                child: (position[index]
-                                                                ['pressure'] ==
-                                                            '' ||
-                                                        (position[index]
-                                                                ['pressure'] ==
-                                                            null))
-                                                    ? Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          Icon(
-                                                            Icons.add,
-                                                            color: white,
-                                                          ),
-                                                          const SizedBox(
-                                                            width: 6,
-                                                          ),
-                                                          Text(
-                                                            'Pressure',
-                                                            style:
-                                                                getWhiteTextStyle(),
-                                                          )
-                                                        ],
-                                                      )
-                                                    : Text(
-                                                        '${position[index]['pressure']} Psi',
-                                                        style:
-                                                            getWhiteTextStyle(
-                                                          fontSize: 24,
-                                                          fontWeight: w700,
-                                                        ),
-                                                      ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            width: 12,
-                                          ),
-                                          // adjusment pressure
-                                          Expanded(
-                                            child: SizedBox(
-                                              width: MediaQuery.of(context)
-                                                  .size
-                                                  .width,
-                                              height: 45,
-                                              child: ElevatedButton(
-                                                onPressed: () async {
-                                                  FocusScope.of(context)
-                                                      .unfocus();
-                                                  setState(() {
-                                                    // selectedPosIndex = posIndex;
-                                                  });
-                                                  showDialog(
-                                                    context: context,
-                                                    builder:
-                                                        (BuildContext context) {
-                                                      return Dialog(
-                                                        child: Container(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                  20.0),
-                                                          child:
-                                                              SingleChildScrollView(
-                                                            child: Column(
-                                                              mainAxisSize:
-                                                                  MainAxisSize
-                                                                      .min,
-                                                              children: <Widget>[
-                                                                Text(
-                                                                  'Choose Pressure',
-                                                                  style:
-                                                                      TextStyle(
-                                                                    fontSize:
-                                                                        24.0,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                  ),
-                                                                ),
-                                                                SizedBox(
-                                                                    height:
-                                                                        16.0),
-                                                                Column(),
-                                                                Wrap(
-                                                                  children:
-                                                                      pressure.map(
-                                                                          (ps) {
-                                                                    final psIndex =
-                                                                        pressure
-                                                                            .indexOf(ps);
-                                                                    return Padding(
-                                                                      padding: const EdgeInsets
-                                                                          .only(
-                                                                          right:
-                                                                              16,
-                                                                          bottom:
-                                                                              18),
-                                                                      child:
-                                                                          ElevatedButton(
-                                                                        style: ElevatedButton.styleFrom(
-                                                                            backgroundColor:
-                                                                                Colors.green),
-                                                                        onPressed:
-                                                                            () {
-                                                                          setState(
-                                                                              () {
-                                                                            position[index]['adjusmentPressure'] =
-                                                                                ps;
-                                                                            Navigator.of(context).pop();
-                                                                          });
-                                                                        },
+                                                                  Row(
+                                                                    children: [
+                                                                      Expanded(
                                                                         child:
-                                                                            Text(
-                                                                          ps,
-                                                                          style:
-                                                                              getWhiteTextStyle(
-                                                                            fontWeight:
-                                                                                w700,
-                                                                          ),
+                                                                            SizedBox(
+                                                                          width:
+                                                                              double.infinity,
+                                                                          child: InputFormWidget(
+                                                                              controller: pressureCtrl,
+                                                                              isDigitOnly: true,
+                                                                              type: TextInputType.number,
+                                                                              hint: 'Input Manual'),
                                                                         ),
                                                                       ),
-                                                                    );
-                                                                  }).toList(),
-                                                                ),
-                                                                Row(
-                                                                  children: [
-                                                                    Expanded(
-                                                                      child:
-                                                                          SizedBox(
-                                                                        width: double
-                                                                            .infinity,
-                                                                        child: InputFormWidget(
-                                                                            controller:
-                                                                                pressureCtrl,
-                                                                            isDigitOnly:
-                                                                                true,
-                                                                            type:
-                                                                                TextInputType.number,
-                                                                            hint: 'Input Manual'),
+                                                                      const SizedBox(
+                                                                        width:
+                                                                            6,
                                                                       ),
-                                                                    ),
-                                                                    const SizedBox(
-                                                                      width: 6,
-                                                                    ),
-                                                                    ElevatedButton(
-                                                                        onPressed:
-                                                                            () {
-                                                                          setState(
-                                                                              () {
-                                                                            if (pressureCtrl.text !=
-                                                                                '') {
-                                                                              position[index]['adjusmentPressure'] = pressureCtrl.text;
-                                                                            }
-                                                                            pressureCtrl.clear();
-                                                                            Navigator.of(context).pop();
-                                                                          });
-                                                                        },
-                                                                        child: const Text(
-                                                                            'Submit'))
-                                                                  ],
-                                                                ),
-                                                                SizedBox(
-                                                                    height:
-                                                                        12.0),
-                                                                SizedBox(
-                                                                  width: double
-                                                                      .infinity,
-                                                                  child:
                                                                       ElevatedButton(
-                                                                    onPressed:
-                                                                        () {
-                                                                      pressureCtrl
-                                                                          .clear();
-                                                                      Navigator.of(
-                                                                              context)
-                                                                          .pop();
-                                                                    },
-                                                                    child: Text(
-                                                                        'Close'),
+                                                                          onPressed:
+                                                                              () {
+                                                                            setState(() {
+                                                                              if (pressureCtrl.text != '') {
+                                                                                position[index]['pressure'] = pressureCtrl.text;
+                                                                              }
+                                                                              pressureCtrl.clear();
+                                                                              Navigator.of(context).pop();
+                                                                            });
+                                                                          },
+                                                                          child:
+                                                                              Text('Submit'))
+                                                                    ],
                                                                   ),
-                                                                ),
-                                                              ],
+                                                                  SizedBox(
+                                                                      height:
+                                                                          12.0),
+                                                                  SizedBox(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    child:
+                                                                        ElevatedButton(
+                                                                      onPressed:
+                                                                          () {
+                                                                        pressureCtrl
+                                                                            .clear();
+                                                                        Navigator.of(context)
+                                                                            .pop();
+                                                                      },
+                                                                      child: Text(
+                                                                          'Close'),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
                                                             ),
                                                           ),
+                                                        );
+                                                      },
+                                                    );
+                                                  },
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              Colors.blue,
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                          )),
+                                                  child: (position[index][
+                                                                  'pressure'] ==
+                                                              '' ||
+                                                          (position[index][
+                                                                  'pressure'] ==
+                                                              null))
+                                                      ? Row(
+                                                          mainAxisSize:
+                                                              MainAxisSize.min,
+                                                          children: [
+                                                            Icon(
+                                                              Icons.add,
+                                                              color: white,
+                                                            ),
+                                                            const SizedBox(
+                                                              width: 6,
+                                                            ),
+                                                            Text(
+                                                              'Pressure',
+                                                              style:
+                                                                  getWhiteTextStyle(),
+                                                            )
+                                                          ],
+                                                        )
+                                                      : Text(
+                                                          '${position[index]['pressure']} Psi',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontSize: 24,
+                                                            fontWeight: w700,
+                                                          ),
                                                         ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                    backgroundColor:
-                                                        Colors.blue,
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                    )),
-                                                child: (position[index][
-                                                            'adjusmentPressure'] ==
-                                                        '')
-                                                    ? Text(
-                                                        'Adj Pressure',
-                                                        style:
-                                                            getWhiteTextStyle(),
-                                                      )
-                                                    : Text(
-                                                        '${position[index]['adjusmentPressure']} Psi (Adj)',
-                                                        style:
-                                                            getWhiteTextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight: w700,
-                                                        ),
-                                                      ),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                            const SizedBox(
+                                              width: 12,
+                                            ),
+                                            // adjusment pressure
+                                            Expanded(
+                                              child: SizedBox(
+                                                width: MediaQuery.of(context)
+                                                    .size
+                                                    .width,
+                                                height: 45,
+                                                child: ElevatedButton(
+                                                  onPressed: () async {
+                                                    FocusScope.of(context)
+                                                        .unfocus();
+                                                    setState(() {
+                                                      // selectedPosIndex = posIndex;
+                                                    });
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (BuildContext
+                                                          context) {
+                                                        return Dialog(
+                                                          child: Container(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                    20.0),
+                                                            child:
+                                                                SingleChildScrollView(
+                                                              child: Column(
+                                                                mainAxisSize:
+                                                                    MainAxisSize
+                                                                        .min,
+                                                                children: <Widget>[
+                                                                  Text(
+                                                                    'Choose Pressure',
+                                                                    style:
+                                                                        TextStyle(
+                                                                      fontSize:
+                                                                          24.0,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
+                                                                  ),
+                                                                  SizedBox(
+                                                                      height:
+                                                                          16.0),
+                                                                  Column(),
+                                                                  Wrap(
+                                                                    children:
+                                                                        pressure
+                                                                            .map((ps) {
+                                                                      final psIndex =
+                                                                          pressure
+                                                                              .indexOf(ps);
+                                                                      return Padding(
+                                                                        padding: const EdgeInsets
+                                                                            .only(
+                                                                            right:
+                                                                                16,
+                                                                            bottom:
+                                                                                18),
+                                                                        child:
+                                                                            ElevatedButton(
+                                                                          style:
+                                                                              ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                                                                          onPressed:
+                                                                              () {
+                                                                            setState(() {
+                                                                              position[index]['adjusmentPressure'] = ps;
+                                                                              Navigator.of(context).pop();
+                                                                            });
+                                                                          },
+                                                                          child:
+                                                                              Text(
+                                                                            ps,
+                                                                            style:
+                                                                                getWhiteTextStyle(
+                                                                              fontWeight: w700,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                      );
+                                                                    }).toList(),
+                                                                  ),
+                                                                  Row(
+                                                                    children: [
+                                                                      Expanded(
+                                                                        child:
+                                                                            SizedBox(
+                                                                          width:
+                                                                              double.infinity,
+                                                                          child: InputFormWidget(
+                                                                              controller: pressureCtrl,
+                                                                              isDigitOnly: true,
+                                                                              type: TextInputType.number,
+                                                                              hint: 'Input Manual'),
+                                                                        ),
+                                                                      ),
+                                                                      const SizedBox(
+                                                                        width:
+                                                                            6,
+                                                                      ),
+                                                                      ElevatedButton(
+                                                                          onPressed:
+                                                                              () {
+                                                                            setState(() {
+                                                                              if (pressureCtrl.text != '') {
+                                                                                position[index]['adjusmentPressure'] = pressureCtrl.text;
+                                                                              }
+                                                                              pressureCtrl.clear();
+                                                                              Navigator.of(context).pop();
+                                                                            });
+                                                                          },
+                                                                          child:
+                                                                              const Text('Submit'))
+                                                                    ],
+                                                                  ),
+                                                                  SizedBox(
+                                                                      height:
+                                                                          12.0),
+                                                                  SizedBox(
+                                                                    width: double
+                                                                        .infinity,
+                                                                    child:
+                                                                        ElevatedButton(
+                                                                      onPressed:
+                                                                          () {
+                                                                        pressureCtrl
+                                                                            .clear();
+                                                                        Navigator.of(context)
+                                                                            .pop();
+                                                                      },
+                                                                      child: Text(
+                                                                          'Close'),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        );
+                                                      },
+                                                    );
+                                                  },
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                          backgroundColor:
+                                                              Colors.blue,
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        12),
+                                                          )),
+                                                  child: (position[index][
+                                                              'adjusmentPressure'] ==
+                                                          '')
+                                                      ? Text(
+                                                          'Adj Pressure',
+                                                          style:
+                                                              getWhiteTextStyle(),
+                                                        )
+                                                      : Text(
+                                                          '${position[index]['adjusmentPressure']} Psi (Adj)',
+                                                          style:
+                                                              getWhiteTextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight: w700,
+                                                          ),
+                                                        ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
 
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
+                                      if (!_hidePressureForPeriod)
+                                        const SizedBox(height: 12),
 
                                       SizedBox(
                                         width:
@@ -3354,27 +3805,29 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       const SizedBox(
                                         height: 12,
                                       ),
-                                      SizedBox(
-                                        width: double.infinity,
-                                        height: 45,
-                                        child: ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.orange,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(12),
+                                      if (!_hideTireComponentForPeriod)
+                                        SizedBox(
+                                          width: double.infinity,
+                                          height: 45,
+                                          child: ElevatedButton(
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.orange,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                            ),
+                                            onPressed: () {
+                                              showRimInspectionDialog(index);
+                                            },
+                                            child: Text(
+                                              'Check Tire Component Condition',
+                                              style: getWhiteTextStyle(
+                                                fontWeight: w700,
+                                              ),
                                             ),
                                           ),
-                                          onPressed: () {
-                                            showRimInspectionDialog(index);
-                                          },
-                                          child: Text(
-                                            'Check Tire Component Condition',
-                                            style: getWhiteTextStyle(
-                                                fontWeight: w700),
-                                          ),
                                         ),
-                                      ),
                                       const SizedBox(
                                         height: 16,
                                       ),
@@ -3874,138 +4327,140 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                       //       )
                                       //     : Container(),
 
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                Text(
-                                                  'RTD 1',
-                                                  style: getBlackTextStyle(
-                                                      fontWeight: w700),
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: InputFormWidget(
-                                                    onChng: (value) {
-                                                      position[index]['rtd1'] =
-                                                          value;
-                                                    },
-                                                    controller:
-                                                        rtd1Controllers[index],
-                                                    hint: '',
+                                      if (!_hideRtdForPeriod)
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  Text(
+                                                    'RTD 1',
+                                                    style: getBlackTextStyle(
+                                                        fontWeight: w700),
                                                   ),
-                                                ),
-                                                // Builder(builder: (context) {
-                                                //   rtd1Controllers[index].text =
-                                                //       unit.rtd ?? '';
-                                                //   position[index]['rtd1'] =
-                                                //       unit.rtd;
-                                                //   return SizedBox(
-                                                //     width: double.infinity,
-                                                //     child: InputFormWidget(
-                                                //         onChng: (value) {
-                                                //           position[index]
-                                                //               ['rtd1'] = value;
-                                                //         },
-                                                //         controller:
-                                                //             rtd1Controllers[
-                                                //                 index],
-                                                //         hint: ''),
-                                                //   );
-                                                // }),
-                                              ],
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                            width: 12,
-                                          ),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                Text(
-                                                  'RTD 2',
-                                                  style: getBlackTextStyle(
-                                                      fontWeight: w700),
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: InputFormWidget(
-                                                    onChng: (value) {
-                                                      position[index]['rtd2'] =
-                                                          value;
-                                                    },
-                                                    controller:
-                                                        rtd2Controllers[index],
-                                                    hint: '',
+                                                  const SizedBox(
+                                                    height: 12,
                                                   ),
-                                                ),
-                                                // Builder(builder: (context) {
-                                                //   rtd2Controllers[index].text =
-                                                //       unit.otd ?? '';
-                                                //   position[index]['rtd2'] =
-                                                //       unit.otd;
-                                                //   return SizedBox(
-                                                //     width: double.infinity,
-                                                //     child: InputFormWidget(
-                                                //         onChng: (value) {
-                                                //           position[index]
-                                                //               ['rtd2'] = value;
-                                                //         },
-                                                //         controller:
-                                                //             rtd2Controllers[
-                                                //                 index],
-                                                //         hint: ''),
-                                                //   );
-                                                // }),
-                                              ],
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                      onChng: (value) {
+                                                        position[index]
+                                                            ['rtd1'] = value;
+                                                      },
+                                                      controller:
+                                                          rtd1Controllers[
+                                                              index],
+                                                      hint: '',
+                                                    ),
+                                                  ),
+                                                  // Builder(builder: (context) {
+                                                  //   rtd1Controllers[index].text =
+                                                  //       unit.rtd ?? '';
+                                                  //   position[index]['rtd1'] =
+                                                  //       unit.rtd;
+                                                  //   return SizedBox(
+                                                  //     width: double.infinity,
+                                                  //     child: InputFormWidget(
+                                                  //         onChng: (value) {
+                                                  //           position[index]
+                                                  //               ['rtd1'] = value;
+                                                  //         },
+                                                  //         controller:
+                                                  //             rtd1Controllers[
+                                                  //                 index],
+                                                  //         hint: ''),
+                                                  //   );
+                                                  // }),
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          const SizedBox(
-                                            width: 12,
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.stretch,
-                                        children: [
-                                          Text(
-                                            'Serial Number',
-                                            style: getBlackTextStyle(
-                                                fontWeight: w700),
-                                          ),
-                                          const SizedBox(
-                                            height: 12,
-                                          ),
-                                          SizedBox(
-                                            width: double.infinity,
-                                            child: InputFormWidget(
+                                            const SizedBox(
+                                              width: 12,
+                                            ),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  Text(
+                                                    'RTD 2',
+                                                    style: getBlackTextStyle(
+                                                        fontWeight: w700),
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                      onChng: (value) {
+                                                        position[index]
+                                                            ['rtd2'] = value;
+                                                      },
+                                                      controller:
+                                                          rtd2Controllers[
+                                                              index],
+                                                      hint: '',
+                                                    ),
+                                                  ),
+                                                  // Builder(builder: (context) {
+                                                  //   rtd2Controllers[index].text =
+                                                  //       unit.otd ?? '';
+                                                  //   position[index]['rtd2'] =
+                                                  //       unit.otd;
+                                                  //   return SizedBox(
+                                                  //     width: double.infinity,
+                                                  //     child: InputFormWidget(
+                                                  //         onChng: (value) {
+                                                  //           position[index]
+                                                  //               ['rtd2'] = value;
+                                                  //         },
+                                                  //         controller:
+                                                  //             rtd2Controllers[
+                                                  //                 index],
+                                                  //         hint: ''),
+                                                  //   );
+                                                  // }),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(
+                                              width: 12,
+                                            ),
+                                          ],
+                                        ),
+                                      if (!_hideRtdForPeriod)
+                                        const SizedBox(height: 12),
+                                      if (!_hideSnForPeriod)
+                                        Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            Text(
+                                              'Serial Number',
+                                              style: getBlackTextStyle(
+                                                fontWeight: w700,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 12),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: InputFormWidget(
                                                 onChng: (value) {
                                                   position[index]['sn'] = value;
                                                 },
                                                 controller:
                                                     snControllers[index],
-                                                hint: ''),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(
-                                        height: 12,
-                                      ),
+                                                hint: '',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      if (!_hideSnForPeriod)
+                                        const SizedBox(height: 12),
                                       Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.stretch,
