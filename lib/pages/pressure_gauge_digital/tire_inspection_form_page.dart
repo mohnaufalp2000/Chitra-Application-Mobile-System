@@ -2538,17 +2538,25 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                           height: (pit.isNotEmpty) ? 24 : 0,
                         ),
                         (pit.isNotEmpty)
-                            ? Center(
-                                child: Wrap(
-                                  spacing: 8.0, // Jarak horizontal antar tombol
-                                  children: pit.map((e) {
-                                    final pitIndex = pit.indexOf(e);
+                            ? SizedBox(
+                                width: double.infinity,
+                                height: 44,
+                                child: ListView.separated(
+                                  scrollDirection: Axis.horizontal,
+                                  physics: const BouncingScrollPhysics(),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 2),
+                                  itemCount: pit.length,
+                                  separatorBuilder: (context, index) =>
+                                      const SizedBox(width: 8),
+                                  itemBuilder: (context, pitIndex) {
+                                    final location = pit[pitIndex];
+
                                     return ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            (selectedPit == pitIndex)
-                                                ? Colors.orange
-                                                : greyF7F8F9,
+                                        backgroundColor: selectedPit == pitIndex
+                                            ? Colors.orange
+                                            : greyF7F8F9,
                                       ),
                                       onPressed: () {
                                         setState(() {
@@ -2556,13 +2564,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                         });
                                       },
                                       child: Text(
-                                        e,
-                                        style: (selectedPit == pitIndex)
+                                        location,
+                                        style: selectedPit == pitIndex
                                             ? getWhiteTextStyle()
                                             : getBlackTextStyle(),
                                       ),
                                     );
-                                  }).toList(),
+                                  },
                                 ),
                               )
                             : Container(),
@@ -2825,6 +2833,46 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                         ),
                         const SizedBox(
                           height: 12,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.device_thermostat,
+                              size: 38,
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Text(
+                              'Unit/Tire Temperature',
+                              style: getBlackTextStyle(
+                                fontSize: 18,
+                                fontWeight: w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        TemperatureStatusSelectorWidget(
+                          selectedStatus: position.isNotEmpty
+                              ? position.first['temperatureStatus']
+                                      ?.toString() ??
+                                  'HOT'
+                              : 'HOT',
+                          onChanged: (value) {
+                            setState(() {
+                              for (final item in position) {
+                                item['temperatureStatus'] = value;
+                                item['adjusmentTemperatureStatus'] = value;
+                              }
+                            });
+                          },
+                        ),
+                        const SizedBox(
+                          height: 16,
                         ),
                         ListView.builder(
                             shrinkWrap: true,
