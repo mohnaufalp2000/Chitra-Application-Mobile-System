@@ -102,6 +102,7 @@ class _BoxMenuWidgetState extends State<BoxMenuWidget> {
         // }
         break;
       case 4:
+        log('halaman spm : ${widget.argument}');
         Navigator.pushNamed(context, TpmsPage.routeName,
             arguments: widget.argument);
         // push(context, CtsPage.routeName);

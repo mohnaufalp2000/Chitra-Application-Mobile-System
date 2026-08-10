@@ -492,7 +492,13 @@ class ApiService {
       List<Map<String, dynamic>> data3) async {
     try {
       // Filter URL Customer
-      final url = await selectedUrl('post_daily_pressure') ?? '';
+      // final url = (await selectedUrl('post_daily_pressure') ?? '').trim();
+      final url =
+          'https://cts-chitraparatama.co.id/ChitraTireMngr/spm_kpc/getdatacamos.php?function=post_daily';
+
+      if (url.isEmpty) {
+        throw StateError('URL post_daily_pressure belum tersedia.');
+      }
 
       log('send daily url : $url');
 
@@ -511,14 +517,17 @@ class ApiService {
         "data3": data3,
       }}');
       if (response.statusCode == 201 || response.statusCode == 200) {
-        print('send data success : ${response}');
-      } else {
-        // Gagal
-        print('Gagal mengirim data. Status: ${response.statusCode}');
-        print('Response: ${response.body}');
+        log('send data success : ${response.statusCode}');
+        log('send data information : ${response.body}');
+        return;
       }
+
+      throw Exception(
+        'CTS HTTP ${response.statusCode}: ${response.body}',
+      );
     } catch (e) {
-      print('Error saat mengirim data: $e');
+      log('Error saat mengirim data Daily Pressure ke CTS: $e');
+      rethrow;
     }
   }
 

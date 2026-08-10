@@ -18,7 +18,7 @@ class DailyCheckPostBloc
 
   DailyCheckPostBloc() : super(DailyCheckPostInitial()) {
     on<DailyCheckPostEvent>((event, emit) async {
-      // emit(DailyCheckPostLoadingState());
+      emit(DailyCheckPostLoadingState());
 
       try {
         log('unit hohohoho');
@@ -126,27 +126,47 @@ class DailyCheckPostBloc
         // Data 2
         List<Map<String, dynamic>> data2 = [];
         try {
+          final unitIdByUnitNumber = <String, String>{};
+          for (final unit in event.allUnit) {
+            final unitNumber = unit.unitNumber?.trim() ?? '';
+            final unitId = unit.idUnit?.trim() ?? '';
+
+            if (unitNumber.isNotEmpty && unitId.isNotEmpty) {
+              unitIdByUnitNumber[unitNumber.toLowerCase()] = unitId;
+            }
+          }
+
           data2 = dailyCheckConverted
-              .expand((daily) => daily.posisi
-                  .map((pos) => {
-                        "id_daily": pos.idDaily,
-                        "id_unit_site": pos.idUnit,
-                        "pos": pos.pos,
-                        "inv": pos.idInventory,
-                        // "tanggal_daily": daily.tanggal.split('T')[0],
-                        "tanggal_daily": "${DateTime.parse(daily.tanggal).year}-"
-                            "${DateTime.parse(daily.tanggal).month.toString().padLeft(2, '0')}-"
-                            "${DateTime.parse(daily.tanggal).day.toString().padLeft(2, '0')} "
-                            "${DateTime.parse(daily.tanggal).hour.toString().padLeft(2, '0')}:"
-                            "${DateTime.parse(daily.tanggal).minute.toString().padLeft(2, '0')}:"
-                            "${DateTime.parse(daily.tanggal).second.toString().padLeft(2, '0')}",
-                        "press": pos.pressure,
-                        "kondisi": pos.kondisi,
-                        'id_site': dailyCheckConverted[0].idSite,
-                        // "id_site": "5",
-                        "adj": "0"
-                      })
-                  .toList())
+              .expand((daily) => daily.posisi.map((pos) {
+                    final positionUnitId = pos.idUnit.trim();
+                    final unitNumber = daily.unit.trim();
+                    final metadataUnitId =
+                        unitIdByUnitNumber[unitNumber.toLowerCase()] ?? '';
+                    final idUnitSite = positionUnitId.isNotEmpty
+                        ? positionUnitId
+                        : metadataUnitId.isNotEmpty
+                            ? metadataUnitId
+                            : unitNumber;
+
+                    return {
+                      "id_daily": pos.idDaily,
+                      "id_unit_site": idUnitSite,
+                      "pos": pos.pos,
+                      "inv": pos.idInventory,
+                      // "tanggal_daily": daily.tanggal.split('T')[0],
+                      "tanggal_daily": "${DateTime.parse(daily.tanggal).year}-"
+                          "${DateTime.parse(daily.tanggal).month.toString().padLeft(2, '0')}-"
+                          "${DateTime.parse(daily.tanggal).day.toString().padLeft(2, '0')} "
+                          "${DateTime.parse(daily.tanggal).hour.toString().padLeft(2, '0')}:"
+                          "${DateTime.parse(daily.tanggal).minute.toString().padLeft(2, '0')}:"
+                          "${DateTime.parse(daily.tanggal).second.toString().padLeft(2, '0')}",
+                      "press": pos.pressure,
+                      "kondisi": pos.kondisi,
+                      'id_site': dailyCheckConverted[0].idSite,
+                      // "id_site": "5",
+                      "adj": "0"
+                    };
+                  }).toList())
               .toList();
         } catch (e) {
           log('error data 2 : ${e.toString()}');

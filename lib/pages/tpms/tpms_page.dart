@@ -64,6 +64,7 @@ class _TpmsPageState extends State<TpmsPage> {
   List<Map<String, dynamic>> temperatures = [];
   List<List<List<Map<String, dynamic>>>> allUnits = [];
   String siteName = '';
+  bool _hasInitialized = false;
   // List<bool> isShowMore = [];
 
   @override
@@ -155,27 +156,67 @@ class _TpmsPageState extends State<TpmsPage> {
         });
   }
 
-  @override
-  void didChangeDependencies() async {
-    super.didChangeDependencies();
+  String _getSiteIdFromArguments() {
+    final arguments = ModalRoute.of(context)?.settings.arguments;
 
-    // Pastikan data tidak null
-    idSite = (Get.isRegistered<HomeState>())
-        ? Get.find<HomeState>().currentSiteId
-        : await getIdSitePreferences();
-    final user = await getUserPreferences();
+    if (arguments is Map) {
+      return arguments['idSite']?.toString().trim() ?? '';
+    }
+
+    if (arguments is String) {
+      return arguments.trim();
+    }
+
+    return '';
+  }
+
+  Future<void> _initializePage() async {
+    final argumentSiteId = _getSiteIdFromArguments();
+    final homeSiteId = Get.isRegistered<HomeState>()
+        ? Get.find<HomeState>().currentSiteId.trim()
+        : '';
+    final preferenceSiteId = (argumentSiteId.isEmpty && homeSiteId.isEmpty)
+        ? (await getIdSitePreferences()).trim()
+        : '';
+
+    if (!mounted) return;
+
+    idSite = argumentSiteId.isNotEmpty
+        ? argumentSiteId
+        : homeSiteId.isNotEmpty
+            ? homeSiteId
+            : preferenceSiteId;
+
+    log('id site spm: $idSite '
+        '(argument: $argumentSiteId, home: $homeSiteId, preference: $preferenceSiteId)');
+
     _loadAndFindSite(idSite);
+
+    final user = await getUserPreferences();
+    if (!mounted) return;
 
     if (user['isCTS'] != true && user['isCTS'] != null) {
       final userDocs = await firestore
           .collection('users')
           .where('email', isEqualTo: auth.currentUser!.email)
           .get();
-      final mapUser = userDocs.docs[0].data();
-      saveUserPreferences(mapUser);
+
+      if (userDocs.docs.isNotEmpty) {
+        saveUserPreferences(userDocs.docs.first.data());
+      }
     }
-    log('id site spm : $idSite');
+
+    if (!mounted) return;
     context.read<SpmBloc>().add(GetListSpmEvent(idSite: idSite));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_hasInitialized) return;
+    _hasInitialized = true;
+    _initializePage();
   }
 
   void showWeeklyAdjustmentDialog(

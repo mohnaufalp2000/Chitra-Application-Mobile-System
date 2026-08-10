@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import '../../../core/blocs/daily_check_post/daily_check_post_bloc.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/model/unit_tire.dart';
 import '../../../core/services/shared_preferences/shared_preferences.dart';
@@ -47,6 +48,7 @@ class _DailyPressureListTrialPageState
   List<Map<String, dynamic>> filteredItemTask = [];
   List<UnitTire> units = [];
   DateTime now = DateTime.now();
+  bool _isPreparingCtsData = false;
 
   @override
   void initState() {
@@ -108,6 +110,218 @@ class _DailyPressureListTrialPageState
     });
   }
 
+  bool _hasCompleteCtsMetadata(
+    List<UnitTire> allUnit,
+    int countAllTire,
+    Map<String, dynamic> allTireSize,
+  ) {
+    final sizes = allTireSize['sizes'];
+    final sizeCount = allTireSize['sizeCount'];
+
+    return allUnit.isNotEmpty &&
+        countAllTire > 0 &&
+        sizes is List &&
+        sizes.isNotEmpty &&
+        sizeCount is Map &&
+        sizeCount.isNotEmpty;
+  }
+
+  Future<Map<String, dynamic>> _loadCtsMetadata() async {
+    List<UnitTire> allUnit = [];
+    int countAllTire = 0;
+    Map<String, dynamic> allTireSize = {};
+
+    try {
+      allUnit = await ApiService.getCachedUnits(idSite: idSite);
+    } catch (e, stackTrace) {
+      log(
+        'Cache unit CTS tidak tersedia, menggunakan list kosong: $e',
+        stackTrace: stackTrace,
+      );
+    }
+
+    try {
+      countAllTire = await ApiService.getCachedCountAllTire(idSite: idSite);
+    } catch (e, stackTrace) {
+      log(
+        'Cache total tire CTS tidak tersedia, menggunakan 0: $e',
+        stackTrace: stackTrace,
+      );
+    }
+
+    try {
+      allTireSize = await ApiService.getCachedTireSize(idSite: idSite);
+    } catch (e, stackTrace) {
+      log(
+        'Cache tire size CTS tidak tersedia, menggunakan map kosong: $e',
+        stackTrace: stackTrace,
+      );
+    }
+
+    if (!_hasCompleteCtsMetadata(
+      allUnit,
+      countAllTire,
+      allTireSize,
+    )) {
+      try {
+        allUnit = await ApiService.getUnits(idSite);
+        countAllTire = await ApiService.getCachedCountAllTire(idSite: idSite);
+        allTireSize = await ApiService.getCachedTireSize(idSite: idSite);
+      } catch (e, stackTrace) {
+        log(
+          'Metadata CTS tidak lengkap dan gagal diperbarui. '
+          'Pengiriman dilanjutkan dengan data yang tersedia: $e',
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+    final rawSizes = allTireSize['sizes'];
+    final normalizedSizes = rawSizes is List
+        ? rawSizes.map((size) => size?.toString() ?? '').toList()
+        : <String>[];
+    final rawSizeCount = allTireSize['sizeCount'];
+    final normalizedSizeCount = <String, dynamic>{};
+
+    for (final size in normalizedSizes) {
+      normalizedSizeCount[size] =
+          rawSizeCount is Map ? (rawSizeCount[size] ?? '') : '';
+    }
+
+    allTireSize = {
+      'sizes': normalizedSizes,
+      'sizeCount': normalizedSizeCount,
+    };
+
+    if (!_hasCompleteCtsMetadata(allUnit, countAllTire, allTireSize)) {
+      log(
+        'Metadata CTS belum lengkap. Menggunakan fallback: '
+        'allUnit=${allUnit.length}, countAllTire=$countAllTire, '
+        'sizes=${normalizedSizes.length}.',
+      );
+    }
+
+    return {
+      'allUnit': allUnit,
+      'countAllTire': countAllTire > 0 ? countAllTire : 0,
+      'allTireSize': allTireSize,
+    };
+  }
+
+  Future<void> _sendDataToCts() async {
+    if (_isPreparingCtsData) return;
+
+    final dailyData = filteredItemTask
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
+
+    if (dailyData.isEmpty) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(
+            'Tidak ada data Daily Pressure hari ini untuk dikirim.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final confirmSend = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(
+              Icons.warning,
+              color: Colors.orange,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Warning',
+              style: getRedTextStyle(fontSize: 24).copyWith(
+                color: Colors.orange,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure? Please Check Before Send Data!',
+          style: getBlackTextStyle(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmSend != true || !mounted) return;
+
+    if (idSite.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Site belum tersedia. Silakan buka ulang halaman.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isPreparingCtsData = true;
+    });
+
+    try {
+      final metadata = await _loadCtsMetadata();
+
+      if (!mounted) return;
+
+      context.read<DailyCheckPostBloc>().add(
+            DailyCheckPostEvent(
+              dailyCheck: dailyData,
+              countAllTire: metadata['countAllTire'] as int,
+              allUnit: metadata['allUnit'] as List<UnitTire>,
+              allTireSize: metadata['allTireSize'] as Map<String, dynamic>,
+              typeSend: 'single',
+            ),
+          );
+    } catch (e, stackTrace) {
+      log(
+        'Gagal menyiapkan data CTS: $e',
+        stackTrace: stackTrace,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isPreparingCtsData = false;
+      });
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Gagal menyiapkan data CTS: $e',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     pit.clear();
@@ -139,6 +353,105 @@ class _DailyPressureListTrialPageState
                       hintText: 'Search... (Unit Number or Model)',
                       hintStyle: getGreyTextStyle(grey8391A1),
                       prefixIcon: Icon(Icons.search)),
+                ),
+                const SizedBox(
+                  height: 12,
+                ),
+                BlocConsumer<DailyCheckPostBloc, DailyCheckPostState>(
+                  listener: (context, state) {
+                    if (state is DailyCheckPostSuccessState) {
+                      if (_isPreparingCtsData) {
+                        setState(() {
+                          _isPreparingCtsData = false;
+                        });
+                      }
+
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: green00968A,
+                          content: Text(
+                            state.message,
+                            style: getWhiteTextStyle(),
+                          ),
+                        ),
+                      );
+                    }
+
+                    if (state is DailyCheckPostErrorState) {
+                      if (_isPreparingCtsData) {
+                        setState(() {
+                          _isPreparingCtsData = false;
+                        });
+                      }
+
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: Colors.red,
+                          content: Text(
+                            'Gagal mengirim data ke CTS: ${state.error}',
+                            style: getWhiteTextStyle(),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  builder: (context, state) {
+                    final isSending = _isPreparingCtsData ||
+                        state is DailyCheckPostLoadingState;
+
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isSending ? null : _sendDataToCts,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: green00968A,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: isSending
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      state is DailyCheckPostLoadingState
+                                          ? 'Sending to CTS...'
+                                          : 'Preparing Data...',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.send,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Send Data to CTS',
+                                      style: getWhiteTextStyle(),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(
                   height: 12,
