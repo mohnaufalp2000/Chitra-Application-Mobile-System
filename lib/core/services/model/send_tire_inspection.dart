@@ -76,6 +76,9 @@ class SendTireInspection {
   final String coreValveCondition;
   final String coreValveRemark;
 
+  final String valveCapCondition;
+  final String valveCapRemark;
+
   final String nutStudCondition;
   final String nutStudRemark;
 
@@ -112,6 +115,8 @@ class SendTireInspection {
     required this.valveRemark,
     required this.coreValveCondition,
     required this.coreValveRemark,
+    required this.valveCapCondition,
+    required this.valveCapRemark,
     required this.nutStudCondition,
     required this.nutStudRemark,
     required this.temperatureStatus,
@@ -151,6 +156,8 @@ class SendTireInspection {
       valveRemark: json['valve_remark']?.toString() ?? '',
       coreValveCondition: json['core_valve_condition']?.toString() ?? '',
       coreValveRemark: json['core_valve_remark']?.toString() ?? '',
+      valveCapCondition: json['valve_cap_condition']?.toString() ?? '',
+      valveCapRemark: json['valve_cap_remark']?.toString() ?? '',
       nutStudCondition: json['nut_stud_condition']?.toString() ?? '',
       nutStudRemark: json['nut_stud_remark']?.toString() ?? '',
       temperatureStatus: json['temperature_status']?.toString() ?? '',
@@ -201,6 +208,9 @@ class SendTireInspection {
 
       'core_valve_condition': coreValveCondition,
       'core_valve_remark': coreValveRemark,
+
+      'valve_cap_condition': valveCapCondition,
+      'valve_cap_remark': valveCapRemark,
 
       'nut_stud_condition': nutStudCondition,
       'nut_stud_remark': nutStudRemark,

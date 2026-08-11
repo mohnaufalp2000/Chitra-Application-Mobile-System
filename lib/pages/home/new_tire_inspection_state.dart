@@ -498,7 +498,7 @@ class NewTireInspectionState extends GetxController {
     int index,
     String key,
   ) {
-    if (index >= rimCondition.length) {
+    if (index < 0 || index >= rimCondition.length) {
       return '';
     }
 
@@ -638,6 +638,18 @@ class NewTireInspectionState extends GetxController {
     Map<String, dynamic> tire,
   ) async {
     final rimCondition = tire['rimCondition'] as List<dynamic>? ?? [];
+    final valveCapIndex = rimCondition.indexWhere((item) {
+      if (item is! Map) return false;
+
+      return item['title']?.toString().trim().toUpperCase() == 'VALVE CAP';
+    });
+    final nutStudIndex = rimCondition.indexWhere((item) {
+      if (item is! Map) return false;
+
+      final title = item['title']?.toString().toUpperCase() ?? '';
+      return title.contains('NUT') && title.contains('STUD');
+    });
+    final effectiveNutStudIndex = nutStudIndex >= 0 ? nutStudIndex : 6;
     var imageBase64 = '0';
 
     if (tire['images'] != null) {
@@ -674,8 +686,12 @@ class NewTireInspectionState extends GetxController {
       valveRemark: _getRimValue(rimCondition, 4, 'remark'),
       coreValveCondition: _getRimValue(rimCondition, 5, 'condition'),
       coreValveRemark: _getRimValue(rimCondition, 5, 'remark'),
-      nutStudCondition: _getRimValue(rimCondition, 6, 'condition'),
-      nutStudRemark: _getRimValue(rimCondition, 6, 'remark'),
+      valveCapCondition: _getRimValue(rimCondition, valveCapIndex, 'condition'),
+      valveCapRemark: _getRimValue(rimCondition, valveCapIndex, 'remark'),
+      nutStudCondition:
+          _getRimValue(rimCondition, effectiveNutStudIndex, 'condition'),
+      nutStudRemark:
+          _getRimValue(rimCondition, effectiveNutStudIndex, 'remark'),
       temperatureStatus:
           tire['temperatureStatus']?.toString().toUpperCase() ?? 'HOT',
       site: task['id_site']?.toString() ?? '',
