@@ -75,6 +75,14 @@ class TireInspectionFormPage extends StatefulWidget {
 
 class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     with WidgetsBindingObserver {
+  static const List<String> _siteSevenLocations = [
+    'Pitstop',
+    'Workshop',
+    'CSA 27',
+    'CSA 46',
+    'CSA 61',
+  ];
+
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
   final HomeState homeState = Get.find<HomeState>();
@@ -109,8 +117,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   TextEditingController rtd2 = TextEditingController(text: '');
   List<TextEditingController> remarksControllers = [];
   List<TextEditingController> snControllers = [];
+  List<FocusNode> snFocusNodes = [];
   List<TextEditingController> rtd1Controllers = [];
   List<TextEditingController> rtd2Controllers = [];
+  final Set<int> _editableSnIndexes = <int>{};
+  bool _isSnConfirmationOpen = false;
 
   SwiperController swiperController = SwiperController();
   final ScrollController _formScrollController = ScrollController();
@@ -448,6 +459,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   @override
   void initState() {
     idSite = homeState.currentSiteId;
+    if (idSite == '7') {
+      selectedPit = 0;
+    }
     _loadDamages();
 
     super.initState();
@@ -703,6 +717,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
     for (final controller in snControllers) {
       controller.dispose();
+    }
+
+    for (final focusNode in snFocusNodes) {
+      focusNode.dispose();
     }
 
     for (final controller in rtd1Controllers) {
@@ -1484,6 +1502,63 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         },
       ),
     );
+  }
+
+  Future<void> _confirmSnChange(int index) async {
+    if (_editableSnIndexes.contains(index)) return;
+
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    if (_isSnConfirmationOpen) return;
+    _isSnConfirmationOpen = true;
+
+    try {
+      final shouldEdit = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Konfirmasi Serial Number'),
+            content: const Text(
+              'Apakah SN aktual pada ban berbeda dengan SN yang tercatat '
+              'di sistem? Mohon periksa kembali sebelum melakukan perubahan.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Tidak, Sudah Sesuai'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Ya, Ubah SN'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (!mounted || index >= snFocusNodes.length) return;
+
+      if (shouldEdit == true) {
+        setState(() {
+          _editableSnIndexes.add(index);
+        });
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && index < snFocusNodes.length) {
+            snFocusNodes[index].requestFocus();
+          }
+        });
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && index < snFocusNodes.length) {
+            snFocusNodes[index].unfocus();
+          }
+        });
+      }
+    } finally {
+      _isSnConfirmationOpen = false;
+    }
   }
 
   String _selectedPitValue() {
@@ -2292,6 +2367,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     //   pit.add('WS');
     // }
     switch (idSite) {
+      case '7':
+        pit.addAll(_siteSevenLocations);
+        break;
       case '5':
         pit.add('PITSTOP AMBON');
         pit.add('PITSTOP BANGKA');
@@ -2404,6 +2482,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             }
 
             position.clear();
+            _editableSnIndexes.clear();
 
             for (int i = 0; i < state.units.length; i++) {
               final unit = state.units[i];
@@ -2419,6 +2498,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               }
               remarksControllers.add(TextEditingController(text: ''));
               snControllers.add(TextEditingController(text: ''));
+              snFocusNodes.add(FocusNode());
               rtd1Controllers.add(
                 TextEditingController(text: unit.rtd?.toString() ?? ''),
               );
@@ -4602,6 +4682,19 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                   SizedBox(
                                                     width: double.infinity,
                                                     child: InputFormWidget(
+                                                        isReadOnly:
+                                                            !_editableSnIndexes
+                                                                .contains(
+                                                                    index),
+                                                        focusNode:
+                                                            snFocusNodes[index],
+                                                        onTap: () {
+                                                          unawaited(
+                                                            _confirmSnChange(
+                                                              index,
+                                                            ),
+                                                          );
+                                                        },
                                                         onChng: (value) {
                                                           position[index]
                                                               ['sn'] = value;

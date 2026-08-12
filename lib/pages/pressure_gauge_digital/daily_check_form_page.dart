@@ -28197,6 +28197,14 @@ class DailyCheckFormPage extends StatefulWidget {
 }
 
 class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
+  static const List<String> _siteSevenLocations = [
+    'Pitstop',
+    'Workshop',
+    'CSA 27',
+    'CSA 46',
+    'CSA 61',
+  ];
+
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseStorage storage = FirebaseStorage.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
@@ -28724,12 +28732,25 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     //   idSite = await getSelectedIdSitePreferences();
     // }
     idSite = homeState.currentSiteId;
+    _configureSiteSevenLocations();
 
     if (dataUnit['isCTS'] == null) {
       if (dataUnit != {} || dataUnit != null || dataUnit.isNotEmpty) {
         context.read<TireBloc>().add(GetUnitTiresEvent(
             idSite: idSite, unitNumber: dataUnit['unitNumber']));
       }
+    }
+  }
+
+  void _configureSiteSevenLocations() {
+    if (idSite != '7') return;
+
+    pit
+      ..clear()
+      ..addAll(_siteSevenLocations);
+
+    if (selectedPit < 0 || selectedPit >= pit.length) {
+      selectedPit = 0;
     }
   }
 
@@ -30618,6 +30639,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       //   pit.add('WS');
                       // }
                       switch (idSite) {
+                        case '7':
+                          pit.addAll(_siteSevenLocations);
+                          if (selectedPit < 0 || selectedPit >= pit.length) {
+                            selectedPit = 0;
+                          }
+                          break;
                         case '5':
                           pit.add('PITSTOP AMBON');
                           pit.add('PITSTOP BANGKA');
@@ -33692,7 +33719,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                   idSite == bmbhauling.idSite ||
                   idSite == bmbtabuhan.idSite ||
                   idSite == bibkgb.idSite ||
-                  idSite == bibgh.idSite) {
+                  idSite == bibgh.idSite ||
+                  idSite == '7') {
                 if (selectedPit == -1) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

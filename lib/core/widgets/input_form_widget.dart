@@ -11,6 +11,8 @@ class InputFormWidget extends StatefulWidget {
       required this.hint,
       this.type = TextInputType.name,
       this.onChng,
+      this.onTap,
+      this.focusNode,
       this.width,
       this.height,
       this.isReadOnly = false,
@@ -32,6 +34,8 @@ class InputFormWidget extends StatefulWidget {
   final bool isDecimalOnly;
   final bool isLargeInput;
   final Function(String)? onChng;
+  final VoidCallback? onTap;
+  final FocusNode? focusNode;
 
   @override
   State<InputFormWidget> createState() => _InputFormWidgetState();
@@ -77,7 +81,9 @@ class _InputFormWidgetState extends State<InputFormWidget> {
       width: 120,
       height: widget.height,
       child: TextFormField(
+        focusNode: widget.focusNode,
         readOnly: widget.isReadOnly,
+        onTap: widget.onTap,
         onChanged: widget.onChng,
         controller: widget.controller,
         keyboardType: widget.type,
