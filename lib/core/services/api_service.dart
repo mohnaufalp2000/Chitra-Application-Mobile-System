@@ -1282,10 +1282,19 @@ class ApiService {
     final prefs = await SharedPreferences.getInstance();
     final String? jsonData = prefs.getString('cached_sites');
 
-    if (jsonData == null) return [];
+    if (jsonData == null || jsonData.trim().isEmpty) return [];
 
-    final List<dynamic> decodedData = jsonDecode(jsonData);
-    return decodedData.map((e) => Site.fromJson(e)).toList();
+    try {
+      final decodedData = jsonDecode(jsonData);
+      if (decodedData is! List) return [];
+      return decodedData
+          .whereType<Map>()
+          .map((e) => Site.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+    } catch (e) {
+      log('Error membaca cache site: $e');
+      return [];
+    }
   }
 
   // mendapatkan data salah satu site

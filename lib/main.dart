@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -53,7 +54,6 @@ void main() async {
   // cameras = [cameras[0], cameras[1]];
   store = (await ObjectBox.create()).store;
   // initializeHERESDK();
-  await AttendanceSheetsAPI.initAttendanceSheets();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   await initializeDateFormatting('id_ID', null);
@@ -86,6 +86,13 @@ void main() async {
 
   PackageInfo packageInfo = await PackageInfo.fromPlatform();
   runApp(const MyApp());
+
+  // Google Sheets membutuhkan jaringan dan bukan syarat untuk menampilkan UI.
+  // Jalankan setelah frame pertama agar koneksi yang lambat tidak menahan
+  // aplikasi di native splash screen.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(AttendanceSheetsAPI.initAttendanceSheets());
+  });
 }
 
 class MyApp extends StatelessWidget {

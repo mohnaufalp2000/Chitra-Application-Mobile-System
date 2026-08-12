@@ -49,10 +49,13 @@ class UnitInitial extends UnitState {}
 class UnitLoadingState extends UnitState {}
 
 class UnitLoadedState extends UnitState {
+  final String idSite;
+  final String requestSource;
   final List<UnitTire> units;
   final List<Map<String, dynamic>> reccPress;
   final int countAllTire;
   final Map<String, dynamic> allTireSize;
+  final bool loadedFromApi;
 
   /// Key adalah nama area.
   /// Value adalah target area.
@@ -65,11 +68,14 @@ class UnitLoadedState extends UnitState {
   final Map<String, int> targetArea;
 
   const UnitLoadedState({
+    required this.idSite,
+    required this.requestSource,
     required this.units,
     required this.reccPress,
     required this.countAllTire,
     required this.allTireSize,
     this.targetArea = const <String, int>{},
+    this.loadedFromApi = false,
   });
 
   /// Daftar nama area untuk dropdown/filter.
@@ -97,11 +103,14 @@ class UnitLoadedState extends UnitState {
 
   @override
   List<Object?> get props => [
+        idSite,
+        requestSource,
         units,
         reccPress,
         countAllTire,
         allTireSize,
         targetArea,
+        loadedFromApi,
       ];
 }
 

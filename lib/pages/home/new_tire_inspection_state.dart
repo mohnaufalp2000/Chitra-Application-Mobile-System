@@ -41,21 +41,27 @@ class NewTireInspectionState extends GetxController {
   var exportProgress = 0.0.obs;
   var sendTireInspectionProgress = 0.0.obs;
 
-  var selectedDateRange = Rxn<DateTimeRange>();
+  final selectedDateRange = Rxn<DateTimeRange>(_todayDateRange());
   var searchQuery = ''.obs;
+
+  static DateTimeRange _todayDateRange() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return DateTimeRange(start: today, end: today);
+  }
 
   @override
   void onInit() {
     super.onInit();
-    // Jika currentSiteId sudah ada, langsung fetch
+    // Jika currentSiteId sudah ada, langsung muat data hari ini.
     if (homeState.currentSiteId.isNotEmpty) {
-      fetchTasks();
+      reloadForActiveFilters();
     }
 
     // Listen perubahan currentSiteId (jika belum ready saat onInit)
     ever(homeState.currentSiteIdRx, (String siteId) {
       if (siteId.isNotEmpty) {
-        fetchTasks();
+        reloadForActiveFilters();
       }
     });
   }
@@ -161,7 +167,7 @@ class NewTireInspectionState extends GetxController {
 
       while (requestId == _loadRequestId) {
         Query<Map<String, dynamic>> query =
-            _siteQuery(homeState.currentSiteId).limit(_pageSize);
+            _dateScopedSiteQuery(homeState.currentSiteId).limit(_pageSize);
         if (cursor != null) {
           query = query.startAfterDocument(cursor);
         }
@@ -207,6 +213,28 @@ class NewTireInspectionState extends GetxController {
     return firestore
         .collection('tire_inspection')
         .where('id_site', isEqualTo: siteId);
+  }
+
+  Query<Map<String, dynamic>> _dateScopedSiteQuery(String siteId) {
+    final query = _siteQuery(siteId);
+    final range = selectedDateRange.value;
+    if (range == null || !_isSameDay(range.start, range.end)) {
+      return query;
+    }
+
+    return query.where('hari', isEqualTo: _dateKey(range.start));
+  }
+
+  bool _isSameDay(DateTime first, DateTime second) {
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
+  }
+
+  String _dateKey(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 
   Future<void> loadMoreTasks() async {
@@ -301,9 +329,9 @@ class NewTireInspectionState extends GetxController {
 
   void resetFilters() {
     _searchDebounce?.cancel();
-    selectedDateRange.value = null;
+    selectedDateRange.value = _todayDateRange();
     searchQuery.value = '';
-    fetchTasks();
+    reloadForActiveFilters();
   }
 
   @override
@@ -543,7 +571,7 @@ class NewTireInspectionState extends GetxController {
 
       while (true) {
         Query<Map<String, dynamic>> query =
-            _siteQuery(homeState.currentSiteId).limit(_pageSize);
+            _dateScopedSiteQuery(homeState.currentSiteId).limit(_pageSize);
         if (cursor != null) {
           query = query.startAfterDocument(cursor);
         }
@@ -704,7 +732,7 @@ class NewTireInspectionState extends GetxController {
 
     while (true) {
       Query<Map<String, dynamic>> query =
-          _siteQuery(homeState.currentSiteId).limit(_pageSize);
+          _dateScopedSiteQuery(homeState.currentSiteId).limit(_pageSize);
       if (cursor != null) {
         query = query.startAfterDocument(cursor);
       }

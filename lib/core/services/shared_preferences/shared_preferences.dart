@@ -13,6 +13,69 @@ String savedSiteCode = 'saved_sites';
 String savedUserDailyCode = 'saved_user_daily';
 String savedPitDailyCode = 'saved_pit_daily';
 
+const String dailyCheckUnitList = 'daily_check';
+const String tireInspectionUnitList = 'tire_inspection';
+
+String _unitListApiLoadKey({
+  required String listType,
+  required String idSite,
+}) {
+  return 'unit_list_last_api_load_${listType}_${idSite.trim()}';
+}
+
+String _localDateKey(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '${date.year}-$month-$day';
+}
+
+/// Mengembalikan true jika list ini belum pernah berhasil memuat unit dari
+/// API untuk site terkait pada tanggal lokal hari ini.
+Future<bool> shouldLoadUnitListFromApiToday({
+  required String listType,
+  required String idSite,
+}) async {
+  if (idSite.trim().isEmpty) return true;
+
+  try {
+    final prefs = await getSharedPreferences();
+    final lastApiLoad = prefs.getString(
+      _unitListApiLoadKey(
+        listType: listType,
+        idSite: idSite,
+      ),
+    );
+
+    return lastApiLoad != _localDateKey(DateTime.now());
+  } catch (e) {
+    log('Error membaca tanggal load API unit: $e');
+    return true;
+  }
+}
+
+/// Dipanggil hanya setelah API unit benar-benar berhasil. Daily Check dan
+/// Tire Inspection memakai key terpisah agar masing-masing refresh sekali
+/// dalam sehari.
+Future<void> saveUnitListApiLoadedToday({
+  required String listType,
+  required String idSite,
+}) async {
+  if (idSite.trim().isEmpty) return;
+
+  try {
+    final prefs = await getSharedPreferences();
+    await prefs.setString(
+      _unitListApiLoadKey(
+        listType: listType,
+        idSite: idSite,
+      ),
+      _localDateKey(DateTime.now()),
+    );
+  } catch (e) {
+    log('Error menyimpan tanggal load API unit: $e');
+  }
+}
+
 /**
  * 
  * USER
@@ -28,8 +91,18 @@ void saveUserPreferences(Map<String, dynamic> user) async {
 Future<Map<String, dynamic>> getUserPreferences() async {
   SharedPreferences prefs = await getSharedPreferences();
   final decoded = prefs.getString('user');
-  final Map<String, dynamic> user = jsonDecode(decoded ?? '');
-  return user;
+
+  if (decoded == null || decoded.trim().isEmpty) return {};
+
+  try {
+    final user = jsonDecode(decoded);
+    if (user is Map<String, dynamic>) return user;
+    if (user is Map) return Map<String, dynamic>.from(user);
+  } catch (e) {
+    log('Error membaca cache user: $e');
+  }
+
+  return {};
 }
 
 void removeUserPreferences() async {

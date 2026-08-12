@@ -718,6 +718,7 @@
 //   }
 // }
 
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -755,6 +756,7 @@ class SelectUnitPage extends StatefulWidget {
 
 class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   String selectedTargetArea = 'All';
+  final Set<String> selectedTargetAreaKeys = <String>{};
   final HomeState homeState = Get.find<HomeState>();
   final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
@@ -777,29 +779,33 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   /// Listener perubahan site.
   Worker? siteWorker;
 
+  /// Menjaga agar pemuatan awal hanya dijalankan sekali setelah argument
+  /// route tersedia.
+  bool hasInitializedPage = false;
+
+  String activeInspectionType = '';
+  int initialUnitLoadRequestId = 0;
+
   @override
   void initState() {
     super.initState();
-
-    callUnits();
-    fetchCheckedUnits();
 
     /// Muat ulang data ketika site aktif berubah.
     siteWorker = ever<String>(
       homeState.currentSiteIdRx,
       (String siteId) {
-        if (siteId.trim().isEmpty) {
+        if (siteId.trim().isEmpty || !hasInitializedPage) {
           return;
         }
 
         if (mounted) {
           setState(() {
             selectedTargetArea = 'All';
+            selectedTargetAreaKeys.clear();
           });
         }
 
-        callUnits();
-        fetchCheckedUnits();
+        unawaited(_loadUnitsForCurrentSite());
       },
     );
   }
@@ -812,7 +818,57 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 
     if (modalRoute != null) {
       routeObserver.subscribe(this, modalRoute);
+
+      if (!hasInitializedPage) {
+        hasInitializedPage = true;
+
+        activeInspectionType = modalRoute.settings.arguments as String? ?? '';
+        unawaited(_loadUnitsForCurrentSite());
+      }
     }
+  }
+
+  Future<void> _loadUnitsForCurrentSite() async {
+    final requestId = ++initialUnitLoadRequestId;
+    final siteId = homeState.currentSiteId.trim();
+    final shouldUseApi = await getUnitBefore7AM(
+      activeInspectionType,
+      siteId,
+    );
+
+    if (!mounted ||
+        requestId != initialUnitLoadRequestId ||
+        siteId != homeState.currentSiteId.trim()) {
+      return;
+    }
+
+    isOnline = shouldUseApi;
+    await callUnits();
+    await fetchCheckedUnits();
+  }
+
+  /// Tire Inspection memakai API sebelum pukul 07.00 atau ketika ini adalah
+  /// pembukaan pertama pada tanggal lokal hari ini.
+  Future<bool> getUnitBefore7AM(
+    String inspectionType,
+    String siteId,
+  ) async {
+    if (inspectionType != 'tire_inspection') return false;
+
+    final now = DateTime.now();
+    final firstApiLoadToday = await shouldLoadUnitListFromApiToday(
+      listType: tireInspectionUnitList,
+      idSite: siteId,
+    );
+    final shouldUseApi = now.hour < 7 || firstApiLoadToday;
+
+    log(
+      'Tire Inspection initial unit source: '
+      '${shouldUseApi ? 'API' : 'cache'} '
+      '(before7=${now.hour < 7}, firstToday=$firstApiLoadToday)',
+    );
+
+    return shouldUseApi;
   }
 
   @override
@@ -864,6 +920,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           GetUnitsEvent(
             idSite: currentSiteId,
             isOnline: (userAccessId == '1' && !isSis) ? true : isOnline,
+            requestSource: activeInspectionType,
           ),
         );
   }
@@ -1167,8 +1224,15 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           break;
       }
 
-      final String safeArea =
-          selectedArea.trim().replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_');
+      final selectedAreaLabels = selectedArea
+          .split(',')
+          .map((area) => area.trim())
+          .where((area) => area.isNotEmpty)
+          .toList();
+      final String safeArea = selectedAreaLabels.length > 1
+          ? 'multi_area_${selectedAreaLabels.length}'
+          : (selectedAreaLabels.isEmpty ? 'All' : selectedAreaLabels.first)
+              .replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_');
 
       final StringBuffer txt = StringBuffer();
 
@@ -1739,6 +1803,18 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
             ),
             child: BlocConsumer<UnitBloc, UnitState>(
               listener: (context, state) {
+                if (state is UnitLoadedState &&
+                    state.loadedFromApi &&
+                    state.requestSource == tireInspectionUnitList &&
+                    activeInspectionType == 'tire_inspection') {
+                  unawaited(
+                    saveUnitListApiLoadedToday(
+                      listType: tireInspectionUnitList,
+                      idSite: state.idSite,
+                    ),
+                  );
+                }
+
                 if (state is UnitErrorState) {
                   setState(() {
                     isOnline = !isOnline;
@@ -1787,16 +1863,25 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 //   'Central': 6,
 //   'North West': 6,
 // }
-                  final List<String> targetAreaNames = state.targetArea.keys
-                      .map((area) => area.trim())
-                      .where((area) => area.isNotEmpty)
-                      .toSet()
-                      .toList()
-                    ..sort(
-                      (a, b) => a.toLowerCase().compareTo(
-                            b.toLowerCase(),
-                          ),
+                  final Map<String, String> targetAreaLabelsByKey =
+                      <String, String>{};
+                  for (final rawArea in state.targetArea.keys) {
+                    final area = rawArea.trim();
+                    if (area.isEmpty) continue;
+
+                    targetAreaLabelsByKey.putIfAbsent(
+                      area.toLowerCase(),
+                      () => area,
                     );
+                  }
+
+                  final List<String> targetAreaNames =
+                      targetAreaLabelsByKey.values.toList()
+                        ..sort(
+                          (a, b) => a.toLowerCase().compareTo(
+                                b.toLowerCase(),
+                              ),
+                        );
                   print('target area names: $targetAreaNames');
 
 // Tambahkan pilihan All di urutan pertama.
@@ -1820,18 +1905,55 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                         area.toLowerCase() == activeTargetArea.toLowerCase(),
                   );
 
+                  // Multi-area hanya berlaku untuk Tire Inspection. Pilihan
+                  // yang sudah tidak tersedia setelah refresh/site berubah
+                  // diabaikan; set kosong berarti menampilkan semua area.
+                  final Set<String> activeTargetAreaKeys =
+                      selectedTargetAreaKeys
+                          .where(targetAreaLabelsByKey.containsKey)
+                          .toSet();
+                  final List<String> activeTargetAreaLabels = targetAreaNames
+                      .where(
+                        (area) => activeTargetAreaKeys.contains(
+                          area.toLowerCase(),
+                        ),
+                      )
+                      .toList();
+                  final bool isAllTargetAreas = activeTargetAreaKeys.isEmpty;
+                  final Set<int> selectedTargetAreaIndexes = <int>{
+                    for (int index = 1;
+                        index < targetAreaOptions.length;
+                        index++)
+                      if (activeTargetAreaKeys.contains(
+                        targetAreaOptions[index].toLowerCase(),
+                      ))
+                        index,
+                  };
+                  if (selectedTargetAreaIndexes.isEmpty) {
+                    selectedTargetAreaIndexes.add(0);
+                  }
+
+                  final String activeTargetAreaLabel =
+                      inspectionType == 'tire_inspection'
+                          ? (isAllTargetAreas
+                              ? 'All'
+                              : activeTargetAreaLabels.join(', '))
+                          : activeTargetArea;
+
                   final String query = searchQuery.trim().toLowerCase();
 
 // Filter pertama berdasarkan target area/PIT.
                   final areaFilteredUnits = state.units.where((unit) {
-                    if (activeTargetArea == 'All') {
-                      return true;
-                    }
-
                     final String unitArea =
                         (unit.area ?? '').trim().toLowerCase();
 
-                    return unitArea == activeTargetArea.trim().toLowerCase();
+                    if (inspectionType == 'tire_inspection') {
+                      return isAllTargetAreas ||
+                          activeTargetAreaKeys.contains(unitArea);
+                    }
+
+                    return activeTargetArea == 'All' ||
+                        unitArea == activeTargetArea.trim().toLowerCase();
                   }).toList();
 
 // Filter kedua berdasarkan pencarian.
@@ -1917,6 +2039,26 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                         ]
                       : filteredUnits;
 
+                  final String totalUnitLabel;
+                  if (inspectionType == 'tire_inspection') {
+                    if (isAllTargetAreas) {
+                      totalUnitLabel = 'Total Unit : ${filteredUnits.length}';
+                    } else if (activeTargetAreaLabels.length == 1) {
+                      totalUnitLabel =
+                          'Total Unit ${activeTargetAreaLabels.first} : '
+                          '${filteredUnits.length}';
+                    } else {
+                      totalUnitLabel =
+                          'Total Unit (${activeTargetAreaLabels.length} area) : '
+                          '${filteredUnits.length}';
+                    }
+                  } else {
+                    totalUnitLabel = activeTargetArea == 'All'
+                        ? 'Total Unit : ${filteredUnits.length}'
+                        : 'Total Unit $activeTargetArea : '
+                            '${filteredUnits.length}';
+                  }
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1929,22 +2071,46 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        SelectPitButton(
-                          pit: targetAreaOptions,
-                          selectedPit: selectedTargetAreaIndex < 0
-                              ? 0
-                              : selectedTargetAreaIndex,
-                          onSelectedPitChanged: (index) {
-                            if (index < 0 ||
-                                index >= targetAreaOptions.length) {
-                              return;
-                            }
+                        if (inspectionType == 'tire_inspection')
+                          MultiSelectPitButton(
+                            pit: targetAreaOptions,
+                            selectedPits: selectedTargetAreaIndexes,
+                            onSelectedPitsChanged: (indexes) {
+                              final newAreaKeys = <String>{};
+                              for (final index in indexes) {
+                                if (index <= 0 ||
+                                    index >= targetAreaOptions.length) {
+                                  continue;
+                                }
+                                newAreaKeys.add(
+                                  targetAreaOptions[index].toLowerCase(),
+                                );
+                              }
 
-                            setState(() {
-                              selectedTargetArea = targetAreaOptions[index];
-                            });
-                          },
-                        ),
+                              setState(() {
+                                selectedTargetAreaKeys
+                                  ..clear()
+                                  ..addAll(newAreaKeys);
+                              });
+                            },
+                          )
+                        else
+                          SelectPitButton(
+                            pit: targetAreaOptions,
+                            selectedPit: selectedTargetAreaIndex < 0
+                                ? 0
+                                : selectedTargetAreaIndex,
+                            onSelectedPitChanged: (index) {
+                              if (index < 0 ||
+                                  index >= targetAreaOptions.length) {
+                                return;
+                              }
+
+                              setState(() {
+                                selectedTargetArea = targetAreaOptions[index];
+                              });
+                            },
+                          ),
                         const SizedBox(height: 12),
                       ],
                       buildTargetAreaSummary(
@@ -1973,10 +2139,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                         children: [
                           Expanded(
                             child: Text(
-                              activeTargetArea == 'All'
-                                  ? 'Total Unit : ${filteredUnits.length}'
-                                  : 'Total Unit $activeTargetArea : '
-                                      '${filteredUnits.length}',
+                              totalUnitLabel,
                               style: getGreyTextStyle(
                                 grey8391A1,
                               ),
@@ -2009,7 +2172,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                             checkedUnits,
                                           ),
                                           inspectionType: inspectionType,
-                                          selectedArea: activeTargetArea,
+                                          selectedArea: activeTargetAreaLabel,
                                           exportType: 'checked',
                                         );
                                       },
@@ -2042,7 +2205,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                             uncheckedUnits,
                                           ),
                                           inspectionType: inspectionType,
-                                          selectedArea: activeTargetArea,
+                                          selectedArea: activeTargetAreaLabel,
                                           exportType: 'not_checked',
                                         );
                                       },
@@ -2078,7 +2241,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                         filteredUnits,
                                       ),
                                       inspectionType: inspectionType,
-                                      selectedArea: activeTargetArea,
+                                      selectedArea: activeTargetAreaLabel,
                                       exportType: 'all',
                                     );
                                   },
@@ -2183,13 +2346,17 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                           unit.unitNumber,
                                         )
                                       : null;
+                                  final String unitArea =
+                                      (unit.area ?? '').trim();
+                                  final bool shouldShowUnitArea =
+                                      inspectionType == 'tire_inspection' &&
+                                          unitArea.isNotEmpty &&
+                                          unitArea.toLowerCase() !=
+                                              'noschedule';
 
                                   return InkWell(
                                     borderRadius: BorderRadius.circular(12),
                                     onTap: () {
-                                      final String unitArea =
-                                          (unit.area ?? '').trim();
-
                                       switch (inspectionType) {
                                         case 'daily_check':
                                           Navigator.pushNamed(
@@ -2287,11 +2454,43 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                             ),
                                           ),
                                         ),
-                                        subtitle: Text(
-                                          '${unit.model}',
-                                          style: getGreyTextStyle(
-                                            grey6A707C,
-                                          ),
+                                        subtitle: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${unit.model}',
+                                              style: getGreyTextStyle(
+                                                grey6A707C,
+                                              ),
+                                            ),
+                                            if (shouldShowUnitArea) ...[
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.location_on_outlined,
+                                                    size: 14,
+                                                    color: Colors.orange,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Area: $unitArea',
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                      style: getGreyTextStyle(
+                                                        grey6A707C,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
                                         ),
                                         trailing: Row(
                                           mainAxisSize: MainAxisSize.min,

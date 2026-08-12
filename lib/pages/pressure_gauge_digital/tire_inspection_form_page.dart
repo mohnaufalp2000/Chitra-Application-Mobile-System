@@ -1026,14 +1026,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   bool get _usesCompanyOnePeriodRules =>
       homeState.userAccessCompanyId.value == '1';
 
-  bool get _hideHmForPeriod =>
-      _usesCompanyOnePeriodRules && selectedPeriodType == 'PI';
+  bool get _usesSiteFiveCompanyOnePiRules =>
+      _usesCompanyOnePeriodRules && idSite == '5' && selectedPeriodType == 'PI';
 
-  bool get _hideRtdForPeriod =>
-      _usesCompanyOnePeriodRules && selectedPeriodType == 'PI';
+  bool get _hideHmForPeriod => _usesSiteFiveCompanyOnePiRules;
 
-  bool get _hideSnForPeriod =>
-      _usesCompanyOnePeriodRules && selectedPeriodType == 'PI';
+  bool get _hideRtdForPeriod => _usesSiteFiveCompanyOnePiRules;
+
+  bool get _hideSnForPeriod => _usesSiteFiveCompanyOnePiRules;
 
   bool get _hideTireComponentForPeriod =>
       _usesCompanyOnePeriodRules && selectedPeriodType == 'PE';
@@ -1975,7 +1975,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return;
     }
 
-    if (_usesCompanyOnePeriodRules && selectedPeriodType == 'PI') {
+    if (_usesSiteFiveCompanyOnePiRules) {
       await _loadHiddenFieldFallbacks();
       if (!mounted) return;
     }
