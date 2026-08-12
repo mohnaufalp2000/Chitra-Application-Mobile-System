@@ -78,5 +78,10 @@
 
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>CAMOS uses your location while the app is open to record the coordinates of site conditions and display inspection points on the site map.</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>CAMOS uses location services to record the coordinates of site conditions and inspection points when location-related operational features are used.</string>
+
+	
 </dict>
 </plist>
