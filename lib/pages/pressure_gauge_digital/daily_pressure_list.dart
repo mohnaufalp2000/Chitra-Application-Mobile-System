@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 
@@ -81,28 +82,36 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
   // ────────────────────────────────
   @override
   void initState() {
-    log('init page terpanggil : ${homeState.currentSiteId}');
-    initializePage();
-    getUnitBefore7AM();
-
     super.initState();
+
+    log('init page terpanggil : ${homeState.currentSiteId}');
+    unawaited(initializePage());
   }
 
-  getUnitBefore7AM() {
-    if (DateTime.now().hour < 7) {
-      print('buka halaman sebelum jam 7');
-      setState(() {
-        isOnline = !isOnline;
+  Future<void> getUnitBefore7AM() async {
+    final now = DateTime.now();
+    final firstApiLoadToday = await shouldLoadUnitListFromApiToday(
+      listType: dailyCheckUnitList,
+      idSite: currentIdSite,
+    );
 
-        getUnits();
-      });
-    }
+    isOnline = now.hour < 7 || firstApiLoadToday;
+
+    log(
+      'Daily Check initial unit source: '
+      '${isOnline ? 'API' : 'cache'} '
+      '(before7=${now.hour < 7}, firstToday=$firstApiLoadToday)',
+    );
   }
 
   Future<void> initializePage() async {
     log('initialize page terpanggil');
     await getUser();
     await setupSite();
+    await getUnitBefore7AM();
+    if (!mounted) return;
+
+    await getUnits();
     setupPit();
     await getCount();
 
@@ -248,8 +257,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     userAccessId = homeState.userAccessId.value;
 
     log('🏗️ Current Site: $currentIdSite | Actual Site: $userAccessId');
-
-    await getUnits();
   }
 
   // ────────────────────────────────
@@ -265,7 +272,11 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         // Offline Mode
         log('📴 Load data dari cache untuk site $currentIdSite');
         context.read<UnitBloc>().add(
-              GetUnitsEvent(idSite: currentIdSite, isOnline: false),
+              GetUnitsEvent(
+                idSite: currentIdSite,
+                isOnline: false,
+                requestSource: dailyCheckUnitList,
+              ),
             );
       } else {
         // Cek koneksi dulu
@@ -282,14 +293,22 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
         // Online Mode
         log('🌐 Load data dari CTS untuk site $currentIdSite');
         context.read<UnitBloc>().add(
-              GetUnitsEvent(idSite: currentIdSite, isOnline: true),
+              GetUnitsEvent(
+                idSite: currentIdSite,
+                isOnline: true,
+                requestSource: dailyCheckUnitList,
+              ),
             );
       }
     } else {
       // Untuk user office — selalu online
       log('🏢 Office user — ambil data online untuk site $currentIdSite');
       context.read<UnitBloc>().add(
-            GetUnitsEvent(idSite: currentIdSite, isOnline: true),
+            GetUnitsEvent(
+              idSite: currentIdSite,
+              isOnline: true,
+              requestSource: dailyCheckUnitList,
+            ),
           );
     }
   }
@@ -572,6 +591,16 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
               // tester 1
               BlocConsumer<UnitBloc, UnitState>(listener: (context, state) {
                 if (state is UnitLoadedState) {
+                  if (state.loadedFromApi &&
+                      state.requestSource == dailyCheckUnitList) {
+                    unawaited(
+                      saveUnitListApiLoadedToday(
+                        listType: dailyCheckUnitList,
+                        idSite: state.idSite,
+                      ),
+                    );
+                  }
+
                   setState(() {
                     // Tambahkan setState agar UI diperbarui
                     allUnit = state.units;
@@ -6326,7 +6355,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     );
   }
 }
-
 
 // import 'dart:developer';
 // import 'dart:io';

@@ -257,7 +257,7 @@ class NewTireInspectionPage extends StatelessWidget {
                     return false;
                   },
                   child: RefreshIndicator(
-                    onRefresh: ntController.fetchTasks,
+                    onRefresh: ntController.reloadForActiveFilters,
                     child: ListView.builder(
                       itemCount: ntController.filteredTasks.length +
                           (ntController.hasMoreTasks.value ? 1 : 0),

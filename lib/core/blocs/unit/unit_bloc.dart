@@ -175,11 +175,14 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
 
           emit(
             UnitLoadedState(
+              idSite: event.idSite,
+              requestSource: event.requestSource,
               units: units,
               reccPress: reccPress,
               countAllTire: countAllTire,
               allTireSize: allTireSize,
               targetArea: targetArea,
+              loadedFromApi: true,
             ),
           );
         } catch (e, st) {
@@ -277,11 +280,14 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
 
       emit(
         UnitLoadedState(
+          idSite: event.idSite,
+          requestSource: event.requestSource,
           units: cachedUnits,
           reccPress: cachedReccPress,
           countAllTire: cachedCountAllTire,
           allTireSize: cachedTireSize,
           targetArea: cachedTargetArea,
+          loadedFromApi: false,
         ),
       );
 

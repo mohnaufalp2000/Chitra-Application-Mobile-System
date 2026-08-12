@@ -22,6 +22,7 @@ import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/bounding_box_painter.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/temperature_status_selector_widget.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:get/get.dart';
@@ -86,6 +87,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   // Jenis periode Tire Inspection.
   // Default menggunakan Period Inspection (PI).
   String selectedPeriodType = 'PI';
+  bool _isLoadingPreviousPressure = false;
+  int _previousPressureRequestId = 0;
+  bool _isLoadingHiddenFieldFallbacks = false;
+  int _hiddenFieldRequestId = 0;
+  String _apiHmForHiddenFields = '';
 
   var map = {};
   String idSite = '';
@@ -987,6 +993,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   }
 
   void applyPressureData(String pressureValue) {
+    if (_isUnitLocationSelectionPending(hasUnitData: dataUnit.isNotEmpty)) {
+      return;
+    }
+
     setState(() {
       final firstNumber = pressureValue;
 
@@ -1013,6 +1023,276 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
   }
 
+  bool get _usesCompanyOnePeriodRules =>
+      homeState.userAccessCompanyId.value == '1';
+
+  bool get _usesSiteFiveCompanyOnePiRules =>
+      _usesCompanyOnePeriodRules && idSite == '5' && selectedPeriodType == 'PI';
+
+  bool get _hideHmForPeriod => _usesSiteFiveCompanyOnePiRules;
+
+  bool get _hideRtdForPeriod => _usesSiteFiveCompanyOnePiRules;
+
+  bool get _hideSnForPeriod => _usesSiteFiveCompanyOnePiRules;
+
+  bool get _hideTireComponentForPeriod =>
+      _usesCompanyOnePeriodRules && selectedPeriodType == 'PE';
+
+  bool get _usePreviousPressureFallbackForPeriod =>
+      _usesCompanyOnePeriodRules && selectedPeriodType == 'PE';
+
+  String _validPressureValue(dynamic value) {
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty || text.toLowerCase() == 'null') return '';
+
+    final number = double.tryParse(text);
+    if (number != null && number <= 0) return '';
+
+    return text;
+  }
+
+  String _nonEmptySourceValue(dynamic value) {
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty || text.toLowerCase() == 'null') return '';
+    return text;
+  }
+
+  Map<dynamic, dynamic>? _historyPositionAt(
+    List<dynamic> positions,
+    int index,
+  ) {
+    final positionNumber =
+        position[index]['position']?.toString() ?? '${index + 1}';
+
+    for (final item in positions) {
+      if (item is Map &&
+          (item['position'] ?? item['pos'])?.toString() == positionNumber) {
+        return item;
+      }
+    }
+
+    if (index < positions.length && positions[index] is Map) {
+      return positions[index] as Map<dynamic, dynamic>;
+    }
+
+    return null;
+  }
+
+  Future<void> _loadHiddenFieldFallbacks() async {
+    if (!_usesCompanyOnePeriodRules || position.isEmpty) {
+      return;
+    }
+
+    final unitNumber = dataUnit['unitNumber']?.toString().trim() ?? '';
+    if (unitNumber.isEmpty) return;
+
+    final requestId = ++_hiddenFieldRequestId;
+    setState(() {
+      _isLoadingHiddenFieldFallbacks = true;
+
+      // Tire Component tidak tersedia pada response UnitTire. Kosongkan nilai
+      // default agar PE hanya memakai riwayat inspeksi Firebase yang nyata.
+      if (_hideTireComponentForPeriod) {
+        for (final item in position) {
+          item['rimCondition'] = <Map<String, dynamic>>[];
+        }
+      }
+    });
+
+    try {
+      final snapshot = await firestore
+          .collection('tire_inspection')
+          .where('unit', isEqualTo: unitNumber)
+          .orderBy('tanggal', descending: true)
+          .limit(10)
+          .get();
+
+      if (!mounted || requestId != _hiddenFieldRequestId) return;
+
+      final historyData = <Map<String, dynamic>>[];
+      for (final document in snapshot.docs) {
+        final data = document.data();
+        final documentSite = data['id_site']?.toString().trim() ?? '';
+        if (documentSite.isEmpty || documentSite == idSite) {
+          historyData.add(data);
+        }
+      }
+
+      String latestDocumentValue(String key) {
+        for (final data in historyData) {
+          final value = _nonEmptySourceValue(data[key]);
+          if (value.isNotEmpty) return value;
+        }
+        return '';
+      }
+
+      String latestPositionValue(int index, String key) {
+        for (final data in historyData) {
+          final positions = data['posisi'];
+          if (positions is! List) continue;
+
+          final previousPosition = _historyPositionAt(positions, index);
+          final value = _nonEmptySourceValue(previousPosition?[key]);
+          if (value.isNotEmpty) return value;
+        }
+        return '';
+      }
+
+      List<Map<String, dynamic>> latestRimCondition(int index) {
+        for (final data in historyData) {
+          final positions = data['posisi'];
+          if (positions is! List) continue;
+
+          final previousPosition = _historyPositionAt(positions, index);
+          final rimCondition = previousPosition?['rimCondition'];
+          if (rimCondition is List && rimCondition.isNotEmpty) {
+            return rimCondition
+                .whereType<Map>()
+                .map((item) => Map<String, dynamic>.from(item))
+                .toList();
+          }
+        }
+        return <Map<String, dynamic>>[];
+      }
+
+      setState(() {
+        if (_hideHmForPeriod) {
+          final firebaseHm = latestDocumentValue('hm');
+          hmUnit.text = _apiHmForHiddenFields.isNotEmpty
+              ? _apiHmForHiddenFields
+              : firebaseHm;
+        }
+
+        for (int index = 0; index < position.length; index++) {
+          if (_hideRtdForPeriod) {
+            final apiRtd = _nonEmptySourceValue(position[index]['_apiRtd']);
+            final apiOtd = _nonEmptySourceValue(position[index]['_apiOtd']);
+            final firebaseRtd = latestPositionValue(index, 'rtd1');
+            final firebaseOtd = latestPositionValue(index, 'rtd2');
+
+            position[index]['rtd1'] = apiRtd.isNotEmpty ? apiRtd : firebaseRtd;
+            position[index]['rtd2'] = apiOtd.isNotEmpty ? apiOtd : firebaseOtd;
+
+            if (index < rtd1Controllers.length) {
+              rtd1Controllers[index].text = position[index]['rtd1'].toString();
+            }
+            if (index < rtd2Controllers.length) {
+              rtd2Controllers[index].text = position[index]['rtd2'].toString();
+            }
+          }
+
+          if (_hideSnForPeriod) {
+            final apiSn = _nonEmptySourceValue(position[index]['_apiSn']);
+            final firebaseSn = latestPositionValue(index, 'sn');
+            position[index]['sn'] = apiSn.isNotEmpty ? apiSn : firebaseSn;
+
+            if (index < snControllers.length) {
+              snControllers[index].text = position[index]['sn'].toString();
+            }
+          }
+
+          if (_hideTireComponentForPeriod) {
+            position[index]['rimCondition'] = latestRimCondition(index);
+          }
+        }
+      });
+    } catch (e, stackTrace) {
+      log(
+        'Error loading hidden field fallbacks: $e',
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (mounted && requestId == _hiddenFieldRequestId) {
+        setState(() {
+          _isLoadingHiddenFieldFallbacks = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fillMissingPressureFromHistory() async {
+    if (!_usePreviousPressureFallbackForPeriod || position.isEmpty) return;
+
+    final missingIndexes = <int>[];
+    for (int index = 0; index < position.length; index++) {
+      if (_validPressureValue(position[index]['pressure']).isEmpty) {
+        missingIndexes.add(index);
+      }
+    }
+
+    if (missingIndexes.isEmpty) return;
+
+    final unitNumber = dataUnit['unitNumber']?.toString().trim() ?? '';
+    if (unitNumber.isEmpty) return;
+
+    final requestId = ++_previousPressureRequestId;
+    setState(() {
+      _isLoadingPreviousPressure = true;
+    });
+
+    try {
+      final snapshot = await firestore
+          .collection('daily_pressure')
+          .where('unit', isEqualTo: unitNumber)
+          .orderBy('tanggal', descending: true)
+          .limit(10)
+          .get();
+
+      if (!mounted || requestId != _previousPressureRequestId) return;
+
+      Map<String, dynamic>? latestData;
+      for (final document in snapshot.docs) {
+        final data = document.data();
+        final documentSite = data['idSite']?.toString().trim() ?? '';
+        if (documentSite.isEmpty || documentSite == idSite) {
+          latestData = data;
+          break;
+        }
+      }
+
+      final latestPositions = latestData?['posisi'];
+      if (latestPositions is! List) return;
+
+      setState(() {
+        for (final index in missingIndexes) {
+          if (index >= position.length ||
+              _validPressureValue(position[index]['pressure']).isNotEmpty) {
+            continue;
+          }
+
+          final previousPosition = _historyPositionAt(latestPositions, index);
+          if (previousPosition == null) continue;
+
+          final previousPressure =
+              _validPressureValue(previousPosition['pressure']);
+          final previousAdjustment =
+              _validPressureValue(previousPosition['adjusmentPressure']);
+
+          // Adjustment pressure adalah kondisi tekanan paling akhir. Jika
+          // tidak tersedia, gunakan hasil pressure inspeksi terakhir.
+          final effectivePreviousPressure = previousAdjustment.isNotEmpty
+              ? previousAdjustment
+              : previousPressure;
+
+          if (effectivePreviousPressure.isNotEmpty) {
+            position[index]['pressure'] = effectivePreviousPressure;
+          }
+        }
+      });
+    } catch (e, stackTrace) {
+      log(
+        'Error loading previous pressure: $e',
+        stackTrace: stackTrace,
+      );
+    } finally {
+      if (mounted && requestId == _previousPressureRequestId) {
+        setState(() {
+          _isLoadingPreviousPressure = false;
+        });
+      }
+    }
+  }
+
   Widget _buildPeriodTypeSelector() {
     Widget buildOption({
       required String code,
@@ -1024,10 +1304,24 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return Expanded(
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          onTap: () {
+          onTap: () async {
             setState(() {
               selectedPeriodType = code;
+
+              if (code != 'PE') {
+                _previousPressureRequestId++;
+                _isLoadingPreviousPressure = false;
+              }
+
+              if (code == 'PI') {
+                _hiddenFieldRequestId++;
+                _isLoadingHiddenFieldFallbacks = false;
+              }
             });
+
+            if (code == 'PE') {
+              await _loadHiddenFieldFallbacks();
+            }
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
@@ -1151,12 +1445,45 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
   }
 
-  bool _isPitRequired() {
-    return idSite == bmbsitarum.idSite ||
-        idSite == bmbhauling.idSite ||
-        idSite == bmbtabuhan.idSite ||
-        idSite == bibkgb.idSite ||
-        idSite == bibgh.idSite;
+  bool _isUnitLocationSelectionPending({required bool hasUnitData}) {
+    return hasUnitData &&
+        pit.isNotEmpty &&
+        (selectedPit < 0 || selectedPit >= pit.length);
+  }
+
+  Widget _buildUnitLocationOptions() {
+    return SizedBox(
+      width: double.infinity,
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        itemCount: pit.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, pitIndex) {
+          final location = pit[pitIndex];
+
+          return ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  selectedPit == pitIndex ? Colors.orange : greyF7F8F9,
+            ),
+            onPressed: () {
+              setState(() {
+                selectedPit = pitIndex;
+              });
+            },
+            child: Text(
+              location,
+              style: selectedPit == pitIndex
+                  ? getWhiteTextStyle()
+                  : getBlackTextStyle(),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   String _selectedPitValue() {
@@ -1305,6 +1632,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         'position': item['position'] ?? index + 1,
         'pressure': item['pressure']?.toString() ?? '',
         'adjusmentPressure': item['adjusmentPressure']?.toString() ?? '',
+        'temperatureStatus': item['temperatureStatus']?.toString() ?? 'HOT',
+        'adjusmentTemperatureStatus':
+            item['adjusmentTemperatureStatus']?.toString() ?? 'HOT',
         'rating': item['rating']?.toString().trim().isNotEmpty == true
             ? item['rating'].toString().trim()
             : 'A',
@@ -1370,6 +1700,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             item['adjusmentPressure']?.toString().trim().isNotEmpty == true
                 ? item['adjusmentPressure'].toString().trim()
                 : '0',
+        'temperatureStatus': item['temperatureStatus']?.toString() ?? 'HOT',
+        'adjusmentTemperatureStatus':
+            item['adjusmentTemperatureStatus']?.toString() ?? 'HOT',
         'luka': damages.isEmpty ? [_defaultDamageRemark()] : damages,
         'idUnit': item['idUnit'],
         'idInventory': item['idInventory'],
@@ -1598,11 +1931,131 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return;
     }
 
+    if (_isUnitLocationSelectionPending(
+      hasUnitData: state.units.isNotEmpty,
+    )) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Please select location of unit first!',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_usesCompanyOnePeriodRules && _isLoadingHiddenFieldFallbacks) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(
+            'Sedang melengkapi data dari API/Firebase. Silakan tunggu.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_usePreviousPressureFallbackForPeriod && _isLoadingPreviousPressure) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(
+            'Sedang mengambil data pressure terakhir. Silakan tunggu.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_usesSiteFiveCompanyOnePiRules) {
+      await _loadHiddenFieldFallbacks();
+      if (!mounted) return;
+    }
+
+    if (_usePreviousPressureFallbackForPeriod) {
+      await _fillMissingPressureFromHistory();
+      if (!mounted) return;
+    }
+
+    if (_usesCompanyOnePeriodRules) {
+      final missingFields = <String>[];
+
+      if (_hideHmForPeriod && _nonEmptySourceValue(hmUnit.text).isEmpty) {
+        missingFields.add('HM');
+      }
+
+      for (int index = 0; index < position.length; index++) {
+        if (_hideRtdForPeriod &&
+            (_nonEmptySourceValue(position[index]['rtd1']).isEmpty ||
+                _nonEmptySourceValue(position[index]['rtd2']).isEmpty)) {
+          missingFields.add('RTD posisi ${index + 1}');
+        }
+
+        if (_hideSnForPeriod &&
+            _nonEmptySourceValue(position[index]['sn']).isEmpty) {
+          missingFields.add('SN posisi ${index + 1}');
+        }
+
+        if (_hideTireComponentForPeriod) {
+          final rimCondition = position[index]['rimCondition'];
+          if (rimCondition is! List || rimCondition.isEmpty) {
+            missingFields.add('Tire Component posisi ${index + 1}');
+          }
+        }
+      }
+
+      if (missingFields.isNotEmpty) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Data API/Firebase belum tersedia: ${missingFields.join(', ')}.',
+              style: getWhiteTextStyle(),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
+    if (_usePreviousPressureFallbackForPeriod) {
+      final missingPressurePositions = <String>[];
+      for (int index = 0; index < position.length; index++) {
+        if (_validPressureValue(position[index]['pressure']).isEmpty) {
+          missingPressurePositions.add('${index + 1}');
+        }
+      }
+
+      if (missingPressurePositions.isNotEmpty) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Data pressure terakhir tidak ditemukan untuk posisi: '
+              '${missingPressurePositions.join(', ')}.',
+              style: getWhiteTextStyle(),
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
     final currentHm =
         double.tryParse(state.units.first.hm?.toString() ?? '0') ?? 0;
     final newHm = double.tryParse(hmUnit.text.trim()) ?? 0;
 
-    if (currentHm > newHm) {
+    if (!_hideHmForPeriod && currentHm > newHm) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1616,7 +2069,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return;
     }
 
-    if ((newHm - currentHm) > 1000) {
+    if (!_hideHmForPeriod && (newHm - currentHm) > 1000) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1625,20 +2078,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             style: getWhiteTextStyle(),
           ),
           backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (_isPitRequired() && (selectedPit < 0 || selectedPit >= pit.length)) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          content: Text(
-            'Please select location of unit first!',
-            style: getWhiteTextStyle(),
-          ),
         ),
       );
       return;
@@ -1671,13 +2110,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           ? double.tryParse(rtd2Controllers[i].text) ?? 0
           : double.tryParse(position[i]['rtd2']?.toString() ?? '0') ?? 0;
 
-      if (inputRtd > actualRtd) {
+      if (!_hideRtdForPeriod && inputRtd > actualRtd) {
         errorsRtd.add(
           'Posisi ${unit.posisi}: RTD input ($inputRtd) melebihi RTD aktual ($actualRtd).',
         );
       }
 
-      if (inputOtd > actualOtd) {
+      if (!_hideRtdForPeriod && inputOtd > actualOtd) {
         errorsRtd.add(
           'Posisi ${unit.posisi}: OTD input ($inputOtd) melebihi OTD aktual ($actualOtd).',
         );
@@ -1954,6 +2393,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           if (state is TiresLoadedState) {
             final firstUnit = state.units.first;
             final currentUnitNumber = firstUnit.unitNumber ?? '';
+            _apiHmForHiddenFields = _nonEmptySourceValue(firstUnit.hm);
 
             if (_hmInitializedForUnit != currentUnitNumber) {
               hmUnit.text = idSite == bmbhauling.idSite
@@ -1990,10 +2430,15 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                 'position': i + 1,
                 'pressure': '',
                 'adjusmentPressure': '',
+                'temperatureStatus': 'HOT',
+                'adjusmentTemperatureStatus': 'HOT',
                 'hm': '',
                 'damageTire': [],
                 'rtd1': unit.rtd?.toString() ?? '',
                 'rtd2': unit.otd?.toString() ?? '',
+                '_apiRtd': unit.rtd?.toString() ?? '',
+                '_apiOtd': unit.otd?.toString() ?? '',
+                '_apiSn': unit.sn?.toString() ?? '',
                 'remarks': '',
                 'sn': unit.sn,
                 'rating': '',
@@ -2050,6 +2495,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                     'remark': ''
                   },
                   {
+                    'title': 'VALVE CAP',
+                    'jobDescription': '',
+                    'condition': 'Good',
+                    'remark': ''
+                  },
+                  {
                     'title': 'NUT DAN STUD RODA',
                     'jobDescription': '',
                     'condition': 'Good',
@@ -2060,6 +2511,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               });
             }
             log('message position tire inspect : ${position}');
+
+            if (_usesCompanyOnePeriodRules && selectedPeriodType == 'PE') {
+              unawaited(_loadHiddenFieldFallbacks());
+            }
           }
         },
         builder: (context, state) {
@@ -2070,6 +2525,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           }
           if (state is TiresLoadedState) {
             final units = state.units;
+            final isUnitLocationSelectionPending =
+                _isUnitLocationSelectionPending(
+              hasUnitData: units.isNotEmpty,
+            );
             _syncPositionSectionKeys(units.length);
 
             return Stack(
@@ -2108,33 +2567,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                           height: (pit.isNotEmpty) ? 24 : 0,
                         ),
                         (pit.isNotEmpty)
-                            ? Center(
-                                child: Wrap(
-                                  spacing: 8.0, // Jarak horizontal antar tombol
-                                  children: pit.map((e) {
-                                    final pitIndex = pit.indexOf(e);
-                                    return ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            (selectedPit == pitIndex)
-                                                ? Colors.orange
-                                                : greyF7F8F9,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          selectedPit = pitIndex;
-                                        });
-                                      },
-                                      child: Text(
-                                        e,
-                                        style: (selectedPit == pitIndex)
-                                            ? getWhiteTextStyle()
-                                            : getBlackTextStyle(),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              )
+                            ? _buildUnitLocationOptions()
                             : Container(),
                         SizedBox(
                           height: (pit.isNotEmpty) ? 24 : 0,
@@ -2396,6 +2829,46 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                         const SizedBox(
                           height: 12,
                         ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.device_thermostat,
+                              size: 38,
+                            ),
+                            const SizedBox(
+                              width: 12,
+                            ),
+                            Text(
+                              'Unit/Tire Temperature',
+                              style: getBlackTextStyle(
+                                fontSize: 18,
+                                fontWeight: w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 8,
+                        ),
+                        TemperatureStatusSelectorWidget(
+                          selectedStatus: position.isNotEmpty
+                              ? position.first['temperatureStatus']
+                                      ?.toString() ??
+                                  'HOT'
+                              : 'HOT',
+                          onChanged: (value) {
+                            setState(() {
+                              for (final item in position) {
+                                item['temperatureStatus'] = value;
+                                item['adjusmentTemperatureStatus'] = value;
+                              }
+                            });
+                          },
+                        ),
+                        const SizedBox(
+                          height: 16,
+                        ),
                         ListView.builder(
                             shrinkWrap: true,
                             physics: NeverScrollableScrollPhysics(),
@@ -2493,26 +2966,30 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                     ),
                                                   ],
                                                 ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'SN',
-                                                      style: getBlackTextStyle(
-                                                          fontWeight: w700),
-                                                    ),
-                                                    Text(
-                                                      unit.sn ?? '',
-                                                      style:
-                                                          getBlackTextStyle(),
-                                                    ),
-                                                  ],
-                                                ),
+                                                if (!_hideSnForPeriod)
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                if (!_hideSnForPeriod)
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        'SN',
+                                                        style:
+                                                            getBlackTextStyle(
+                                                                fontWeight:
+                                                                    w700),
+                                                      ),
+                                                      Text(
+                                                        unit.sn ?? '',
+                                                        style:
+                                                            getBlackTextStyle(),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 const SizedBox(
                                                   height: 12,
                                                 ),
@@ -2573,27 +3050,31 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                     ),
                                                   ],
                                                 ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      'RTD',
-                                                      style: getBlackTextStyle(
-                                                          fontWeight: w700),
-                                                    ),
-                                                    Text(
-                                                      '${unit.rtd} / ${unit.otd}' ??
-                                                          '',
-                                                      style:
-                                                          getBlackTextStyle(),
-                                                    ),
-                                                  ],
-                                                ),
+                                                if (!_hideRtdForPeriod)
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                if (!_hideRtdForPeriod)
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        'RTD',
+                                                        style:
+                                                            getBlackTextStyle(
+                                                                fontWeight:
+                                                                    w700),
+                                                      ),
+                                                      Text(
+                                                        '${unit.rtd} / ${unit.otd}' ??
+                                                            '',
+                                                        style:
+                                                            getBlackTextStyle(),
+                                                      ),
+                                                    ],
+                                                  ),
                                               ],
                                             ),
                                             Padding(
@@ -3984,149 +4465,158 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             //       )
                                             //     : Container(),
 
-                                            Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .stretch,
-                                                    children: [
-                                                      Text(
-                                                        'RTD 1',
-                                                        style:
-                                                            getBlackTextStyle(
-                                                                fontWeight:
-                                                                    w700),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      SizedBox(
-                                                        width: double.infinity,
-                                                        child: InputFormWidget(
-                                                          onChng: (value) {
-                                                            position[index]
-                                                                    ['rtd1'] =
-                                                                value;
-                                                          },
-                                                          controller:
-                                                              rtd1Controllers[
-                                                                  index],
-                                                          hint: '',
+                                            if (!_hideRtdForPeriod)
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .stretch,
+                                                      children: [
+                                                        Text(
+                                                          'RTD 1',
+                                                          style:
+                                                              getBlackTextStyle(
+                                                                  fontWeight:
+                                                                      w700),
                                                         ),
-                                                      ),
-                                                      // Builder(builder: (context) {
-                                                      //   rtd1Controllers[index].text =
-                                                      //       unit.rtd ?? '';
-                                                      //   position[index]['rtd1'] =
-                                                      //       unit.rtd;
-                                                      //   return SizedBox(
-                                                      //     width: double.infinity,
-                                                      //     child: InputFormWidget(
-                                                      //         onChng: (value) {
-                                                      //           position[index]
-                                                      //               ['rtd1'] = value;
-                                                      //         },
-                                                      //         controller:
-                                                      //             rtd1Controllers[
-                                                      //                 index],
-                                                      //         hint: ''),
-                                                      //   );
-                                                      // }),
-                                                    ],
-                                                  ),
-                                                ),
-                                                const SizedBox(
-                                                  width: 12,
-                                                ),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .stretch,
-                                                    children: [
-                                                      Text(
-                                                        'RTD 2',
-                                                        style:
-                                                            getBlackTextStyle(
-                                                                fontWeight:
-                                                                    w700),
-                                                      ),
-                                                      const SizedBox(
-                                                        height: 12,
-                                                      ),
-                                                      SizedBox(
-                                                        width: double.infinity,
-                                                        child: InputFormWidget(
-                                                          onChng: (value) {
-                                                            position[index]
-                                                                    ['rtd2'] =
-                                                                value;
-                                                          },
-                                                          controller:
-                                                              rtd2Controllers[
-                                                                  index],
-                                                          hint: '',
+                                                        const SizedBox(
+                                                          height: 12,
                                                         ),
-                                                      ),
-                                                      // Builder(builder: (context) {
-                                                      //   rtd2Controllers[index].text =
-                                                      //       unit.otd ?? '';
-                                                      //   position[index]['rtd2'] =
-                                                      //       unit.otd;
-                                                      //   return SizedBox(
-                                                      //     width: double.infinity,
-                                                      //     child: InputFormWidget(
-                                                      //         onChng: (value) {
-                                                      //           position[index]
-                                                      //               ['rtd2'] = value;
-                                                      //         },
-                                                      //         controller:
-                                                      //             rtd2Controllers[
-                                                      //                 index],
-                                                      //         hint: ''),
-                                                      //   );
-                                                      // }),
-                                                    ],
+                                                        SizedBox(
+                                                          width:
+                                                              double.infinity,
+                                                          child:
+                                                              InputFormWidget(
+                                                            onChng: (value) {
+                                                              position[index]
+                                                                      ['rtd1'] =
+                                                                  value;
+                                                            },
+                                                            controller:
+                                                                rtd1Controllers[
+                                                                    index],
+                                                            hint: '',
+                                                          ),
+                                                        ),
+                                                        // Builder(builder: (context) {
+                                                        //   rtd1Controllers[index].text =
+                                                        //       unit.rtd ?? '';
+                                                        //   position[index]['rtd1'] =
+                                                        //       unit.rtd;
+                                                        //   return SizedBox(
+                                                        //     width: double.infinity,
+                                                        //     child: InputFormWidget(
+                                                        //         onChng: (value) {
+                                                        //           position[index]
+                                                        //               ['rtd1'] = value;
+                                                        //         },
+                                                        //         controller:
+                                                        //             rtd1Controllers[
+                                                        //                 index],
+                                                        //         hint: ''),
+                                                        //   );
+                                                        // }),
+                                                      ],
+                                                    ),
                                                   ),
-                                                ),
-                                                const SizedBox(
-                                                  width: 12,
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(
-                                              height: 12,
-                                            ),
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                Text(
-                                                  'Serial Number',
-                                                  style: getBlackTextStyle(
-                                                      fontWeight: w700),
-                                                ),
-                                                const SizedBox(
-                                                  height: 12,
-                                                ),
-                                                SizedBox(
-                                                  width: double.infinity,
-                                                  child: InputFormWidget(
-                                                      onChng: (value) {
-                                                        position[index]['sn'] =
-                                                            value;
-                                                      },
-                                                      controller:
-                                                          snControllers[index],
-                                                      hint: ''),
-                                                ),
-                                              ],
-                                            ),
-                                            const SizedBox(
-                                              height: 12,
-                                            ),
+                                                  const SizedBox(
+                                                    width: 12,
+                                                  ),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .stretch,
+                                                      children: [
+                                                        Text(
+                                                          'RTD 2',
+                                                          style:
+                                                              getBlackTextStyle(
+                                                                  fontWeight:
+                                                                      w700),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 12,
+                                                        ),
+                                                        SizedBox(
+                                                          width:
+                                                              double.infinity,
+                                                          child:
+                                                              InputFormWidget(
+                                                            onChng: (value) {
+                                                              position[index]
+                                                                      ['rtd2'] =
+                                                                  value;
+                                                            },
+                                                            controller:
+                                                                rtd2Controllers[
+                                                                    index],
+                                                            hint: '',
+                                                          ),
+                                                        ),
+                                                        // Builder(builder: (context) {
+                                                        //   rtd2Controllers[index].text =
+                                                        //       unit.otd ?? '';
+                                                        //   position[index]['rtd2'] =
+                                                        //       unit.otd;
+                                                        //   return SizedBox(
+                                                        //     width: double.infinity,
+                                                        //     child: InputFormWidget(
+                                                        //         onChng: (value) {
+                                                        //           position[index]
+                                                        //               ['rtd2'] = value;
+                                                        //         },
+                                                        //         controller:
+                                                        //             rtd2Controllers[
+                                                        //                 index],
+                                                        //         hint: ''),
+                                                        //   );
+                                                        // }),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  const SizedBox(
+                                                    width: 12,
+                                                  ),
+                                                ],
+                                              ),
+                                            if (!_hideRtdForPeriod)
+                                              const SizedBox(
+                                                height: 12,
+                                              ),
+                                            if (!_hideSnForPeriod)
+                                              Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.stretch,
+                                                children: [
+                                                  Text(
+                                                    'Serial Number',
+                                                    style: getBlackTextStyle(
+                                                        fontWeight: w700),
+                                                  ),
+                                                  const SizedBox(
+                                                    height: 12,
+                                                  ),
+                                                  SizedBox(
+                                                    width: double.infinity,
+                                                    child: InputFormWidget(
+                                                        onChng: (value) {
+                                                          position[index]
+                                                              ['sn'] = value;
+                                                        },
+                                                        controller:
+                                                            snControllers[
+                                                                index],
+                                                        hint: ''),
+                                                  ),
+                                                ],
+                                              ),
+                                            if (!_hideSnForPeriod)
+                                              const SizedBox(
+                                                height: 12,
+                                              ),
                                             Column(
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.stretch,
@@ -4255,6 +4745,69 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                       child: _buildTirePositionIndex(units.length),
                     ),
                   ),
+                if (isUnitLocationSelectionPending)
+                  Positioned.fill(
+                    child: Stack(
+                      children: [
+                        const ModalBarrier(
+                          dismissible: false,
+                          color: Color(0x33000000),
+                        ),
+                        Align(
+                          alignment: Alignment.topCenter,
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(
+                              24,
+                              24,
+                              units.length > 1 ? 54 : 24,
+                              24,
+                            ),
+                            child: Material(
+                              elevation: 8,
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.ev_station,
+                                          size: 32,
+                                          color: Colors.orange,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Text(
+                                            'Pilih Unit Location',
+                                            style: getBlackTextStyle(
+                                              fontSize: 18,
+                                              fontWeight: w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Location wajib dipilih sebelum data '
+                                      'inspeksi dapat diinput.',
+                                      style: getBlackTextStyle(),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _buildUnitLocationOptions(),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             );
           }
@@ -4267,9 +4820,16 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           BlocBuilder<TireBloc, TireState>(
             builder: (context, state) {
               if (state is TiresLoadedState) {
+                final isUnitLocationSelectionPending =
+                    _isUnitLocationSelectionPending(
+                  hasUnitData: state.units.isNotEmpty,
+                );
+
                 return Container(
                   margin: EdgeInsets.symmetric(horizontal: 24),
                   child: ButtonWidget(
+                      color:
+                          isUnitLocationSelectionPending ? Colors.grey : black,
                       name: isLoadingSave
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -4307,9 +4867,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                 ),
                               ],
                             ),
-                      function: () async {
-                        await _handleSaveTireInspection(state);
-                      }),
+                      function: isUnitLocationSelectionPending
+                          ? null
+                          : () async {
+                              await _handleSaveTireInspection(state);
+                            }),
                 );
               }
               return Container();

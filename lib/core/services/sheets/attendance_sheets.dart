@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'model_sheets/attendance.dart';
@@ -23,16 +24,33 @@ class AttendanceSheetsAPI {
   static final spreadSheetId = '17ych7yYZP9ocWJYV1ZHHkKjtnJyTnMh_DCPSy0ScSPo';
   static final gsheets = GSheets(credentials);
   static Worksheet? userSheet;
+  static const Duration _requestTimeout = Duration(seconds: 15);
+  static Future<void>? _initializing;
 
-  static Future initAttendanceSheets() async {
+  static Future<void> initAttendanceSheets() {
+    if (userSheet != null) return Future.value();
+
+    return _initializing ??=
+        _initializeAttendanceSheets().whenComplete(() => _initializing = null);
+  }
+
+  static Future<void> _initializeAttendanceSheets() async {
     try {
-      final spreadsheet = await gsheets.spreadsheet(spreadSheetId);
-      userSheet = await getWorkSheet(spreadsheet, title: 'Attendance');
+      final spreadsheet =
+          await gsheets.spreadsheet(spreadSheetId).timeout(_requestTimeout);
+      final sheet = await getWorkSheet(spreadsheet, title: 'Attendance')
+          .timeout(_requestTimeout);
+      userSheet = sheet;
 
       final firstRow = AttendanceFields.getFields();
-      userSheet!.values.insertRow(1, firstRow);
-    } catch (e) {
-      print('Init Attendance Sheet Error : $e');
+      await sheet.values.insertRow(1, firstRow).timeout(_requestTimeout);
+    } on TimeoutException catch (e) {
+      log('Init Attendance Sheet timeout: $e');
+    } catch (e, stackTrace) {
+      log(
+        'Init Attendance Sheet error: $e',
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -41,25 +59,28 @@ class AttendanceSheetsAPI {
     try {
       return await spreadsheet.addWorksheet(title);
     } catch (e) {
-      return await spreadsheet.worksheetByTitle(title)!;
+      return spreadsheet.worksheetByTitle(title)!;
     }
   }
 
-  static Future insertAttendanceSheet(
+  static Future<void> insertAttendanceSheet(
       List<Map<String, dynamic>> rowList) async {
+    await initAttendanceSheets();
     if (userSheet == null) return;
     print('bisakah');
-    userSheet!.values.map.appendRows(rowList);
+    await userSheet!.values.map.appendRows(rowList);
   }
 
   static Future<bool> updateAttendanceSheet(
       int id, Map<String, dynamic> user) async {
+    await initAttendanceSheets();
     if (userSheet == null) return false;
 
     return userSheet!.values.map.insertRowByKey(id, user);
   }
 
   static Future<int> getRowCount() async {
+    await initAttendanceSheets();
     log('attendance_user_sheet : ${userSheet}');
     if (userSheet == null) return 0;
 
@@ -73,6 +94,7 @@ class AttendanceSheetsAPI {
     required String key,
     required dynamic value,
   }) async {
+    await initAttendanceSheets();
     if (userSheet == null) return false;
 
     return userSheet!.values
@@ -82,6 +104,7 @@ class AttendanceSheetsAPI {
   static Future<String?> getSingleDataAttendance(
       String sn, String tanggal) async {
     try {
+      await initAttendanceSheets();
       if (userSheet == null) return null;
 
       // Get all rows

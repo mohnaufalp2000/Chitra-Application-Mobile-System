@@ -11,7 +11,20 @@ abstract class UnitEvent extends Equatable {
 class GetUnitsEvent extends UnitEvent {
   final String idSite;
   final bool isOnline;
-  GetUnitsEvent({required this.idSite, required this.isOnline});
+  final String requestSource;
+
+  const GetUnitsEvent({
+    required this.idSite,
+    required this.isOnline,
+    this.requestSource = '',
+  });
+
+  @override
+  List<Object> get props => [
+        idSite,
+        isOnline,
+        requestSource,
+      ];
 }
 
 class PostDailyCheckEvent extends UnitEvent {
