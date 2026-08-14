@@ -1,4 +1,4 @@
-import 'package:camos/pages/home/home_state.dart';
+import 'package:camos/core/widgets/tire_inspection_draft_recovery_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -13,101 +13,103 @@ class DashboardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final DashboardState controller = Get.put(DashboardState());
 
-    return Scaffold(
-      extendBody: true, // 🔹 biar FAB overlap dengan nav bar transparan
-      body: Obx(() {
-        return controller.currentPage;
-      }),
+    return TireInspectionDraftRecoveryGate(
+      child: Scaffold(
+        extendBody: true, // 🔹 biar FAB overlap dengan nav bar transparan
+        body: Obx(() {
+          return controller.currentPage;
+        }),
 
-      // 🔹 Tombol tengah (AI Analyzer)
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(top: 60),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.blueAccent.withOpacity(0.4),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
+        // 🔹 Tombol tengah (AI Analyzer)
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(top: 60),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00C6FF), Color(0xFF0072FF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: FloatingActionButton(
-                onPressed: controller.onScanPressed,
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                shape: const CircleBorder(),
-                child: const Icon(
-                  LucideIcons.scanLine,
-                  size: 28,
-                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blueAccent.withOpacity(0.4),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: FloatingActionButton(
+                  onPressed: controller.onScanPressed,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  shape: const CircleBorder(),
+                  child: const Icon(
+                    LucideIcons.scanLine,
+                    size: 28,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Tire Damage \nAnalyzer (AI)',
-              style: getBlackTextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ).copyWith(
-                color: Colors.teal,
-              ),
-            ),
-          ],
-        ),
-      ),
-
-      // 🔹 Bottom Navigation Redesign
-      bottomNavigationBar: Obx(
-        () => Container(
-          margin: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.95),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 2),
+              const SizedBox(height: 6),
+              Text(
+                'Tire Damage \nAnalyzer (AI)',
+                style: getBlackTextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ).copyWith(
+                  color: Colors.teal,
+                ),
               ),
             ],
           ),
-          child: BottomAppBar(
-            color: Colors.transparent,
-            shape: const CircularNotchedRectangle(),
-            notchMargin: 8.0,
-            elevation: 0,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavItem(
-                    icon: LucideIcons.home,
-                    label: 'Home',
-                    index: 0,
-                    controller: controller,
-                  ),
-                  _buildNavItem(
-                    icon: LucideIcons.clipboardList,
-                    label: 'Inspection',
-                    index: 1,
-                    controller: controller,
-                  ),
-                ],
+        ),
+
+        // 🔹 Bottom Navigation Redesign
+        bottomNavigationBar: Obx(
+          () => Container(
+            margin: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: BottomAppBar(
+              color: Colors.transparent,
+              shape: const CircularNotchedRectangle(),
+              notchMargin: 8.0,
+              elevation: 0,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildNavItem(
+                      icon: LucideIcons.home,
+                      label: 'Home',
+                      index: 0,
+                      controller: controller,
+                    ),
+                    _buildNavItem(
+                      icon: LucideIcons.clipboardList,
+                      label: 'Inspection',
+                      index: 1,
+                      controller: controller,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
