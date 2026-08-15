@@ -28290,8 +28290,14 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   TextEditingController damageCtrl = TextEditingController(text: '');
   TextEditingController hmCtrl = TextEditingController(text: '');
   TextEditingController hmNoteCtrl = TextEditingController(text: '');
+  TextEditingController usernameCtrl = TextEditingController(text: '');
   TextEditingController rtd1Ctrl = TextEditingController(text: '');
   TextEditingController rtd2Ctrl = TextEditingController(text: '');
+  Future<void> _usernameInitialization = Future<void>.value();
+  Timer? _usernamePersistTimer;
+  bool _usernameWasEdited = false;
+  String? _pendingUsername;
+  String _lastKnownUsername = '';
   int selectedPit = -1;
   int selectedPosIndex = -1;
   int selectedType = 1;
@@ -28831,9 +28837,142 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     print('🎯 Semua upload selesai.');
   }
 
-  getUser() async {
-    user = await getUserPreferences();
-    log('username : ${user}');
+  String _inspectionAccountId([Map<String, dynamic>? account]) {
+    final firebaseUser = auth.currentUser;
+    final uid = firebaseUser?.uid.trim() ?? '';
+
+    if (uid.isNotEmpty) return uid;
+
+    return (firebaseUser?.email ?? account?['email'] ?? user['email'] ?? '')
+        .toString()
+        .trim();
+  }
+
+  String _accountUsername([Map<String, dynamic>? account]) {
+    final accountData = account ?? user;
+    final username = (accountData['username'] ?? '').toString().trim();
+
+    if (username.isNotEmpty) return username;
+
+    final displayName = auth.currentUser?.displayName?.trim() ?? '';
+    if (displayName.isNotEmpty) return displayName;
+
+    return (auth.currentUser?.email ?? accountData['email'] ?? 'Unknown')
+        .toString()
+        .trim();
+  }
+
+  String get _effectiveUsername {
+    final inputUsername = usernameCtrl.text.trim();
+    return inputUsername.isNotEmpty ? inputUsername : _accountUsername();
+  }
+
+  Future<void> _persistInspectionUsername([String? username]) async {
+    final accountId = _inspectionAccountId();
+    if (accountId.isEmpty) return;
+
+    try {
+      await saveInspectionUsername(
+        accountId: accountId,
+        username: username ?? usernameCtrl.text,
+      );
+    } catch (e) {
+      debugPrint('Gagal menyimpan username inspector: $e');
+    }
+  }
+
+  void _onUsernameChanged(String value) {
+    _usernameWasEdited = true;
+    _pendingUsername = value;
+    _lastKnownUsername = value;
+    _usernamePersistTimer?.cancel();
+    _usernamePersistTimer = Timer(const Duration(milliseconds: 400), () {
+      final pendingUsername = _pendingUsername;
+      if (pendingUsername != null) {
+        unawaited(_persistInspectionUsername(pendingUsername));
+      }
+    });
+  }
+
+  Future<void> getUser() async {
+    try {
+      final account = await getUserPreferences();
+      final savedUsername = await getInspectionUsername(
+        accountId: _inspectionAccountId(account),
+      );
+
+      if (!mounted) return;
+
+      user = account;
+      if (!_usernameWasEdited) {
+        final initialUsername = savedUsername.isNotEmpty
+            ? savedUsername
+            : _accountUsername(account);
+        _lastKnownUsername = initialUsername;
+        usernameCtrl.text = initialUsername;
+      }
+
+      log('username : $user');
+    } catch (e) {
+      debugPrint('Gagal memuat username inspector: $e');
+
+      if (mounted && !_usernameWasEdited) {
+        final initialUsername = _accountUsername();
+        _lastKnownUsername = initialUsername;
+        usernameCtrl.text = initialUsername;
+      }
+    }
+  }
+
+  Widget _buildUsernameField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.account_circle,
+              color: Colors.blue,
+              size: 38,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'USERNAME / NAMA INSPECTOR',
+                style: getBlackTextStyle(fontWeight: w700, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: usernameCtrl,
+          keyboardType: TextInputType.name,
+          textCapitalization: TextCapitalization.words,
+          onChanged: _onUsernameChanged,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: greyF7F8F9,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(18),
+              borderSide: const BorderSide(color: greyDADADA),
+            ),
+            hintText: 'Masukkan username atau nama inspector',
+            hintStyle: getGreyTextStyle(grey8391A1),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<bool> _persistUsernameBeforeLeaving() async {
+    _usernamePersistTimer?.cancel();
+    if (_usernameWasEdited) {
+      await _persistInspectionUsername(
+        _pendingUsername ?? usernameCtrl.text,
+      );
+    }
+    return true;
   }
 
   Future<String> pickImage(ImageSource source) async {
@@ -28981,7 +29120,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     final connectedCubit = context.read<ConnectedDevicesCubit>();
     log('connected cubit : $connectedCubit');
     connectedCubit.fetchConnectedDevices(); // HANYA MEMULAI fetch
-    getUser();
+    _usernameInitialization = getUser();
   }
 
   // @override
@@ -29013,10 +29152,16 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
   @override
   void dispose() {
+    _usernamePersistTimer?.cancel();
+    if (_usernameWasEdited) {
+      final pendingUsername = _pendingUsername ?? _lastKnownUsername;
+      unawaited(_persistInspectionUsername(pendingUsername));
+    }
     pressureCtrl.dispose();
     damageCtrl.dispose();
     hmCtrl.dispose();
     hmNoteCtrl.dispose();
+    usernameCtrl.dispose();
     rtd1Ctrl.dispose();
     rtd2Ctrl.dispose();
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -29216,7 +29361,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   ) {
     return {
       'idSite': idSite,
-      'user': user['username'] ?? auth.currentUser?.email ?? 'Unknown',
+      'user': _effectiveUsername,
       'tanggal': now.toIso8601String(),
       'hari': DateFormat('yyyy-MM-dd').format(now),
       'jam': DateFormat('HH:mm:ss').format(now),
@@ -29300,16 +29445,18 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     // dataUnit =
     //     ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: Text(
-          'Daily Check Pressure',
-          style: getBlackTextStyle(),
+    return WillPopScope(
+      onWillPop: _persistUsernameBeforeLeaving,
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text(
+            'Daily Check Pressure',
+            style: getBlackTextStyle(),
+          ),
+          actions: [],
         ),
-        actions: [],
-      ),
-      body: SafeArea(
+        body: SafeArea(
           child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -29447,6 +29594,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       const SizedBox(
                         height: 24,
                       ),
+
+                      _buildUsernameField(),
+                      const SizedBox(height: 24),
 
                       (pit.isNotEmpty)
                           ? Row(
@@ -30966,6 +31116,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           const SizedBox(
                             height: 24,
                           ),
+
+                          _buildUsernameField(),
+                          const SizedBox(height: 24),
 
                           (pit.isNotEmpty)
                               ? Row(
@@ -33502,6 +33655,16 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                 isLoadingSave = true;
               });
 
+              _usernamePersistTimer?.cancel();
+              await _usernameInitialization;
+              if (_usernameWasEdited) {
+                await _persistInspectionUsername(
+                  _pendingUsername ?? usernameCtrl.text,
+                );
+              }
+
+              if (!mounted) return;
+
               DateTime? selectedDateTimeSPM = DateTime.now();
 
               // POP UP input time event low pressure (hanya adjustment tapping spm)
@@ -33801,7 +33964,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         .doc(docId)
                         .update({
                       'idSite': idSite,
-                      'user': user['username'] ?? auth.currentUser!.email,
+                      'user': _effectiveUsername,
                       'tanggal': DateTime.now().toIso8601String(),
                       'hari': DateTime.now().toIso8601String().substring(0, 10),
                       'jam': DateTime.now().toIso8601String().substring(11, 19),
@@ -33875,7 +34038,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                             .add({
                           // 'nama': (user),
                           'idSite': idSite,
-                          'user': user['username'] ?? auth.currentUser!.email,
+                          'user': _effectiveUsername,
                           'tanggal': DateTime.now()
                               .subtract(Duration(days: 1))
                               .toIso8601String(),
@@ -33943,7 +34106,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         .add({
                       // 'nama': (user),
                       'idSite': idSite,
-                      'user': user['username'] ?? auth.currentUser!.email,
+                      'user': _effectiveUsername,
                       'tanggal': DateTime.now().toIso8601String(),
                       'hari': DateTime.now().toIso8601String().substring(0, 10),
                       'jam': DateTime.now().toIso8601String().substring(11, 19),
@@ -34057,6 +34220,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                   ),
           ),
         ),
+      ),
       ),
     );
   }

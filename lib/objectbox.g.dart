@@ -18,6 +18,7 @@ import 'core/services/local_database/attendance/attendance_entity.dart';
 import 'core/services/local_database/outstanding_task/outstanding_task_entity.dart';
 import 'core/services/local_database/site_condition/site_condition_entity.dart';
 import 'core/services/local_database/tire_inspect_picture/tire_inspect_picture_entity.dart';
+import 'core/services/local_database/tire_inspection_draft/tire_inspection_draft_entity.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
@@ -227,6 +228,106 @@ final _entities = <ModelEntity>[
             flags: 0)
       ],
       relations: <ModelRelation>[],
+      backlinks: <ModelBacklink>[]),
+  ModelEntity(
+      id: const IdUid(6, 3707612730663693188),
+      name: 'TireInspectionDraftEntity',
+      lastPropertyId: const IdUid(17, 1044897928696218749),
+      flags: 0,
+      properties: <ModelProperty>[
+        ModelProperty(
+            id: const IdUid(1, 3921162149749741710),
+            name: 'id',
+            type: 6,
+            flags: 1),
+        ModelProperty(
+            id: const IdUid(2, 829980885628662138),
+            name: 'storageToken',
+            type: 9,
+            flags: 2080,
+            indexId: const IdUid(2, 3257553517996472036)),
+        ModelProperty(
+            id: const IdUid(3, 7106272875332196455),
+            name: 'userId',
+            type: 9,
+            flags: 2048,
+            indexId: const IdUid(3, 571721907201197778)),
+        ModelProperty(
+            id: const IdUid(4, 6652552876791487738),
+            name: 'siteId',
+            type: 9,
+            flags: 2048,
+            indexId: const IdUid(4, 1870706964490806350)),
+        ModelProperty(
+            id: const IdUid(5, 779729549122456904),
+            name: 'unitNumber',
+            type: 9,
+            flags: 2048,
+            indexId: const IdUid(5, 8665176081532320594)),
+        ModelProperty(
+            id: const IdUid(6, 4743953306098693851),
+            name: 'inspectionDate',
+            type: 9,
+            flags: 2048,
+            indexId: const IdUid(6, 3038259512425712531)),
+        ModelProperty(
+            id: const IdUid(7, 2657424782010689786),
+            name: 'createdAtMillis',
+            type: 6,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(8, 6655326173759908983),
+            name: 'updatedAtMillis',
+            type: 6,
+            flags: 8,
+            indexId: const IdUid(7, 8791780560457950025)),
+        ModelProperty(
+            id: const IdUid(9, 5877052912631046418),
+            name: 'periodType',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(10, 6765686734048243021),
+            name: 'location',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(11, 138760243502877056),
+            name: 'hm',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(12, 7358520491326401089),
+            name: 'unitModel',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(13, 6838175691880269835),
+            name: 'siteName',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(14, 7504222624366807196),
+            name: 'userDisplayName',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(15, 8043701271188989020),
+            name: 'positionCount',
+            type: 6,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(16, 96096236899331635),
+            name: 'imageCount',
+            type: 6,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(17, 1044897928696218749),
+            name: 'payloadJson',
+            type: 9,
+            flags: 0)
+      ],
+      relations: <ModelRelation>[],
       backlinks: <ModelBacklink>[])
 ];
 
@@ -250,8 +351,8 @@ Future<Store> openStore(
 ModelDefinition getObjectBoxModel() {
   final model = ModelInfo(
       entities: _entities,
-      lastEntityId: const IdUid(5, 3938695816533245477),
-      lastIndexId: const IdUid(1, 3050109029188817089),
+      lastEntityId: const IdUid(6, 3707612730663693188),
+      lastIndexId: const IdUid(7, 8791780560457950025),
       lastRelationId: const IdUid(0, 0),
       lastSequenceId: const IdUid(0, 0),
       retiredEntityUids: const [3938695816533245477],
@@ -478,6 +579,81 @@ ModelDefinition getObjectBoxModel() {
                   .vTableGet(buffer, rootOffset, 16, []));
 
           return object;
+        }),
+    TireInspectionDraftEntity: EntityDefinition<TireInspectionDraftEntity>(
+        model: _entities[4],
+        toOneRelations: (TireInspectionDraftEntity object) => [],
+        toManyRelations: (TireInspectionDraftEntity object) => {},
+        getId: (TireInspectionDraftEntity object) => object.id,
+        setId: (TireInspectionDraftEntity object, int id) {
+          object.id = id;
+        },
+        objectToFB: (TireInspectionDraftEntity object, fb.Builder fbb) {
+          final storageTokenOffset = fbb.writeString(object.storageToken);
+          final userIdOffset = fbb.writeString(object.userId);
+          final siteIdOffset = fbb.writeString(object.siteId);
+          final unitNumberOffset = fbb.writeString(object.unitNumber);
+          final inspectionDateOffset = fbb.writeString(object.inspectionDate);
+          final periodTypeOffset = fbb.writeString(object.periodType);
+          final locationOffset = fbb.writeString(object.location);
+          final hmOffset = fbb.writeString(object.hm);
+          final unitModelOffset = fbb.writeString(object.unitModel);
+          final siteNameOffset = fbb.writeString(object.siteName);
+          final userDisplayNameOffset = fbb.writeString(object.userDisplayName);
+          final payloadJsonOffset = fbb.writeString(object.payloadJson);
+          fbb.startTable(18);
+          fbb.addInt64(0, object.id);
+          fbb.addOffset(1, storageTokenOffset);
+          fbb.addOffset(2, userIdOffset);
+          fbb.addOffset(3, siteIdOffset);
+          fbb.addOffset(4, unitNumberOffset);
+          fbb.addOffset(5, inspectionDateOffset);
+          fbb.addInt64(6, object.createdAtMillis);
+          fbb.addInt64(7, object.updatedAtMillis);
+          fbb.addOffset(8, periodTypeOffset);
+          fbb.addOffset(9, locationOffset);
+          fbb.addOffset(10, hmOffset);
+          fbb.addOffset(11, unitModelOffset);
+          fbb.addOffset(12, siteNameOffset);
+          fbb.addOffset(13, userDisplayNameOffset);
+          fbb.addInt64(14, object.positionCount);
+          fbb.addInt64(15, object.imageCount);
+          fbb.addOffset(16, payloadJsonOffset);
+          fbb.finish(fbb.endTable());
+          return object.id;
+        },
+        objectFromFB: (Store store, ByteData fbData) {
+          final buffer = fb.BufferContext(fbData);
+          final rootOffset = buffer.derefObject(0);
+
+          final object = TireInspectionDraftEntity(
+              id: const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0),
+              storageToken: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 6, ''),
+              userId: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 8, ''),
+              siteId: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 10, ''),
+              unitNumber: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 12, ''),
+              inspectionDate: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 14, ''),
+              createdAtMillis:
+                  const fb.Int64Reader().vTableGet(buffer, rootOffset, 16, 0),
+              updatedAtMillis:
+                  const fb.Int64Reader().vTableGet(buffer, rootOffset, 18, 0),
+              periodType: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 20, ''),
+              location: const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 22, ''),
+              hm: const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 24, ''),
+              unitModel: const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 26, ''),
+              siteName: const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 28, ''),
+              userDisplayName: const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 30, ''),
+              positionCount: const fb.Int64Reader().vTableGet(buffer, rootOffset, 32, 0),
+              imageCount: const fb.Int64Reader().vTableGet(buffer, rootOffset, 34, 0),
+              payloadJson: const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 36, ''));
+
+          return object;
         })
   };
 
@@ -630,4 +806,77 @@ class SiteConditionEntity_ {
   /// see [SiteConditionEntity.siteConditionId]
   static final siteConditionId =
       QueryStringProperty<SiteConditionEntity>(_entities[3].properties[7]);
+}
+
+/// [TireInspectionDraftEntity] entity fields to define ObjectBox queries.
+class TireInspectionDraftEntity_ {
+  /// see [TireInspectionDraftEntity.id]
+  static final id = QueryIntegerProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[0]);
+
+  /// see [TireInspectionDraftEntity.storageToken]
+  static final storageToken = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[1]);
+
+  /// see [TireInspectionDraftEntity.userId]
+  static final userId = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[2]);
+
+  /// see [TireInspectionDraftEntity.siteId]
+  static final siteId = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[3]);
+
+  /// see [TireInspectionDraftEntity.unitNumber]
+  static final unitNumber = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[4]);
+
+  /// see [TireInspectionDraftEntity.inspectionDate]
+  static final inspectionDate = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[5]);
+
+  /// see [TireInspectionDraftEntity.createdAtMillis]
+  static final createdAtMillis =
+      QueryIntegerProperty<TireInspectionDraftEntity>(
+          _entities[4].properties[6]);
+
+  /// see [TireInspectionDraftEntity.updatedAtMillis]
+  static final updatedAtMillis =
+      QueryIntegerProperty<TireInspectionDraftEntity>(
+          _entities[4].properties[7]);
+
+  /// see [TireInspectionDraftEntity.periodType]
+  static final periodType = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[8]);
+
+  /// see [TireInspectionDraftEntity.location]
+  static final location = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[9]);
+
+  /// see [TireInspectionDraftEntity.hm]
+  static final hm = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[10]);
+
+  /// see [TireInspectionDraftEntity.unitModel]
+  static final unitModel = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[11]);
+
+  /// see [TireInspectionDraftEntity.siteName]
+  static final siteName = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[12]);
+
+  /// see [TireInspectionDraftEntity.userDisplayName]
+  static final userDisplayName = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[13]);
+
+  /// see [TireInspectionDraftEntity.positionCount]
+  static final positionCount = QueryIntegerProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[14]);
+
+  /// see [TireInspectionDraftEntity.imageCount]
+  static final imageCount = QueryIntegerProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[15]);
+
+  /// see [TireInspectionDraftEntity.payloadJson]
+  static final payloadJson = QueryStringProperty<TireInspectionDraftEntity>(
+      _entities[4].properties[16]);
 }

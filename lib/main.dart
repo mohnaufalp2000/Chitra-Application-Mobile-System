@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -29,6 +30,7 @@ import 'core/blocs/wo_jobcard/wo_jobcard_bloc.dart';
 import 'core/navigator/routes.dart';
 import 'core/services/local_database/outstanding_task/objectbox.dart';
 import 'core/services/sheets/attendance_sheets.dart';
+import 'core/services/tire_inspection_draft_service.dart';
 import 'core/utils/functions/functions.dart';
 import 'objectbox.g.dart';
 import 'pages/opening/splash_screen.dart';
@@ -53,6 +55,7 @@ void main() async {
   cameras = await availableCameras();
   // cameras = [cameras[0], cameras[1]];
   store = (await ObjectBox.create()).store;
+  TireInspectionDraftService.instance.initialize(store);
   // initializeHERESDK();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
@@ -91,7 +94,17 @@ void main() async {
   // Jalankan setelah frame pertama agar koneksi yang lambat tidak menahan
   // aplikasi di native splash screen.
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    unawaited(AttendanceSheetsAPI.initAttendanceSheets());
+    // unawaited(AttendanceSheetsAPI.initAttendanceSheets());
+    unawaited(() async {
+      try {
+        await TireInspectionDraftService.instance.prepareStorage();
+      } catch (error, stackTrace) {
+        log(
+          'Gagal menyiapkan penyimpanan draft Tire Inspection: $error',
+          stackTrace: stackTrace,
+        );
+      }
+    }());
   });
 }
 
