@@ -2,51 +2,131 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:camos/core/services/local_database/tire_inspection_draft/tire_inspection_draft_entity.dart';
+import 'package:camos/objectbox.g.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'model/tire_inspection_draft.dart';
 
-/// Persists unfinished Tire Inspection forms independently from Firestore.
+/// Persists unfinished Tire Inspection forms in ObjectBox.
 ///
-/// Every draft has its own SharedPreferences entry. The separate metadata
-/// index keeps resume prompts lightweight and can be rebuilt if it is corrupt
-/// or an app process is stopped between the payload and index writes.
+/// Payloads created by the previous SharedPreferences implementation are
+/// migrated one at a time and removed only after ObjectBox stores them.
 class TireInspectionDraftService {
-  TireInspectionDraftService._();
+  TireInspectionDraftService._({
+    Store? store,
+    SharedPreferences? legacyPreferences,
+    DateTime Function()? clock,
+    this.retention = defaultRetention,
+    this.maxDraftsPerUser = defaultMaxDraftsPerUser,
+    this.maxDraftsPerDevice = defaultMaxDraftsPerDevice,
+  })  : _store = store,
+        _legacyPreferences = legacyPreferences,
+        _clock = clock ?? DateTime.now {
+    if (retention <= Duration.zero) {
+      throw ArgumentError.value(retention, 'retention', 'must be positive');
+    }
+    if (maxDraftsPerUser < 1) {
+      throw ArgumentError.value(
+        maxDraftsPerUser,
+        'maxDraftsPerUser',
+        'must be positive',
+      );
+    }
+    if (maxDraftsPerDevice < maxDraftsPerUser) {
+      throw ArgumentError.value(
+        maxDraftsPerDevice,
+        'maxDraftsPerDevice',
+        'must be at least maxDraftsPerUser',
+      );
+    }
+  }
 
   factory TireInspectionDraftService() => instance;
+
+  factory TireInspectionDraftService.forTesting({
+    required Store store,
+    SharedPreferences? legacyPreferences,
+    DateTime Function()? clock,
+    Duration retention = defaultRetention,
+    int maxDraftsPerUser = defaultMaxDraftsPerUser,
+    int maxDraftsPerDevice = defaultMaxDraftsPerDevice,
+  }) {
+    return TireInspectionDraftService._(
+      store: store,
+      legacyPreferences: legacyPreferences,
+      clock: clock,
+      retention: retention,
+      maxDraftsPerUser: maxDraftsPerUser,
+      maxDraftsPerDevice: maxDraftsPerDevice,
+    );
+  }
 
   static final TireInspectionDraftService instance =
       TireInspectionDraftService._();
 
-  static const int _storageSchemaVersion = 1;
-  static const String _indexPreferenceKey =
+  static const Duration defaultRetention = Duration(days: 30);
+  // Keep only the two most recently updated unit drafts for each user.
+  static const int defaultMaxDraftsPerUser = 2;
+  static const int defaultMaxDraftsPerDevice = 300;
+
+  static const String _legacyIndexPreferenceKey =
       'camos.tire_inspection.drafts.index.v1';
-  static const String _payloadPreferencePrefix =
+  static const String _legacyPayloadPreferencePrefix =
       'camos.tire_inspection.draft.v1.';
 
+  Store? _store;
+  SharedPreferences? _legacyPreferences;
+  final DateTime Function() _clock;
+
+  final Duration retention;
+  final int maxDraftsPerUser;
+  final int maxDraftsPerDevice;
+
+  bool _prepared = false;
   Future<void> _operationQueue = Future<void>.value();
+
+  /// Attaches the single application ObjectBox store.
+  ///
+  /// This call is synchronous and safe before [runApp]. Migration and cleanup
+  /// run lazily through [prepareStorage] or the first CRUD operation.
+  void initialize(Store store) => attachStore(store);
+
+  void attachStore(Store store) {
+    if (_store != null && !identical(_store, store)) {
+      throw StateError('Tire Inspection draft store is already initialized.');
+    }
+    _store = store;
+  }
+
+  /// Starts legacy migration, repairs malformed rows, and applies retention.
+  Future<void> prepareStorage() {
+    return _enqueue<void>(() async {
+      await _ensurePrepared();
+    });
+  }
 
   /// Creates or replaces a draft and returns the exact stored snapshot.
   ///
   /// [updatedAt] is refreshed on every call while [createdAt] is preserved.
   Future<TireInspectionDraft> saveDraft(TireInspectionDraft draft) {
     return _enqueue<TireInspectionDraft>(() async {
-      final prefs = await SharedPreferences.getInstance();
-      final index = await _loadOrRepairIndex(prefs);
-      final snapshot = draft.copyWith(updatedAt: DateTime.now());
-      final payloadKey = _payloadKey(snapshot.key.storageToken);
+      await _ensurePrepared();
 
-      final payloadSaved = await prefs.setString(
-        payloadKey,
-        jsonEncode(snapshot.toJson()),
+      final token = draft.key.storageToken;
+      final existing = _findEntity(token);
+      final createdAt = existing != null && existing.createdAtMillis > 0
+          ? DateTime.fromMillisecondsSinceEpoch(existing.createdAtMillis)
+          : draft.createdAt;
+      final snapshot = draft.copyWith(
+        createdAt: createdAt,
+        updatedAt: _clock(),
       );
-      if (!payloadSaved) {
-        throw StateError('Failed to persist Tire Inspection draft.');
-      }
 
-      index[snapshot.key.storageToken] = snapshot.toMetadata();
-      await _writeIndex(prefs, index);
+      _box.put(_entityFromDraft(snapshot, id: existing?.id ?? 0));
+      if (existing == null) {
+        _pruneDrafts(protectedToken: token);
+      }
       return snapshot;
     });
   }
@@ -54,24 +134,20 @@ class TireInspectionDraftService {
   /// Reads a draft. A malformed payload is removed and reported as `null`.
   Future<TireInspectionDraft?> loadDraft(TireInspectionDraftKey key) {
     return _enqueue<TireInspectionDraft?>(() async {
-      final prefs = await SharedPreferences.getInstance();
-      final index = await _loadOrRepairIndex(prefs);
-      final token = key.storageToken;
-      final rawPayload = prefs.getString(_payloadKey(token));
+      await _ensurePrepared();
 
-      if (rawPayload == null || rawPayload.trim().isEmpty) {
-        if (index.remove(token) != null) {
-          await _writeIndex(prefs, index);
-        }
+      final entity = _findEntity(key.storageToken);
+      if (entity == null) return null;
+      if (_isExpired(entity)) {
+        _box.remove(entity.id);
         return null;
       }
 
-      final draft = _tryDecodeDraft(rawPayload);
+      final draft = _draftFromEntity(entity);
       if (draft == null || draft.key != key) {
-        await _removePayloadAndIndex(prefs, index, token);
+        _box.remove(entity.id);
         return null;
       }
-
       return draft;
     });
   }
@@ -84,14 +160,9 @@ class TireInspectionDraftService {
   /// user explicitly chooses to discard the unfinished inspection.
   Future<bool> deleteDraft(TireInspectionDraftKey key) {
     return _enqueue<bool>(() async {
-      final prefs = await SharedPreferences.getInstance();
-      final index = await _loadOrRepairIndex(prefs);
-      final token = key.storageToken;
-      final existed =
-          prefs.containsKey(_payloadKey(token)) || index.containsKey(token);
-
-      await _removePayloadAndIndex(prefs, index, token);
-      return existed;
+      await _ensurePrepared();
+      final entity = _findEntity(key.storageToken);
+      return entity != null && _box.remove(entity.id);
     });
   }
 
@@ -102,9 +173,6 @@ class TireInspectionDraftService {
   }
 
   /// Lists lightweight metadata for all active (unfinished) drafts.
-  ///
-  /// Results are newest first. Every filter is optional and compared after
-  /// trimming. [inspectionDate] is converted to a local `yyyy-MM-dd` key.
   Future<List<TireInspectionDraftMetadata>> listActiveDrafts({
     String? userId,
     String? siteId,
@@ -112,24 +180,36 @@ class TireInspectionDraftService {
     DateTime? inspectionDate,
   }) {
     return _enqueue<List<TireInspectionDraftMetadata>>(() async {
-      final prefs = await SharedPreferences.getInstance();
-      final index = await _loadOrRepairIndex(prefs);
+      await _ensurePrepared();
+      _pruneDrafts();
+
       final dateKey = inspectionDate == null
           ? null
           : TireInspectionDraftKey.dateKeyFor(inspectionDate);
+      final result = <TireInspectionDraftMetadata>[];
+      final malformedIds = <int>[];
 
-      final result = index.values.where((metadata) {
-        return _matches(
+      for (final id in _allEntityIdsNewestFirst()) {
+        final entity = _box.get(id);
+        if (entity == null) continue;
+        final metadata = _metadataFromEntity(entity);
+        if (metadata == null) {
+          malformedIds.add(entity.id);
+          continue;
+        }
+        if (_matches(
           metadata,
           userId: userId,
           siteId: siteId,
           unitNumber: unitNumber,
           inspectionDate: dateKey,
-        );
-      }).toList()
-        ..sort(
-          (a, b) => b.updatedAt.compareTo(a.updatedAt),
-        );
+        )) {
+          result.add(metadata);
+        }
+      }
+
+      if (malformedIds.isNotEmpty) _box.removeMany(malformedIds);
+      result.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
       return result;
     });
   }
@@ -142,31 +222,35 @@ class TireInspectionDraftService {
     DateTime? inspectionDate,
   }) {
     return _enqueue<TireInspectionDraft?>(() async {
-      final prefs = await SharedPreferences.getInstance();
-      final index = await _loadOrRepairIndex(prefs);
+      await _ensurePrepared();
+      _pruneDrafts();
+
       final dateKey = inspectionDate == null
           ? null
           : TireInspectionDraftKey.dateKeyFor(inspectionDate);
-      final candidates = index.values.where((metadata) {
-        return _matches(
+      for (final id in _allEntityIdsNewestFirst()) {
+        final entity = _box.get(id);
+        if (entity == null) continue;
+        final metadata = _metadataFromEntity(entity);
+        if (metadata == null) {
+          _box.remove(entity.id);
+          continue;
+        }
+        if (!_matches(
           metadata,
           userId: userId,
           siteId: siteId,
           unitNumber: unitNumber,
           inspectionDate: dateKey,
-        );
-      }).toList()
-        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-
-      for (final metadata in candidates) {
-        final token = metadata.key.storageToken;
-        final rawPayload = prefs.getString(_payloadKey(token));
-        final draft = rawPayload == null ? null : _tryDecodeDraft(rawPayload);
-        if (draft != null && draft.key == metadata.key) {
-          return draft;
+        )) {
+          continue;
         }
 
-        await _removePayloadAndIndex(prefs, index, token);
+        final draft = _draftFromEntity(entity);
+        if (draft != null && draft.key.storageToken == entity.storageToken) {
+          return draft;
+        }
+        _box.remove(entity.id);
       }
       return null;
     });
@@ -181,144 +265,329 @@ class TireInspectionDraftService {
     DateTime? inspectionDate,
   }) {
     return _enqueue<int>(() async {
-      final prefs = await SharedPreferences.getInstance();
-      final index = await _loadOrRepairIndex(prefs);
+      await _ensurePrepared();
+
       final dateKey = inspectionDate == null
           ? null
           : TireInspectionDraftKey.dateKeyFor(inspectionDate);
-      final tokens = index.entries
-          .where(
-            (entry) => _matches(
-              entry.value,
+      final ids = <int>[];
+      for (final id in _allEntityIdsNewestFirst()) {
+        final entity = _box.get(id);
+        if (entity == null) continue;
+        final metadata = _metadataFromEntity(entity);
+        if (metadata == null ||
+            _matches(
+              metadata,
               userId: userId,
               siteId: siteId,
               unitNumber: unitNumber,
               inspectionDate: dateKey,
-            ),
-          )
-          .map((entry) => entry.key)
-          .toList();
-
-      for (final token in tokens) {
-        await prefs.remove(_payloadKey(token));
-        index.remove(token);
+            )) {
+          ids.add(entity.id);
+        }
       }
-      await _writeIndex(prefs, index);
-      return tokens.length;
+      return ids.isEmpty ? 0 : _box.removeMany(ids);
     });
   }
 
-  /// Rebuilds metadata from valid payloads and deletes malformed entries.
+  /// Repairs malformed rows, reapplies retention, and returns valid metadata.
   Future<List<TireInspectionDraftMetadata>> repairStorage() {
     return _enqueue<List<TireInspectionDraftMetadata>>(() async {
-      final prefs = await SharedPreferences.getInstance();
-      final index = await _rebuildIndex(prefs);
-      final result = index.values.toList()
-        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      return result;
+      await _ensurePrepared();
+      _repairObjectBoxRows();
+      _pruneDrafts();
+      return _validMetadataNewestFirst();
     });
   }
 
-  Future<T> _enqueue<T>(Future<T> Function() action) {
-    final completer = Completer<T>();
-    _operationQueue = _operationQueue.catchError((_) {}).then((_) async {
-      try {
-        completer.complete(await action());
-      } catch (error, stackTrace) {
-        completer.completeError(error, stackTrace);
-      }
-    });
-    return completer.future;
-  }
-
-  Future<Map<String, TireInspectionDraftMetadata>> _loadOrRepairIndex(
-    SharedPreferences prefs,
-  ) async {
-    final rawIndex = prefs.getString(_indexPreferenceKey);
-    if (rawIndex == null || rawIndex.trim().isEmpty) {
-      return _rebuildIndex(prefs);
-    }
+  Future<void> _ensurePrepared() async {
+    if (_prepared) return;
+    _requiredStore;
 
     try {
-      final decoded = jsonDecode(rawIndex);
-      if (decoded is! Map ||
-          decoded['schemaVersion'] != _storageSchemaVersion ||
-          decoded['items'] is! Map) {
-        return _rebuildIndex(prefs);
-      }
-
-      final result = <String, TireInspectionDraftMetadata>{};
-      final items = decoded['items'] as Map;
-      for (final entry in items.entries) {
-        if (entry.value is! Map) return _rebuildIndex(prefs);
-        final metadata = TireInspectionDraftMetadata.fromJson(
-          Map<String, dynamic>.from(entry.value as Map),
-        );
-        final token = entry.key.toString();
-        if (metadata.key.storageToken != token) {
-          return _rebuildIndex(prefs);
-        }
-        result[token] = metadata;
-      }
-
-      final payloadTokens = _payloadTokens(prefs);
-      if (payloadTokens.length != result.length ||
-          !payloadTokens.every(result.containsKey)) {
-        return _rebuildIndex(prefs);
-      }
-      return result;
+      await _migrateLegacyDrafts();
     } catch (error, stackTrace) {
       log(
-        'Repairing corrupt Tire Inspection draft index: $error',
+        'Tire Inspection legacy draft migration failed: $error',
         stackTrace: stackTrace,
       );
-      return _rebuildIndex(prefs);
+    }
+
+    _repairObjectBoxRows();
+    _pruneDrafts();
+    _prepared = true;
+  }
+
+  Future<void> _migrateLegacyDrafts() async {
+    final prefs = _legacyPreferences ??= await SharedPreferences.getInstance();
+    final payloadKeys = prefs
+        .getKeys()
+        .where((key) => key.startsWith(_legacyPayloadPreferencePrefix))
+        .toList();
+
+    final retentionCutoff = _clock().subtract(retention).millisecondsSinceEpoch;
+    var allProcessed = true;
+    for (var index = 0; index < payloadKeys.length; index++) {
+      final preferenceKey = payloadKeys[index];
+      try {
+        final rawPayload = prefs.getString(preferenceKey);
+        final legacyDraft = rawPayload == null
+            ? null
+            : _tryDecodeDraft(rawPayload, source: 'legacy SharedPreferences');
+
+        final isExpired = legacyDraft != null &&
+            legacyDraft.updatedAt.millisecondsSinceEpoch < retentionCutoff;
+        if (legacyDraft != null && !isExpired) {
+          final token = legacyDraft.key.storageToken;
+          final existing = _findEntity(token);
+          final existingDraft =
+              existing == null ? null : _draftFromEntity(existing);
+          if (existing == null ||
+              existingDraft == null ||
+              legacyDraft.updatedAt.isAfter(existingDraft.updatedAt)) {
+            _box.put(
+              _entityFromDraft(legacyDraft, id: existing?.id ?? 0),
+            );
+          }
+        }
+
+        final removed = await prefs.remove(preferenceKey);
+        if (!removed && prefs.containsKey(preferenceKey)) {
+          allProcessed = false;
+        }
+      } catch (error, stackTrace) {
+        allProcessed = false;
+        log(
+          'Failed migrating legacy Tire Inspection draft $preferenceKey: '
+          '$error',
+          stackTrace: stackTrace,
+        );
+      }
+
+      if ((index + 1) % 10 == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+
+    final legacyPayloadRemains = prefs
+        .getKeys()
+        .any((key) => key.startsWith(_legacyPayloadPreferencePrefix));
+    if (allProcessed && !legacyPayloadRemains) {
+      await prefs.remove(_legacyIndexPreferenceKey);
     }
   }
 
-  Future<Map<String, TireInspectionDraftMetadata>> _rebuildIndex(
-    SharedPreferences prefs,
-  ) async {
-    final result = <String, TireInspectionDraftMetadata>{};
-    final payloadKeys = prefs
-        .getKeys()
-        .where((key) => key.startsWith(_payloadPreferencePrefix))
-        .toList();
+  void _repairObjectBoxRows() {
+    final removeIds = <int>[];
 
-    for (final payloadKey in payloadKeys) {
-      final rawPayload = prefs.getString(payloadKey);
-      final draft = rawPayload == null ? null : _tryDecodeDraft(rawPayload);
-      if (draft == null) {
-        await prefs.remove(payloadKey);
+    for (final id in _allEntityIdsNewestFirst()) {
+      final entity = _box.get(id);
+      if (entity == null) continue;
+      final draft = _draftFromEntity(entity);
+      if (draft == null || draft.key.storageToken != entity.storageToken) {
+        removeIds.add(entity.id);
         continue;
       }
 
-      final canonicalToken = draft.key.storageToken;
-      final canonicalPayloadKey = _payloadKey(canonicalToken);
-      if (payloadKey != canonicalPayloadKey) {
-        await prefs.setString(canonicalPayloadKey, rawPayload!);
-        await prefs.remove(payloadKey);
-      }
-
-      final previous = result[canonicalToken];
-      if (previous == null || draft.updatedAt.isAfter(previous.updatedAt)) {
-        result[canonicalToken] = draft.toMetadata();
+      final canonical = _entityFromDraft(draft, id: entity.id);
+      if (!_entityMetadataMatches(entity, canonical)) {
+        _box.put(canonical);
       }
     }
 
-    await _writeIndex(prefs, result);
+    if (removeIds.isNotEmpty) _box.removeMany(removeIds);
+  }
+
+  void _pruneDrafts({String? protectedToken}) {
+    if (_box.isEmpty()) return;
+
+    final removeIds = <int>{};
+    final cutoff = _clock().subtract(retention).millisecondsSinceEpoch;
+    final expiredQuery = _box
+        .query(TireInspectionDraftEntity_.updatedAtMillis.lessThan(cutoff))
+        .build();
+    try {
+      removeIds.addAll(expiredQuery.findIds());
+    } finally {
+      expiredQuery.close();
+    }
+
+    final entries = <_DraftRetentionEntry>[];
+    for (final id in _allEntityIdsNewestFirst()) {
+      final entity = _box.get(id);
+      if (entity == null) continue;
+      if (entity.storageToken == protectedToken) {
+        removeIds.remove(entity.id);
+      }
+      if (!removeIds.contains(entity.id)) {
+        entries.add(
+          _DraftRetentionEntry(
+            id: entity.id,
+            storageToken: entity.storageToken,
+            userId: entity.userId,
+            updatedAtMillis: entity.updatedAtMillis,
+          ),
+        );
+      }
+    }
+
+    entries.sort((first, second) {
+      final firstIsProtected = first.storageToken == protectedToken;
+      final secondIsProtected = second.storageToken == protectedToken;
+      if (firstIsProtected != secondIsProtected) {
+        return firstIsProtected ? -1 : 1;
+      }
+      final updatedComparison =
+          second.updatedAtMillis.compareTo(first.updatedAtMillis);
+      if (updatedComparison != 0) return updatedComparison;
+      return second.id.compareTo(first.id);
+    });
+
+    final userCounts = <String, int>{};
+    for (final entry in entries) {
+      final count = userCounts[entry.userId] ?? 0;
+      if (count >= maxDraftsPerUser) {
+        removeIds.add(entry.id);
+      } else {
+        userCounts[entry.userId] = count + 1;
+      }
+    }
+
+    var globalCount = 0;
+    for (final entry in entries) {
+      if (removeIds.contains(entry.id)) continue;
+      if (globalCount >= maxDraftsPerDevice) {
+        removeIds.add(entry.id);
+      } else {
+        globalCount++;
+      }
+    }
+
+    if (removeIds.isNotEmpty) _box.removeMany(removeIds.toList());
+  }
+
+  List<TireInspectionDraftMetadata> _validMetadataNewestFirst() {
+    final result = <TireInspectionDraftMetadata>[];
+    final malformedIds = <int>[];
+    for (final id in _allEntityIdsNewestFirst()) {
+      final entity = _box.get(id);
+      if (entity == null) continue;
+      final metadata = _metadataFromEntity(entity);
+      if (metadata == null) {
+        malformedIds.add(entity.id);
+      } else {
+        result.add(metadata);
+      }
+    }
+    if (malformedIds.isNotEmpty) _box.removeMany(malformedIds);
+    result.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     return result;
   }
 
-  Set<String> _payloadTokens(SharedPreferences prefs) {
-    return prefs
-        .getKeys()
-        .where((key) => key.startsWith(_payloadPreferencePrefix))
-        .map((key) => key.substring(_payloadPreferencePrefix.length))
-        .toSet();
+  TireInspectionDraftEntity _entityFromDraft(
+    TireInspectionDraft draft, {
+    int id = 0,
+  }) {
+    final metadata = draft.toMetadata();
+    return TireInspectionDraftEntity(
+      id: id,
+      storageToken: draft.key.storageToken,
+      userId: draft.key.userId,
+      siteId: draft.key.siteId,
+      unitNumber: draft.key.unitNumber,
+      inspectionDate: draft.key.inspectionDate,
+      createdAtMillis: draft.createdAt.millisecondsSinceEpoch,
+      updatedAtMillis: draft.updatedAt.millisecondsSinceEpoch,
+      periodType: draft.periodType,
+      location: draft.location,
+      hm: draft.hm,
+      unitModel: draft.unitModel,
+      siteName: draft.siteName,
+      userDisplayName: draft.userDisplayName,
+      positionCount: metadata.positionCount,
+      imageCount: metadata.imageCount,
+      payloadJson: jsonEncode(draft.toJson()),
+    );
   }
 
-  TireInspectionDraft? _tryDecodeDraft(String rawPayload) {
+  TireInspectionDraft? _draftFromEntity(TireInspectionDraftEntity entity) {
+    final draft = _tryDecodeDraft(entity.payloadJson, source: 'ObjectBox');
+    if (draft == null || draft.key.storageToken != entity.storageToken) {
+      return null;
+    }
+    return draft;
+  }
+
+  TireInspectionDraftMetadata? _metadataFromEntity(
+    TireInspectionDraftEntity entity,
+  ) {
+    try {
+      if (entity.createdAtMillis <= 0 || entity.updatedAtMillis <= 0) {
+        return null;
+      }
+      return TireInspectionDraftMetadata(
+        key: TireInspectionDraftKey(
+          userId: entity.userId,
+          siteId: entity.siteId,
+          unitNumber: entity.unitNumber,
+          inspectionDate: entity.inspectionDate,
+        ),
+        createdAt: DateTime.fromMillisecondsSinceEpoch(entity.createdAtMillis),
+        updatedAt: DateTime.fromMillisecondsSinceEpoch(entity.updatedAtMillis),
+        periodType: entity.periodType,
+        location: entity.location,
+        unitModel: entity.unitModel,
+        siteName: entity.siteName,
+        userDisplayName: entity.userDisplayName,
+        positionCount: entity.positionCount,
+        imageCount: entity.imageCount,
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Ignoring invalid Tire Inspection draft metadata: $error',
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  bool _entityMetadataMatches(
+    TireInspectionDraftEntity current,
+    TireInspectionDraftEntity canonical,
+  ) {
+    return current.storageToken == canonical.storageToken &&
+        current.userId == canonical.userId &&
+        current.siteId == canonical.siteId &&
+        current.unitNumber == canonical.unitNumber &&
+        current.inspectionDate == canonical.inspectionDate &&
+        current.createdAtMillis == canonical.createdAtMillis &&
+        current.updatedAtMillis == canonical.updatedAtMillis &&
+        current.periodType == canonical.periodType &&
+        current.location == canonical.location &&
+        current.hm == canonical.hm &&
+        current.unitModel == canonical.unitModel &&
+        current.siteName == canonical.siteName &&
+        current.userDisplayName == canonical.userDisplayName &&
+        current.positionCount == canonical.positionCount &&
+        current.imageCount == canonical.imageCount &&
+        current.payloadJson == canonical.payloadJson;
+  }
+
+  TireInspectionDraftEntity? _findEntity(String storageToken) {
+    final query = _box
+        .query(TireInspectionDraftEntity_.storageToken.equals(storageToken))
+        .build();
+    try {
+      return query.findFirst();
+    } finally {
+      query.close();
+    }
+  }
+
+  TireInspectionDraft? _tryDecodeDraft(
+    String rawPayload, {
+    required String source,
+  }) {
     try {
       final decoded = jsonDecode(rawPayload);
       if (decoded is! Map) return null;
@@ -327,42 +596,34 @@ class TireInspectionDraftService {
       );
     } catch (error, stackTrace) {
       log(
-        'Ignoring corrupt Tire Inspection draft: $error',
+        'Ignoring corrupt Tire Inspection draft from $source: $error',
         stackTrace: stackTrace,
       );
       return null;
     }
   }
 
-  Future<void> _removePayloadAndIndex(
-    SharedPreferences prefs,
-    Map<String, TireInspectionDraftMetadata> index,
-    String token,
-  ) async {
-    await prefs.remove(_payloadKey(token));
-    if (index.remove(token) != null) {
-      await _writeIndex(prefs, index);
-    }
+  bool _isExpired(TireInspectionDraftEntity entity) {
+    return entity.updatedAtMillis <
+        _clock().subtract(retention).millisecondsSinceEpoch;
   }
 
-  Future<void> _writeIndex(
-    SharedPreferences prefs,
-    Map<String, TireInspectionDraftMetadata> index,
-  ) async {
-    final items = <String, dynamic>{};
-    index.forEach((token, metadata) {
-      items[token] = metadata.toJson();
-    });
-
-    final saved = await prefs.setString(
-      _indexPreferenceKey,
-      jsonEncode(<String, dynamic>{
-        'schemaVersion': _storageSchemaVersion,
-        'items': items,
-      }),
-    );
-    if (!saved) {
-      throw StateError('Failed to persist Tire Inspection draft index.');
+  List<int> _allEntityIdsNewestFirst() {
+    final query = _box
+        .query()
+        .order(
+          TireInspectionDraftEntity_.updatedAtMillis,
+          flags: Order.descending,
+        )
+        .order(
+          TireInspectionDraftEntity_.id,
+          flags: Order.descending,
+        )
+        .build();
+    try {
+      return query.findIds();
+    } finally {
+      query.close();
     }
   }
 
@@ -390,5 +651,42 @@ class TireInspectionDraftService {
             metadata.key.inspectionDate == inspectionDate);
   }
 
-  String _payloadKey(String token) => '$_payloadPreferencePrefix$token';
+  Future<T> _enqueue<T>(Future<T> Function() action) {
+    final completer = Completer<T>();
+    _operationQueue = _operationQueue.catchError((_) {}).then((_) async {
+      try {
+        completer.complete(await action());
+      } catch (error, stackTrace) {
+        completer.completeError(error, stackTrace);
+      }
+    });
+    return completer.future;
+  }
+
+  Store get _requiredStore {
+    final value = _store;
+    if (value == null) {
+      throw StateError(
+        'TireInspectionDraftService.initialize(store) must be called first.',
+      );
+    }
+    return value;
+  }
+
+  Box<TireInspectionDraftEntity> get _box =>
+      _requiredStore.box<TireInspectionDraftEntity>();
+}
+
+class _DraftRetentionEntry {
+  const _DraftRetentionEntry({
+    required this.id,
+    required this.storageToken,
+    required this.userId,
+    required this.updatedAtMillis,
+  });
+
+  final int id;
+  final String storageToken;
+  final String userId;
+  final int updatedAtMillis;
 }

@@ -23,6 +23,7 @@ class NewTireInspectionState extends GetxController {
 
   static const int _pageSize = 50;
   static const int _sendBatchSize = 50;
+  static const Duration _autoRefreshCooldown = Duration(seconds: 30);
 
   final totalTasks = 0.obs;
   final totalFilteredTasks = 0.obs;
@@ -33,6 +34,8 @@ class NewTireInspectionState extends GetxController {
   Timer? _searchDebounce;
   int _loadRequestId = 0;
   bool _isTotalCountKnown = false;
+  bool _usesDefaultTodayFilter = true;
+  DateTime? _lastServerRefreshAt;
 
   var isLoading = false.obs;
   var isExporting = false.obs;
@@ -130,6 +133,7 @@ class NewTireInspectionState extends GetxController {
       hasMoreTasks.value = querySnapshot.docs.length == _pageSize &&
           (!_isTotalCountKnown || tasks.length < totalTasks.value);
       applyFilters();
+      _lastServerRefreshAt = DateTime.now();
     } catch (e) {
       log('Error fetching tire_inspection: $e');
     } finally {
@@ -144,8 +148,50 @@ class NewTireInspectionState extends GetxController {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(
       const Duration(milliseconds: 400),
-      reloadForActiveFilters,
+      applyFilters,
     );
+  }
+
+  /// Memuat ulang ketika pengguna benar-benar kembali dari Home ke Inspection.
+  /// Refresh otomatis dibatasi agar perpindahan tab berulang tidak membuat
+  /// pembacaan Firestore yang tidak perlu. Refresh manual tetap tidak dibatasi.
+  Future<void> refreshOnOpen() async {
+    if (isLoading.value ||
+        isLoadingMore.value ||
+        isSending.value ||
+        isExporting.value) {
+      return;
+    }
+
+    final didRollToToday = _rollDefaultFilterToToday();
+    final lastRefreshAt = _lastServerRefreshAt;
+    if (!didRollToToday &&
+        lastRefreshAt != null &&
+        DateTime.now().difference(lastRefreshAt) < _autoRefreshCooldown) {
+      return;
+    }
+
+    await reloadForActiveFilters();
+  }
+
+  Future<void> selectDateRange(DateTimeRange range) async {
+    _usesDefaultTodayFilter = false;
+    selectedDateRange.value = range;
+    await reloadForActiveFilters();
+  }
+
+  bool _rollDefaultFilterToToday() {
+    if (!_usesDefaultTodayFilter) return false;
+
+    final currentRange = selectedDateRange.value;
+    final todayRange = _todayDateRange();
+    final alreadyToday = currentRange != null &&
+        _isSameDay(currentRange.start, todayRange.start) &&
+        _isSameDay(currentRange.end, todayRange.end);
+    if (alreadyToday) return false;
+
+    selectedDateRange.value = todayRange;
+    return true;
   }
 
   Future<void> reloadForActiveFilters() async {
@@ -162,7 +208,10 @@ class NewTireInspectionState extends GetxController {
       hasMoreTasks.value = false;
       _lastTaskDocument = null;
 
-      final matches = <Map<String, dynamic>>[];
+      // Simpan semua data dalam rentang tanggal yang aktif. Search diterapkan
+      // secara lokal agar mengetik di kolom pencarian tidak membaca Firestore
+      // lagi pada setiap debounce.
+      final dateScopedTasks = <Map<String, dynamic>>[];
       DocumentSnapshot<Map<String, dynamic>>? cursor;
 
       while (requestId == _loadRequestId) {
@@ -177,9 +226,9 @@ class NewTireInspectionState extends GetxController {
 
         for (final doc in snapshot.docs) {
           final data = doc.data();
-          if (_taskMatchesActiveFilters(data)) {
+          if (_taskMatchesSelectedDate(data)) {
             data['doc_id'] = doc.id;
-            matches.add(data);
+            dateScopedTasks.add(data);
           }
         }
 
@@ -189,7 +238,7 @@ class NewTireInspectionState extends GetxController {
 
       if (requestId != _loadRequestId) return;
 
-      matches.sort((a, b) {
+      dateScopedTasks.sort((a, b) {
         final dateA =
             DateTime.tryParse(a['hari']?.toString() ?? '') ?? DateTime(2000);
         final dateB =
@@ -197,9 +246,10 @@ class NewTireInspectionState extends GetxController {
         return dateB.compareTo(dateA);
       });
 
-      tasks.assignAll(matches);
-      filteredTasks.assignAll(matches);
-      totalFilteredTasks.value = matches.length;
+      tasks.assignAll(dateScopedTasks);
+      totalTasks.value = dateScopedTasks.length;
+      applyFilters();
+      _lastServerRefreshAt = DateTime.now();
     } catch (e, stackTrace) {
       log('Error filtering tire_inspection: $e', stackTrace: stackTrace);
     } finally {
@@ -292,10 +342,23 @@ class NewTireInspectionState extends GetxController {
     });
 
     filteredTasks.assignAll(list);
+    totalFilteredTasks.value = list.length;
     log('filtered task : $filteredTasks');
   }
 
   bool _taskMatchesActiveFilters(Map<String, dynamic> task) {
+    if (!_taskMatchesSelectedDate(task)) return false;
+
+    final query = searchQuery.value.trim().toLowerCase();
+    if (query.isNotEmpty &&
+        !(task['unit'] ?? '').toString().toLowerCase().contains(query)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _taskMatchesSelectedDate(Map<String, dynamic> task) {
     final range = selectedDateRange.value;
     if (range != null) {
       final dateStr = task['hari']?.toString();
@@ -318,17 +381,12 @@ class NewTireInspectionState extends GetxController {
       if (date.isBefore(start) || date.isAfter(end)) return false;
     }
 
-    final query = searchQuery.value.trim().toLowerCase();
-    if (query.isNotEmpty &&
-        !(task['unit'] ?? '').toString().toLowerCase().contains(query)) {
-      return false;
-    }
-
     return true;
   }
 
   void resetFilters() {
     _searchDebounce?.cancel();
+    _usesDefaultTodayFilter = true;
     selectedDateRange.value = _todayDateRange();
     searchQuery.value = '';
     reloadForActiveFilters();

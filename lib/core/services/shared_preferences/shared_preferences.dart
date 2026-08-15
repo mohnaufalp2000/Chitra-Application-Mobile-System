@@ -249,6 +249,39 @@ Future<String> getUserDaily() async {
   return prefs.getString(savedUserDailyCode) ?? '';
 }
 
+String _inspectionUsernameKey(String accountId) {
+  final encodedAccountId =
+      base64Url.encode(utf8.encode(accountId.trim())).replaceAll('=', '');
+  return 'inspection_username_$encodedAccountId';
+}
+
+/// Menyimpan nama inspector yang terakhir diinput untuk akun terkait.
+/// Nilai kosong menghapus override sehingga form kembali memakai username akun.
+Future<void> saveInspectionUsername({
+  required String accountId,
+  required String username,
+}) async {
+  if (accountId.trim().isEmpty) return;
+
+  final prefs = await getSharedPreferences();
+  final key = _inspectionUsernameKey(accountId);
+  final normalizedUsername = username.trim();
+
+  if (normalizedUsername.isEmpty) {
+    await prefs.remove(key);
+    return;
+  }
+
+  await prefs.setString(key, normalizedUsername);
+}
+
+Future<String> getInspectionUsername({required String accountId}) async {
+  if (accountId.trim().isEmpty) return '';
+
+  final prefs = await getSharedPreferences();
+  return prefs.getString(_inspectionUsernameKey(accountId))?.trim() ?? '';
+}
+
 Future<void> saveListCustomer(
     List<Map<String, dynamic>> listCustPgDigitalData) async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();

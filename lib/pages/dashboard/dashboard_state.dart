@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:appcheck/appcheck.dart';
 import 'package:camos/pages/home/home_page.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/home/new_tire_inspection_page.dart';
+import 'package:camos/pages/home/new_tire_inspection_state.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -27,7 +29,21 @@ class DashboardState extends GetxController {
   }
 
   void changePage(int index) {
+    final previousIndex = currentIndex.value;
+    if (previousIndex == index) return;
+
+    // Simpan kondisi ini sebelum currentIndex diubah. Pada pembukaan pertama,
+    // NewTireInspectionState akan memuat data melalui onInit sehingga tidak
+    // perlu dipanggil dua kali dari navigasi dashboard.
+    final inspectionPageHasBeenOpened = _inspectionPage != null;
     currentIndex.value = index;
+
+    if (previousIndex == 0 &&
+        index == 1 &&
+        inspectionPageHasBeenOpened &&
+        Get.isRegistered<NewTireInspectionState>()) {
+      unawaited(Get.find<NewTireInspectionState>().refreshOnOpen());
+    }
   }
 
   void onScanPressed() async {

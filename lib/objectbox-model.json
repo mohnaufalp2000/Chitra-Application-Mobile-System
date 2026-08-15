@@ -208,10 +208,116 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "6:3707612730663693188",
+      "lastPropertyId": "17:1044897928696218749",
+      "name": "TireInspectionDraftEntity",
+      "properties": [
+        {
+          "id": "1:3921162149749741710",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:829980885628662138",
+          "name": "storageToken",
+          "type": 9,
+          "flags": 2080,
+          "indexId": "2:3257553517996472036"
+        },
+        {
+          "id": "3:7106272875332196455",
+          "name": "userId",
+          "type": 9,
+          "flags": 2048,
+          "indexId": "3:571721907201197778"
+        },
+        {
+          "id": "4:6652552876791487738",
+          "name": "siteId",
+          "type": 9,
+          "flags": 2048,
+          "indexId": "4:1870706964490806350"
+        },
+        {
+          "id": "5:779729549122456904",
+          "name": "unitNumber",
+          "type": 9,
+          "flags": 2048,
+          "indexId": "5:8665176081532320594"
+        },
+        {
+          "id": "6:4743953306098693851",
+          "name": "inspectionDate",
+          "type": 9,
+          "flags": 2048,
+          "indexId": "6:3038259512425712531"
+        },
+        {
+          "id": "7:2657424782010689786",
+          "name": "createdAtMillis",
+          "type": 6
+        },
+        {
+          "id": "8:6655326173759908983",
+          "name": "updatedAtMillis",
+          "type": 6,
+          "flags": 8,
+          "indexId": "7:8791780560457950025"
+        },
+        {
+          "id": "9:5877052912631046418",
+          "name": "periodType",
+          "type": 9
+        },
+        {
+          "id": "10:6765686734048243021",
+          "name": "location",
+          "type": 9
+        },
+        {
+          "id": "11:138760243502877056",
+          "name": "hm",
+          "type": 9
+        },
+        {
+          "id": "12:7358520491326401089",
+          "name": "unitModel",
+          "type": 9
+        },
+        {
+          "id": "13:6838175691880269835",
+          "name": "siteName",
+          "type": 9
+        },
+        {
+          "id": "14:7504222624366807196",
+          "name": "userDisplayName",
+          "type": 9
+        },
+        {
+          "id": "15:8043701271188989020",
+          "name": "positionCount",
+          "type": 6
+        },
+        {
+          "id": "16:96096236899331635",
+          "name": "imageCount",
+          "type": 6
+        },
+        {
+          "id": "17:1044897928696218749",
+          "name": "payloadJson",
+          "type": 9
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "5:3938695816533245477",
-  "lastIndexId": "1:3050109029188817089",
+  "lastEntityId": "6:3707612730663693188",
+  "lastIndexId": "7:8791780560457950025",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

@@ -180,8 +180,7 @@ class NewTireInspectionPage extends StatelessWidget {
                               ntController.selectedDateRange.value,
                         );
                         if (picked != null) {
-                          ntController.selectedDateRange.value = picked;
-                          await ntController.reloadForActiveFilters();
+                          await ntController.selectDateRange(picked);
                         }
                       },
                       child: Container(

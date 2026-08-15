@@ -82,6 +82,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     'CSA 27',
     'CSA 46',
     'CSA 61',
+    'Hauling Road',
+    'Other',
   ];
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -97,6 +99,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       TireInspectionDraftService.instance;
   Timer? _draftAutosaveTimer;
   Timer? _draftDebounceTimer;
+  Timer? _usernamePreferenceTimer;
+  late final Future<void> _usernameReady;
+  Future<void> _formHydration = Future<void>.value();
   TireInspectionDraftKey? _draftKey;
   TireInspectionDraft? _loadedDraft;
   String? _lastDraftFingerprint;
@@ -104,7 +109,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   DateTime? _draftInspectionDate;
   List<String?> _currentTireKeys = <String?>[];
   bool _isRestoringDraft = false;
-  bool _discardDraftOnDispose = false;
+  bool _isHandlingBack = false;
+  bool _usernameWasEdited = false;
+  String _latestEditedUsername = '';
   int _pressureSubscriptionGeneration = 0;
   final List<StreamSubscription<List<int>>> _pressureSubscriptions =
       <StreamSubscription<List<int>>>[];
@@ -117,6 +124,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   bool _isLoadingHiddenFieldFallbacks = false;
   int _hiddenFieldRequestId = 0;
   String _apiHmForHiddenFields = '';
+  String _defaultHmValue = '';
 
   var map = {};
   String idSite = '';
@@ -127,6 +135,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
   TextEditingController idUnit = TextEditingController(text: '');
   TextEditingController hmUnit = TextEditingController(text: '');
+  TextEditingController usernameCtrl = TextEditingController(text: '');
   TextEditingController pressureCtrl = TextEditingController(text: '');
   TextEditingController remarksCtrl = TextEditingController(text: '');
   TextEditingController damageCtrl = TextEditingController(text: '');
@@ -144,6 +153,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   final ScrollController _formScrollController = ScrollController();
   List<GlobalKey> _positionSectionKeys = [];
   int _selectedScrollPosition = 0;
+  final ValueNotifier<Set<int>> _enteredPositionIndexes =
+      ValueNotifier<Set<int>>(<int>{});
 
   Map<int, TireDamageAi> aiResults = {};
   Map<int, bool> loadingAI = {};
@@ -456,6 +467,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                     setState(() {
                       position[tireIndex]['rimCondition'] = tempList;
                     });
+                    _markPositionAsEntered(tireIndex);
                     _scheduleDraftSave();
 
                     Navigator.pop(context);
@@ -558,12 +570,99 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   }
 
   void _scheduleDraftSave() {
-    if (_isRestoringDraft || isSaved || _discardDraftOnDispose) return;
+    if (_isRestoringDraft || isSaved) return;
 
     _draftDebounceTimer?.cancel();
     _draftDebounceTimer = Timer(
       const Duration(milliseconds: 700),
       () => unawaited(_persistDraftIfChanged()),
+    );
+  }
+
+  String get _accountUsername {
+    final cachedUsername = user['username']?.toString().trim() ?? '';
+    if (cachedUsername.isNotEmpty) return cachedUsername;
+
+    final firebaseDisplayName = auth.currentUser?.displayName?.trim() ?? '';
+    if (firebaseDisplayName.isNotEmpty) return firebaseDisplayName;
+
+    final email = auth.currentUser?.email?.trim() ?? '';
+    return email.isNotEmpty ? email : 'Unknown';
+  }
+
+  String get _effectiveUsername {
+    final inputUsername = usernameCtrl.text.trim();
+    return inputUsername.isNotEmpty ? inputUsername : _accountUsername;
+  }
+
+  Future<void> _initializeUsername() async {
+    try {
+      final loadedUser = await getUserPreferences();
+      final accountId = auth.currentUser?.uid.trim() ?? '';
+      final savedUsername = await getInspectionUsername(accountId: accountId);
+
+      if (!mounted) return;
+      user = loadedUser;
+
+      if (!_usernameWasEdited && usernameCtrl.text.trim().isEmpty) {
+        usernameCtrl.text =
+            savedUsername.isNotEmpty ? savedUsername : _accountUsername;
+      }
+      _scheduleDraftSave();
+      log('username : $user');
+    } catch (e, stackTrace) {
+      log(
+        'Gagal memuat username Tire Inspection: $e',
+        stackTrace: stackTrace,
+      );
+      if (mounted && !_usernameWasEdited && usernameCtrl.text.trim().isEmpty) {
+        usernameCtrl.text = _accountUsername;
+      }
+    }
+  }
+
+  Future<void> _persistInspectionUsername(String username) async {
+    final accountId = auth.currentUser?.uid.trim() ?? '';
+    if (accountId.isEmpty) return;
+
+    try {
+      await saveInspectionUsername(
+        accountId: accountId,
+        username: username.trim(),
+      );
+    } catch (e, stackTrace) {
+      log(
+        'Gagal menyimpan username Tire Inspection: $e',
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Future<void> _persistEditedUsernameIfNeeded() async {
+    if (!_usernameWasEdited) return;
+    _usernamePreferenceTimer?.cancel();
+    await _persistInspectionUsername(_latestEditedUsername);
+  }
+
+  void _handleUsernameChanged(String value) {
+    _usernameWasEdited = true;
+    _latestEditedUsername = value;
+    _scheduleDraftSave();
+
+    _usernamePreferenceTimer?.cancel();
+    final usernameToSave = value;
+    _usernamePreferenceTimer = Timer(
+      const Duration(milliseconds: 500),
+      () => unawaited(_persistInspectionUsername(usernameToSave)),
+    );
+  }
+
+  void _resetHmToDefault() {
+    if (_defaultHmValue.isEmpty) return;
+
+    hmUnit.value = TextEditingValue(
+      text: _defaultHmValue,
+      selection: TextSelection.collapsed(offset: _defaultHmValue.length),
     );
   }
 
@@ -582,7 +681,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       hm: hmUnit.text,
       unitModel: dataUnit['model']?.toString() ?? '',
       siteName: homeState.siteName,
-      userDisplayName: user['username']?.toString() ?? '',
+      userDisplayName: _effectiveUsername,
       formData: <String, dynamic>{
         'selectedRoute': selectedRoute,
         'checkAmount': checkAmount,
@@ -605,11 +704,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     return jsonEncode(json);
   }
 
-  Future<void> _persistDraftIfChanged({bool force = false}) async {
-    if (_isRestoringDraft ||
-        isSaved ||
-        _discardDraftOnDispose ||
-        position.isEmpty) {
+  Future<void> _persistDraftIfChanged({
+    bool force = false,
+    bool rethrowOnError = false,
+  }) async {
+    if (_isRestoringDraft || isSaved || position.isEmpty) {
       return;
     }
 
@@ -627,6 +726,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         'Tire Inspection draft save failed: $e',
         stackTrace: stackTrace,
       );
+      if (rethrowOnError) rethrow;
     }
   }
 
@@ -684,7 +784,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     final key = _draftKey ?? _buildDraftKey();
     if (key == null || state.units.isEmpty) return false;
     _draftKey = key;
-    _isRestoringDraft = true;
 
     try {
       final draft = await _draftService.loadDraft(key);
@@ -696,6 +795,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
       setState(() {
         _loadedDraft = draft;
+        if (!_usernameWasEdited && draft.userDisplayName.isNotEmpty) {
+          usernameCtrl.text = draft.userDisplayName;
+        }
         if (draft.periodType == 'PI' || draft.periodType == 'PE') {
           selectedPeriodType = draft.periodType;
         }
@@ -735,6 +837,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             'prevRating',
             'rimCondition',
             'tireAccessories',
+            '_hasUserInput',
+            '_pressureFromHistory',
           ]) {
             if (restored.containsKey(key)) position[index][key] = restored[key];
           }
@@ -744,10 +848,31 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               .map((path) => '$path|${position[index]['position']}')
               .toList();
           position[index]['image'] = imagePaths;
+
+          // Draft versi lama belum memiliki flag ini. Gunakan hanya data
+          // eksplisit yang aman agar nilai API/history tidak dianggap sebagai
+          // input baru dari user.
+          if (!restored.containsKey('_hasUserInput')) {
+            position[index]['_hasUserInput'] =
+                _nonEmptySourceValue(restored['pressure']).isNotEmpty ||
+                    _nonEmptySourceValue(restored['adjusmentPressure'])
+                        .isNotEmpty ||
+                    imagePaths.isNotEmpty;
+          }
+
+          // Draft PE versi lama belum mencatat asal pressure. Perlakukan nilai
+          // tersebut sebagai data historis sampai user menginput ulang agar
+          // tidak dapat dipakai untuk memenuhi mandatory pressure pada PI.
+          if (!restored.containsKey('_pressureFromHistory')) {
+            position[index]['_pressureFromHistory'] =
+                draft.periodType == 'PE' &&
+                    _nonEmptySourceValue(restored['pressure']).isNotEmpty;
+          }
         }
 
         _syncPositionControllers();
       });
+      _syncEnteredPositionIndexes();
 
       _lastDraftFingerprint = _draftFingerprint(draft);
 
@@ -767,8 +892,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     } catch (e, stackTrace) {
       log('Tire Inspection draft restore failed: $e', stackTrace: stackTrace);
       return false;
-    } finally {
-      _isRestoringDraft = false;
     }
   }
 
@@ -804,45 +927,43 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
   }
 
-  Future<bool> _confirmLeaveForm() async {
+  Future<bool> _saveDraftBeforeLeaving() async {
     if (isSaved || position.isEmpty) return true;
+    if (isLoadingSave || _isHandlingBack) return false;
 
-    final action = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Tire Inspection Belum Disimpan'),
-        content: const Text(
-          'Data form akan disimpan sebagai draft dan dapat dilanjutkan kembali. '
-          'Apakah Anda ingin keluar dari form?',
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, 'cancel'),
-            child: const Text('Tetap di Form'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, 'discard'),
-            child: const Text('Buang Draft'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(dialogContext, 'keep'),
-            child: const Text('Simpan Draft & Keluar'),
-          ),
-        ],
-      ),
-    );
+    _isHandlingBack = true;
+    try {
+      _draftDebounceTimer?.cancel();
+      await _usernameReady;
+      await _formHydration;
+      if (!mounted) return false;
 
-    if (action == 'discard') {
-      _discardDraftOnDispose = true;
-      await _deleteCurrentDraft();
+      _draftDebounceTimer?.cancel();
+      await _persistEditedUsernameIfNeeded();
+      if (!mounted) return false;
+
+      await _persistDraftIfChanged(
+        force: true,
+        rethrowOnError: true,
+      );
       return true;
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              'Draft belum berhasil disimpan. Silakan tekan tombol Back kembali.',
+              style: getWhiteTextStyle(),
+            ),
+          ),
+        );
+      }
+      return false;
+    } finally {
+      _isHandlingBack = false;
     }
-    if (action == 'keep') {
-      await _persistDraftIfChanged(force: true);
-      return true;
-    }
-    return false;
   }
 
   @override
@@ -850,6 +971,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
+      unawaited(_persistEditedUsernameIfNeeded());
       unawaited(_persistDraftIfChanged(force: true));
     }
   }
@@ -867,7 +989,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     // callTires();
     WidgetsBinding.instance.addObserver(this);
     hmUnit.addListener(_scheduleDraftSave);
-    getUser();
+    _usernameReady = _initializeUsername();
   }
 
   // Future<void> _loadDamages() async {
@@ -999,16 +1121,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
   }
 
-  getUser() async {
-    user = await getUserPreferences();
-    log('username : ${user}');
-  }
-
   @override
   void dispose() {
     _draftDebounceTimer?.cancel();
     _draftAutosaveTimer?.cancel();
-    if (!isSaved && !_discardDraftOnDispose) {
+    _usernamePreferenceTimer?.cancel();
+    unawaited(_persistEditedUsernameIfNeeded());
+    if (!isSaved) {
       unawaited(_persistDraftIfChanged(force: true));
     }
 
@@ -1023,6 +1142,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     hmUnit.removeListener(_scheduleDraftSave);
     idUnit.dispose();
     hmUnit.dispose();
+    usernameCtrl.dispose();
     pressureCtrl.dispose();
     remarksCtrl.dispose();
     damageCtrl.dispose();
@@ -1050,6 +1170,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
 
     _formScrollController.dispose();
+    _enteredPositionIndexes.dispose();
     swiperController.dispose();
 
     super.dispose();
@@ -1309,6 +1430,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
     _disposePositionInputs();
     position.clear();
+    _enteredPositionIndexes.value = <int>{};
     _editableSnIndexes.clear();
     _currentTireKeys = state.units
         .map((unit) => unit.kunciTire?.toString())
@@ -1317,9 +1439,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
     final firstUnit = state.units.first;
     _apiHmForHiddenFields = _nonEmptySourceValue(firstUnit.hm);
+    _defaultHmValue = idSite == bmbhauling.idSite ? '' : _apiHmForHiddenFields;
     if (_hmInitializedForUnit != currentUnitNumber) {
-      hmUnit.text =
-          idSite == bmbhauling.idSite ? '' : firstUnit.hm?.toString() ?? '';
+      hmUnit.text = _defaultHmValue;
       _hmInitializedForUnit = currentUnitNumber;
     }
 
@@ -1333,7 +1455,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       final rtd1Controller =
           TextEditingController(text: unit.rtd?.toString() ?? '');
       final rtd2Controller =
-          TextEditingController(text: unit.otd?.toString() ?? '');
+          TextEditingController(text: unit.rtd?.toString() ?? '');
 
       remarksController.addListener(_scheduleDraftSave);
       snController.addListener(_scheduleDraftSave);
@@ -1349,15 +1471,16 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       position.add(<String, dynamic>{
         'position': index + 1,
         'pressure': '',
+        '_pressureFromHistory': false,
         'adjusmentPressure': '',
         'temperatureStatus': 'HOT',
         'adjusmentTemperatureStatus': 'HOT',
         'hm': '',
         'damageTire': <dynamic>[],
         'rtd1': unit.rtd?.toString() ?? '',
-        'rtd2': unit.otd?.toString() ?? '',
+        'rtd2': unit.rtd?.toString() ?? '',
         '_apiRtd': unit.rtd?.toString() ?? '',
-        '_apiOtd': unit.otd?.toString() ?? '',
+        '_apiRtd2': unit.rtd?.toString() ?? '',
         '_apiSn': unit.sn?.toString() ?? '',
         'remarks': '',
         'sn': unit.sn,
@@ -1370,11 +1493,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         'kunci_tire': unit.kunciTire,
         'rimCondition': _defaultRimConditions(),
         'tireAccessories': <dynamic>[],
+        '_hasUserInput': false,
       });
     }
 
     _startDraftAutosave();
-    unawaited(_hydrateInitialFormData(state, currentUnitNumber));
+    _formHydration = _hydrateInitialFormData(state, currentUnitNumber);
+    unawaited(_formHydration);
   }
 
   bool _stateMatchesRequestedUnit(TiresLoadedState state) {
@@ -1493,14 +1618,24 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     TiresLoadedState state,
     String unitNumber,
   ) async {
-    await _restoreDraft(state);
-    if (!mounted || _initializedUnitNumber != unitNumber) return;
+    // Lindungi draft lama sejak sebelum menunggu inisialisasi username.
+    // Tanpa guard ini, autosave dapat menimpa draft dengan posisi default.
+    _isRestoringDraft = true;
+    try {
+      await _usernameReady;
+      if (!mounted || _initializedUnitNumber != unitNumber) return;
 
-    await _loadPreviousInspectionDetails(state, unitNumber);
-    if (!mounted || _initializedUnitNumber != unitNumber) return;
+      await _restoreDraft(state);
+      if (!mounted || _initializedUnitNumber != unitNumber) return;
 
-    if (_usesCompanyOnePeriodRules && selectedPeriodType == 'PE') {
-      await _loadHiddenFieldFallbacks();
+      await _loadPreviousInspectionDetails(state, unitNumber);
+      if (!mounted || _initializedUnitNumber != unitNumber) return;
+
+      if (_usesCompanyOnePeriodRules && selectedPeriodType == 'PE') {
+        await _loadHiddenFieldFallbacks();
+      }
+    } finally {
+      _isRestoringDraft = false;
     }
 
     _scheduleDraftSave();
@@ -1542,6 +1677,27 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
   }
 
+  void _markPositionAsEntered(int index) {
+    if (index < 0 || index >= position.length) return;
+
+    position[index]['_hasUserInput'] = true;
+    if (_enteredPositionIndexes.value.contains(index)) return;
+
+    _enteredPositionIndexes.value = Set<int>.unmodifiable(
+      <int>{..._enteredPositionIndexes.value, index},
+    );
+  }
+
+  void _syncEnteredPositionIndexes() {
+    final enteredIndexes = <int>{};
+    for (int index = 0; index < position.length; index++) {
+      if (position[index]['_hasUserInput'] == true) {
+        enteredIndexes.add(index);
+      }
+    }
+    _enteredPositionIndexes.value = Set<int>.unmodifiable(enteredIndexes);
+  }
+
   Future<void> _scrollToTirePosition(int index) async {
     if (index < 0 || index >= _positionSectionKeys.length) return;
 
@@ -1570,59 +1726,103 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       MediaQuery.of(context).size.height * 0.58,
     );
 
-    return Material(
-      elevation: 6,
-      color: Colors.white.withOpacity(0.96),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: 40,
-        height: railHeight,
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(
+    return ValueListenableBuilder<Set<int>>(
+      valueListenable: _enteredPositionIndexes,
+      builder: (context, enteredIndexes, child) {
+        return Material(
+          elevation: 6,
+          color: Colors.white.withOpacity(0.96),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.orange.withOpacity(0.35)),
-        ),
-        child: ListView.builder(
-          padding: EdgeInsets.zero,
-          shrinkWrap: true,
-          itemCount: itemCount,
-          itemBuilder: (context, index) {
-            final isSelected = _selectedScrollPosition == index;
-            final positionLabel = index < position.length
-                ? position[index]['position']?.toString() ?? '${index + 1}'
-                : '${index + 1}';
+          child: Container(
+            width: 40,
+            height: railHeight,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.orange.withOpacity(0.35)),
+            ),
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              itemCount: itemCount,
+              itemBuilder: (context, index) {
+                final isSelected = _selectedScrollPosition == index;
+                final hasUserInput = enteredIndexes.contains(index);
+                final positionLabel = index < position.length
+                    ? position[index]['position']?.toString() ?? '${index + 1}'
+                    : '${index + 1}';
 
-            return Tooltip(
-              message: 'Posisi $positionLabel',
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => _scrollToTirePosition(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  height: 32,
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.orange : Colors.transparent,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    positionLabel,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black87,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                return Semantics(
+                  label: hasUserInput
+                      ? 'Posisi $positionLabel, pernah diinput'
+                      : 'Posisi $positionLabel, belum pernah diinput',
+                  selected: isSelected,
+                  button: true,
+                  child: Tooltip(
+                    message: hasUserInput
+                        ? 'Posisi $positionLabel - pernah diinput'
+                        : 'Posisi $positionLabel - belum pernah diinput',
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () => _scrollToTirePosition(index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        height: 32,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 2,
+                        ),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? Colors.orange
+                              : hasUserInput
+                                  ? Colors.green
+                                  : Colors.transparent,
+                          shape: BoxShape.circle,
+                          border: isSelected && hasUserInput
+                              ? Border.all(color: Colors.green, width: 2)
+                              : null,
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Text(
+                              positionLabel,
+                              style: TextStyle(
+                                color: isSelected || hasUserInput
+                                    ? Colors.white
+                                    : Colors.black87,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (hasUserInput)
+                              Positioned(
+                                top: 2,
+                                right: 2,
+                                child: Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.green
+                                        : Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -1633,6 +1833,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return;
     }
 
+    int? enteredPositionIndex;
     setState(() {
       final firstNumber = pressureValue;
 
@@ -1649,10 +1850,15 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
         // Update Map di index tersebut
         position[targetIndex]["pressure"] = firstNumber;
+        position[targetIndex]['_pressureFromHistory'] = false;
+        enteredPositionIndex = targetIndex;
 
         checkAmount++;
       }
     });
+    if (enteredPositionIndex != null) {
+      _markPositionAsEntered(enteredPositionIndex!);
+    }
     _scheduleDraftSave();
   }
 
@@ -1740,6 +1946,15 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
   bool get _usePreviousPressureFallbackForPeriod =>
       _usesCompanyOnePeriodRules && selectedPeriodType == 'PE';
+
+  void _clearPreviousPressureFallbacksForPi() {
+    for (final item in position) {
+      if (item['_pressureFromHistory'] == true) {
+        item['pressure'] = '';
+        item['_pressureFromHistory'] = false;
+      }
+    }
+  }
 
   String _validPressureValue(dynamic value) {
     final text = value?.toString().trim() ?? '';
@@ -1866,12 +2081,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         for (int index = 0; index < position.length; index++) {
           if (_hideRtdForPeriod) {
             final apiRtd = _nonEmptySourceValue(position[index]['_apiRtd']);
-            final apiOtd = _nonEmptySourceValue(position[index]['_apiOtd']);
+            final apiRtd2 = _nonEmptySourceValue(position[index]['_apiRtd2']);
             final firebaseRtd = latestPositionValue(index, 'rtd1');
-            final firebaseOtd = latestPositionValue(index, 'rtd2');
+            final firebaseRtd2 = latestPositionValue(index, 'rtd2');
 
             position[index]['rtd1'] = apiRtd.isNotEmpty ? apiRtd : firebaseRtd;
-            position[index]['rtd2'] = apiOtd.isNotEmpty ? apiOtd : firebaseOtd;
+            position[index]['rtd2'] =
+                apiRtd2.isNotEmpty ? apiRtd2 : firebaseRtd2;
 
             if (index < rtd1Controllers.length) {
               rtd1Controllers[index].text = position[index]['rtd1'].toString();
@@ -1976,6 +2192,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
           if (effectivePreviousPressure.isNotEmpty) {
             position[index]['pressure'] = effectivePreviousPressure;
+            position[index]['_pressureFromHistory'] = true;
           }
         }
       });
@@ -2016,6 +2233,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               if (code == 'PI') {
                 _hiddenFieldRequestId++;
                 _isLoadingHiddenFieldFallbacks = false;
+                _clearPreviousPressureFallbacksForPi();
               }
             });
             _scheduleDraftSave();
@@ -2491,7 +2709,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     return {
       'id': const Uuid().v4(),
       'id_site': idSite,
-      'user': user['username'] ?? 'username',
+      'user': _effectiveUsername,
       'user_email': auth.currentUser?.email ?? '',
       'unit': dataUnit['unitNumber'] ?? firstUnit.unitNumber ?? '',
       'kunci_unit': firstUnit.kunciUnit ?? '',
@@ -2523,7 +2741,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
     return {
       'idSite': idSite,
-      'user': user['username'] ?? auth.currentUser?.email ?? 'username',
+      'user': _effectiveUsername,
       'tanggal': now.toIso8601String(),
       'hari': hari,
       'jam': jam,
@@ -2749,7 +2967,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       final missingPressurePositions = <String>[];
 
       for (int index = 0; index < state.units.length; index++) {
-        final pressureValue = index < position.length
+        final usesPreviousPressure = index < position.length &&
+            position[index]['_pressureFromHistory'] == true;
+        final pressureValue = index < position.length && !usesPreviousPressure
             ? _nonEmptySourceValue(position[index]['pressure'])
             : '';
         if (pressureValue.isNotEmpty) continue;
@@ -2900,12 +3120,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       final unit = state.units[i];
 
       final actualRtd = double.tryParse(unit.rtd?.toString() ?? '0') ?? 0;
-      final actualOtd = double.tryParse(unit.otd?.toString() ?? '0') ?? 0;
+      final actualRtd2 = double.tryParse(unit.rtd?.toString() ?? '0') ?? 0;
 
       final inputRtd = i < rtd1Controllers.length
           ? double.tryParse(rtd1Controllers[i].text) ?? 0
           : double.tryParse(position[i]['rtd1']?.toString() ?? '0') ?? 0;
-      final inputOtd = i < rtd2Controllers.length
+      final inputRtd2 = i < rtd2Controllers.length
           ? double.tryParse(rtd2Controllers[i].text) ?? 0
           : double.tryParse(position[i]['rtd2']?.toString() ?? '0') ?? 0;
 
@@ -2915,9 +3135,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         );
       }
 
-      if (!_hideRtdForPeriod && inputOtd > actualOtd) {
+      if (!_hideRtdForPeriod && inputRtd2 > actualRtd2) {
         errorsRtd.add(
-          'Posisi ${unit.posisi}: OTD input ($inputOtd) melebihi OTD aktual ($actualOtd).',
+          'Posisi ${unit.posisi}: RTD 2 input ($inputRtd2) '
+          'melebihi RTD aktual ($actualRtd2).',
         );
       }
 
@@ -2968,6 +3189,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return;
     }
 
+    if (!mounted) return;
+
+    await _usernameReady;
+    if (!mounted) return;
+    await _persistEditedUsernameIfNeeded();
     if (!mounted) return;
 
     FocusScope.of(context).unfocus();
@@ -3087,7 +3313,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: _confirmLeaveForm,
+      onWillPop: _saveDraftBeforeLeaving,
       child: Scaffold(
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
@@ -3114,7 +3340,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
               ),
               child: IconButton(
                   onPressed: () async {
-                    final canLeave = await _confirmLeaveForm();
+                    final canLeave = await _saveDraftBeforeLeaving();
                     if (canLeave && mounted) Navigator.pop(context);
                   },
                   icon: const Icon(
@@ -3204,6 +3430,44 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                           ),
                           Row(
                             children: [
+                              const Icon(
+                                Icons.account_circle,
+                                color: Colors.blue,
+                                size: 38,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'INSPECTOR',
+                                  style: getBlackTextStyle(
+                                    fontWeight: w700,
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: usernameCtrl,
+                            keyboardType: TextInputType.name,
+                            textCapitalization: TextCapitalization.words,
+                            onChanged: _handleUsernameChanged,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: greyF7F8F9,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: const BorderSide(color: greyDADADA),
+                              ),
+                              hintText: 'Masukkan username atau nama inspector',
+                              hintStyle: getGreyTextStyle(grey8391A1),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Expanded(
                                 child: Column(
                                   children: [
@@ -3281,6 +3545,30 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                             'Fill ${idSite == bmbhauling.idSite ? 'KM' : 'HM'}',
                                       ),
                                     ),
+                                    if (_defaultHmValue.isNotEmpty &&
+                                        !_hideHmForPeriod) ...[
+                                      const SizedBox(height: 6),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: OutlinedButton.icon(
+                                          onPressed: _resetHmToDefault,
+                                          icon: const Icon(
+                                            Icons.restart_alt,
+                                            size: 18,
+                                          ),
+                                          label: const Text('Reset HM'),
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 7,
+                                            ),
+                                            minimumSize: const Size(0, 34),
+                                            tapTargetSize: MaterialTapTargetSize
+                                                .shrinkWrap,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -3640,7 +3928,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                       w700),
                                                         ),
                                                         Text(
-                                                          '${unit.rtd} / ${unit.otd}' ??
+                                                          '${unit.rtd} / ${unit.rtd}' ??
                                                               '',
                                                           style:
                                                               getBlackTextStyle(),
@@ -3722,8 +4010,10 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                                   final id = Uuid();
                                                                                   setState(() {
                                                                                     position[index]['pressure'] = ps;
+                                                                                    position[index]['_pressureFromHistory'] = false;
                                                                                     Navigator.of(context).pop();
                                                                                   });
+                                                                                  _markPositionAsEntered(index);
                                                                                   _scheduleDraftSave();
                                                                                 },
                                                                                 child: Text(
@@ -3752,6 +4042,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                                   setState(() {
                                                                                     if (pressureCtrl.text != '') {
                                                                                       position[index]['pressure'] = pressureCtrl.text;
+                                                                                      position[index]['_pressureFromHistory'] = false;
+                                                                                      _markPositionAsEntered(index);
                                                                                     }
                                                                                     pressureCtrl.clear();
                                                                                     Navigator.of(context).pop();
@@ -3902,6 +4194,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                                     position[index]['adjusmentPressure'] = ps;
                                                                                     Navigator.of(context).pop();
                                                                                   });
+                                                                                  _markPositionAsEntered(index);
                                                                                   _scheduleDraftSave();
                                                                                 },
                                                                                 child: Text(
@@ -3930,6 +4223,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                                   setState(() {
                                                                                     if (pressureCtrl.text != '') {
                                                                                       position[index]['adjusmentPressure'] = pressureCtrl.text;
+                                                                                      _markPositionAsEntered(index);
                                                                                     }
                                                                                     pressureCtrl.clear();
                                                                                     Navigator.of(context).pop();
@@ -4070,6 +4364,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                               position[index]['rating'] = rat;
                                                                               Navigator.of(context).pop();
                                                                             });
+                                                                            _markPositionAsEntered(index);
                                                                             _scheduleDraftSave();
                                                                           },
                                                                           child:
@@ -4354,9 +4649,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                         ),
                                                                         onPressed:
                                                                             () {
-                                                                          setState(
-                                                                              () {}); // setState parent
-
                                                                           selectedDamage
                                                                               .clear();
 
@@ -4432,6 +4724,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                             log('hasil luka ban : $position');
                                                                           }
 
+                                                                          if (tmp
+                                                                              .isNotEmpty) {
+                                                                            _markPositionAsEntered(index);
+                                                                          }
+                                                                          setState(
+                                                                              () {});
+                                                                          _scheduleDraftSave();
                                                                           damageCtrl
                                                                               .clear();
                                                                           Navigator.pop(
@@ -4680,6 +4979,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                             loadingAI[index] =
                                                                 false;
                                                           });
+                                                          _markPositionAsEntered(
+                                                              index);
                                                           _scheduleDraftSave();
 
                                                           log('tire inspection image = ${position[index]['image']}');
@@ -5072,6 +5373,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                 position[index][
                                                                         'rtd1'] =
                                                                     value;
+                                                                _markPositionAsEntered(
+                                                                    index);
                                                               },
                                                               controller:
                                                                   rtd1Controllers[
@@ -5128,6 +5431,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                                 position[index][
                                                                         'rtd2'] =
                                                                     value;
+                                                                _markPositionAsEntered(
+                                                                    index);
                                                               },
                                                               controller:
                                                                   rtd2Controllers[
@@ -5137,9 +5442,9 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                           ),
                                                           // Builder(builder: (context) {
                                                           //   rtd2Controllers[index].text =
-                                                          //       unit.otd ?? '';
+                                                          //       unit.rtd ?? '';
                                                           //   position[index]['rtd2'] =
-                                                          //       unit.otd;
+                                                          //       unit.rtd;
                                                           //   return SizedBox(
                                                           //     width: double.infinity,
                                                           //     child: InputFormWidget(
@@ -5199,6 +5504,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                           onChng: (value) {
                                                             position[index]
                                                                 ['sn'] = value;
+                                                            _markPositionAsEntered(
+                                                                index);
                                                           },
                                                           controller:
                                                               snControllers[
@@ -5230,6 +5537,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                                           position[index]
                                                                   ['remarks'] =
                                                               value;
+                                                          _markPositionAsEntered(
+                                                              index);
                                                         },
                                                         controller:
                                                             remarksControllers[
