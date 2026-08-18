@@ -18,6 +18,7 @@ class ExportExcelButton extends StatefulWidget {
     required this.pit,
     required this.selectedPit,
     required this.filteredItemTask,
+    required this.idSite,
     required this.date,
     required this.type,
   });
@@ -26,6 +27,7 @@ class ExportExcelButton extends StatefulWidget {
   final List<String> pit;
   final int selectedPit;
   final List<Map<String, dynamic>> filteredItemTask;
+  final String idSite;
   final String date;
   final String type;
 
@@ -58,9 +60,10 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
     required DateTime firstPicked,
     required DateTime lastPicked,
   }) async {
-    if (widget.filteredItemTask.isEmpty) {
-      throw Exception(
-          'Data daily masih kosong. Buka data checked dulu sebelum export.');
+    final idSite = widget.idSite.trim();
+
+    if (idSite.isEmpty) {
+      throw Exception('Site belum tersedia. Silakan buka ulang halaman.');
     }
 
     final startDate = DateTime(
@@ -69,26 +72,29 @@ class _ExportExcelButtonState extends State<ExportExcelButton> {
       firstPicked.day,
     );
 
-    final endDate = DateTime(
+    final endDateExclusive = DateTime(
       lastPicked.year,
       lastPicked.month,
       lastPicked.day,
-      23,
-      59,
-      59,
-    );
+    ).add(const Duration(days: 1));
 
     Query<Map<String, dynamic>> query = firestore
         .collection('daily_pressure')
-        .where('idSite', isEqualTo: widget.filteredItemTask[0]['idSite'])
+        .where('idSite', isEqualTo: idSite)
         .where(
           'tanggal',
           isGreaterThanOrEqualTo: startDate.toIso8601String(),
         )
         .where(
           'tanggal',
-          isLessThanOrEqualTo: endDate.toIso8601String(),
+          isLessThan: endDateExclusive.toIso8601String(),
         );
+
+    log(
+      'Export daily | site: $idSite | '
+      'tanggal: ${startDate.toIso8601String()} - '
+      '< ${endDateExclusive.toIso8601String()}',
+    );
 
     // Kalau user pilih pit tertentu, filter langsung di Firestore.
     // Ini mengurangi jumlah dokumen yang dibaca dan mempercepat proses export.

@@ -88,19 +88,17 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     unawaited(initializePage());
   }
 
-  Future<void> getUnitBefore7AM() async {
-    final now = DateTime.now();
+  Future<void> setInitialUnitSource() async {
     final firstApiLoadToday = await shouldLoadUnitListFromApiToday(
-      listType: dailyCheckUnitList,
       idSite: currentIdSite,
     );
 
-    isOnline = now.hour < 7 || firstApiLoadToday;
+    isOnline = firstApiLoadToday;
 
     log(
       'Daily Check initial unit source: '
       '${isOnline ? 'API' : 'cache'} '
-      '(before7=${now.hour < 7}, firstToday=$firstApiLoadToday)',
+      '(firstSharedLoadToday=$firstApiLoadToday)',
     );
   }
 
@@ -108,7 +106,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
     log('initialize page terpanggil');
     await getUser();
     await setupSite();
-    await getUnitBefore7AM();
+    await setInitialUnitSource();
     if (!mounted) return;
 
     await getUnits();
@@ -460,6 +458,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                         pit: pit,
                         selectedPit: selectedPit,
                         filteredItemTask: filteredItemTask,
+                        idSite: currentIdSite,
                         date:
                             "${DateTime.now().month.toString().padLeft(2, '0')}-${DateTime.now().day.toString().padLeft(2, '0')}-${DateTime.now().year}",
                         type: ExportType.oneDay,
@@ -591,16 +590,6 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
               // tester 1
               BlocConsumer<UnitBloc, UnitState>(listener: (context, state) {
                 if (state is UnitLoadedState) {
-                  if (state.loadedFromApi &&
-                      state.requestSource == dailyCheckUnitList) {
-                    unawaited(
-                      saveUnitListApiLoadedToday(
-                        listType: dailyCheckUnitList,
-                        idSite: state.idSite,
-                      ),
-                    );
-                  }
-
                   setState(() {
                     // Tambahkan setState agar UI diperbarui
                     allUnit = state.units;

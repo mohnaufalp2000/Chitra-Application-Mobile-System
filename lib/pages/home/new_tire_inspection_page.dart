@@ -228,6 +228,42 @@ class NewTireInspectionPage extends StatelessWidget {
             const SizedBox(height: 12),
 
             Obx(
+              () => ntController.isShowingCachedData.value
+                  ? Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.5),
+                        ),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.cloud_off_outlined,
+                            color: Colors.orange,
+                            size: 18,
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Menampilkan data tersimpan. Tekan refresh saat internet tersedia.',
+                              style: TextStyle(fontSize: 11),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+
+            Obx(
               () => Text(
                 'Total Unit: ${ntController.totalFilteredTasks.value}',
                 style: getBlackTextStyle(fontSize: 13),

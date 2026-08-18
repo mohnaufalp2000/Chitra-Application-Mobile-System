@@ -85,6 +85,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../services/api_service.dart';
 import '../../services/model/unit_tire.dart';
+import '../../services/shared_preferences/shared_preferences.dart';
 
 part 'unit_event.dart';
 part 'unit_state.dart';
@@ -172,6 +173,13 @@ class UnitBloc extends Bloc<UnitEvent, UnitState> {
           log('Online all tire    : $countAllTire');
           log('Online tire size   : $allTireSize');
           log('Online target area : $targetArea');
+
+          // Daily Check dan Tire Inspection memakai cache unit yang sama.
+          // Simpan penanda segera setelah API serta cache selesai agar halaman
+          // lain tidak perlu memanggil API lagi pada hari dan site yang sama.
+          await saveUnitListApiLoadedToday(
+            idSite: event.idSite,
+          );
 
           emit(
             UnitLoadedState(
