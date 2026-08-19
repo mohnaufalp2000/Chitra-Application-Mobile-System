@@ -171,6 +171,7 @@ class _DailyPressureHistoryTrialPageState
                     pit: pit,
                     selectedPit: selectedPit,
                     filteredItemTask: filteredItemTask,
+                    idSite: idSite,
                     type: ExportType.oneDay,
                     date:
                         "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}")),

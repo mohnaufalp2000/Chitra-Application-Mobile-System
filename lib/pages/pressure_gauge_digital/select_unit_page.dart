@@ -831,7 +831,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   Future<void> _loadUnitsForCurrentSite() async {
     final requestId = ++initialUnitLoadRequestId;
     final siteId = homeState.currentSiteId.trim();
-    final shouldUseApi = await getUnitBefore7AM(
+    final shouldUseApi = await shouldLoadInitialUnitsFromApi(
       activeInspectionType,
       siteId,
     );
@@ -847,25 +847,24 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     await fetchCheckedUnits();
   }
 
-  /// Tire Inspection memakai API sebelum pukul 07.00 atau ketika ini adalah
-  /// pembukaan pertama pada tanggal lokal hari ini.
-  Future<bool> getUnitBefore7AM(
+  /// Daily Check dan Tire Inspection berbagi satu cache unit. Halaman pertama
+  /// yang dibuka pada site dan tanggal lokal ini memperbarui API, sedangkan
+  /// halaman berikutnya menggunakan cache yang sama.
+  Future<bool> shouldLoadInitialUnitsFromApi(
     String inspectionType,
     String siteId,
   ) async {
     if (inspectionType != 'tire_inspection') return false;
 
-    final now = DateTime.now();
     final firstApiLoadToday = await shouldLoadUnitListFromApiToday(
-      listType: tireInspectionUnitList,
       idSite: siteId,
     );
-    final shouldUseApi = now.hour < 7 || firstApiLoadToday;
+    final shouldUseApi = firstApiLoadToday;
 
     log(
       'Tire Inspection initial unit source: '
       '${shouldUseApi ? 'API' : 'cache'} '
-      '(before7=${now.hour < 7}, firstToday=$firstApiLoadToday)',
+      '(firstSharedLoadToday=$firstApiLoadToday)',
     );
 
     return shouldUseApi;
@@ -1803,18 +1802,6 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
             ),
             child: BlocConsumer<UnitBloc, UnitState>(
               listener: (context, state) {
-                if (state is UnitLoadedState &&
-                    state.loadedFromApi &&
-                    state.requestSource == tireInspectionUnitList &&
-                    activeInspectionType == 'tire_inspection') {
-                  unawaited(
-                    saveUnitListApiLoadedToday(
-                      listType: tireInspectionUnitList,
-                      idSite: state.idSite,
-                    ),
-                  );
-                }
-
                 if (state is UnitErrorState) {
                   setState(() {
                     isOnline = !isOnline;

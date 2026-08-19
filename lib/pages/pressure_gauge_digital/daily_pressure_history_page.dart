@@ -311,6 +311,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                         pit: pit,
                         selectedPit: selectedPit,
                         filteredItemTask: filteredItemTask,
+                        idSite: idSite,
                         date:
                             "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}",
                         type: ExportType.multipleDay,
@@ -546,6 +547,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
                         pit: pit,
                         selectedPit: selectedPit,
                         filteredItemTask: filteredItemTask,
+                        idSite: idSite,
                         date:
                             "${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.year}",
                         type: ExportType.oneDay,

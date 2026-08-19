@@ -29,6 +29,7 @@ class NewTireInspectionState extends GetxController {
   final totalFilteredTasks = 0.obs;
   final isLoadingMore = false.obs;
   final hasMoreTasks = true.obs;
+  final isShowingCachedData = false.obs;
 
   DocumentSnapshot<Map<String, dynamic>>? _lastTaskDocument;
   Timer? _searchDebounce;
@@ -211,43 +212,40 @@ class NewTireInspectionState extends GetxController {
       // Simpan semua data dalam rentang tanggal yang aktif. Search diterapkan
       // secara lokal agar mengetik di kolom pencarian tidak membaca Firestore
       // lagi pada setiap debounce.
-      final dateScopedTasks = <Map<String, dynamic>>[];
-      DocumentSnapshot<Map<String, dynamic>>? cursor;
+      List<Map<String, dynamic>>? dateScopedTasks;
+      var loadedFromCache = false;
 
-      while (requestId == _loadRequestId) {
-        Query<Map<String, dynamic>> query =
-            _dateScopedSiteQuery(homeState.currentSiteId).limit(_pageSize);
-        if (cursor != null) {
-          query = query.startAfterDocument(cursor);
-        }
+      try {
+        dateScopedTasks = await _loadAllDateScopedTasks(
+          requestId: requestId,
+          source: Source.server,
+        );
+      } catch (error, stackTrace) {
+        log(
+          'Server tire_inspection tidak tersedia, mencoba cache: $error',
+          stackTrace: stackTrace,
+        );
 
-        final snapshot = await query.get();
-        if (requestId != _loadRequestId || snapshot.docs.isEmpty) break;
+        if (requestId != _loadRequestId) return;
 
-        for (final doc in snapshot.docs) {
-          final data = doc.data();
-          if (_taskMatchesSelectedDate(data)) {
-            data['doc_id'] = doc.id;
-            dateScopedTasks.add(data);
-          }
-        }
-
-        cursor = snapshot.docs.last;
-        if (snapshot.docs.length < _pageSize) break;
+        loadedFromCache = true;
+        dateScopedTasks = await _loadAllDateScopedTasks(
+          requestId: requestId,
+          source: Source.cache,
+        );
       }
 
-      if (requestId != _loadRequestId) return;
+      if (requestId != _loadRequestId || dateScopedTasks == null) return;
 
       dateScopedTasks.sort((a, b) {
-        final dateA =
-            DateTime.tryParse(a['hari']?.toString() ?? '') ?? DateTime(2000);
-        final dateB =
-            DateTime.tryParse(b['hari']?.toString() ?? '') ?? DateTime(2000);
+        final dateA = _taskDateTime(a);
+        final dateB = _taskDateTime(b);
         return dateB.compareTo(dateA);
       });
 
       tasks.assignAll(dateScopedTasks);
       totalTasks.value = dateScopedTasks.length;
+      isShowingCachedData.value = loadedFromCache;
       applyFilters();
       _lastServerRefreshAt = DateTime.now();
     } catch (e, stackTrace) {
@@ -257,6 +255,48 @@ class NewTireInspectionState extends GetxController {
         isLoading.value = false;
       }
     }
+  }
+
+  Future<List<Map<String, dynamic>>?> _loadAllDateScopedTasks({
+    required int requestId,
+    required Source source,
+  }) async {
+    final result = <Map<String, dynamic>>[];
+    DocumentSnapshot<Map<String, dynamic>>? cursor;
+    var page = 0;
+
+    while (requestId == _loadRequestId) {
+      Query<Map<String, dynamic>> query =
+          _dateScopedSiteQuery(homeState.currentSiteId).limit(_pageSize);
+      if (cursor != null) {
+        query = query.startAfterDocument(cursor);
+      }
+
+      final snapshot = await query.get(GetOptions(source: source));
+      if (requestId != _loadRequestId) return null;
+
+      page++;
+      log(
+        'Tire inspection page $page '
+        'site=${homeState.currentSiteId} '
+        'source=${source.name} docs=${snapshot.docs.length}',
+      );
+
+      if (snapshot.docs.isEmpty) break;
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        if (_taskMatchesSelectedDate(data)) {
+          data['doc_id'] = doc.id;
+          result.add(data);
+        }
+      }
+
+      cursor = snapshot.docs.last;
+      if (snapshot.docs.length < _pageSize) break;
+    }
+
+    return requestId == _loadRequestId ? result : null;
   }
 
   Query<Map<String, dynamic>> _siteQuery(String siteId) {
@@ -333,17 +373,47 @@ class NewTireInspectionState extends GetxController {
   void applyFilters() {
     var list = List<Map<String, dynamic>>.from(tasks);
     list = list.where(_taskMatchesActiveFilters).toList();
+    list = _latestTaskPerUnit(list);
     list.sort((a, b) {
-      final dateA =
-          DateTime.tryParse(a['hari']?.toString() ?? '') ?? DateTime(2000);
-      final dateB =
-          DateTime.tryParse(b['hari']?.toString() ?? '') ?? DateTime(2000);
+      final dateA = _taskDateTime(a);
+      final dateB = _taskDateTime(b);
       return dateB.compareTo(dateA);
     });
 
     filteredTasks.assignAll(list);
     totalFilteredTasks.value = list.length;
     log('filtered task : $filteredTasks');
+  }
+
+  List<Map<String, dynamic>> _latestTaskPerUnit(
+    List<Map<String, dynamic>> source,
+  ) {
+    final latestByUnit = <String, Map<String, dynamic>>{};
+
+    for (final task in source) {
+      final unit = task['unit']?.toString().trim().toUpperCase() ?? '';
+      final key = unit.isNotEmpty
+          ? unit
+          : '__DOC__${task['doc_id']?.toString() ?? latestByUnit.length}';
+      final existing = latestByUnit[key];
+
+      if (existing == null ||
+          _taskDateTime(task).isAfter(_taskDateTime(existing))) {
+        latestByUnit[key] = task;
+      }
+    }
+
+    return latestByUnit.values.toList();
+  }
+
+  DateTime _taskDateTime(Map<String, dynamic> task) {
+    final timestamp = DateTime.tryParse(task['tanggal']?.toString() ?? '');
+    if (timestamp != null) return timestamp;
+
+    final day = task['hari']?.toString().trim() ?? '';
+    final time = task['jam']?.toString().trim() ?? '';
+    return DateTime.tryParse(time.isEmpty ? day : '${day}T$time') ??
+        DateTime(2000);
   }
 
   bool _taskMatchesActiveFilters(Map<String, dynamic> task) {

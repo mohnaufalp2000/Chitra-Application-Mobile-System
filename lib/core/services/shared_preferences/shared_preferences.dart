@@ -16,7 +16,11 @@ String savedPitDailyCode = 'saved_pit_daily';
 const String dailyCheckUnitList = 'daily_check';
 const String tireInspectionUnitList = 'tire_inspection';
 
-String _unitListApiLoadKey({
+String _unitListApiLoadKey({required String idSite}) {
+  return 'unit_list_last_api_load_shared_${idSite.trim()}';
+}
+
+String _legacyUnitListApiLoadKey({
   required String listType,
   required String idSite,
 }) {
@@ -29,47 +33,86 @@ String _localDateKey(DateTime date) {
   return '${date.year}-$month-$day';
 }
 
-/// Mengembalikan true jika list ini belum pernah berhasil memuat unit dari
-/// API untuk site terkait pada tanggal lokal hari ini.
+/// Mengembalikan true jika cache unit bersama belum pernah berhasil diperbarui
+/// dari API untuk site terkait pada tanggal lokal hari ini.
+///
+/// Daily Check dan Tire Inspection menggunakan data serta cache unit yang sama,
+/// sehingga satu refresh API yang berhasil berlaku untuk kedua halaman.
 Future<bool> shouldLoadUnitListFromApiToday({
-  required String listType,
   required String idSite,
 }) async {
   if (idSite.trim().isEmpty) return true;
 
   try {
     final prefs = await getSharedPreferences();
+    final today = _localDateKey(DateTime.now());
     final lastApiLoad = prefs.getString(
-      _unitListApiLoadKey(
-        listType: listType,
-        idSite: idSite,
-      ),
+      _unitListApiLoadKey(idSite: idSite),
     );
 
-    return lastApiLoad != _localDateKey(DateTime.now());
+    if (lastApiLoad == today) return false;
+
+    // Migrasi lazy dari penanda lama agar update aplikasi tidak menyebabkan
+    // pemanggilan API kedua pada hari yang sama.
+    for (final listType in <String>[
+      dailyCheckUnitList,
+      tireInspectionUnitList,
+    ]) {
+      final legacyLastApiLoad = prefs.getString(
+        _legacyUnitListApiLoadKey(
+          listType: listType,
+          idSite: idSite,
+        ),
+      );
+
+      if (legacyLastApiLoad == today) {
+        await prefs.setString(
+          _unitListApiLoadKey(idSite: idSite),
+          today,
+        );
+        return false;
+      }
+    }
+
+    return true;
   } catch (e) {
     log('Error membaca tanggal load API unit: $e');
     return true;
   }
 }
 
-/// Dipanggil hanya setelah API unit benar-benar berhasil. Daily Check dan
-/// Tire Inspection memakai key terpisah agar masing-masing refresh sekali
-/// dalam sehari.
+/// Dipanggil hanya setelah API unit dan seluruh cache pendukung berhasil
+/// dimuat. Penanda bersama ini dipakai Daily Check dan Tire Inspection.
 Future<void> saveUnitListApiLoadedToday({
-  required String listType,
   required String idSite,
 }) async {
   if (idSite.trim().isEmpty) return;
 
   try {
     final prefs = await getSharedPreferences();
+    final today = _localDateKey(DateTime.now());
+
     await prefs.setString(
-      _unitListApiLoadKey(
-        listType: listType,
-        idSite: idSite,
-      ),
-      _localDateKey(DateTime.now()),
+      _unitListApiLoadKey(idSite: idSite),
+      today,
+    );
+
+    // Tetap menulis key lama untuk kompatibilitas jika aplikasi perlu
+    // diturunkan sementara ke versi sebelumnya.
+    await Future.wait(
+      <Future<bool>>[
+        for (final listType in <String>[
+          dailyCheckUnitList,
+          tireInspectionUnitList,
+        ])
+          prefs.setString(
+            _legacyUnitListApiLoadKey(
+              listType: listType,
+              idSite: idSite,
+            ),
+            today,
+          ),
+      ],
     );
   } catch (e) {
     log('Error menyimpan tanggal load API unit: $e');
