@@ -770,6 +770,10 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   /// Tanggal Tire Inspection unit tersebut.
   Map<String, DateTime> checkedUnitDates = <String, DateTime>{};
 
+  /// ID dokumen Tire Inspection terbaru hari ini untuk setiap unit Checked.
+  /// Hanya ID yang ditahan di memori; isi dokumen dibaca saat unit ditekan.
+  Map<String, String> checkedUnitDocumentIds = <String, String>{};
+
   /// Loading khusus pengambilan status Checked.
   bool isLoadingCheckedUnits = false;
 
@@ -940,6 +944,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 
       setState(() {
         checkedUnitDates.clear();
+        checkedUnitDocumentIds.clear();
         isLoadingCheckedUnits = false;
       });
 
@@ -960,6 +965,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       final DateTime now = DateTime.now();
       final String today = DateFormat('yyyy-MM-dd').format(now);
       final Map<String, DateTime> result = <String, DateTime>{};
+      final Map<String, String> resultDocumentIds = <String, String>{};
 
       // Status Checked hanya membutuhkan data hari ini. Memindai seluruh
       // riwayat per halaman tetap membuat CPU dan GC bekerja terus-menerus.
@@ -991,8 +997,8 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           continue;
         }
 
-        final dynamic dateValue = data['hari'] ?? data['tanggal'];
-        final DateTime? inspectionDate = parseInspectionDate(dateValue);
+        final DateTime? inspectionDate = parseInspectionDate(data['tanggal']) ??
+            parseInspectionDate(data['hari']);
 
         if (inspectionDate == null || !isSameDate(inspectionDate, now)) {
           continue;
@@ -1004,6 +1010,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
         /// yang sama, gunakan tanggal/waktu terbaru.
         if (previousDate == null || inspectionDate.isAfter(previousDate)) {
           result[unitNumber] = inspectionDate;
+          resultDocumentIds[unitNumber] = document.id;
         }
       }
 
@@ -1014,6 +1021,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 
       setState(() {
         checkedUnitDates = result;
+        checkedUnitDocumentIds = resultDocumentIds;
       });
     } catch (e, st) {
       log('Error fetching checked units: $e');
@@ -1135,6 +1143,105 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     final String normalized = normalizeUnitNumber(unitNumber);
 
     return checkedUnitDates[normalized];
+  }
+
+  String? getCheckedInspectionDocumentId(String? unitNumber) {
+    final normalized = normalizeUnitNumber(unitNumber);
+    return checkedUnitDocumentIds[normalized];
+  }
+
+  Future<void> _openTireInspectionForm({
+    required UnitTire unit,
+    required bool checked,
+    required String unitArea,
+  }) async {
+    if (!checked) {
+      await Navigator.pushNamed(
+        context,
+        TireInspectionFormPage.routeName,
+        arguments: <String, dynamic>{
+          'unitNumber': unit.unitNumber,
+          'hm': unit.hm,
+          'idSite': homeState.currentSiteId,
+          if (unitArea.isNotEmpty) 'area': unitArea,
+        },
+      );
+      return;
+    }
+
+    String? inspectionDocumentId =
+        getCheckedInspectionDocumentId(unit.unitNumber);
+    if (inspectionDocumentId == null || inspectionDocumentId.isEmpty) {
+      await fetchCheckedUnits();
+      if (!mounted) return;
+      inspectionDocumentId = getCheckedInspectionDocumentId(unit.unitNumber);
+    }
+
+    if (inspectionDocumentId == null || inspectionDocumentId.isEmpty) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(
+            'Data Tire Inspection unit ini belum berhasil dimuat. Silakan refresh lalu coba kembali.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    Map<String, dynamic>? inspectionDocument;
+    try {
+      final snapshot = await firestore
+          .collection('tire_inspection')
+          .doc(inspectionDocumentId)
+          .get();
+      if (snapshot.exists) {
+        inspectionDocument = <String, dynamic>{
+          ...?snapshot.data(),
+          'doc_id': snapshot.id,
+        };
+      }
+    } catch (e, stackTrace) {
+      log(
+        'Load checked Tire Inspection for edit failed: $e',
+        stackTrace: stackTrace,
+      );
+    }
+
+    if (!mounted) return;
+    if (inspectionDocument == null) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Data Tire Inspection tidak dapat dibuka. Periksa koneksi lalu coba kembali.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    await Navigator.pushNamed(
+      context,
+      TireInspectionFormPage.routeName,
+      arguments: <String, dynamic>{
+        'unitNumber':
+            inspectionDocument['unit']?.toString() ?? unit.unitNumber ?? '',
+        'hm': inspectionDocument['hm']?.toString() ?? unit.hm,
+        'idSite': inspectionDocument['id_site']?.toString() ??
+            homeState.currentSiteId,
+        'isEdit': true,
+        'inspectionDocId': inspectionDocument['doc_id']?.toString() ?? '',
+        'inspectionData': Map<String, dynamic>.from(inspectionDocument),
+        'draftInspectionDate':
+            inspectionDocument['tanggal'] ?? inspectionDocument['hari'],
+        if (unitArea.isNotEmpty) 'area': unitArea,
+      },
+    );
   }
 
   String formatCheckedDate(DateTime? date) {
@@ -2360,18 +2467,12 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                           break;
 
                                         case 'tire_inspection':
-                                          Navigator.pushNamed(
-                                            context,
-                                            TireInspectionFormPage.routeName,
-                                            arguments: {
-                                              'unitNumber': unit.unitNumber,
-                                              'hm': unit.hm,
-                                              'idSite': homeState.currentSiteId,
-
-                                              // Area unit ikut dikirim ke form.
-                                              if (unitArea.isNotEmpty)
-                                                'area': unitArea,
-                                            },
+                                          unawaited(
+                                            _openTireInspectionForm(
+                                              unit: unit,
+                                              checked: checked,
+                                              unitArea: unitArea,
+                                            ),
                                           );
                                           break;
                                       }
@@ -2491,9 +2592,13 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                                 width: 8,
                                               ),
                                             ],
-                                            const Icon(
-                                              Icons.arrow_forward_ios,
+                                            Icon(
+                                              checked
+                                                  ? Icons.edit_outlined
+                                                  : Icons.arrow_forward_ios,
                                               size: 18,
+                                              color:
+                                                  checked ? Colors.blue : null,
                                             ),
                                           ],
                                         ),
