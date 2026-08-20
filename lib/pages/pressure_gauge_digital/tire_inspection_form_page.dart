@@ -11377,13 +11377,6 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               const SizedBox(
                                                 height: 12,
                                               ),
-                                              Text(
-                                                '*You can only take one picture. If you take another picture, the previous one will be deleted.',
-                                                style: getRedTextStyle(),
-                                              ),
-                                              const SizedBox(
-                                                height: 12,
-                                              ),
                                               ((position[index]['image']
                                                           as List<dynamic>)
                                                       .isNotEmpty)
