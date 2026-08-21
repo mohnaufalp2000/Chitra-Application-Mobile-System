@@ -730,6 +730,7 @@ import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import '../../core/blocs/unit/unit_bloc.dart';
@@ -762,6 +763,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 
   String searchQuery = '';
   bool isOnline = false;
+  bool isSendingWhatsappRecap = false;
 
   /// Key:
   /// Nomor unit yang sudah dinormalisasi.
@@ -1435,6 +1437,156 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           ),
         ),
       );
+    }
+  }
+
+  Future<void> shareTireInspectionRecap({
+    required List<UnitTire> units,
+    required Map<String, int> targetArea,
+  }) async {
+    if (homeState.userAccessCompanyId.value != '1' || isSendingWhatsappRecap) {
+      return;
+    }
+
+    final Map<String, UnitTire> uniqueUnits = <String, UnitTire>{};
+    for (final unit in units) {
+      final unitNumber = normalizeUnitNumber(unit.unitNumber);
+      if (unitNumber.isEmpty) continue;
+      uniqueUnits.putIfAbsent(unitNumber, () => unit);
+    }
+
+    final unitList = uniqueUnits.values.toList();
+    final checkedCount = unitList
+        .where(
+          (unit) => isUnitChecked(unit.unitNumber),
+        )
+        .length;
+    final uncheckedCount = unitList.length - checkedCount;
+
+    final Map<String, Set<String>> checkedUnitByArea = <String, Set<String>>{};
+    for (final unit in unitList) {
+      final unitNumber = normalizeUnitNumber(unit.unitNumber);
+      final area = (unit.area ?? '').trim();
+      if (unitNumber.isEmpty || area.isEmpty || !isUnitChecked(unitNumber)) {
+        continue;
+      }
+
+      checkedUnitByArea
+          .putIfAbsent(area.toLowerCase(), () => <String>{})
+          .add(unitNumber);
+    }
+
+    final targetEntries = targetArea.entries
+        .where((entry) => entry.key.trim().isNotEmpty)
+        .toList()
+      ..sort(
+        (first, second) => first.key.toLowerCase().compareTo(
+              second.key.toLowerCase(),
+            ),
+      );
+
+    final now = DateTime.now();
+    final recap = StringBuffer()
+      ..writeln('*RECAP TIRE INSPECTION*')
+      ..writeln('Tanggal: ${DateFormat('dd-MM-yyyy').format(now)}')
+      ..writeln('Site: ${homeState.currentSiteId}')
+      ..writeln('')
+      ..writeln('Total Unit: ${unitList.length}')
+      ..writeln('Checked: $checkedCount')
+      ..writeln('Not Checked: $uncheckedCount')
+      ..writeln(
+        'Progress: ${formatInspectionPercentage(current: checkedCount, target: unitList.length)}',
+      );
+
+    if (targetEntries.isNotEmpty) {
+      recap
+        ..writeln('')
+        ..writeln('*PROGRESS PER AREA*');
+
+      for (final entry in targetEntries) {
+        final areaKey = entry.key.trim().toLowerCase();
+        final current = checkedUnitByArea[areaKey]?.length ?? 0;
+        recap.writeln(
+          '- ${entry.key}: $current/${entry.value} '
+          '(${formatInspectionPercentage(current: current, target: entry.value)})',
+        );
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        isSendingWhatsappRecap = true;
+      });
+    }
+
+    try {
+      final request = http.Request(
+        'POST',
+        Uri.parse('http://localhost:3000/api/sendMessageGroup'),
+      )
+        ..headers.addAll(
+          <String, String>{
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+        )
+        ..bodyFields = <String, String>{
+          'apiKey': '09b3e08979d1474cb81c55c040744ca9',
+          'id_group': '120363427464156384@g.us',
+          'message': 'Hello World',
+        };
+
+      final response = await request.send().timeout(
+            const Duration(seconds: 30),
+          );
+      final responseBody = await response.stream.bytesToString();
+
+      log(
+        'Send WhatsApp recap response: '
+        '${response.statusCode} $responseBody',
+      );
+
+      if (response.statusCode != 200) {
+        throw HttpException(
+          'HTTP ${response.statusCode}: '
+          '${response.reasonPhrase ?? responseBody}',
+        );
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.green,
+          content: Text(
+            'Recap berhasil dikirim ke grup WhatsApp.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Send Tire Inspection recap to WhatsApp failed: $error',
+        stackTrace: stackTrace,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Gagal mengirim recap: $error',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSendingWhatsappRecap = false;
+        });
+      }
     }
   }
 
@@ -2358,6 +2510,51 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                         ),
                       ],
                       const SizedBox(height: 12),
+                      if (inspectionType == 'tire_inspection' &&
+                          homeState.userAccessCompanyId.value == '1') ...[
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: isSendingWhatsappRecap
+                                ? null
+                                : () {
+                                    shareTireInspectionRecap(
+                                      units: List<UnitTire>.from(
+                                        state.units,
+                                      ),
+                                      targetArea: state.targetArea,
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              disabledBackgroundColor: Colors.grey,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
+                            ),
+                            icon: isSendingWhatsappRecap
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.send_outlined,
+                                    color: Colors.white,
+                                  ),
+                            label: Text(
+                              isSendingWhatsappRecap
+                                  ? 'Sending Recap...'
+                                  : 'Share Recap to Whatsapp',
+                              style: getWhiteTextStyle(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       FutureBuilder<String>(
                         future: getActualIdSite(),
                         builder: (
