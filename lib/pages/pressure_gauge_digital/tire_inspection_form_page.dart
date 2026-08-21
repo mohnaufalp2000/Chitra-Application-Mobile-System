@@ -6156,6 +6156,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     'Hauling Road',
     'Other',
   ];
+  static const List<String> _siteEightCompanyOneLocations = [
+    'Pit Stop',
+    'Workshop',
+    'Moving',
+    'Refueling',
+  ];
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseAuth auth = FirebaseAuth.instance;
@@ -6566,6 +6572,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     switch (idSite) {
       case '7':
         pit.addAll(_siteSevenLocations);
+        break;
+      case '8':
+        if (homeState.userAccessCompanyId.value == '1') {
+          pit.addAll(_siteEightCompanyOneLocations);
+        }
         break;
       case '5':
       case '6':
