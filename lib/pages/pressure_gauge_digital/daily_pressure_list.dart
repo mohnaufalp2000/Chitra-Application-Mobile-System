@@ -226,6 +226,7 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
           'TIA',
           'Serongga',
           'CSA Selatan',
+          'CSA Pelaihari',
           'WS',
         ]);
         break;

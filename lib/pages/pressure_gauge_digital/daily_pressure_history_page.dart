@@ -104,6 +104,7 @@ class _DailyPressureHistoryPageState extends State<DailyPressureHistoryPage> {
         pit.add('TIA');
         pit.add('Serongga');
         pit.add('CSA Selatan');
+        pit.add('CSA Pelaihari');
         pit.add('WS');
         break;
       case '166':
