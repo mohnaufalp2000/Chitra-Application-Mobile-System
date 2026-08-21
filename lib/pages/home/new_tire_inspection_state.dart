@@ -914,9 +914,7 @@ class NewTireInspectionState extends GetxController {
       }
 
       exportProgress.value = 0.85;
-      final cleanedData = takeOutRimCondition(exportTasks);
-
-      final bytes = await createExcel('tire_inspection', task: cleanedData);
+      final bytes = await createExcel('tire_inspection', task: exportTasks);
       await file.writeAsBytes(bytes, flush: true);
 
       exportProgress.value = 1.0;
@@ -939,24 +937,5 @@ class NewTireInspectionState extends GetxController {
       isExporting.value = false;
       exportProgress.value = 0.0;
     }
-  }
-
-  List<Map<String, dynamic>> takeOutRimCondition(List tasks) {
-    return tasks.map((task) {
-      final newTask = Map<String, dynamic>.from(task);
-
-      if (newTask['posisi'] is List) {
-        newTask['posisi'] = (newTask['posisi'] as List).map((pos) {
-          final newPos = Map<String, dynamic>.from(pos);
-
-          // 🔥 HAPUS rimCondition
-          newPos.remove('rimCondition');
-
-          return newPos;
-        }).toList();
-      }
-
-      return newTask;
-    }).toList();
   }
 }

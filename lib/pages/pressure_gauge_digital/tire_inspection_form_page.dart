@@ -6607,6 +6607,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
           'TIA',
           'Serongga',
           'CSA Selatan',
+          'CSA Pelaihari',
           'WS',
         ]);
         break;
