@@ -28204,6 +28204,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     'CSA 46',
     'CSA 61',
   ];
+  static const List<String> _siteEightCompanyOneLocations = [
+    'Pit Stop',
+    'Workshop',
+    'Moving',
+    'Refueling',
+  ];
 
   FirebaseFirestore firestore = FirebaseFirestore.instance;
   FirebaseStorage storage = FirebaseStorage.instance;
@@ -28739,6 +28745,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     // }
     idSite = homeState.currentSiteId;
     _configureSiteSevenLocations();
+    _configureSiteEightCompanyOneLocations();
 
     if (dataUnit['isCTS'] == null) {
       if (dataUnit != {} || dataUnit != null || dataUnit.isNotEmpty) {
@@ -28757,6 +28764,18 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
     if (selectedPit < 0 || selectedPit >= pit.length) {
       selectedPit = 0;
+    }
+  }
+
+  void _configureSiteEightCompanyOneLocations() {
+    if (idSite != '8' || homeState.userAccessCompanyId.value != '1') return;
+
+    pit
+      ..clear()
+      ..addAll(_siteEightCompanyOneLocations);
+
+    if (selectedPit >= pit.length) {
+      selectedPit = -1;
     }
   }
 
@@ -30793,6 +30812,11 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           pit.addAll(_siteSevenLocations);
                           if (selectedPit < 0 || selectedPit >= pit.length) {
                             selectedPit = 0;
+                          }
+                          break;
+                        case '8':
+                          if (homeState.userAccessCompanyId.value == '1') {
+                            pit.addAll(_siteEightCompanyOneLocations);
                           }
                           break;
                         case '5':
@@ -33883,7 +33907,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                   idSite == bmbtabuhan.idSite ||
                   idSite == bibkgb.idSite ||
                   idSite == bibgh.idSite ||
-                  idSite == '7') {
+                  idSite == '7' ||
+                  (idSite == '8' &&
+                      homeState.userAccessCompanyId.value == '1')) {
                 if (selectedPit == -1) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
