@@ -8184,7 +8184,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     if (text.isEmpty || text.toLowerCase() == 'null') return '';
 
     final number = double.tryParse(text);
-    if (number != null && number <= 0) return '';
+    if (number != null && number < 0) return '';
+    // if (number != null && number <= 0) return '';
 
     return text;
   }
@@ -8348,8 +8349,12 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     if (!_usePreviousPressureFallbackForPeriod || position.isEmpty) return;
 
     final missingIndexes = <int>[];
+
     for (int index = 0; index < position.length; index++) {
-      if (_validPressureValue(position[index]['pressure']).isEmpty) {
+      final pressureValue =
+          position[index]['pressure']?.toString().trim() ?? '';
+
+      if (pressureValue.isEmpty || pressureValue == 'null') {
         missingIndexes.add(index);
       }
     }
@@ -8360,6 +8365,7 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     if (unitNumber.isEmpty) return;
 
     final requestId = ++_previousPressureRequestId;
+
     setState(() {
       _isLoadingPreviousPressure = true;
     });
@@ -8374,51 +8380,92 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
       if (!mounted || requestId != _previousPressureRequestId) return;
 
-      Map<String, dynamic>? latestData;
+      // Filter history berdasarkan site
+      final historyData = <Map<String, dynamic>>[];
+
       for (final document in snapshot.docs) {
         final data = document.data();
+
         final documentSite = data['idSite']?.toString().trim() ?? '';
+
         if (documentSite.isEmpty || documentSite == idSite) {
-          latestData = data;
-          break;
+          historyData.add(data);
         }
       }
 
-      final latestPositions = latestData?['posisi'];
-      if (latestPositions is! List) return;
-
       setState(() {
         for (final index in missingIndexes) {
-          if (index >= position.length ||
-              _validPressureValue(position[index]['pressure']).isNotEmpty) {
-            continue;
+          if (index >= position.length) continue;
+
+          String previousPressure = '';
+
+          // Cari pressure terakhir untuk posisi ini
+          // Tidak hanya dari 1 document terbaru.
+          for (final history in historyData) {
+            final historyPositions = history['posisi'];
+
+            if (historyPositions is! List) continue;
+
+            final previousPosition =
+                _historyPositionAt(historyPositions, index);
+
+            if (previousPosition == null) continue;
+
+            final pressure =
+                previousPosition['pressure']?.toString().trim() ?? '';
+
+            final adjustment =
+                previousPosition['adjusmentPressure']?.toString().trim() ?? '';
+
+            // Adjustment adalah kondisi pressure paling akhir.
+            if (adjustment.isNotEmpty && adjustment != 'null') {
+              previousPressure = adjustment;
+              break;
+            }
+
+            if (pressure.isNotEmpty && pressure != 'null') {
+              previousPressure = pressure;
+              break;
+            }
           }
 
-          final previousPosition = _historyPositionAt(latestPositions, index);
-          if (previousPosition == null) continue;
-
-          final previousPressure =
-              _validPressureValue(previousPosition['pressure']);
-          final previousAdjustment =
-              _validPressureValue(previousPosition['adjusmentPressure']);
-
-          // Adjustment pressure adalah kondisi tekanan paling akhir. Jika
-          // tidak tersedia, gunakan hasil pressure inspeksi terakhir.
-          final effectivePreviousPressure = previousAdjustment.isNotEmpty
-              ? previousAdjustment
-              : previousPressure;
-
-          if (effectivePreviousPressure.isNotEmpty) {
-            position[index]['pressure'] = effectivePreviousPressure;
+          if (previousPressure.isNotEmpty) {
+            // Ada history
+            position[index]['pressure'] = previousPressure;
             position[index]['_pressureFromHistory'] = true;
+          } else {
+            // Tidak pernah ada history pressure
+            // PE tetap dapat disimpan dengan pressure 0.
+            position[index]['pressure'] = '0';
+            position[index]['_pressureFromHistory'] = false;
           }
         }
       });
+
+      _scheduleDraftSave();
     } catch (e, stackTrace) {
       log(
         'Error loading previous pressure: $e',
         stackTrace: stackTrace,
       );
+
+      // Kalau query Firebase error/tidak ada data,
+      // PE tetap diberi fallback 0.
+      if (mounted && requestId == _previousPressureRequestId) {
+        setState(() {
+          for (final index in missingIndexes) {
+            if (index < position.length) {
+              final value =
+                  position[index]['pressure']?.toString().trim() ?? '';
+
+              if (value.isEmpty || value == 'null') {
+                position[index]['pressure'] = '0';
+                position[index]['_pressureFromHistory'] = false;
+              }
+            }
+          }
+        });
+      }
     } finally {
       if (mounted && requestId == _previousPressureRequestId) {
         setState(() {
