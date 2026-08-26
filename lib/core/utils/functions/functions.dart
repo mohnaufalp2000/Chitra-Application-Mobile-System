@@ -452,6 +452,66 @@ Future<String?> tryShrinkToOneCell(Uint8List originalBytes,
   return null;
 }
 
+Map<dynamic, dynamic>? _findTireInspectionComponent(
+  List<dynamic> rimConditions,
+  String component,
+  int fallbackIndex,
+) {
+  for (final dynamic rawItem in rimConditions) {
+    if (rawItem is! Map) continue;
+
+    final String title =
+        rawItem['title']?.toString().trim().toUpperCase() ?? '';
+    final bool matches;
+    switch (component) {
+      case 'rim_base':
+        matches = title == 'RIM BASE';
+        break;
+      case 'flange':
+        matches = title == 'FLANGE';
+        break;
+      case 'lock_ring':
+        matches = title.contains('LOCK RING');
+        break;
+      case 'valve':
+        matches = title.startsWith('VALVE') &&
+            !title.contains('CAP') &&
+            !title.contains('CORE');
+        break;
+      case 'core_valve':
+        matches = title.contains('CORE VALVE');
+        break;
+      case 'nut_stud':
+        matches = title.contains('NUT') && title.contains('STUD');
+        break;
+      default:
+        matches = false;
+    }
+
+    if (matches) return rawItem;
+  }
+
+  if (fallbackIndex >= 0 && fallbackIndex < rimConditions.length) {
+    final dynamic fallback = rimConditions[fallbackIndex];
+    if (fallback is Map) return fallback;
+  }
+  return null;
+}
+
+String _getTireInspectionComponentValue(
+  List<dynamic> rimConditions,
+  String component,
+  int fallbackIndex,
+  String key,
+) {
+  final Map<dynamic, dynamic>? item = _findTireInspectionComponent(
+    rimConditions,
+    component,
+    fallbackIndex,
+  );
+  return item?[key]?.toString() ?? '';
+}
+
 /// membuat excel
 Future<List<int>> createExcel(String type,
     {String username = '',
@@ -483,7 +543,62 @@ Future<List<int>> createExcel(String type,
       sheet.getRangeByName('L1').setText('Tire Damage');
       sheet.getRangeByName('M1').setText('Broken Component');
       sheet.getRangeByName('N1').setText('SN Tire');
-      sheet.getRangeByName('O1').setText('temperature_status');
+      sheet.getRangeByName('O1').setText('Rim Base Condition');
+      sheet.getRangeByName('P1').setText('Rim Base Remark');
+      sheet.getRangeByName('Q1').setText('Flange Condition');
+      sheet.getRangeByName('R1').setText('Flange Remark');
+      sheet.getRangeByName('S1').setText('Lock Ring Condition');
+      sheet.getRangeByName('T1').setText('Lock Ring Remark');
+      sheet
+          .getRangeByName('U1')
+          .setText('Valve (Terpasang - GOOD/Tidak - POOR)');
+      sheet.getRangeByName('V1').setText('Valve Remark');
+      sheet.getRangeByName('W1').setText('Core Valve Condition');
+      sheet.getRangeByName('X1').setText('Core Valve Remark');
+      sheet.getRangeByName('Y1').setText('Nut and Stud Condition');
+      sheet.getRangeByName('Z1').setText('Nut and Stud Remark');
+      sheet.getRangeByName('AA1').setText('temperature_status');
+
+      final Map<String, double> columnWidths = <String, double>{
+        'A': 13,
+        'B': 18,
+        'C': 14,
+        'D': 12,
+        'E': 13,
+        'F': 17,
+        'G': 20,
+        'H': 21,
+        'I': 14,
+        'J': 16,
+        'K': 14,
+        'L': 20,
+        'M': 19,
+        'N': 16,
+        'O': 24,
+        'P': 37,
+        'Q': 28,
+        'R': 28,
+        'S': 25,
+        'T': 42,
+        'U': 34,
+        'V': 22,
+        'W': 23,
+        'X': 25,
+        'Y': 27,
+        'Z': 32,
+        'AA': 23,
+      };
+      for (final entry in columnWidths.entries) {
+        sheet.getRangeByName('${entry.key}1').columnWidth = entry.value;
+      }
+
+      final Range headerRange = sheet.getRangeByName('A1:AA1');
+      headerRange.rowHeight = 30;
+      headerRange.cellStyle.bold = true;
+      headerRange.cellStyle.hAlign = HAlignType.center;
+      headerRange.cellStyle.vAlign = VAlignType.center;
+      headerRange.cellStyle.wrapText = true;
+      sheet.getRangeByName('A2').freezePanes();
 
       int rowIndex = 2;
 
@@ -574,21 +689,25 @@ Future<List<int>> createExcel(String type,
           sheet.getRangeByName('G$rowIndex').cellStyle.vAlign =
               VAlignType.center;
 
-          final dynamic remarksData = posisi['remarks'];
-
-          String remarks = '';
-
-          if (remarksData is Map) {
-            // Jika remarks berupa Map, ambil nilai dari key "remark"
-            remarks = remarksData['remark']?.toString().trim() ?? '';
-          } else if (remarksData is String) {
-            // Jika remarks berupa String, langsung gunakan nilainya
-            remarks = remarksData.trim();
+          final dynamic damageDataForRemark = posisi['damageTire'];
+          String firstDamageRemark = '0';
+          if (damageDataForRemark is List && damageDataForRemark.isNotEmpty) {
+            final dynamic firstDamage = damageDataForRemark.first;
+            if (firstDamage is Map) {
+              firstDamageRemark =
+                  firstDamage['remark']?.toString().trim() ?? '0';
+            } else if (firstDamage != null &&
+                firstDamage.toString().trim().isNotEmpty) {
+              firstDamageRemark = firstDamage.toString();
+            }
+          } else if (damageDataForRemark is String &&
+              damageDataForRemark.trim().isNotEmpty) {
+            firstDamageRemark = damageDataForRemark;
           }
 
-          sheet.getRangeByName('G$rowIndex').setText(
-                remarks.isEmpty ? 'Good Condition' : remarks,
-              );
+          sheet
+              .getRangeByName('G$rowIndex')
+              .setText(firstDamageRemark.isEmpty ? '0' : firstDamageRemark);
           // sheet.getRangeByName('G$rowIndex').cellStyle.hAlign =
           //     HAlignType.center;
           // sheet.getRangeByName('G$rowIndex').cellStyle.vAlign =
@@ -715,17 +834,78 @@ Future<List<int>> createExcel(String type,
                   ? '0'
                   : posisi['sn']);
 
-          // O = Temperature Status
-          sheet.getRangeByName('O$rowIndex').cellStyle.hAlign =
-              HAlignType.center;
-          sheet.getRangeByName('O$rowIndex').cellStyle.vAlign =
-              VAlignType.center;
+          final List<dynamic> rimConditions =
+              posisi['rimCondition'] as List<dynamic>? ?? <dynamic>[];
+
+          final int nutStudFallbackIndex = rimConditions.length > 7 ? 7 : 6;
+          final List<String> componentValues = <String>[
+            _getTireInspectionComponentValue(
+                rimConditions, 'rim_base', 0, 'condition'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'rim_base', 0, 'remark'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'flange', 1, 'condition'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'flange', 1, 'remark'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'lock_ring', 2, 'condition'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'lock_ring', 2, 'remark'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'valve', 4, 'condition'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'valve', 4, 'remark'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'core_valve', 5, 'condition'),
+            _getTireInspectionComponentValue(
+                rimConditions, 'core_valve', 5, 'remark'),
+            _getTireInspectionComponentValue(
+              rimConditions,
+              'nut_stud',
+              nutStudFallbackIndex,
+              'condition',
+            ),
+            _getTireInspectionComponentValue(
+              rimConditions,
+              'nut_stud',
+              nutStudFallbackIndex,
+              'remark',
+            ),
+          ];
+          const List<String> componentColumns = <String>[
+            'O',
+            'P',
+            'Q',
+            'R',
+            'S',
+            'T',
+            'U',
+            'V',
+            'W',
+            'X',
+            'Y',
+            'Z',
+          ];
+          for (int index = 0; index < componentColumns.length; index++) {
+            sheet
+                .getRangeByName('${componentColumns[index]}$rowIndex')
+                .setText(componentValues[index]);
+          }
+
+          // AA = Temperature Status
           sheet
-              .getRangeByName('O$rowIndex')
-              .setText(posisi['temperatureStatus']);
+              .getRangeByName('AA$rowIndex')
+              .setText(posisi['temperatureStatus']?.toString() ?? '');
 
           rowIndex++;
         }
+      }
+
+      if (rowIndex > 2) {
+        final Range dataRange = sheet.getRangeByName('A2:AA${rowIndex - 1}');
+        dataRange.cellStyle.hAlign = HAlignType.center;
+        dataRange.cellStyle.vAlign = VAlignType.center;
+        dataRange.cellStyle.wrapText = true;
       }
 
       final List<int> bytes = workbook.saveAsStream();

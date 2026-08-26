@@ -130,13 +130,65 @@ class _ProcessRepairState extends State<ProcessRepair> {
   int dimensiLukaMax = 5;
   int visibleItemCountDimensi = 1;
 
+  bool _isSameMaterial(
+    Map<String, dynamic> item,
+    dynamic idMatstock,
+    String materialName,
+  ) {
+    return item['id_matstock']?.toString().trim() ==
+            idMatstock?.toString().trim() &&
+        item['name']?.toString().trim() == materialName.trim();
+  }
+
+  List<Map<String, dynamic>> _normalizeMaterials(dynamic rawMaterials) {
+    final Iterable<dynamic> values;
+    if (rawMaterials is List) {
+      values = rawMaterials;
+    } else if (rawMaterials is Map) {
+      values = rawMaterials.values;
+    } else {
+      values = const <dynamic>[];
+    }
+
+    final normalized = values
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .where((item) {
+      final id = item['id_matstock']?.toString().trim() ?? '';
+      final name = item['name']?.toString().trim() ?? '';
+      return id.isNotEmpty || name.isNotEmpty;
+    }).toList();
+
+    final uniqueMaterials = <Map<String, dynamic>>[];
+    for (final item in normalized) {
+      final existingIndex = uniqueMaterials.indexWhere(
+        (existing) => _isSameMaterial(
+          existing,
+          item['id_matstock'],
+          item['name']?.toString() ?? '',
+        ),
+      );
+      if (existingIndex == -1) {
+        uniqueMaterials.add(item);
+      } else {
+        final existingQty =
+            uniqueMaterials[existingIndex]['qty']?.toString().trim() ?? '';
+        final currentQty = item['qty']?.toString().trim() ?? '';
+        if (existingQty.isEmpty && currentQty.isNotEmpty) {
+          uniqueMaterials[existingIndex] = item;
+        }
+      }
+    }
+    return uniqueMaterials;
+  }
+
   Future<void> initEditJobcard() async {
     // Edit Jobcard (Proses yg dipilih)
     existingJob = widget.selectedJob;
     // Data sebelumnya
     final selectedJobQuery = await firestore
         .collection(FirestoreKey.tireRepairInspectionReport)
-        .where('sn', isEqualTo: widget.tireDetail['sn'])
+        .where('id', isEqualTo: widget.tireDetail['id'])
         .limit(1)
         .get();
 
@@ -146,12 +198,9 @@ class _ProcessRepairState extends State<ProcessRepair> {
 
     final format = DateFormat('dd-MM-yyyy');
     selectedDate = format.parse(selectedJobSelect['date']);
-    try {
-      selectedMaterials.addAll(
-          List<Map<String, dynamic>>.from(selectedJobSelect['material']));
-    } catch (e) {
-      print('error material : $e');
-    }
+    selectedMaterials
+      ..clear()
+      ..addAll(_normalizeMaterials(selectedJobSelect['material']));
 
     final dimensi = (selectedJobSelect['dimensi'] ?? '').toString();
 
@@ -461,17 +510,17 @@ class _ProcessRepairState extends State<ProcessRepair> {
                         const SizedBox(height: 10),
                         GestureDetector(
                           onTap: () {
+                            final List<Map<String, dynamic>>
+                                tempSelectedMaterials = selectedMaterials
+                                    .map((item) =>
+                                        Map<String, dynamic>.from(item))
+                                    .toList();
                             showModalBottomSheet(
                               isDismissible: false,
                               context: context,
                               isScrollControlled: true,
                               enableDrag: false,
                               builder: (context) {
-                                List<Map<String, dynamic>>
-                                    tempSelectedMaterials = [];
-                                tempSelectedMaterials =
-                                    List<Map<String, dynamic>>.from(
-                                        selectedMaterials);
                                 return StatefulBuilder(
                                   builder: (BuildContext context,
                                       StateSetter setModalState) {
@@ -515,143 +564,177 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                     const NeverScrollableScrollPhysics(),
                                                 children: filteredMaterials
                                                     .map((material) {
-                                                  final isSelected = selectedMaterials
-                                                      .any((element) =>
-                                                          element['id_matstock'] ==
-                                                              material
-                                                                  .idMatstock &&
-                                                          element['name'] ==
-                                                              material
-                                                                  .materialName);
+                                                  final isSelected =
+                                                      tempSelectedMaterials.any(
+                                                          (element) =>
+                                                              _isSameMaterial(
+                                                                element,
+                                                                material
+                                                                    .idMatstock,
+                                                                material
+                                                                    .materialName,
+                                                              ));
 
                                                   final currentQty =
-                                                      selectedMaterials
+                                                      tempSelectedMaterials
                                                           .firstWhere(
                                                     (element) =>
-                                                        element['id_matstock'] ==
-                                                            material
-                                                                .idMatstock &&
-                                                        element['name'] ==
-                                                            material
-                                                                .materialName,
+                                                        _isSameMaterial(
+                                                      element,
+                                                      material.idMatstock,
+                                                      material.materialName,
+                                                    ),
                                                     orElse: () => {'qty': ''},
                                                   )['qty'];
 
-                                                  return CheckboxListTile(
-                                                    title: Column(
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .start,
-                                                      children: [
-                                                        Text(material
-                                                            .materialName),
-                                                        if (isSelected)
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .only(
-                                                                    top: 8.0),
-                                                            child: Row(
-                                                              children: [
-                                                                SizedBox(
-                                                                  width: 120,
-                                                                  child:
-                                                                      TextFormField(
-                                                                    initialValue:
-                                                                        currentQty,
-                                                                    keyboardType:
-                                                                        const TextInputType
-                                                                            .numberWithOptions(
-                                                                      decimal:
-                                                                          true,
-                                                                      signed:
-                                                                          false,
+                                                  return Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .stretch,
+                                                    children: [
+                                                      Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child: Text(material
+                                                                .materialName),
+                                                          ),
+                                                          Checkbox(
+                                                            value: isSelected,
+                                                            onChanged: (bool?
+                                                                selected) {
+                                                              setModalState(() {
+                                                                if (selected ==
+                                                                    true) {
+                                                                  final existingIndex =
+                                                                      tempSelectedMaterials
+                                                                          .indexWhere(
+                                                                    (element) =>
+                                                                        _isSameMaterial(
+                                                                      element,
+                                                                      material
+                                                                          .idMatstock,
+                                                                      material
+                                                                          .materialName,
                                                                     ),
-                                                                    inputFormatters: [
-                                                                      DecimalTextInputFormatter(),
-                                                                    ],
-                                                                    decoration:
-                                                                        const InputDecoration(
-                                                                      labelText:
-                                                                          'Qty',
-                                                                      border:
-                                                                          OutlineInputBorder(),
-                                                                      contentPadding:
-                                                                          EdgeInsets.symmetric(
-                                                                              horizontal: 12),
+                                                                  );
+                                                                  if (existingIndex ==
+                                                                      -1) {
+                                                                    tempSelectedMaterials
+                                                                        .add({
+                                                                      'id_matstock':
+                                                                          material
+                                                                              .idMatstock,
+                                                                      'name': material
+                                                                          .materialName,
+                                                                      'qty': '',
+                                                                      'smu':
+                                                                          existingMaterialUnit,
+                                                                    });
+                                                                  }
+                                                                } else {
+                                                                  tempSelectedMaterials
+                                                                      .removeWhere(
+                                                                    (element) =>
+                                                                        _isSameMaterial(
+                                                                      element,
+                                                                      material
+                                                                          .idMatstock,
+                                                                      material
+                                                                          .materialName,
                                                                     ),
-                                                                    onChanged:
-                                                                        (value) {
-                                                                      final qtyValue =
+                                                                  );
+                                                                }
+                                                              });
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      if (isSelected)
+                                                        Padding(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .only(
+                                                            top: 8,
+                                                            bottom: 8,
+                                                          ),
+                                                          child: Row(
+                                                            children: [
+                                                              SizedBox(
+                                                                width: 120,
+                                                                child:
+                                                                    TextFormField(
+                                                                  key: ValueKey(
+                                                                    'qty-${material.idMatstock}-${material.materialName}',
+                                                                  ),
+                                                                  initialValue:
+                                                                      currentQty
+                                                                          ?.toString(),
+                                                                  keyboardType:
+                                                                      const TextInputType
+                                                                          .numberWithOptions(
+                                                                    decimal:
+                                                                        true,
+                                                                    signed:
+                                                                        false,
+                                                                  ),
+                                                                  inputFormatters: [
+                                                                    DecimalTextInputFormatter(),
+                                                                  ],
+                                                                  decoration:
+                                                                      const InputDecoration(
+                                                                    labelText:
+                                                                        'Qty',
+                                                                    border:
+                                                                        OutlineInputBorder(),
+                                                                    contentPadding:
+                                                                        EdgeInsets
+                                                                            .symmetric(
+                                                                      horizontal:
+                                                                          12,
+                                                                    ),
+                                                                  ),
+                                                                  onChanged:
+                                                                      (value) {
+                                                                    final index =
+                                                                        tempSelectedMaterials
+                                                                            .indexWhere(
+                                                                      (element) =>
+                                                                          _isSameMaterial(
+                                                                        element,
+                                                                        material
+                                                                            .idMatstock,
+                                                                        material
+                                                                            .materialName,
+                                                                      ),
+                                                                    );
+                                                                    if (index !=
+                                                                        -1) {
+                                                                      tempSelectedMaterials[index]
+                                                                              [
+                                                                              'qty'] =
                                                                           value.replaceAll(
                                                                               ',',
                                                                               '.');
-                                                                      setModalState(
-                                                                          () {
-                                                                        final index =
-                                                                            selectedMaterials.indexWhere(
-                                                                          (element) =>
-                                                                              element['id_matstock'] == material.idMatstock &&
-                                                                              element['name'] == material.materialName,
-                                                                        );
-                                                                        if (index !=
-                                                                            -1) {
-                                                                          selectedMaterials[index]['qty'] =
-                                                                              qtyValue;
-                                                                        }
-                                                                      });
-                                                                      setState(
-                                                                          () {});
-                                                                    },
-                                                                  ),
+                                                                    }
+                                                                  },
                                                                 ),
-                                                                const SizedBox(
-                                                                  width: 12,
-                                                                ),
-                                                                Text(
-                                                                  existingMaterialUnit,
-                                                                  style:
-                                                                      getBlackTextStyle(),
-                                                                )
-                                                              ],
-                                                            ),
+                                                              ),
+                                                              const SizedBox(
+                                                                width: 12,
+                                                              ),
+                                                              Text(
+                                                                existingMaterialUnit,
+                                                                style:
+                                                                    getBlackTextStyle(),
+                                                              ),
+                                                            ],
                                                           ),
-                                                        const Divider(
-                                                          color: black,
-                                                          thickness: 1.5,
                                                         ),
-                                                      ],
-                                                    ),
-                                                    value: isSelected,
-                                                    onChanged:
-                                                        (bool? selected) {
-                                                      setModalState(() {
-                                                        if (selected == true) {
-                                                          selectedMaterials
-                                                              .add({
-                                                            'id_matstock':
-                                                                material
-                                                                    .idMatstock,
-                                                            'name': material
-                                                                .materialName,
-                                                            'qty': '',
-                                                            'smu':
-                                                                existingMaterialUnit
-                                                          });
-                                                        } else {
-                                                          selectedMaterials.removeWhere((element) =>
-                                                              element['id_matstock'] == material.idMatstock &&
-                                                              element['name'] ==
-                                                                  material
-                                                                      .materialName &&
-                                                              element['smu'] ==
-                                                                  existingMaterialUnit);
-                                                        }
-                                                      });
-
-                                                      // Update tampilan utama juga
-                                                      setState(() {});
-                                                    },
+                                                      const Divider(
+                                                        color: black,
+                                                        thickness: 1.5,
+                                                      ),
+                                                    ],
                                                   );
                                                 }).toList(),
                                               ),
@@ -659,7 +742,7 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                               ElevatedButton.icon(
                                                 onPressed: () {
                                                   final hasEmptyQty =
-                                                      selectedMaterials.any(
+                                                      tempSelectedMaterials.any(
                                                           (item) =>
                                                               item['qty'] ==
                                                                   null ||
@@ -689,6 +772,15 @@ class _ProcessRepairState extends State<ProcessRepair> {
                                                       ),
                                                     );
                                                   } else {
+                                                    setState(() {
+                                                      selectedMaterials =
+                                                          tempSelectedMaterials
+                                                              .map((item) => Map<
+                                                                      String,
+                                                                      dynamic>.from(
+                                                                  item))
+                                                              .toList();
+                                                    });
                                                     Navigator.pop(context);
                                                   }
                                                 },
