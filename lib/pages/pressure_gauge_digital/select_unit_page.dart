@@ -765,6 +765,10 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   bool isOnline = false;
   bool isSendingWhatsappRecap = false;
 
+  bool get canShareWhatsappRecap =>
+      homeState.userAccessCompanyId.value.trim() == '1' &&
+      homeState.currentSiteId.trim() == '8';
+
   /// Key:
   /// Nomor unit yang sudah dinormalisasi.
   ///
@@ -775,6 +779,12 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   /// ID dokumen Tire Inspection terbaru hari ini untuk setiap unit Checked.
   /// Hanya ID yang ditahan di memori; isi dokumen dibaca saat unit ditekan.
   Map<String, String> checkedUnitDocumentIds = <String, String>{};
+
+  /// Data ringkas dokumen Tire Inspection terbaru untuk kebutuhan recap.
+  /// Data ini diambil dari query Checked yang sama agar tombol Share tidak
+  /// menambah pembacaan dokumen Firestore.
+  Map<String, Map<String, dynamic>> checkedUnitRecapData =
+      <String, Map<String, dynamic>>{};
 
   /// Loading khusus pengambilan status Checked.
   bool isLoadingCheckedUnits = false;
@@ -947,6 +957,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       setState(() {
         checkedUnitDates.clear();
         checkedUnitDocumentIds.clear();
+        checkedUnitRecapData.clear();
         isLoadingCheckedUnits = false;
       });
 
@@ -968,6 +979,8 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       final String today = DateFormat('yyyy-MM-dd').format(now);
       final Map<String, DateTime> result = <String, DateTime>{};
       final Map<String, String> resultDocumentIds = <String, String>{};
+      final Map<String, Map<String, dynamic>> resultRecapData =
+          <String, Map<String, dynamic>>{};
 
       // Status Checked hanya membutuhkan data hari ini. Memindai seluruh
       // riwayat per halaman tetap membuat CPU dan GC bekerja terus-menerus.
@@ -1013,6 +1026,10 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
         if (previousDate == null || inspectionDate.isAfter(previousDate)) {
           result[unitNumber] = inspectionDate;
           resultDocumentIds[unitNumber] = document.id;
+          resultRecapData[unitNumber] = <String, dynamic>{
+            'location': data['pit']?.toString().trim() ?? '',
+            'hasFinding': _hasInspectionFinding(data),
+          };
         }
       }
 
@@ -1024,6 +1041,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       setState(() {
         checkedUnitDates = result;
         checkedUnitDocumentIds = resultDocumentIds;
+        checkedUnitRecapData = resultRecapData;
       });
     } catch (e, st) {
       log('Error fetching checked units: $e');
@@ -1137,6 +1155,60 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     final String normalized = normalizeUnitNumber(unitNumber);
 
     return checkedUnitDates.containsKey(normalized);
+  }
+
+  bool _isSafeInspectionValue(dynamic value) {
+    final normalized = value
+        ?.toString()
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[_-]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ');
+
+    return normalized == null ||
+        normalized.isEmpty ||
+        normalized == 'good' ||
+        normalized == 'good condition' ||
+        normalized == 'normal' ||
+        normalized == 'aman' ||
+        normalized == 'ok';
+  }
+
+  bool _hasInspectionFinding(Map<String, dynamic> inspection) {
+    final positions = inspection['posisi'];
+    if (positions is! List) return false;
+
+    for (final rawPosition in positions) {
+      if (rawPosition is! Map) continue;
+
+      final position = Map<String, dynamic>.from(rawPosition);
+      final damages = position['damageTire'];
+
+      if (damages is List) {
+        if (damages.any((damage) => !_isSafeInspectionValue(damage))) {
+          return true;
+        }
+      } else if (!_isSafeInspectionValue(damages)) {
+        return true;
+      }
+
+      final rimConditions = position['rimCondition'];
+      if (rimConditions is List) {
+        for (final rawCondition in rimConditions) {
+          if (rawCondition is! Map) continue;
+
+          final condition =
+              rawCondition['condition']?.toString().trim().toLowerCase();
+          if (condition == 'poor' ||
+              condition == 'bad' ||
+              condition == 'not good') {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   }
 
   DateTime? getUnitCheckedDate(
@@ -1442,9 +1514,8 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 
   Future<void> shareTireInspectionRecap({
     required List<UnitTire> units,
-    required Map<String, int> targetArea,
   }) async {
-    if (homeState.userAccessCompanyId.value != '1' || isSendingWhatsappRecap) {
+    if (!canShareWhatsappRecap || isSendingWhatsappRecap) {
       return;
     }
 
@@ -1455,63 +1526,83 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       uniqueUnits.putIfAbsent(unitNumber, () => unit);
     }
 
-    final unitList = uniqueUnits.values.toList();
-    final checkedCount = unitList
-        .where(
-          (unit) => isUnitChecked(unit.unitNumber),
-        )
-        .length;
-    final uncheckedCount = unitList.length - checkedCount;
+    final checkedUnits = uniqueUnits.values
+        .where((unit) => isUnitChecked(unit.unitNumber))
+        .toList();
 
-    final Map<String, Set<String>> checkedUnitByArea = <String, Set<String>>{};
-    for (final unit in unitList) {
-      final unitNumber = normalizeUnitNumber(unit.unitNumber);
-      final area = (unit.area ?? '').trim();
-      if (unitNumber.isEmpty || area.isEmpty || !isUnitChecked(unitNumber)) {
-        continue;
-      }
+    if (checkedUnits.isEmpty) {
+      if (!mounted) return;
 
-      checkedUnitByArea
-          .putIfAbsent(area.toLowerCase(), () => <String>{})
-          .add(unitNumber);
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(
+            'Belum ada unit Tire Inspection yang selesai hari ini.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
     }
 
-    final targetEntries = targetArea.entries
-        .where((entry) => entry.key.trim().isNotEmpty)
-        .toList()
-      ..sort(
-        (first, second) => first.key.toLowerCase().compareTo(
-              second.key.toLowerCase(),
-            ),
-      );
+    checkedUnits.sort((first, second) {
+      final firstDate = checkedUnitDates[normalizeUnitNumber(first.unitNumber)];
+      final secondDate =
+          checkedUnitDates[normalizeUnitNumber(second.unitNumber)];
+
+      if (firstDate == null && secondDate == null) return 0;
+      if (firstDate == null) return 1;
+      if (secondDate == null) return -1;
+      return firstDate.compareTo(secondDate);
+    });
 
     final now = DateTime.now();
     final recap = StringBuffer()
-      ..writeln('*RECAP TIRE INSPECTION*')
-      ..writeln('Tanggal: ${DateFormat('dd-MM-yyyy').format(now)}')
-      ..writeln('Site: ${homeState.currentSiteId}')
-      ..writeln('')
-      ..writeln('Total Unit: ${unitList.length}')
-      ..writeln('Checked: $checkedCount')
-      ..writeln('Not Checked: $uncheckedCount')
-      ..writeln(
-        'Progress: ${formatInspectionPercentage(current: checkedCount, target: unitList.length)}',
-      );
+      ..writeln('*LAPORAN TYREMAN KOLEKTIF*')
+      ..writeln('📅 Tanggal: ${DateFormat('dd/MM/yyyy').format(now)}')
+      ..writeln('⏰ Jam: 06:00 - 18:00')
+      ..writeln('--------------------')
+      ..writeln();
 
-    if (targetEntries.isNotEmpty) {
+    for (int index = 0; index < checkedUnits.length; index++) {
+      final unit = checkedUnits[index];
+      final unitNumber = normalizeUnitNumber(unit.unitNumber);
+      final recapData = checkedUnitRecapData[unitNumber];
+      final inspectionLocation =
+          recapData?['location']?.toString().trim() ?? '';
+      final unitArea = unit.area?.trim() ?? '';
+      final location = inspectionLocation.isNotEmpty
+          ? inspectionLocation
+          : unitArea.isNotEmpty
+              ? unitArea
+              : '-';
+      final hasFinding = recapData?['hasFinding'] == true;
+
       recap
-        ..writeln('')
-        ..writeln('*PROGRESS PER AREA*');
-
-      for (final entry in targetEntries) {
-        final areaKey = entry.key.trim().toLowerCase();
-        final current = checkedUnitByArea[areaKey]?.length ?? 0;
-        recap.writeln(
-          '- ${entry.key}: $current/${entry.value} '
-          '(${formatInspectionPercentage(current: current, target: entry.value)})',
+        ..writeln('${index + 1}. *UNIT: $unitNumber*')
+        ..writeln('   📍 Lokasi: $location')
+        ..writeln(
+          '   🛠 Kondisi: ${hasFinding ? '⚠️ TEMUAN' : '✅ AMAN'}',
         );
+
+      if (index < checkedUnits.length - 1) {
+        recap
+          ..writeln()
+          ..writeln('---------------------------')
+          ..writeln();
       }
     }
+
+    recap
+      ..writeln()
+      ..writeln(
+        '✅ Total: ${checkedUnits.length} Unit Selesai.'
+        '\n\n'
+        '📌 *Sent via CAMOS App*'
+        '\n'
+        'Powered by : PT Chitra Paratama',
+      );
 
     if (mounted) {
       setState(() {
@@ -1522,7 +1613,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     try {
       final request = http.Request(
         'POST',
-        Uri.parse('http://localhost:3000/api/sendMessageGroup'),
+        Uri.parse('http://103.82.92.181/api/sendMessageGroup'),
       )
         ..headers.addAll(
           <String, String>{
@@ -1533,7 +1624,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
         ..bodyFields = <String, String>{
           'apiKey': '09b3e08979d1474cb81c55c040744ca9',
           'id_group': '120363427464156384@g.us',
-          'message': 'Hello World',
+          'message': recap.toString(),
         };
 
       final response = await request.send().timeout(
@@ -2511,7 +2602,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                       ],
                       const SizedBox(height: 12),
                       if (inspectionType == 'tire_inspection' &&
-                          homeState.userAccessCompanyId.value == '1') ...[
+                          canShareWhatsappRecap) ...[
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -2522,7 +2613,6 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                       units: List<UnitTire>.from(
                                         state.units,
                                       ),
-                                      targetArea: state.targetArea,
                                     );
                                   },
                             style: ElevatedButton.styleFrom(
