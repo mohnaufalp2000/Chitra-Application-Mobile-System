@@ -1611,6 +1611,35 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     }
 
     try {
+      final siteId = homeState.currentSiteId.trim();
+      final configDocuments = await Future.wait([
+        firestore.collection('url_whapi').doc('api_key').get(),
+        firestore.collection('url_whapi').doc(siteId).get(),
+      ]);
+
+      if (siteId != homeState.currentSiteId.trim()) {
+        throw StateError(
+          'Site aktif berubah. Silakan kirim ulang recap.',
+        );
+      }
+
+      final apiKey =
+          configDocuments[0].data()?['api_key']?.toString().trim() ?? '';
+      final groupId =
+          configDocuments[1].data()?['id_group']?.toString().trim() ?? '';
+
+      if (apiKey.isEmpty) {
+        throw StateError(
+          'API key WhatsApp belum tersedia di Firestore.',
+        );
+      }
+
+      if (groupId.isEmpty) {
+        throw StateError(
+          'ID grup WhatsApp untuk site $siteId belum tersedia di Firestore.',
+        );
+      }
+
       final request = http.Request(
         'POST',
         Uri.parse('http://103.82.92.181/api/sendMessageGroup'),
@@ -1622,8 +1651,8 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           },
         )
         ..bodyFields = <String, String>{
-          'apiKey': '09b3e08979d1474cb81c55c040744ca9',
-          'id_group': '120363427464156384@g.us',
+          'apiKey': apiKey,
+          'id_group': groupId,
           'message': recap.toString(),
         };
 
