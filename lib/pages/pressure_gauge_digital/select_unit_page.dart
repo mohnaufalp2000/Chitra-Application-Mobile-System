@@ -730,6 +730,7 @@ import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart';
 import '../../core/blocs/unit/unit_bloc.dart';
@@ -762,6 +763,11 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 
   String searchQuery = '';
   bool isOnline = false;
+  bool isSendingWhatsappRecap = false;
+
+  bool get canShareWhatsappRecap =>
+      homeState.userAccessCompanyId.value.trim() == '1' &&
+      homeState.currentSiteId.trim() == '8';
 
   /// Key:
   /// Nomor unit yang sudah dinormalisasi.
@@ -773,6 +779,12 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   /// ID dokumen Tire Inspection terbaru hari ini untuk setiap unit Checked.
   /// Hanya ID yang ditahan di memori; isi dokumen dibaca saat unit ditekan.
   Map<String, String> checkedUnitDocumentIds = <String, String>{};
+
+  /// Data ringkas dokumen Tire Inspection terbaru untuk kebutuhan recap.
+  /// Data ini diambil dari query Checked yang sama agar tombol Share tidak
+  /// menambah pembacaan dokumen Firestore.
+  Map<String, Map<String, dynamic>> checkedUnitRecapData =
+      <String, Map<String, dynamic>>{};
 
   /// Loading khusus pengambilan status Checked.
   bool isLoadingCheckedUnits = false;
@@ -945,6 +957,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       setState(() {
         checkedUnitDates.clear();
         checkedUnitDocumentIds.clear();
+        checkedUnitRecapData.clear();
         isLoadingCheckedUnits = false;
       });
 
@@ -966,6 +979,8 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       final String today = DateFormat('yyyy-MM-dd').format(now);
       final Map<String, DateTime> result = <String, DateTime>{};
       final Map<String, String> resultDocumentIds = <String, String>{};
+      final Map<String, Map<String, dynamic>> resultRecapData =
+          <String, Map<String, dynamic>>{};
 
       // Status Checked hanya membutuhkan data hari ini. Memindai seluruh
       // riwayat per halaman tetap membuat CPU dan GC bekerja terus-menerus.
@@ -1011,6 +1026,10 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
         if (previousDate == null || inspectionDate.isAfter(previousDate)) {
           result[unitNumber] = inspectionDate;
           resultDocumentIds[unitNumber] = document.id;
+          resultRecapData[unitNumber] = <String, dynamic>{
+            'location': data['pit']?.toString().trim() ?? '',
+            'hasFinding': _hasInspectionFinding(data),
+          };
         }
       }
 
@@ -1022,6 +1041,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       setState(() {
         checkedUnitDates = result;
         checkedUnitDocumentIds = resultDocumentIds;
+        checkedUnitRecapData = resultRecapData;
       });
     } catch (e, st) {
       log('Error fetching checked units: $e');
@@ -1135,6 +1155,60 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     final String normalized = normalizeUnitNumber(unitNumber);
 
     return checkedUnitDates.containsKey(normalized);
+  }
+
+  bool _isSafeInspectionValue(dynamic value) {
+    final normalized = value
+        ?.toString()
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[_-]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ');
+
+    return normalized == null ||
+        normalized.isEmpty ||
+        normalized == 'good' ||
+        normalized == 'good condition' ||
+        normalized == 'normal' ||
+        normalized == 'aman' ||
+        normalized == 'ok';
+  }
+
+  bool _hasInspectionFinding(Map<String, dynamic> inspection) {
+    final positions = inspection['posisi'];
+    if (positions is! List) return false;
+
+    for (final rawPosition in positions) {
+      if (rawPosition is! Map) continue;
+
+      final position = Map<String, dynamic>.from(rawPosition);
+      final damages = position['damageTire'];
+
+      if (damages is List) {
+        if (damages.any((damage) => !_isSafeInspectionValue(damage))) {
+          return true;
+        }
+      } else if (!_isSafeInspectionValue(damages)) {
+        return true;
+      }
+
+      final rimConditions = position['rimCondition'];
+      if (rimConditions is List) {
+        for (final rawCondition in rimConditions) {
+          if (rawCondition is! Map) continue;
+
+          final condition =
+              rawCondition['condition']?.toString().trim().toLowerCase();
+          if (condition == 'poor' ||
+              condition == 'bad' ||
+              condition == 'not good') {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
   }
 
   DateTime? getUnitCheckedDate(
@@ -1435,6 +1509,204 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           ),
         ),
       );
+    }
+  }
+
+  Future<void> shareTireInspectionRecap({
+    required List<UnitTire> units,
+  }) async {
+    if (!canShareWhatsappRecap || isSendingWhatsappRecap) {
+      return;
+    }
+
+    final Map<String, UnitTire> uniqueUnits = <String, UnitTire>{};
+    for (final unit in units) {
+      final unitNumber = normalizeUnitNumber(unit.unitNumber);
+      if (unitNumber.isEmpty) continue;
+      uniqueUnits.putIfAbsent(unitNumber, () => unit);
+    }
+
+    final checkedUnits = uniqueUnits.values
+        .where((unit) => isUnitChecked(unit.unitNumber))
+        .toList();
+
+    if (checkedUnits.isEmpty) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.orange,
+          content: Text(
+            'Belum ada unit Tire Inspection yang selesai hari ini.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+      return;
+    }
+
+    checkedUnits.sort((first, second) {
+      final firstDate = checkedUnitDates[normalizeUnitNumber(first.unitNumber)];
+      final secondDate =
+          checkedUnitDates[normalizeUnitNumber(second.unitNumber)];
+
+      if (firstDate == null && secondDate == null) return 0;
+      if (firstDate == null) return 1;
+      if (secondDate == null) return -1;
+      return firstDate.compareTo(secondDate);
+    });
+
+    final now = DateTime.now();
+    final recap = StringBuffer()
+      ..writeln('*LAPORAN TYREMAN KOLEKTIF*')
+      ..writeln('📅 Tanggal: ${DateFormat('dd/MM/yyyy').format(now)}')
+      ..writeln('⏰ Jam: 06:00 - 18:00')
+      ..writeln('--------------------')
+      ..writeln();
+
+    for (int index = 0; index < checkedUnits.length; index++) {
+      final unit = checkedUnits[index];
+      final unitNumber = normalizeUnitNumber(unit.unitNumber);
+      final recapData = checkedUnitRecapData[unitNumber];
+      final inspectionLocation =
+          recapData?['location']?.toString().trim() ?? '';
+      final unitArea = unit.area?.trim() ?? '';
+      final location = inspectionLocation.isNotEmpty
+          ? inspectionLocation
+          : unitArea.isNotEmpty
+              ? unitArea
+              : '-';
+      final hasFinding = recapData?['hasFinding'] == true;
+
+      recap
+        ..writeln('${index + 1}. *UNIT: $unitNumber*')
+        ..writeln('   📍 Lokasi: $location')
+        ..writeln(
+          '   🛠 Kondisi: ${hasFinding ? '⚠️ TEMUAN' : '✅ AMAN'}',
+        );
+
+      if (index < checkedUnits.length - 1) {
+        recap
+          ..writeln()
+          ..writeln('---------------------------')
+          ..writeln();
+      }
+    }
+
+    recap
+      ..writeln()
+      ..writeln(
+        '✅ Total: ${checkedUnits.length} Unit Selesai.'
+        '\n\n'
+        '📌 *Sent via CAMOS App*'
+        '\n'
+        'Powered by : PT Chitra Paratama',
+      );
+
+    if (mounted) {
+      setState(() {
+        isSendingWhatsappRecap = true;
+      });
+    }
+
+    try {
+      final siteId = homeState.currentSiteId.trim();
+      final configDocuments = await Future.wait([
+        firestore.collection('url_whapi').doc('api_key').get(),
+        firestore.collection('url_whapi').doc(siteId).get(),
+      ]);
+
+      if (siteId != homeState.currentSiteId.trim()) {
+        throw StateError(
+          'Site aktif berubah. Silakan kirim ulang recap.',
+        );
+      }
+
+      final apiKey =
+          configDocuments[0].data()?['api_key']?.toString().trim() ?? '';
+      final groupId =
+          configDocuments[1].data()?['id_group']?.toString().trim() ?? '';
+
+      if (apiKey.isEmpty) {
+        throw StateError(
+          'API key WhatsApp belum tersedia di Firestore.',
+        );
+      }
+
+      if (groupId.isEmpty) {
+        throw StateError(
+          'ID grup WhatsApp untuk site $siteId belum tersedia di Firestore.',
+        );
+      }
+
+      final request = http.Request(
+        'POST',
+        Uri.parse('http://103.82.92.181/api/sendMessageGroup'),
+      )
+        ..headers.addAll(
+          <String, String>{
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+          },
+        )
+        ..bodyFields = <String, String>{
+          'apiKey': apiKey,
+          'id_group': groupId,
+          'message': recap.toString(),
+        };
+
+      final response = await request.send().timeout(
+            const Duration(seconds: 30),
+          );
+      final responseBody = await response.stream.bytesToString();
+
+      log(
+        'Send WhatsApp recap response: '
+        '${response.statusCode} $responseBody',
+      );
+
+      if (response.statusCode != 200) {
+        throw HttpException(
+          'HTTP ${response.statusCode}: '
+          '${response.reasonPhrase ?? responseBody}',
+        );
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.green,
+          content: Text(
+            'Recap berhasil dikirim ke grup WhatsApp.',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+    } catch (error, stackTrace) {
+      log(
+        'Send Tire Inspection recap to WhatsApp failed: $error',
+        stackTrace: stackTrace,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text(
+            'Gagal mengirim recap: $error',
+            style: getWhiteTextStyle(),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSendingWhatsappRecap = false;
+        });
+      }
     }
   }
 
@@ -2358,6 +2630,50 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                         ),
                       ],
                       const SizedBox(height: 12),
+                      if (inspectionType == 'tire_inspection' &&
+                          canShareWhatsappRecap) ...[
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: isSendingWhatsappRecap
+                                ? null
+                                : () {
+                                    shareTireInspectionRecap(
+                                      units: List<UnitTire>.from(
+                                        state.units,
+                                      ),
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF25D366),
+                              disabledBackgroundColor: Colors.grey,
+                              padding: const EdgeInsets.symmetric(
+                                vertical: 12,
+                              ),
+                            ),
+                            icon: isSendingWhatsappRecap
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.send_outlined,
+                                    color: Colors.white,
+                                  ),
+                            label: Text(
+                              isSendingWhatsappRecap
+                                  ? 'Sending Recap...'
+                                  : 'Share Recap to Whatsapp',
+                              style: getWhiteTextStyle(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       FutureBuilder<String>(
                         future: getActualIdSite(),
                         builder: (
