@@ -19,6 +19,7 @@ import 'core/services/local_database/outstanding_task/outstanding_task_entity.da
 import 'core/services/local_database/site_condition/site_condition_entity.dart';
 import 'core/services/local_database/tire_inspect_picture/tire_inspect_picture_entity.dart';
 import 'core/services/local_database/tire_inspection_draft/tire_inspection_draft_entity.dart';
+import 'core/services/local_database/tire_inspection_offline_edit/tire_inspection_offline_edit_entity.dart';
 
 export 'package:objectbox/objectbox.dart'; // so that callers only have to import this file
 
@@ -328,6 +329,75 @@ final _entities = <ModelEntity>[
             flags: 0)
       ],
       relations: <ModelRelation>[],
+      backlinks: <ModelBacklink>[]),
+  ModelEntity(
+      id: const IdUid(7, 337180601686900237),
+      name: 'TireInspectionOfflineEditEntity',
+      lastPropertyId: const IdUid(11, 3983164961122509684),
+      flags: 0,
+      properties: <ModelProperty>[
+        ModelProperty(
+            id: const IdUid(1, 6005862507352071936),
+            name: 'id',
+            type: 6,
+            flags: 1),
+        ModelProperty(
+            id: const IdUid(2, 1793035355903747144),
+            name: 'inspectionDocumentId',
+            type: 9,
+            flags: 2080,
+            indexId: const IdUid(8, 7459522532285237176)),
+        ModelProperty(
+            id: const IdUid(3, 8891260531602556845),
+            name: 'siteId',
+            type: 9,
+            flags: 2048,
+            indexId: const IdUid(9, 9146718258176853893)),
+        ModelProperty(
+            id: const IdUid(4, 8212804424367248590),
+            name: 'unitNumber',
+            type: 9,
+            flags: 2048,
+            indexId: const IdUid(10, 8887781759751462120)),
+        ModelProperty(
+            id: const IdUid(5, 7415715201803282),
+            name: 'inspectionDate',
+            type: 9,
+            flags: 2048,
+            indexId: const IdUid(11, 4525891365673924882)),
+        ModelProperty(
+            id: const IdUid(6, 6399292144999723831),
+            name: 'originalHari',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(7, 2246142409640211563),
+            name: 'cachedInspectionJson',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(8, 305421651954315454),
+            name: 'pendingInspectionJson',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(9, 4250010527208265906),
+            name: 'pendingDailyPressureJson',
+            type: 9,
+            flags: 0),
+        ModelProperty(
+            id: const IdUid(10, 1402532595169219269),
+            name: 'updatedAtMillis',
+            type: 6,
+            flags: 8,
+            indexId: const IdUid(12, 2097185445966602181)),
+        ModelProperty(
+            id: const IdUid(11, 3983164961122509684),
+            name: 'pendingSync',
+            type: 1,
+            flags: 0)
+      ],
+      relations: <ModelRelation>[],
       backlinks: <ModelBacklink>[])
 ];
 
@@ -351,8 +421,8 @@ Future<Store> openStore(
 ModelDefinition getObjectBoxModel() {
   final model = ModelInfo(
       entities: _entities,
-      lastEntityId: const IdUid(6, 3707612730663693188),
-      lastIndexId: const IdUid(7, 8791780560457950025),
+      lastEntityId: const IdUid(7, 337180601686900237),
+      lastIndexId: const IdUid(12, 2097185445966602181),
       lastRelationId: const IdUid(0, 0),
       lastSequenceId: const IdUid(0, 0),
       retiredEntityUids: const [3938695816533245477],
@@ -654,6 +724,70 @@ ModelDefinition getObjectBoxModel() {
               payloadJson: const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 36, ''));
 
           return object;
+        }),
+    TireInspectionOfflineEditEntity: EntityDefinition<
+            TireInspectionOfflineEditEntity>(
+        model: _entities[5],
+        toOneRelations: (TireInspectionOfflineEditEntity object) => [],
+        toManyRelations: (TireInspectionOfflineEditEntity object) => {},
+        getId: (TireInspectionOfflineEditEntity object) => object.id,
+        setId: (TireInspectionOfflineEditEntity object, int id) {
+          object.id = id;
+        },
+        objectToFB: (TireInspectionOfflineEditEntity object, fb.Builder fbb) {
+          final inspectionDocumentIdOffset =
+              fbb.writeString(object.inspectionDocumentId);
+          final siteIdOffset = fbb.writeString(object.siteId);
+          final unitNumberOffset = fbb.writeString(object.unitNumber);
+          final inspectionDateOffset = fbb.writeString(object.inspectionDate);
+          final originalHariOffset = fbb.writeString(object.originalHari);
+          final cachedInspectionJsonOffset =
+              fbb.writeString(object.cachedInspectionJson);
+          final pendingInspectionJsonOffset =
+              fbb.writeString(object.pendingInspectionJson);
+          final pendingDailyPressureJsonOffset =
+              fbb.writeString(object.pendingDailyPressureJson);
+          fbb.startTable(12);
+          fbb.addInt64(0, object.id);
+          fbb.addOffset(1, inspectionDocumentIdOffset);
+          fbb.addOffset(2, siteIdOffset);
+          fbb.addOffset(3, unitNumberOffset);
+          fbb.addOffset(4, inspectionDateOffset);
+          fbb.addOffset(5, originalHariOffset);
+          fbb.addOffset(6, cachedInspectionJsonOffset);
+          fbb.addOffset(7, pendingInspectionJsonOffset);
+          fbb.addOffset(8, pendingDailyPressureJsonOffset);
+          fbb.addInt64(9, object.updatedAtMillis);
+          fbb.addBool(10, object.pendingSync);
+          fbb.finish(fbb.endTable());
+          return object.id;
+        },
+        objectFromFB: (Store store, ByteData fbData) {
+          final buffer = fb.BufferContext(fbData);
+          final rootOffset = buffer.derefObject(0);
+
+          final object = TireInspectionOfflineEditEntity(
+              id: const fb.Int64Reader().vTableGet(buffer, rootOffset, 4, 0),
+              inspectionDocumentId: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 6, ''),
+              siteId: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 8, ''),
+              unitNumber: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 10, ''),
+              inspectionDate: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 12, ''),
+              originalHari: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 14, ''),
+              cachedInspectionJson: const fb.StringReader(asciiOptimization: true)
+                  .vTableGet(buffer, rootOffset, 16, ''),
+              pendingInspectionJson:
+                  const fb.StringReader(asciiOptimization: true)
+                      .vTableGet(buffer, rootOffset, 18, ''),
+              pendingDailyPressureJson: const fb.StringReader(asciiOptimization: true).vTableGet(buffer, rootOffset, 20, ''),
+              updatedAtMillis: const fb.Int64Reader().vTableGet(buffer, rootOffset, 22, 0),
+              pendingSync: const fb.BoolReader().vTableGet(buffer, rootOffset, 24, false));
+
+          return object;
         })
   };
 
@@ -879,4 +1013,60 @@ class TireInspectionDraftEntity_ {
   /// see [TireInspectionDraftEntity.payloadJson]
   static final payloadJson = QueryStringProperty<TireInspectionDraftEntity>(
       _entities[4].properties[16]);
+}
+
+/// [TireInspectionOfflineEditEntity] entity fields to define ObjectBox queries.
+class TireInspectionOfflineEditEntity_ {
+  /// see [TireInspectionOfflineEditEntity.id]
+  static final id = QueryIntegerProperty<TireInspectionOfflineEditEntity>(
+      _entities[5].properties[0]);
+
+  /// see [TireInspectionOfflineEditEntity.inspectionDocumentId]
+  static final inspectionDocumentId =
+      QueryStringProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[1]);
+
+  /// see [TireInspectionOfflineEditEntity.siteId]
+  static final siteId = QueryStringProperty<TireInspectionOfflineEditEntity>(
+      _entities[5].properties[2]);
+
+  /// see [TireInspectionOfflineEditEntity.unitNumber]
+  static final unitNumber =
+      QueryStringProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[3]);
+
+  /// see [TireInspectionOfflineEditEntity.inspectionDate]
+  static final inspectionDate =
+      QueryStringProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[4]);
+
+  /// see [TireInspectionOfflineEditEntity.originalHari]
+  static final originalHari =
+      QueryStringProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[5]);
+
+  /// see [TireInspectionOfflineEditEntity.cachedInspectionJson]
+  static final cachedInspectionJson =
+      QueryStringProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[6]);
+
+  /// see [TireInspectionOfflineEditEntity.pendingInspectionJson]
+  static final pendingInspectionJson =
+      QueryStringProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[7]);
+
+  /// see [TireInspectionOfflineEditEntity.pendingDailyPressureJson]
+  static final pendingDailyPressureJson =
+      QueryStringProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[8]);
+
+  /// see [TireInspectionOfflineEditEntity.updatedAtMillis]
+  static final updatedAtMillis =
+      QueryIntegerProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[9]);
+
+  /// see [TireInspectionOfflineEditEntity.pendingSync]
+  static final pendingSync =
+      QueryBooleanProperty<TireInspectionOfflineEditEntity>(
+          _entities[5].properties[10]);
 }

@@ -6090,6 +6090,11 @@ import 'package:camos/core/services/api_service.dart';
 import 'package:camos/core/services/model/tire_damage_ai.dart';
 import 'package:camos/core/services/model/tire_inspection_draft.dart';
 import 'package:camos/core/services/tire_inspection_draft_service.dart';
+import 'package:camos/core/services/tire_inspection_offline_edit_service.dart';
+import 'package:camos/core/utils/functions/inspection_photo_helpers.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/pending_inspection_photo_preview.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/cached_inspection_photo_preview.dart';
+import 'package:camos/pages/pressure_gauge_digital/widget/existing_inspection_photo_preview.dart';
 import 'package:camos/core/utils/data/id_site.dart';
 import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/trial/scan_device_page.dart';
@@ -7726,6 +7731,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     final storedPositions = editData['posisi'];
     if (storedPositions is! List) return;
 
+    final pendingPhotos = Get.isRegistered<UploadQueueService>()
+        ? UploadQueueService.to.photosForDocument(
+            _editInspectionDocumentId,
+            storedPositions: storedPositions,
+          )
+        : <Map<String, dynamic>>[];
+
     final storedUsername = _nonEmptySourceValue(editData['user']);
     if (storedUsername.isNotEmpty && !_usernameWasEdited) {
       usernameCtrl.text = storedUsername;
@@ -7779,6 +7791,18 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       position[index]['prevRating'] =
           _nonEmptySourceValue(stored['rating']).toUpperCase();
       position[index]['_existingImages'] = _copyDynamicList(stored['images']);
+      position[index]['_cachedLocalImagePath'] =
+          _nonEmptySourceValue(stored['_cachedLocalImagePath']);
+      final pendingPhotoPath = pendingInspectionPhotoPath(
+        pendingPhotos,
+        storedIndex: storedPositions.indexOf(stored),
+        tirePosition: (stored['position'] ?? stored['pos'])?.toString() ?? '',
+      );
+      // Preview tersimpan terpisah dari 'image' (foto baru). Save tanpa
+      // mengganti foto tidak boleh mengantrekan file yang sama sekali lagi.
+      position[index]['_pendingLocalImagePath'] = pendingPhotoPath;
+      position[index]['_existingImagePending'] =
+          stored['imagePending'] == true || pendingPhotoPath != null;
       position[index]['_editOriginalPosition'] =
           Map<String, dynamic>.from(stored);
       position[index]['_pressureFromHistory'] = false;
@@ -8842,6 +8866,43 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }
   }
 
+  String? _existingImageUrlAt(int positionIndex) {
+    if (positionIndex < 0 || positionIndex >= position.length) {
+      return null;
+    }
+
+    final images = position[positionIndex]['_existingImages'];
+    if (images is! List) return null;
+
+    for (final image in images) {
+      String? candidate;
+      if (image is String) {
+        candidate = image.trim();
+      } else if (image is Map) {
+        candidate =
+            (image['url'] ?? image['image'] ?? image['src'])?.toString().trim();
+      }
+
+      if (candidate == null || candidate.isEmpty) continue;
+      final uri = Uri.tryParse(candidate);
+      if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  String? _cachedLocalImagePathAt(int positionIndex) {
+    if (positionIndex < 0 || positionIndex >= position.length) return null;
+    final path =
+        position[positionIndex]['_cachedLocalImagePath']?.toString().trim() ??
+            '';
+    if (path.isEmpty) return null;
+    final file = File(path);
+    return file.existsSync() ? path : null;
+  }
+
   String _defaultDamageRemark() {
     if (damageType.isNotEmpty) {
       final remark = damageType.first['remark']?.toString().trim() ?? '';
@@ -8858,6 +8919,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     List<int> activeIndexes,
   ) {
     final result = <Map<String, dynamic>>[];
+    final latestPositions = _isEditMode
+        ? TireInspectionOfflineEditService.instance
+            .loadByDocumentId(_editInspectionDocumentId)
+            ?.data['posisi']
+        : null;
 
     for (final index in activeIndexes) {
       if (index < 0 ||
@@ -8869,7 +8935,20 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       final item = position[index];
       final unit = state.units[index];
       final localImagePath = _localImagePathAt(index);
-      final existingImages = _copyDynamicList(item['_existingImages']);
+      var existingImages = _copyDynamicList(item['_existingImages']);
+      var existingPending = item['_existingImagePending'] == true;
+      if (localImagePath == null && latestPositions is List) {
+        final latestPosition =
+            _editPositionForUnit(latestPositions, unit, index);
+        final uploadedImages = _copyDynamicList(latestPosition?['images']);
+        if (uploadedImages.isNotEmpty &&
+            latestPosition?['imagePending'] != true) {
+          // Upload bisa selesai setelah form dibuka. Pertahankan URL hasilnya
+          // ketika user hanya mengedit isian, bukan mengganti foto.
+          existingImages = uploadedImages;
+          existingPending = false;
+        }
+      }
 
       final rawDamage = item['damageTire'];
       final damages = rawDamage is List
@@ -8915,8 +8994,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         'tireSize': item['tireSize'],
         'kunci_tire': unit.kunciTire,
         'hm': hmUnit.text,
-        'images': localImagePath == null ? existingImages : <dynamic>[],
-        'imagePending': localImagePath != null,
+        ...inspectionPhotoFields(
+          existingImages: existingImages,
+          existingPending: existingPending,
+          newLocalImagePath: localImagePath,
+        ),
         'tireAccessories': item['tireAccessories'] ?? [],
         'brand': unit.brand,
         'pattern': unit.pattern,
@@ -9081,7 +9163,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     String inspectionDocumentId,
     List<int> activeIndexes,
   ) {
-    for (final index in activeIndexes) {
+    for (final entry in activeIndexes.asMap().entries) {
+      final index = entry.value;
       final localImagePath = _localImagePathAt(index);
       if (localImagePath == null) {
         continue;
@@ -9091,7 +9174,15 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         UploadQueueService.to.addPending(
           docId: inspectionDocumentId,
           filePath: localImagePath,
-          posisiIndex: index,
+          posisiIndex: entry.key,
+          tirePosition:
+              position[index]['position']?.toString() ?? '${index + 1}',
+        );
+        TireInspectionOfflineEditService.instance.cacheLocalPhotoPath(
+          inspectionDocumentId: inspectionDocumentId,
+          tirePosition:
+              position[index]['position']?.toString() ?? '${index + 1}',
+          filePath: localImagePath,
         );
       } catch (e, stackTrace) {
         log(
@@ -9123,6 +9214,15 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       now,
       activeIndexes,
       savedOffline: true,
+    );
+
+    // Data baru yang dibuat tanpa jaringan belum tentu langsung dapat dibaca
+    // ulang dari cache Firestore. Simpan snapshot lokal lebih dulu supaya
+    // foto lokal yang masih berada pada antrean upload tetap dapat ditemukan
+    // saat pengguna membuka form edit kembali.
+    TireInspectionOfflineEditService.instance.cacheInspection(
+      documentId: inspectionDocumentId,
+      data: inspectionData,
     );
 
     final inspectionWrite =
@@ -9161,6 +9261,47 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
     }());
 
     _queuePendingImages(inspectionDocumentId, activeIndexes);
+  }
+
+  Future<void> _updateInspectionOffline(TiresLoadedState state) async {
+    if (_editInspectionDocumentId.trim().isEmpty) {
+      throw StateError('ID dokumen Tire Inspection lama tidak tersedia.');
+    }
+
+    final now = DateTime.now();
+    final recordDate = _editInspectionDate ?? now;
+    final firstUnit = state.units.first;
+    final unitNumber =
+        dataUnit['unitNumber']?.toString() ?? firstUnit.unitNumber ?? '';
+    final originalHari = _nonEmptySourceValue(_editInspectionData?['hari'])
+            .isNotEmpty
+        ? _nonEmptySourceValue(_editInspectionData?['hari'])
+        : '${recordDate.year}-${recordDate.month.toString().padLeft(2, '0')}-${recordDate.day.toString().padLeft(2, '0')}';
+    final activeIndexes = _activePositionIndexes();
+
+    final inspectionData = _buildInspectionData(
+      state,
+      now,
+      activeIndexes,
+      savedOffline: true,
+    );
+    final dailyPressureData = _buildDailyPressureData(
+      now,
+      activeIndexes,
+      savedOffline: true,
+    );
+
+    await TireInspectionOfflineEditService.instance.enqueueEdit(
+      inspectionDocumentId: _editInspectionDocumentId,
+      siteId: idSite,
+      unitNumber: unitNumber,
+      originalHari: originalHari,
+      inspectionData: inspectionData,
+      dailyPressureData: dailyPressureData,
+    );
+
+    _editInspectionData = Map<String, dynamic>.from(inspectionData);
+    _queuePendingImages(_editInspectionDocumentId, activeIndexes);
   }
 
   Future<void> _updateInspectionOnline(TiresLoadedState state) async {
@@ -9216,17 +9357,19 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       );
     }
 
+    final updatedInspectionData = _buildInspectionData(
+      state,
+      now,
+      activeIndexes,
+      savedOffline: false,
+    );
+
     final batch = firestore.batch();
     batch.set(
       firestore.collection('tire_inspection').doc(
             _editInspectionDocumentId,
           ),
-      _buildInspectionData(
-        state,
-        now,
-        activeIndexes,
-        savedOffline: false,
-      ),
+      updatedInspectionData,
       SetOptions(merge: true),
     );
     batch.set(
@@ -9235,6 +9378,11 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       SetOptions(merge: true),
     );
     await batch.commit();
+
+    TireInspectionOfflineEditService.instance.markSynced(
+      inspectionDocumentId: _editInspectionDocumentId,
+      inspectionData: updatedInspectionData,
+    );
 
     _queuePendingImages(_editInspectionDocumentId, activeIndexes);
   }
@@ -9264,15 +9412,24 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         ? inspectionQuery.docs.first.id
         : _buildInspectionDocumentId(now, unitNumber);
 
+    final inspectionData = _buildInspectionData(
+      state,
+      now,
+      activeIndexes,
+      savedOffline: false,
+    );
     await firestore.collection('tire_inspection').doc(inspectionDocumentId).set(
-          _buildInspectionData(
-            state,
-            now,
-            activeIndexes,
-            savedOffline: false,
-          ),
+          inspectionData,
           SetOptions(merge: true),
         );
+
+    // Jaga snapshot lokal tetap sama dengan data yang baru disimpan. Ini
+    // memastikan preview foto pending tidak hilang bila form dibuka sebelum
+    // worker upload berhasil mengirim gambar ke Storage.
+    TireInspectionOfflineEditService.instance.cacheInspection(
+      documentId: inspectionDocumentId,
+      data: inspectionData,
+    );
 
     _queuePendingImages(inspectionDocumentId, activeIndexes);
 
@@ -9610,20 +9767,26 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
 
       if (!hasNetwork) {
         if (_isEditMode) {
+          await _updateInspectionOffline(state);
           if (!mounted) return;
+
           setState(() {
             isLoadingSave = false;
+            isSaved = true;
           });
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 5),
               content: Text(
-                'Edit data memerlukan koneksi internet agar dokumen lama tidak terduplikasi.',
+                'Tidak ada jaringan. Perubahan edit disimpan di perangkat dan akan disinkronkan ke dokumen lama saat koneksi tersedia.',
                 style: getWhiteTextStyle(),
               ),
             ),
           );
+
+          Navigator.pop(context, true);
           return;
         }
 
@@ -11436,6 +11599,46 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
                                               const SizedBox(
                                                 height: 12,
                                               ),
+                                              if ((position[index]['image']
+                                                          as List)
+                                                      .isEmpty &&
+                                                  position[index][
+                                                          '_pendingLocalImagePath']
+                                                      is String)
+                                                PendingInspectionPhotoPreview(
+                                                  filePath: position[index][
+                                                          '_pendingLocalImagePath']
+                                                      as String,
+                                                ),
+                                              if ((position[index]['image']
+                                                          as List)
+                                                      .isEmpty &&
+                                                  position[index][
+                                                          '_pendingLocalImagePath']
+                                                      is! String &&
+                                                  _cachedLocalImagePathAt(
+                                                          index) !=
+                                                      null)
+                                                CachedInspectionPhotoPreview(
+                                                  filePath:
+                                                      _cachedLocalImagePathAt(
+                                                          index)!,
+                                                ),
+                                              if ((position[index]['image']
+                                                          as List)
+                                                      .isEmpty &&
+                                                  position[index][
+                                                          '_pendingLocalImagePath']
+                                                      is! String &&
+                                                  _cachedLocalImagePathAt(
+                                                          index) ==
+                                                      null &&
+                                                  _existingImageUrlAt(index) !=
+                                                      null)
+                                                ExistingInspectionPhotoPreview(
+                                                  imageUrl: _existingImageUrlAt(
+                                                      index)!,
+                                                ),
                                               ((position[index]['image']
                                                           as List<dynamic>)
                                                       .isNotEmpty)

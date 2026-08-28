@@ -31,6 +31,7 @@ import 'core/navigator/routes.dart';
 import 'core/services/local_database/outstanding_task/objectbox.dart';
 import 'core/services/sheets/attendance_sheets.dart';
 import 'core/services/tire_inspection_draft_service.dart';
+import 'core/services/tire_inspection_offline_edit_service.dart';
 import 'core/utils/functions/functions.dart';
 import 'objectbox.g.dart';
 import 'pages/opening/splash_screen.dart';
@@ -56,6 +57,7 @@ void main() async {
   // cameras = [cameras[0], cameras[1]];
   store = (await ObjectBox.create()).store;
   TireInspectionDraftService.instance.initialize(store);
+  TireInspectionOfflineEditService.instance.initialize(store);
   // initializeHERESDK();
   SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
