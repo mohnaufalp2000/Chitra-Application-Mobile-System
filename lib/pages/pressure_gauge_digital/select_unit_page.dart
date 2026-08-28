@@ -729,6 +729,7 @@ import 'package:camos/pages/home/home_state.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/select_pit_button.dart';
 import 'package:camos/pages/pressure_gauge_digital/widget/upload_queue_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -736,6 +737,8 @@ import 'package:lecle_downloads_path_provider/lecle_downloads_path_provider.dart
 import '../../core/blocs/unit/unit_bloc.dart';
 import '../../core/services/model/unit_tire.dart';
 import '../../core/services/shared_preferences/shared_preferences.dart';
+import '../../core/services/tire_inspection_edit_opener.dart';
+import '../../core/services/tire_inspection_offline_edit_service.dart';
 import '../../core/styles/color.dart';
 import '../../core/styles/text_manager.dart';
 import '../../core/widgets/appbar_widget.dart';
@@ -764,6 +767,15 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
   String searchQuery = '';
   bool isOnline = false;
   bool isSendingWhatsappRecap = false;
+  final TireInspectionEditOpener _inspectionEditOpener =
+      TireInspectionEditOpener();
+  String? _openingInspectionUnit;
+
+  /// Jumlah kartu unit yang dibuat dalam satu tahap. Seluruh data tetap
+  /// tersedia untuk perhitungan, pencarian, dan filter; pembatasan ini hanya
+  /// mencegah ratusan widget kartu dibuat sekaligus di memori.
+  static const int _unitRenderBatchSize = 40;
+  int _visibleUnitLimit = _unitRenderBatchSize;
 
   bool get canShareWhatsappRecap =>
       homeState.userAccessCompanyId.value.trim() == '1' &&
@@ -818,6 +830,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           setState(() {
             selectedTargetArea = 'All';
             selectedTargetAreaKeys.clear();
+            _visibleUnitLimit = _unitRenderBatchSize;
           });
         }
 
@@ -1002,7 +1015,12 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       }
 
       for (final document in querySnapshot.docs) {
-        final Map<String, dynamic> data = document.data();
+        final cachedSnapshot =
+            TireInspectionOfflineEditService.instance.cacheInspection(
+          documentId: document.id,
+          data: document.data(),
+        );
+        final Map<String, dynamic> data = cachedSnapshot.data;
 
         final String unitNumber = normalizeUnitNumber(
           data['unit']?.toString(),
@@ -1029,6 +1047,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
           resultRecapData[unitNumber] = <String, dynamic>{
             'location': data['pit']?.toString().trim() ?? '',
             'hasFinding': _hasInspectionFinding(data),
+            'pendingSync': cachedSnapshot.pendingSync,
           };
         }
       }
@@ -1046,6 +1065,51 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     } catch (e, st) {
       log('Error fetching checked units: $e');
       log('$st');
+
+      final DateTime now = DateTime.now();
+      final String today = DateFormat('yyyy-MM-dd').format(now);
+      final cachedInspections =
+          TireInspectionOfflineEditService.instance.loadForSiteAndDate(
+        siteId: currentSiteId,
+        inspectionDate: today,
+      );
+
+      final result = <String, DateTime>{};
+      final resultDocumentIds = <String, String>{};
+      final resultRecapData = <String, Map<String, dynamic>>{};
+
+      for (final cached in cachedInspections) {
+        final data = cached.data;
+        final unitNumber = normalizeUnitNumber(data['unit']?.toString());
+        final inspectionDate = parseInspectionDate(data['tanggal']) ??
+            parseInspectionDate(data['hari']);
+        if (unitNumber.isEmpty ||
+            inspectionDate == null ||
+            !isSameDate(inspectionDate, now)) {
+          continue;
+        }
+
+        final previousDate = result[unitNumber];
+        if (previousDate == null || inspectionDate.isAfter(previousDate)) {
+          result[unitNumber] = inspectionDate;
+          resultDocumentIds[unitNumber] = cached.documentId;
+          resultRecapData[unitNumber] = <String, dynamic>{
+            'location': data['pit']?.toString().trim() ?? '',
+            'hasFinding': _hasInspectionFinding(data),
+            'pendingSync': cached.pendingSync,
+          };
+        }
+      }
+
+      if (mounted &&
+          requestId == checkedUnitsRequestId &&
+          currentSiteId == homeState.currentSiteId.trim()) {
+        setState(() {
+          checkedUnitDates = result;
+          checkedUnitDocumentIds = resultDocumentIds;
+          checkedUnitRecapData = resultRecapData;
+        });
+      }
     } finally {
       if (mounted && requestId == checkedUnitsRequestId) {
         setState(() {
@@ -1157,6 +1221,11 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     return checkedUnitDates.containsKey(normalized);
   }
 
+  bool isUnitEditPendingSync(String? unitNumber) {
+    final normalized = normalizeUnitNumber(unitNumber);
+    return checkedUnitRecapData[normalized]?['pendingSync'] == true;
+  }
+
   bool _isSafeInspectionValue(dynamic value) {
     final normalized = value
         ?.toString()
@@ -1228,7 +1297,44 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     required UnitTire unit,
     required bool checked,
     required String unitArea,
+  }) {
+    return _inspectionEditOpener.openOnce(() async {
+      if (!mounted) return;
+      setState(() {
+        _openingInspectionUnit = normalizeUnitNumber(unit.unitNumber);
+      });
+      try {
+        await _openTireInspectionFormOnce(
+          unit: unit,
+          checked: checked,
+          unitArea: unitArea,
+        );
+      } catch (error, stackTrace) {
+        log('Open Tire Inspection failed: $error', stackTrace: stackTrace);
+        if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Data Tire Inspection belum dapat dibuka. Silakan coba kembali.',
+            ),
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _openingInspectionUnit = null;
+          });
+        }
+      }
+    });
+  }
+
+  Future<void> _openTireInspectionFormOnce({
+    required UnitTire unit,
+    required bool checked,
+    required String unitArea,
   }) async {
+    final requestedSiteId = homeState.currentSiteId.trim();
     if (!checked) {
       await Navigator.pushNamed(
         context,
@@ -1246,7 +1352,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
     String? inspectionDocumentId =
         getCheckedInspectionDocumentId(unit.unitNumber);
     if (inspectionDocumentId == null || inspectionDocumentId.isEmpty) {
-      await fetchCheckedUnits();
+      await fetchCheckedUnits().timeout(const Duration(seconds: 3));
       if (!mounted) return;
       inspectionDocumentId = getCheckedInspectionDocumentId(unit.unitNumber);
     }
@@ -1265,33 +1371,44 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       return;
     }
 
-    Map<String, dynamic>? inspectionDocument;
-    try {
-      final snapshot = await firestore
-          .collection('tire_inspection')
-          .doc(inspectionDocumentId)
-          .get();
-      if (snapshot.exists) {
-        inspectionDocument = <String, dynamic>{
-          ...?snapshot.data(),
-          'doc_id': snapshot.id,
-        };
-      }
-    } catch (e, stackTrace) {
-      log(
-        'Load checked Tire Inspection for edit failed: $e',
-        stackTrace: stackTrace,
-      );
-    }
+    final localSnapshot = TireInspectionOfflineEditService.instance
+        .loadByDocumentId(inspectionDocumentId);
+    final loadedSnapshot = await _inspectionEditOpener.loadInspection(
+      localSnapshot: localSnapshot,
+      hasNetworkInterface: () async =>
+          await Connectivity().checkConnectivity() != ConnectivityResult.none,
+      fetchRemote: () async {
+        final snapshot = await firestore
+            .collection('tire_inspection')
+            .doc(inspectionDocumentId)
+            .get(const GetOptions(source: Source.server));
+        return snapshot.data();
+      },
+      cacheRemote: (data) =>
+          TireInspectionOfflineEditService.instance.cacheInspection(
+        documentId: inspectionDocumentId!,
+        data: data,
+      ),
+      onError: (error, stackTrace) {
+        log(
+          'Load checked Tire Inspection for edit, using local fallback: $error',
+          stackTrace: stackTrace,
+        );
+      },
+    );
 
-    if (!mounted) return;
-    if (inspectionDocument == null) {
+    if (!mounted ||
+        requestedSiteId != homeState.currentSiteId.trim() ||
+        ModalRoute.of(context)?.isCurrent != true) {
+      return;
+    }
+    if (loadedSnapshot == null) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: Colors.red,
           content: Text(
-            'Data Tire Inspection tidak dapat dibuka. Periksa koneksi lalu coba kembali.',
+            'Data Tire Inspection belum tersimpan di perangkat. Buka data ini sekali saat online sebelum mengeditnya secara offline.',
             style: getWhiteTextStyle(),
           ),
         ),
@@ -1299,6 +1416,10 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
       return;
     }
 
+    final inspectionDocument = <String, dynamic>{
+      ...loadedSnapshot.data,
+      'doc_id': loadedSnapshot.documentId,
+    };
     await Navigator.pushNamed(
       context,
       TireInspectionFormPage.routeName,
@@ -2080,25 +2201,33 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 
   Widget buildCheckedBadge(
     DateTime? checkedDate,
+    bool pendingSync,
   ) {
+    final backgroundColor =
+        pendingSync ? const Color(0xFFFFF4E5) : const Color(0xFFE8F8EE);
+    final borderColor =
+        pendingSync ? const Color(0xFFFFCC80) : const Color(0xFFB8E5C6);
+    final foregroundColor =
+        pendingSync ? const Color(0xFFE67E00) : const Color(0xFF00A849);
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 8,
         vertical: 6,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFE8F8EE),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: const Color(0xFFB8E5C6),
+          color: borderColor,
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.check_circle,
-            color: Color(0xFF00B14F),
+          Icon(
+            pendingSync ? Icons.sync : Icons.check_circle,
+            color: foregroundColor,
             size: 18,
           ),
           const SizedBox(width: 6),
@@ -2106,10 +2235,10 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Checked',
+              Text(
+                pendingSync ? 'Pending Sync' : 'Checked',
                 style: TextStyle(
-                  color: Color(0xFF00A849),
+                  color: foregroundColor,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   height: 1,
@@ -2118,8 +2247,8 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
               const SizedBox(height: 3),
               Text(
                 formatCheckedDate(checkedDate),
-                style: const TextStyle(
-                  color: Color(0xFF559B6E),
+                style: TextStyle(
+                  color: foregroundColor,
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                   height: 1,
@@ -2405,6 +2534,12 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                         ]
                       : filteredUnits;
 
+                  final visibleUnits = displayedUnits
+                      .take(_visibleUnitLimit)
+                      .toList(growable: false);
+                  final int remainingUnitCount =
+                      displayedUnits.length - visibleUnits.length;
+
                   final String totalUnitLabel;
                   if (inspectionType == 'tire_inspection') {
                     if (isAllTargetAreas) {
@@ -2457,6 +2592,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                                 selectedTargetAreaKeys
                                   ..clear()
                                   ..addAll(newAreaKeys);
+                                _visibleUnitLimit = _unitRenderBatchSize;
                               });
                             },
                           )
@@ -2474,6 +2610,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
 
                               setState(() {
                                 selectedTargetArea = targetAreaOptions[index];
+                                _visibleUnitLimit = _unitRenderBatchSize;
                               });
                             },
                           ),
@@ -2488,6 +2625,7 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                         onChanged: (value) {
                           setState(() {
                             searchQuery = value;
+                            _visibleUnitLimit = _unitRenderBatchSize;
                           });
                         },
                         decoration: InputDecoration(
@@ -2743,186 +2881,239 @@ class _SelectUnitPageState extends State<SelectUnitPage> with RouteAware {
                               ),
                             )
                           : Column(
-                              children: displayedUnits.map(
-                                (unit) {
-                                  final bool checked =
-                                      inspectionType == 'tire_inspection' &&
-                                          isUnitChecked(
+                              children: [
+                                ...visibleUnits.map(
+                                  (unit) {
+                                    final bool checked =
+                                        inspectionType == 'tire_inspection' &&
+                                            isUnitChecked(
+                                              unit.unitNumber,
+                                            );
+
+                                    final DateTime? checkedDate = checked
+                                        ? getUnitCheckedDate(
                                             unit.unitNumber,
-                                          );
+                                          )
+                                        : null;
+                                    final String unitArea =
+                                        (unit.area ?? '').trim();
+                                    final bool shouldShowUnitArea =
+                                        inspectionType == 'tire_inspection' &&
+                                            unitArea.isNotEmpty &&
+                                            unitArea.toLowerCase() !=
+                                                'noschedule';
 
-                                  final DateTime? checkedDate = checked
-                                      ? getUnitCheckedDate(
-                                          unit.unitNumber,
-                                        )
-                                      : null;
-                                  final String unitArea =
-                                      (unit.area ?? '').trim();
-                                  final bool shouldShowUnitArea =
-                                      inspectionType == 'tire_inspection' &&
-                                          unitArea.isNotEmpty &&
-                                          unitArea.toLowerCase() !=
-                                              'noschedule';
+                                    return InkWell(
+                                      borderRadius: BorderRadius.circular(12),
+                                      onTap: _inspectionEditOpener.isOpening
+                                          ? null
+                                          : () {
+                                              switch (inspectionType) {
+                                                case 'daily_check':
+                                                  Navigator.pushNamed(
+                                                    context,
+                                                    DailyCheckFormPage
+                                                        .routeName,
+                                                    arguments: {
+                                                      'unitNumber':
+                                                          unit.unitNumber,
 
-                                  return InkWell(
-                                    borderRadius: BorderRadius.circular(12),
-                                    onTap: () {
-                                      switch (inspectionType) {
-                                        case 'daily_check':
-                                          Navigator.pushNamed(
-                                            context,
-                                            DailyCheckFormPage.routeName,
-                                            arguments: {
-                                              'unitNumber': unit.unitNumber,
+                                                      // Area unit ikut dikirim sebagai PIT.
+                                                      if (unitArea.isNotEmpty)
+                                                        'pit': unitArea,
+                                                    },
+                                                  );
+                                                  break;
 
-                                              // Area unit ikut dikirim sebagai PIT.
-                                              if (unitArea.isNotEmpty)
-                                                'pit': unitArea,
+                                                case 'tire_inspection':
+                                                  unawaited(
+                                                    _openTireInspectionForm(
+                                                      unit: unit,
+                                                      checked: checked,
+                                                      unitArea: unitArea,
+                                                    ),
+                                                  );
+                                                  break;
+                                              }
                                             },
-                                          );
-                                          break;
+                                      // onTap: () {
+                                      //   switch (inspectionType) {
+                                      //     case 'daily_check':
+                                      //       Navigator.pushNamed(
+                                      //         context,
+                                      //         DailyCheckFormPage.routeName,
+                                      //         arguments: {
+                                      //           'unitNumber': unit.unitNumber,
+                                      //         },
+                                      //       );
+                                      //       break;
 
-                                        case 'tire_inspection':
-                                          unawaited(
-                                            _openTireInspectionForm(
-                                              unit: unit,
-                                              checked: checked,
-                                              unitArea: unitArea,
-                                            ),
-                                          );
-                                          break;
-                                      }
-                                    },
-                                    // onTap: () {
-                                    //   switch (inspectionType) {
-                                    //     case 'daily_check':
-                                    //       Navigator.pushNamed(
-                                    //         context,
-                                    //         DailyCheckFormPage.routeName,
-                                    //         arguments: {
-                                    //           'unitNumber': unit.unitNumber,
-                                    //         },
-                                    //       );
-                                    //       break;
-
-                                    //     case 'tire_inspection':
-                                    //       Navigator.pushNamed(
-                                    //         context,
-                                    //         TireInspectionFormPage.routeName,
-                                    //         arguments: {
-                                    //           'unitNumber': unit.unitNumber,
-                                    //           'hm': unit.hm,
-                                    //         },
-                                    //       );
-                                    //       break;
-                                    //   }
-                                    // },
-                                    child: Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        vertical: 8,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(
-                                          12,
+                                      //     case 'tire_inspection':
+                                      //       Navigator.pushNamed(
+                                      //         context,
+                                      //         TireInspectionFormPage.routeName,
+                                      //         arguments: {
+                                      //           'unitNumber': unit.unitNumber,
+                                      //           'hm': unit.hm,
+                                      //         },
+                                      //       );
+                                      //       break;
+                                      //   }
+                                      // },
+                                      child: Container(
+                                        margin: const EdgeInsets.symmetric(
+                                          vertical: 8,
                                         ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(
-                                              0.1,
-                                            ),
-                                            spreadRadius: 2,
-                                            blurRadius: 5,
-                                            offset: const Offset(
-                                              0,
-                                              2,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      child: ListTile(
-                                        leading: const Icon(
-                                          Icons.front_loader,
-                                          color: Colors.orange,
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 6,
                                         ),
-                                        title: Padding(
-                                          padding: const EdgeInsets.only(
-                                            bottom: 4,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
                                           ),
-                                          child: Text(
-                                            '${unit.unitNumber}',
-                                            style: getBlackTextStyle(
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                          ),
-                                        ),
-                                        subtitle: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              '${unit.model}',
-                                              style: getGreyTextStyle(
-                                                grey6A707C,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(
+                                                0.1,
+                                              ),
+                                              spreadRadius: 2,
+                                              blurRadius: 5,
+                                              offset: const Offset(
+                                                0,
+                                                2,
                                               ),
                                             ),
-                                            if (shouldShowUnitArea) ...[
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  const Icon(
-                                                    Icons.location_on_outlined,
-                                                    size: 14,
-                                                    color: Colors.orange,
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Expanded(
-                                                    child: Text(
-                                                      'Area: $unitArea',
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: getGreyTextStyle(
-                                                        grey6A707C,
-                                                        fontSize: 12,
+                                          ],
+                                        ),
+                                        child: ListTile(
+                                          leading: const Icon(
+                                            Icons.front_loader,
+                                            color: Colors.orange,
+                                          ),
+                                          title: Padding(
+                                            padding: const EdgeInsets.only(
+                                              bottom: 4,
+                                            ),
+                                            child: Text(
+                                              '${unit.unitNumber}',
+                                              style: getBlackTextStyle(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                          subtitle: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                '${unit.model}',
+                                                style: getGreyTextStyle(
+                                                  grey6A707C,
+                                                ),
+                                              ),
+                                              if (shouldShowUnitArea) ...[
+                                                const SizedBox(height: 4),
+                                                Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons
+                                                          .location_on_outlined,
+                                                      size: 14,
+                                                      color: Colors.orange,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Expanded(
+                                                      child: Text(
+                                                        'Area: $unitArea',
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: getGreyTextStyle(
+                                                          grey6A707C,
+                                                          fontSize: 12,
+                                                        ),
                                                       ),
                                                     ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (checked) ...[
+                                                buildCheckedBadge(
+                                                  checkedDate,
+                                                  isUnitEditPendingSync(
+                                                    unit.unitNumber,
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+                                                const SizedBox(
+                                                  width: 8,
+                                                ),
+                                              ],
+                                              if (_openingInspectionUnit ==
+                                                  normalizeUnitNumber(
+                                                    unit.unitNumber,
+                                                  ))
+                                                const SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                )
+                                              else
+                                                Icon(
+                                                  checked
+                                                      ? Icons.edit_outlined
+                                                      : Icons.arrow_forward_ios,
+                                                  size: 18,
+                                                  color: checked
+                                                      ? Colors.blue
+                                                      : null,
+                                                ),
                                             ],
-                                          ],
+                                          ),
                                         ),
-                                        trailing: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (checked) ...[
-                                              buildCheckedBadge(
-                                                checkedDate,
-                                              ),
-                                              const SizedBox(
-                                                width: 8,
-                                              ),
-                                            ],
-                                            Icon(
-                                              checked
-                                                  ? Icons.edit_outlined
-                                                  : Icons.arrow_forward_ios,
-                                              size: 18,
-                                              color:
-                                                  checked ? Colors.blue : null,
-                                            ),
-                                          ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                                if (remainingUnitCount > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(
+                                      top: 8,
+                                      bottom: 16,
+                                    ),
+                                    child: SizedBox(
+                                      width: double.infinity,
+                                      child: OutlinedButton.icon(
+                                        onPressed: () {
+                                          setState(() {
+                                            final int nextLimit =
+                                                _visibleUnitLimit +
+                                                    _unitRenderBatchSize;
+                                            _visibleUnitLimit = nextLimit >
+                                                    displayedUnits.length
+                                                ? displayedUnits.length
+                                                : nextLimit;
+                                          });
+                                        },
+                                        icon: const Icon(Icons.expand_more),
+                                        label: Text(
+                                          'Muat Unit Berikutnya '
+                                          '(${visibleUnits.length}/'
+                                          '${displayedUnits.length})',
                                         ),
                                       ),
                                     ),
-                                  );
-                                },
-                              ).toList(),
+                                  ),
+                              ],
                             ),
                     ],
                   );

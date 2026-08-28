@@ -314,10 +314,84 @@
         }
       ],
       "relations": []
+    },
+    {
+      "id": "7:337180601686900237",
+      "lastPropertyId": "11:3983164961122509684",
+      "name": "TireInspectionOfflineEditEntity",
+      "properties": [
+        {
+          "id": "1:6005862507352071936",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1793035355903747144",
+          "name": "inspectionDocumentId",
+          "type": 9,
+          "flags": 2080,
+          "indexId": "8:7459522532285237176"
+        },
+        {
+          "id": "3:8891260531602556845",
+          "name": "siteId",
+          "type": 9,
+          "flags": 2048,
+          "indexId": "9:9146718258176853893"
+        },
+        {
+          "id": "4:8212804424367248590",
+          "name": "unitNumber",
+          "type": 9,
+          "flags": 2048,
+          "indexId": "10:8887781759751462120"
+        },
+        {
+          "id": "5:7415715201803282",
+          "name": "inspectionDate",
+          "type": 9,
+          "flags": 2048,
+          "indexId": "11:4525891365673924882"
+        },
+        {
+          "id": "6:6399292144999723831",
+          "name": "originalHari",
+          "type": 9
+        },
+        {
+          "id": "7:2246142409640211563",
+          "name": "cachedInspectionJson",
+          "type": 9
+        },
+        {
+          "id": "8:305421651954315454",
+          "name": "pendingInspectionJson",
+          "type": 9
+        },
+        {
+          "id": "9:4250010527208265906",
+          "name": "pendingDailyPressureJson",
+          "type": 9
+        },
+        {
+          "id": "10:1402532595169219269",
+          "name": "updatedAtMillis",
+          "type": 6,
+          "flags": 8,
+          "indexId": "12:2097185445966602181"
+        },
+        {
+          "id": "11:3983164961122509684",
+          "name": "pendingSync",
+          "type": 1
+        }
+      ],
+      "relations": []
     }
   ],
-  "lastEntityId": "6:3707612730663693188",
-  "lastIndexId": "7:8791780560457950025",
+  "lastEntityId": "7:337180601686900237",
+  "lastIndexId": "12:2097185445966602181",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",
   "modelVersion": 5,
