@@ -9662,91 +9662,102 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       return;
     }
 
-    final errorsRtd = <String>[];
-    final errorsRating = <String>[];
+    // Validasi berdasarkan RTD dan rating dinonaktifkan sementara khusus selain idCompany 1
+    if (homeState.userAccessCompanyId.value == '1') {
+      final errorsRtd = <String>[];
+      final errorsRating = <String>[];
 
-    const ratingScore = {
-      'A': 4,
-      'B': 3,
-      'C': 2,
-      'X': 1,
-    };
+      const ratingScore = {
+        'A': 4,
+        'B': 3,
+        'C': 2,
+        'X': 1,
+      };
 
-    final validationLength = state.units.length < position.length
-        ? state.units.length
-        : position.length;
+      final validationLength = state.units.length < position.length
+          ? state.units.length
+          : position.length;
 
-    for (int i = 0; i < validationLength; i++) {
-      final unit = state.units[i];
+      for (int i = 0; i < validationLength; i++) {
+        final unit = state.units[i];
 
-      final actualRtd = double.tryParse(unit.rtd?.toString() ?? '0') ?? 0;
-      final actualRtd2 = double.tryParse(unit.rtd?.toString() ?? '0') ?? 0;
+        final actualRtd = double.tryParse(unit.rtd?.toString() ?? '0') ?? 0;
+        final actualRtd2 = double.tryParse(unit.rtd?.toString() ?? '0') ?? 0;
 
-      final inputRtd = i < rtd1Controllers.length
-          ? double.tryParse(rtd1Controllers[i].text) ?? 0
-          : double.tryParse(position[i]['rtd1']?.toString() ?? '0') ?? 0;
-      final inputRtd2 = i < rtd2Controllers.length
-          ? double.tryParse(rtd2Controllers[i].text) ?? 0
-          : double.tryParse(position[i]['rtd2']?.toString() ?? '0') ?? 0;
+        final inputRtd = i < rtd1Controllers.length
+            ? double.tryParse(rtd1Controllers[i].text) ?? 0
+            : double.tryParse(position[i]['rtd1']?.toString() ?? '0') ?? 0;
+        final inputRtd2 = i < rtd2Controllers.length
+            ? double.tryParse(rtd2Controllers[i].text) ?? 0
+            : double.tryParse(position[i]['rtd2']?.toString() ?? '0') ?? 0;
 
-      if (!_hideRtdForPeriod && inputRtd > actualRtd) {
-        errorsRtd.add(
-          'Posisi ${unit.posisi}: RTD input ($inputRtd) melebihi RTD aktual ($actualRtd).',
-        );
-      }
-
-      if (!_hideRtdForPeriod && inputRtd2 > actualRtd2) {
-        errorsRtd.add(
-          'Posisi ${unit.posisi}: RTD 2 input ($inputRtd2) '
-          'melebihi RTD aktual ($actualRtd2).',
-        );
-      }
-
-      final actualRating =
-          position[i]['prevRating']?.toString().toUpperCase().trim() ?? '';
-      final inputRating =
-          position[i]['rating']?.toString().toUpperCase().trim() ?? '';
-
-      if (actualRating.isNotEmpty) {
-        final actualScore = ratingScore[actualRating] ?? 0;
-        final inputScore = ratingScore[inputRating] ?? 0;
-
-        if (inputScore > actualScore) {
-          errorsRating.add(
-            'Posisi ${unit.posisi}: Rating tidak boleh meningkat dari $actualRating menjadi $inputRating.',
+        if (!_hideRtdForPeriod && inputRtd > actualRtd) {
+          errorsRtd.add(
+            'Posisi ${unit.posisi}: RTD input ($inputRtd) melebihi RTD aktual ($actualRtd).',
           );
         }
+
+        if (!_hideRtdForPeriod && inputRtd2 > actualRtd2) {
+          errorsRtd.add(
+            'Posisi ${unit.posisi}: RTD 2 input ($inputRtd2) '
+            'melebihi RTD aktual ($actualRtd2).',
+          );
+        }
+
+        final actualRating =
+            position[i]['prevRating']?.toString().toUpperCase().trim() ?? '';
+        final inputRating =
+            position[i]['rating']?.toString().toUpperCase().trim() ?? '';
+
+        if (actualRating.isNotEmpty) {
+          final actualScore = ratingScore[actualRating] ?? 0;
+          final inputScore = ratingScore[inputRating] ?? 0;
+
+          if (inputScore > actualScore) {
+            errorsRating.add(
+              'Posisi ${unit.posisi}: Rating tidak boleh meningkat dari $actualRating menjadi $inputRating.',
+            );
+          }
+        }
       }
-    }
 
-    if (errorsRtd.isNotEmpty) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 6),
-          content: Text(
-            errorsRtd.join('\n'),
-            style: getWhiteTextStyle(),
+      if (errorsRtd.isNotEmpty) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 6),
+            content: Text(
+              errorsRtd.join('\n'),
+              style: getWhiteTextStyle(),
+            ),
           ),
-        ),
-      );
-      return;
-    }
+        );
+        return;
+      }
 
-    if (errorsRating.isNotEmpty) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 6),
-          content: Text(
-            errorsRating.join('\n'),
-            style: getWhiteTextStyle(),
+      if (errorsRating.isNotEmpty) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 6),
+            content: Text(
+              errorsRating.join('\n'),
+              style: getWhiteTextStyle(),
+            ),
           ),
-        ),
-      );
-      return;
+        );
+        return;
+      }
+    } else {
+      // NOTE: Validasi RTD dan Rating untuk selain idCompany 1 dinonaktifkan sementara.
+      //
+      // if (!_hideRtdForPeriod && inputRtd > actualRtd) { ... }
+      // if (!_hideRtdForPeriod && inputRtd2 > actualRtd2) { ... }
+      // if (inputScore > actualScore) { ... }
+      // if (errorsRtd.isNotEmpty) { ... }
+      // if (errorsRating.isNotEmpty) { ... }
     }
 
     if (!mounted) return;
