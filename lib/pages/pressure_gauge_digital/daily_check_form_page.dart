@@ -28186,6 +28186,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../core/services/daily_check_shift_date_service.dart';
 
 class DailyCheckFormPage extends StatefulWidget {
   static const routeName = '/daily-check-pressure-page';
@@ -28217,6 +28218,39 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
   final HomeState homeState = Get.find<HomeState>();
   bool get _usesAutomaticDamageRating =>
       homeState.userAccessCompanyId.value == '1';
+  bool get _isCustomDateEnabled =>
+      DailyCheckShiftDateService.instance.isEligible(
+        homeState.userAccessCompanyId.value,
+        idSite.isNotEmpty ? idSite : homeState.currentSiteId,
+      );
+  DateTime? _selectedCheckDate;
+  DateTime get _effectiveCheckDate =>
+      _selectedCheckDate ??
+      DailyCheckShiftDateService.instance.getActiveDate(
+        companyId: homeState.userAccessCompanyId.value,
+        siteId: idSite.isNotEmpty ? idSite : homeState.currentSiteId,
+      );
+  String? _selectedShift;
+  String get _effectiveShift =>
+      _selectedShift ??
+      DailyCheckShiftDateService.instance.getActiveShift(
+        companyId: homeState.userAccessCompanyId.value,
+        siteId: idSite.isNotEmpty ? idSite : homeState.currentSiteId,
+      );
+  DateTime get _recordDateTime {
+    final now = DateTime.now();
+    final date = _effectiveCheckDate;
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      now.hour,
+      now.minute,
+      now.second,
+      now.millisecond,
+      now.microsecond,
+    );
+  }
   bool _isInit = true;
   bool _listenerAdded = false;
 
@@ -28984,6 +29018,189 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     );
   }
 
+  void _updatePositionIdDaily(DateTime newDate) {
+    final formatted =
+        '${newDate.month.toString().padLeft(2, '0')}'
+        '${newDate.day.toString().padLeft(2, '0')}'
+        '${(newDate.year % 100).toString().padLeft(2, '0')}';
+    for (int i = 0; i < position.length; i++) {
+      final unitId = position[i].idUnit ?? '';
+      position[i] = position[i].copyWith(
+        idDaily: '$unitId${i + 1}$formatted$idSite',
+      );
+    }
+  }
+
+  Widget _buildShiftDateField() {
+    if (!_isCustomDateEnabled) {
+      return const SizedBox.shrink();
+    }
+
+    final displayDate = _effectiveCheckDate;
+    final formatted = DateFormat('dd-MM-yyyy').format(displayDate);
+    final shiftName = _effectiveShift;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.calendar_month,
+              color: Colors.orange,
+              size: 38,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'TANGGAL CHECK / INSPEKSI',
+              style: getBlackTextStyle(fontWeight: w700, fontSize: 18),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: BoxDecoration(
+            color: greyF7F8F9,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: greyDADADA),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () async {
+                    final now = DateTime.now();
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: displayDate.isAfter(now) ? now : displayDate,
+                      firstDate: DateTime(2020),
+                      lastDate: now,
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedCheckDate = picked;
+                        DailyCheckShiftDateService.instance.setCustomDate(
+                          picked,
+                          companyId: homeState.userAccessCompanyId.value,
+                          siteId: idSite.isNotEmpty
+                              ? idSite
+                              : homeState.currentSiteId,
+                        );
+                        _updatePositionIdDaily(picked);
+                      });
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Text(
+                      formatted,
+                      style: getBlackTextStyle(fontSize: 16, fontWeight: w600),
+                    ),
+                  ),
+                ),
+              ),
+              PopupMenuButton<String>(
+                initialValue: shiftName,
+                tooltip: 'Pilih Shift',
+                onSelected: (String value) {
+                  setState(() {
+                    _selectedShift = value;
+                    DailyCheckShiftDateService.instance.setCustomShift(
+                      value,
+                      companyId: homeState.userAccessCompanyId.value,
+                      siteId: idSite.isNotEmpty
+                          ? idSite
+                          : homeState.currentSiteId,
+                    );
+                  });
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                itemBuilder: (BuildContext context) => [
+                  const PopupMenuItem<String>(
+                    value: 'Shift 1',
+                    child: Text('Shift 1 (06:00 - 18:00)'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'Shift 2',
+                    child: Text('Shift 2 (18:00 - 06:00)'),
+                  ),
+                ],
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: Colors.blue.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        shiftName,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_drop_down,
+                        size: 18,
+                        color: Colors.blue,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              InkWell(
+                onTap: () async {
+                  final now = DateTime.now();
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: displayDate.isAfter(now) ? now : displayDate,
+                    firstDate: DateTime(2020),
+                    lastDate: now,
+                  );
+                  if (picked != null) {
+                    setState(() {
+                      _selectedCheckDate = picked;
+                      DailyCheckShiftDateService.instance.setCustomDate(
+                        picked,
+                        companyId: homeState.userAccessCompanyId.value,
+                        siteId: idSite.isNotEmpty
+                            ? idSite
+                            : homeState.currentSiteId,
+                      );
+                      _updatePositionIdDaily(picked);
+                    });
+                  }
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4.0),
+                  child: Icon(
+                    Icons.edit_calendar,
+                    color: Colors.grey,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
   Future<bool> _persistUsernameBeforeLeaving() async {
     _usernamePersistTimer?.cancel();
     if (_usernameWasEdited) {
@@ -29201,6 +29418,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     if (arguments is Map<String, dynamic>) {
       dataUnit = arguments;
 
+      idSite = homeState.currentSiteId;
+
       // Mengisi kembali KM/HM dari data yang dipilih
       hmCtrl.text = (dataUnit['hm'] ?? '').toString();
       hmNoteCtrl.text = (dataUnit['hmNote'] ?? '').toString();
@@ -29365,9 +29584,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     }
   }
 
-  String _createOfflineDocumentId(DateTime now) {
+  String _createOfflineDocumentId(DateTime recordDate) {
     final unitNumber = (dataUnit['unitNumber'] ?? 'unknown_unit').toString();
-    final date = DateFormat('yyyyMMdd').format(now);
+    final date = DateFormat('yyyyMMdd').format(recordDate);
     final rawDocumentId = '${unitNumber}_${idSite}_$date';
 
     // Firestore tidak mengizinkan slash pada document ID.
@@ -29378,11 +29597,12 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
     DateTime now,
     DateTime? selectedDateTimeSPM,
   ) {
+    final recordDate = _recordDateTime;
     return {
       'idSite': idSite,
       'user': _effectiveUsername,
-      'tanggal': now.toIso8601String(),
-      'hari': DateFormat('yyyy-MM-dd').format(now),
+      'tanggal': recordDate.toIso8601String(),
+      'hari': DateFormat('yyyy-MM-dd').format(recordDate),
       'jam': DateFormat('HH:mm:ss').format(now),
       'unit': dataUnit['unitNumber'],
       'hm': hmCtrl.text,
@@ -29440,9 +29660,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
   void _saveToFirestoreOffline(DateTime? selectedDateTimeSPM) {
     final now = DateTime.now();
+    final recordDate = _recordDateTime;
     final collectionName =
         dataUnit['type'] == 'spm' ? 'adjusment_spm' : 'daily_pressure';
-    final documentId = _createOfflineDocumentId(now);
+    final documentId = _createOfflineDocumentId(recordDate);
     final data = _buildOfflineFirestoreData(now, selectedDateTimeSPM);
 
     // Jangan await write ketika offline. Firestore langsung memasukkannya
@@ -29616,6 +29837,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                       _buildUsernameField(),
                       const SizedBox(height: 24),
+                      _buildShiftDateField(),
 
                       (pit.isNotEmpty)
                           ? Row(
@@ -30863,7 +31085,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       if (dataUnit['position'] != null) {
                         position.addAll(dataUnit['position']);
                       } else {
-                        final today = DateTime.now();
+                        final today = _effectiveCheckDate;
                         final formattedToday =
                             '${today.month.toString().padLeft(2, '0')}' // MM
                             '${today.day.toString().padLeft(2, '0')}' // DD
@@ -31021,15 +31243,19 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                         Icon(
                                           Icons.front_loader,
                                           color: Colors.orange,
-                                          size: 38,
+                                          size: (idSite == '1') ? 26 : 38,
                                         ),
-                                        const SizedBox(
-                                          width: 12,
+                                        SizedBox(
+                                          width: (idSite == '1') ? 6 : 12,
                                         ),
-                                        Text(
-                                          'UNIT',
-                                          style: getBlackTextStyle(
-                                              fontWeight: w700, fontSize: 18),
+                                        Flexible(
+                                          child: Text(
+                                            'UNIT',
+                                            overflow: TextOverflow.ellipsis,
+                                            style: getBlackTextStyle(
+                                                fontWeight: w700,
+                                                fontSize: (idSite == '1') ? 14 : 18),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -31047,8 +31273,8 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(
-                                width: 12,
+                              SizedBox(
+                                width: (idSite == '1') ? 8 : 12,
                               ),
                               Expanded(
                                 child: Column(
@@ -31064,18 +31290,22 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                                   idSite == '1')
                                               ? Colors.black
                                               : Colors.red,
-                                          size: 38,
+                                          size: (idSite == '1') ? 26 : 38,
                                         ),
-                                        const SizedBox(
-                                          width: 12,
+                                        SizedBox(
+                                          width: (idSite == '1') ? 6 : 12,
                                         ),
-                                        Text(
-                                          (idSite == bmbhauling.idSite ||
-                                                  idSite == '1')
-                                              ? 'KM UNIT'
-                                              : 'HM UNIT',
-                                          style: getBlackTextStyle(
-                                              fontWeight: w700, fontSize: 18),
+                                        Flexible(
+                                          child: Text(
+                                            (idSite == bmbhauling.idSite ||
+                                                    idSite == '1')
+                                                ? 'KM UNIT'
+                                                : 'HM UNIT',
+                                            overflow: TextOverflow.ellipsis,
+                                            style: getBlackTextStyle(
+                                                fontWeight: w700,
+                                                fontSize: (idSite == '1') ? 14 : 18),
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -31095,10 +31325,10 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(
-                                width: 12,
-                              ),
-                              if (idSite == '1')
+                              if (idSite == '1') ...[
+                                const SizedBox(
+                                  width: 8,
+                                ),
                                 Expanded(
                                   child: Column(
                                     children: [
@@ -31106,20 +31336,20 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                         children: [
                                           Icon(
                                             Icons.note,
-                                            color:
-                                                (idSite == bmbhauling.idSite ||
-                                                        idSite == '1')
-                                                    ? Colors.black
-                                                    : Colors.red,
-                                            size: 38,
+                                            color: Colors.black,
+                                            size: 26,
                                           ),
                                           const SizedBox(
-                                            width: 12,
+                                            width: 6,
                                           ),
-                                          Text(
-                                            'Note',
-                                            style: getBlackTextStyle(
-                                                fontWeight: w700, fontSize: 18),
+                                          Flexible(
+                                            child: Text(
+                                              'Note',
+                                              overflow: TextOverflow.ellipsis,
+                                              style: getBlackTextStyle(
+                                                  fontWeight: w700,
+                                                  fontSize: 14),
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -31136,6 +31366,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                     ],
                                   ),
                                 ),
+                              ],
                             ],
                           ),
                           const SizedBox(
@@ -31144,6 +31375,7 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
 
                           _buildUsernameField(),
                           const SizedBox(height: 24),
+                          _buildShiftDateField(),
 
                           (pit.isNotEmpty)
                               ? Row(
@@ -33960,11 +34192,25 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
               // Jalur online tetap menggunakan timeout 15 detik.
               try {
                 await (() async {
-                  final today = DateTime.now();
+                  final now = DateTime.now();
+                  final checkDate = _effectiveCheckDate;
+                  final recordDate = DateTime(
+                    checkDate.year,
+                    checkDate.month,
+                    checkDate.day,
+                    now.hour,
+                    now.minute,
+                    now.second,
+                    now.millisecond,
+                    now.microsecond,
+                  );
                   final startOfDay =
-                      DateTime(today.year, today.month, today.day);
+                      DateTime(checkDate.year, checkDate.month, checkDate.day);
                   final endOfDay =
-                      DateTime(today.year, today.month, today.day, 23, 59, 59);
+                      DateTime(checkDate.year, checkDate.month, checkDate.day, 23, 59, 59);
+                  final hariString = DateFormat('yyyy-MM-dd').format(checkDate);
+                  final jamString = DateFormat('HH:mm:ss').format(now);
+                  final tanggalString = recordDate.toIso8601String();
 
                   final listImage = await uploadImageFirebase(idSite);
                   await uploadAllTireAccessories();
@@ -33992,9 +34238,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                         .update({
                       'idSite': idSite,
                       'user': _effectiveUsername,
-                      'tanggal': DateTime.now().toIso8601String(),
-                      'hari': DateTime.now().toIso8601String().substring(0, 10),
-                      'jam': DateTime.now().toIso8601String().substring(11, 19),
+                      'tanggal': tanggalString,
+                      'hari': hariString,
+                      'jam': jamString,
                       'unit': dataUnit['unitNumber'],
                       'hm': hmCtrl.text,
                       'hmNote': hmNoteCtrl.text,
@@ -34048,9 +34294,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                           .where('unit', isEqualTo: dataUnit['unitNumber'])
                           .where('tanggal',
                               isGreaterThanOrEqualTo: DateTime(
-                                      today.year,
-                                      today.month,
-                                      today.subtract(Duration(days: 1)).day)
+                                      now.year,
+                                      now.month,
+                                      now.subtract(const Duration(days: 1)).day)
                                   .toIso8601String())
                           .where('tanggal',
                               isLessThanOrEqualTo: endOfDay.toIso8601String())
@@ -34097,9 +34343,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                                       : '',
                               'luka': (selectedType == 0)
                                   ? ''
-                                  : (p.luka.isEmpty)
-                                      ? ['Good Condition']
-                                      : p.luka,
+                              : (p.luka.isEmpty)
+                                  ? ['Good Condition']
+                                  : p.luka,
                               'image': (listImage[pIndex] != '')
                                   ? listImage[pIndex]
                                   : '',
@@ -34134,9 +34380,9 @@ class _DailyCheckFormPageState extends State<DailyCheckFormPage> {
                       // 'nama': (user),
                       'idSite': idSite,
                       'user': _effectiveUsername,
-                      'tanggal': DateTime.now().toIso8601String(),
-                      'hari': DateTime.now().toIso8601String().substring(0, 10),
-                      'jam': DateTime.now().toIso8601String().substring(11, 19),
+                      'tanggal': tanggalString,
+                      'hari': hariString,
+                      'jam': jamString,
                       'unit': dataUnit['unitNumber'],
                       'hm': hmCtrl.text,
                       'hmNote': hmNoteCtrl.text,
