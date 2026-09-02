@@ -2288,6 +2288,10 @@ class _DailyPressureListPageState extends State<DailyPressureListPage> {
                                                                                 p.idDaily,
                                                                             kondisi:
                                                                                 p.kondisi,
+                                                                            rtd1:
+                                                                                p.rtd1,
+                                                                            rtd2:
+                                                                                p.rtd2,
                                                                           ),
                                                                         );
                                                                       }
