@@ -551,7 +551,28 @@ class NewTireInspectionState extends GetxController {
       /// 4. DOWNLOAD GAMBAR
       log('Downloading image...');
 
-      final http.Response response = await http.get(uri);
+      http.Response? response;
+      for (int attempt = 1; attempt <= 2; attempt++) {
+        try {
+          response = await http.get(
+            uri,
+            headers: {'Connection': 'close'},
+          ).timeout(const Duration(seconds: 20));
+
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            break;
+          }
+        } catch (downloadErr) {
+          log('Download image attempt $attempt failed: $downloadErr');
+          if (attempt == 2) rethrow;
+          await Future.delayed(const Duration(seconds: 1));
+        }
+      }
+
+      if (response == null) {
+        log('Gagal download image setelah retry.');
+        return '0';
+      }
 
       log('Download status : ${response.statusCode}');
       log('Image bytes     : ${response.bodyBytes.length}');

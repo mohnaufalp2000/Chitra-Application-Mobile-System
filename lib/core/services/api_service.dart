@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:camos/core/services/model/auto_tapping_model.dart';
 import 'package:camos/core/services/model/send_tire_inspection.dart';
@@ -193,54 +195,109 @@ class ApiService {
     }
   }
 
-  /// 🔹 POST: Send Data Tire Inspection
+  /// 🔹 POST: Send Data Tire Inspection (dengan Auto-Retry & Connection: close)
   static Future<void> sendTireInspection(
-    SendTireInspectionRequest request,
-  ) async {
-    try {
-      final url = await selectedUrl('post_tire_inspection') ?? '';
+    SendTireInspectionRequest request, {
+    int maxRetries = 3,
+  }) async {
+    final url = await selectedUrl('post_tire_inspection') ?? '';
 
-      if (url.isEmpty) {
-        throw Exception('URL post_tire_inspection tidak ditemukan');
-      }
+    if (url.isEmpty) {
+      throw Exception('URL post_tire_inspection tidak ditemukan');
+    }
 
-      final body = request.toJson();
+    final body = request.toJson();
+    final encodedBody = jsonEncode(body);
 
-      log('=== SEND TIRE INSPECTION ===');
-      log('URL : $url');
-      log('Payload : ${jsonEncode(body)}');
+    log('=== SEND TIRE INSPECTION ===');
+    log('URL : $url');
+    log('Payload : $encodedBody');
 
-      final response = await http.post(
-        Uri.parse(url),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(body),
-      );
+    int attempt = 0;
+    while (attempt < maxRetries) {
+      attempt++;
+      try {
+        log('Attempt $attempt of $maxRetries sending tire inspection...');
 
-      log('=== RESPONSE TIRE INSPECTION ===');
-      log('URL : ${response.request?.url}');
-      log('Status Code : ${response.statusCode}');
-      log('Headers : ${response.headers}');
-      log('Body : ${response.body}');
+        final response = await http
+            .post(
+              Uri.parse(url),
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Connection': 'close',
+              },
+              body: encodedBody,
+            )
+            .timeout(
+              const Duration(seconds: 45),
+            );
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception(
-          'Gagal send tire inspection. '
-          'Status: ${response.statusCode}, '
-          'Body: ${response.body}',
+        log('=== RESPONSE TIRE INSPECTION (Attempt $attempt) ===');
+        log('URL : ${response.request?.url}');
+        log('Status Code : ${response.statusCode}');
+        log('Headers : ${response.headers}');
+        log('Body : ${response.body}');
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          log('Successful send tire inspection on attempt $attempt');
+          return;
+        }
+
+        // Jika server mengembalikan BadGateway / Gateway Timeout (502/503/504), coba lagi jika masih ada kuota retry
+        final isGatewayError = response.statusCode == 502 ||
+            response.statusCode == 503 ||
+            response.statusCode == 504;
+
+        if (isGatewayError && attempt < maxRetries) {
+          final waitSeconds = attempt * 2;
+          log('Server returned ${response.statusCode}. Retrying in ${waitSeconds}s...');
+          await Future.delayed(Duration(seconds: waitSeconds));
+          continue;
+        }
+
+        final bodyLower = response.body.trim().toLowerCase();
+        final isHtml =
+            bodyLower.contains('<html') || bodyLower.contains('<!doctype');
+        final errorMsg = isHtml
+            ? 'Gateway/Proxy Server (Azure SIS) timeout atau tidak dapat diakses (Status ${response.statusCode}). Silakan coba sesaat lagi.'
+            : 'Gagal send tire inspection. Status: ${response.statusCode}, Body: ${response.body}';
+        throw Exception(errorMsg);
+      } on SocketException catch (e) {
+        log('SocketException on attempt $attempt: $e');
+        if (attempt >= maxRetries) {
+          throw Exception(
+            'Koneksi terputus (Connection reset by peer). Sinyal jaringan tidak stabil, silakan coba lagi.',
+          );
+        }
+        await Future.delayed(Duration(seconds: attempt * 2));
+      } on http.ClientException catch (e) {
+        log('ClientException on attempt $attempt: $e');
+        if (attempt >= maxRetries) {
+          throw Exception(
+            'Koneksi tertutup sebelum menerima header lengkap (Connection closed before full header). Silakan coba lagi.',
+          );
+        }
+        await Future.delayed(Duration(seconds: attempt * 2));
+      } on TimeoutException catch (e) {
+        log('TimeoutException on attempt $attempt: $e');
+        if (attempt >= maxRetries) {
+          throw Exception(
+            'Waktu pengiriman data habis (Timeout). Koneksi jaringan terlalu lambat.',
+          );
+        }
+        await Future.delayed(Duration(seconds: attempt * 2));
+      } catch (e, stackTrace) {
+        log(
+          'Error send tire inspection (Attempt $attempt): $e',
+          stackTrace: stackTrace,
         );
+
+        if (attempt >= maxRetries) {
+          rethrow;
+        }
+        await Future.delayed(Duration(seconds: attempt * 2));
       }
-
-      log('Successful send tire inspection');
-    } catch (e, stackTrace) {
-      log(
-        'Error send tire inspection : $e',
-        stackTrace: stackTrace,
-      );
-
-      rethrow;
     }
   }
 
