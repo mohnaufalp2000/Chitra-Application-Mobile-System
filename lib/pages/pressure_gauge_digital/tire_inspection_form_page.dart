@@ -7585,10 +7585,14 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       final unit = state.units[index];
       final remarksController = TextEditingController();
       final snController = TextEditingController(text: unit.sn ?? '');
-      final rtd1Controller =
-          TextEditingController(text: unit.rtd?.toString() ?? '');
-      final rtd2Controller =
-          TextEditingController(text: unit.rtd?.toString() ?? '');
+      final initialRtd1 = (unit.rtd1 != null && unit.rtd1!.isNotEmpty)
+          ? unit.rtd1!
+          : (unit.rtd?.toString() ?? '');
+      final initialRtd2 = (unit.rtd2 != null && unit.rtd2!.isNotEmpty)
+          ? unit.rtd2!
+          : (unit.rtd?.toString() ?? '');
+      final rtd1Controller = TextEditingController(text: initialRtd1);
+      final rtd2Controller = TextEditingController(text: initialRtd2);
 
       remarksController.addListener(_scheduleDraftSave);
       snController.addListener(_scheduleDraftSave);
@@ -7610,11 +7614,13 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
         'adjusmentTemperatureStatus': 'HOT',
         'hm': '',
         'damageTire': <dynamic>[],
-        'rtd1': unit.rtd?.toString() ?? '',
-        'rtd2': unit.rtd?.toString() ?? '',
-        '_apiRtd': unit.rtd?.toString() ?? '',
-        '_apiRtd2': unit.rtd?.toString() ?? '',
+        'rtd1': initialRtd1,
+        'rtd2': initialRtd2,
+        '_apiRtd': initialRtd1,
+        '_apiRtd2': initialRtd2,
         '_apiSn': unit.sn?.toString() ?? '',
+        'job': unit.job ?? '',
+        'avg_rtd': unit.avgRtd ?? '',
         'remarks': '',
         'sn': unit.sn,
         'rating': '',
@@ -8983,6 +8989,8 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
             : 'A',
         'rtd1': item['rtd1']?.toString() ?? '',
         'rtd2': item['rtd2']?.toString() ?? '',
+        'job': item['job']?.toString() ?? unit.job ?? '',
+        'avg_rtd': item['avg_rtd']?.toString() ?? unit.avgRtd ?? '',
         'sn': item['sn']?.toString().trim().isNotEmpty == true
             ? item['sn'].toString().trim()
             : unit.sn ?? '',
@@ -9681,8 +9689,16 @@ class _TireInspectionFormPageState extends State<TireInspectionFormPage>
       for (int i = 0; i < validationLength; i++) {
         final unit = state.units[i];
 
-        final actualRtd = double.tryParse(unit.rtd?.toString() ?? '0') ?? 0;
-        final actualRtd2 = double.tryParse(unit.rtd?.toString() ?? '0') ?? 0;
+        final actualRtd = double.tryParse(
+                (unit.rtd1?.isNotEmpty == true ? unit.rtd1 : unit.rtd)
+                        ?.toString() ??
+                    '0') ??
+            0;
+        final actualRtd2 = double.tryParse(
+                (unit.rtd2?.isNotEmpty == true ? unit.rtd2 : unit.rtd)
+                        ?.toString() ??
+                    '0') ??
+            0;
 
         final inputRtd = i < rtd1Controllers.length
             ? double.tryParse(rtd1Controllers[i].text) ?? 0

@@ -138,6 +138,7 @@ import 'package:equatable/equatable.dart';
 class UnitTire extends Equatable {
   final String? unitNumber;
   final String? posisi;
+  final String? job;
   final String? model;
   final String? status;
   final String? hm;
@@ -146,6 +147,9 @@ class UnitTire extends Equatable {
   final String? pattern;
   final String? otd;
   final String? rtd;
+  final String? rtd1;
+  final String? rtd2;
+  final String? avgRtd;
   final String? lifetime;
   final String? hmOnJob;
   final String? lifeOnJob;
@@ -158,7 +162,7 @@ class UnitTire extends Equatable {
   final String? idinventory;
   final String? idUnit;
 
-  /// Field baru dari get_tire_running.
+  /// Field area dan schedule dari get_tire_running.
   final String? area;
   final String? scheduleType;
   final String? scheduleDate;
@@ -166,6 +170,7 @@ class UnitTire extends Equatable {
   const UnitTire({
     this.unitNumber,
     this.posisi,
+    this.job,
     this.model,
     this.status,
     this.hm,
@@ -174,6 +179,9 @@ class UnitTire extends Equatable {
     this.pattern,
     this.otd,
     this.rtd,
+    this.rtd1,
+    this.rtd2,
+    this.avgRtd,
     this.lifetime,
     this.hmOnJob,
     this.lifeOnJob,
@@ -208,6 +216,7 @@ class UnitTire extends Equatable {
     return UnitTire(
       unitNumber: _toNullableString(json['unit_number']),
       posisi: _toNullableString(json['posisi']),
+      job: _toNullableString(json['job']),
       model: _toNullableString(json['model']),
       status: _toNullableString(json['status']),
       hm: _toNullableString(json['hm']),
@@ -216,6 +225,9 @@ class UnitTire extends Equatable {
       pattern: _toNullableString(json['pattern']),
       otd: _toNullableString(json['otd']),
       rtd: _toNullableString(json['rtd']),
+      rtd1: _toNullableString(json['rtd1']),
+      rtd2: _toNullableString(json['rtd2']),
+      avgRtd: _toNullableString(json['avg_rtd']),
       lifetime: _toNullableString(json['lifetime']),
       hmOnJob: _toNullableString(json['hm_on_job']),
       lifeOnJob: _toNullableString(json['life_on_job']),
@@ -226,9 +238,9 @@ class UnitTire extends Equatable {
       kunciUnit: _toNullableString(json['kunci_unit']),
       kunciTire: _toNullableString(json['kunci_tire']),
       idinventory: _toNullableString(json['id_inventory']),
-      idUnit: _toNullableString(json['idunit']),
+      idUnit: _toNullableString(json['idunit'] ?? json['id_unit']),
 
-      /// Field baru.
+      /// Field area dan schedule
       area: _toNullableString(json['area']),
       scheduleType: _toNullableString(json['schedule_type']),
       scheduleDate: _toNullableString(json['schedule_date']),
@@ -237,8 +249,11 @@ class UnitTire extends Equatable {
 
   Map<String, dynamic> toJson() {
     return {
+      'id_inventory': idinventory,
+      'idunit': idUnit,
       'unit_number': unitNumber,
       'posisi': posisi,
+      'job': job,
       'model': model,
       'status': status,
       'hm': hm,
@@ -247,6 +262,9 @@ class UnitTire extends Equatable {
       'pattern': pattern,
       'otd': otd,
       'rtd': rtd,
+      'rtd1': rtd1,
+      'rtd2': rtd2,
+      'avg_rtd': avgRtd,
       'lifetime': lifetime,
       'hm_on_job': hmOnJob,
       'life_on_job': lifeOnJob,
@@ -256,20 +274,79 @@ class UnitTire extends Equatable {
       'sn': sn,
       'kunci_unit': kunciUnit,
       'kunci_tire': kunciTire,
-      'id_inventory': idinventory,
-      'idunit': idUnit,
-
-      /// Field baru ikut tersimpan ke cache unit.
       'area': area,
       'schedule_type': scheduleType,
       'schedule_date': scheduleDate,
     };
   }
 
+  UnitTire copyWith({
+    String? unitNumber,
+    String? posisi,
+    String? job,
+    String? model,
+    String? status,
+    String? hm,
+    String? brand,
+    String? size,
+    String? pattern,
+    String? otd,
+    String? rtd,
+    String? rtd1,
+    String? rtd2,
+    String? avgRtd,
+    String? lifetime,
+    String? hmOnJob,
+    String? lifeOnJob,
+    String? date,
+    String? rating,
+    String? site,
+    String? sn,
+    String? kunciUnit,
+    String? kunciTire,
+    String? idinventory,
+    String? idUnit,
+    String? area,
+    String? scheduleType,
+    String? scheduleDate,
+  }) {
+    return UnitTire(
+      unitNumber: unitNumber ?? this.unitNumber,
+      posisi: posisi ?? this.posisi,
+      job: job ?? this.job,
+      model: model ?? this.model,
+      status: status ?? this.status,
+      hm: hm ?? this.hm,
+      brand: brand ?? this.brand,
+      size: size ?? this.size,
+      pattern: pattern ?? this.pattern,
+      otd: otd ?? this.otd,
+      rtd: rtd ?? this.rtd,
+      rtd1: rtd1 ?? this.rtd1,
+      rtd2: rtd2 ?? this.rtd2,
+      avgRtd: avgRtd ?? this.avgRtd,
+      lifetime: lifetime ?? this.lifetime,
+      hmOnJob: hmOnJob ?? this.hmOnJob,
+      lifeOnJob: lifeOnJob ?? this.lifeOnJob,
+      date: date ?? this.date,
+      rating: rating ?? this.rating,
+      site: site ?? this.site,
+      sn: sn ?? this.sn,
+      kunciUnit: kunciUnit ?? this.kunciUnit,
+      kunciTire: kunciTire ?? this.kunciTire,
+      idinventory: idinventory ?? this.idinventory,
+      idUnit: idUnit ?? this.idUnit,
+      area: area ?? this.area,
+      scheduleType: scheduleType ?? this.scheduleType,
+      scheduleDate: scheduleDate ?? this.scheduleDate,
+    );
+  }
+
   @override
   List<Object?> get props => [
         unitNumber,
         posisi,
+        job,
         model,
         status,
         hm,
@@ -278,6 +355,9 @@ class UnitTire extends Equatable {
         pattern,
         otd,
         rtd,
+        rtd1,
+        rtd2,
+        avgRtd,
         lifetime,
         hmOnJob,
         lifeOnJob,
@@ -299,6 +379,7 @@ class UnitTire extends Equatable {
     return 'UnitTire('
         'unitNumber: $unitNumber, '
         'posisi: $posisi, '
+        'job: $job, '
         'model: $model, '
         'status: $status, '
         'hm: $hm, '
@@ -307,6 +388,9 @@ class UnitTire extends Equatable {
         'pattern: $pattern, '
         'otd: $otd, '
         'rtd: $rtd, '
+        'rtd1: $rtd1, '
+        'rtd2: $rtd2, '
+        'avgRtd: $avgRtd, '
         'lifetime: $lifetime, '
         'hmOnJob: $hmOnJob, '
         'lifeOnJob: $lifeOnJob, '

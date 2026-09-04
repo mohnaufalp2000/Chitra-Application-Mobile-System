@@ -39,6 +39,9 @@ class SendTireInspection {
   final String tirePosition;
   final String pressure;
   final String rtd1;
+  final String rtd2;
+  final String avgRtd;
+  final String job;
 
   final String hmOnInspect;
   final String kmOnInspect;
@@ -92,6 +95,9 @@ class SendTireInspection {
     required this.tirePosition,
     required this.pressure,
     required this.rtd1,
+    this.rtd2 = '',
+    this.avgRtd = '',
+    this.job = '',
     required this.hmOnInspect,
     required this.kmOnInspect,
     required this.remark,
@@ -133,6 +139,9 @@ class SendTireInspection {
       tirePosition: json['tire_position']?.toString() ?? '',
       pressure: json['pressure']?.toString() ?? '',
       rtd1: json['rtd1']?.toString() ?? '',
+      rtd2: json['rtd2']?.toString() ?? '',
+      avgRtd: (json['avg_rtd'] ?? json['avgRtd'])?.toString() ?? '',
+      job: json['job']?.toString() ?? '',
       hmOnInspect: json['hm_on_inspect']?.toString() ?? '',
       kmOnInspect: json['km_on_inspect']?.toString() ?? '',
       remark: json['remark']?.toString() ?? '',
@@ -175,6 +184,9 @@ class SendTireInspection {
       'tire_position': tirePosition,
       'pressure': pressure,
       'rtd1': rtd1,
+      'rtd2': rtd2,
+      'avg_rtd': avgRtd,
+      'job': job,
       'hm_on_inspect': hmOnInspect,
       'km_on_inspect': kmOnInspect,
       'remark': remark,
